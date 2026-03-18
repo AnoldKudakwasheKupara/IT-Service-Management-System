@@ -1,0 +1,29 @@
+﻿@model IT_Service_Management_System.Models.Ticket
+
+<h2>Ticket Details</h2>
+
+<div>
+    <h4>@Model.Title</h4>
+    <p>@Model.Description</p>
+
+    <p><strong>Category:</strong> @Model.Category</p>
+    <p><strong>Priority:</strong> @Model.Priority</p>
+    <p><strong>Status:</strong> @Model.Status</p>
+    <p><strong>Created By:</strong> @Model.CreatedBy?.FirstName</p>
+</div>
+
+<h4>Attachments</h4>
+
+@if (Model.Attachments != null && Model.Attachments.Any())
+{
+    foreach (var file in Model.Attachments)
+    {
+        <div>
+            <a href="@file.FilePath" target="_blank">@file.FileName</a>
+        </div>
+    }
+}
+else
+{
+    <p>No attachments</p>
+}

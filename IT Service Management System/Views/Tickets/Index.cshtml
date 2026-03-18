@@ -1,0 +1,55 @@
+﻿@model IEnumerable<IT_Service_Management_System.Models.Ticket>
+
+<h2>Ticket Dashboard</h2>
+
+<a asp-action="Create" class="btn btn-primary mb-3">+ Create New Ticket</a>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Created By</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var ticket in Model)
+        {
+            <tr>
+                <td>@ticket.Title</td>
+                <td>@ticket.Priority</td>
+
+                <td>
+                    @if (ticket.Status.ToString() == "Open")
+                    {
+                        <span class="badge bg-warning">Open</span>
+                    }
+                    else if (ticket.Status.ToString() == "InProgress")
+                    {
+                        <span class="badge bg-info">In Progress</span>
+                    }
+                    else if (ticket.Status.ToString() == "Resolved")
+                    {
+                        <span class="badge bg-success">Resolved</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Closed</span>
+                    }
+                </td>
+
+                <td>@ticket.CreatedBy?.FirstName</td>
+                <td>@ticket.CreatedAt.ToString("yyyy-MM-dd")</td>
+
+                <td>
+                    <a asp-action="Details" asp-route-id="@ticket.Id" class="btn btn-sm btn-info">View</a>
+                    <a asp-action="Edit" asp-route-id="@ticket.Id" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@ticket.Id" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
