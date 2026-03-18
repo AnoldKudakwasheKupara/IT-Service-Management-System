@@ -16,7 +16,6 @@ namespace IT_Service_Management_System.Models
 
         public DateTime UploadedAt { get; set; } = DateTime.Now;
 
-        // Foreign Keys (can belong to Ticket OR Message)
         public int? TicketId { get; set; }
         public Ticket Ticket { get; set; }
 

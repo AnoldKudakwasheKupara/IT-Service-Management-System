@@ -1,3 +1,4 @@
+using IT_Service_Management_System.DbContexts;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

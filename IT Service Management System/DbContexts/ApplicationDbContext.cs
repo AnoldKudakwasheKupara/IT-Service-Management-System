@@ -10,7 +10,6 @@ namespace IT_Service_Management_System.DbContexts
         {
         }
 
-        // Tables
         public DbSet<User> Users { get; set; }
         public DbSet<Ticket> Tickets { get; set; }
         public DbSet<TicketMessage> TicketMessages { get; set; }
@@ -48,7 +47,7 @@ namespace IT_Service_Management_System.DbContexts
                 .HasOne(m => m.Ticket)
                 .WithMany(t => t.Messages)
                 .HasForeignKey(m => m.TicketId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<TicketMessage>()
                 .HasOne(m => m.Sender)
@@ -60,13 +59,13 @@ namespace IT_Service_Management_System.DbContexts
                 .HasOne(a => a.Ticket)
                 .WithMany(t => t.Attachments)
                 .HasForeignKey(a => a.TicketId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<TicketAttachment>()
                 .HasOne(a => a.TicketMessage)
                 .WithMany(m => m.Attachments)
                 .HasForeignKey(a => a.TicketMessageId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
