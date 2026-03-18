@@ -176,7 +176,8 @@ namespace IT_Service_Management_System.Migrations
                 {
                     b.HasOne("IT_Service_Management_System.Models.User", "AssignedTo")
                         .WithMany()
-                        .HasForeignKey("AssignedToId");
+                        .HasForeignKey("AssignedToId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
                         .WithMany("TicketsCreated")
@@ -217,7 +218,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Ticket", "Ticket")
                         .WithMany("Messages")
                         .HasForeignKey("TicketId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Sender");

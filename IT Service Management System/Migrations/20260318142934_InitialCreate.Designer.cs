@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IT_Service_Management_System.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260318142033_InitialCreate")]
+    [Migration("20260318142934_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -198,12 +198,12 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Ticket", "Ticket")
                         .WithMany("Attachments")
                         .HasForeignKey("TicketId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("IT_Service_Management_System.Models.TicketMessage", "TicketMessage")
                         .WithMany("Attachments")
                         .HasForeignKey("TicketMessageId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Ticket");
 
@@ -221,7 +221,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Ticket", "Ticket")
                         .WithMany("Messages")
                         .HasForeignKey("TicketId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Sender");
