@@ -12,6 +12,8 @@ builder.Services.AddSignalR();
 
 builder.Services.AddScoped<EmailService>();
 
+builder.Services.AddSession();
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -25,7 +27,10 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseRouting();
+
+app.UseSession();
 
 app.UseAuthorization();
 
@@ -38,8 +43,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-
-// ✅ SEED DEFAULT USER (THIS FIXES YOUR ERROR)
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -54,6 +57,7 @@ using (var scope = app.Services.CreateScope())
             LastName = "User",
             Email = "admin@test.com",
             PasswordHash = "123456",
+            IsActive = true,
             Role = Ticket.UserRole.Admin,
             CreatedAt = DateTime.Now
         });
@@ -61,6 +65,5 @@ using (var scope = app.Services.CreateScope())
         context.SaveChanges();
     }
 }
-
 
 app.Run();

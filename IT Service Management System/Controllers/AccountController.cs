@@ -13,6 +13,36 @@ namespace IT_Service_Management_System.Controllers
             _context = context;
         }
 
+        public IActionResult Login()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Login(string email, string password)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null || user.PasswordHash != password || !user.IsActive)
+            {
+                ViewBag.Error = "Invalid credentials or account not activated.";
+                return View();
+            }
+
+            HttpContext.Session.SetInt32("UserId", user.Id);
+            HttpContext.Session.SetString("UserName", user.FirstName);
+            HttpContext.Session.SetString("UserRole", user.Role.ToString());
+
+            return RedirectToAction("Index", "Home");
+        }
+
+        public IActionResult Logout()
+        {
+            HttpContext.Session.Clear();
+            return RedirectToAction("Login");
+        }
+
         public async Task<IActionResult> SetPassword(string token)
         {
             var user = await _context.Users
@@ -27,18 +57,20 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost]
         public async Task<IActionResult> SetPassword(string token, string password)
         {
+            if (string.IsNullOrEmpty(token))
+                return Content("ERROR: Token is NULL");
+
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.ResetToken == token);
 
-            if (user == null || user.TokenExpiry == null || user.TokenExpiry < DateTime.Now)
-                return BadRequest("Invalid or expired link");
+            if (user == null)
+                return Content("ERROR: User NOT FOUND");
 
-            // 🔐 PASSWORD VALIDATION
+            if (user.TokenExpiry == null || user.TokenExpiry < DateTime.Now)
+                return Content("ERROR: Token EXPIRED");
+
             if (!IsValidPassword(password))
-            {
-                ModelState.AddModelError("", "Password must be at least 8 characters and include uppercase, lowercase, and special character.");
-                return View();
-            }
+                return Content("ERROR: Weak password");
 
             user.PasswordHash = password;
             user.IsActive = true;
@@ -47,7 +79,8 @@ namespace IT_Service_Management_System.Controllers
 
             await _context.SaveChangesAsync();
 
-            return RedirectToAction("Login");
+            TempData["Success"] = "Account activated successfully. Please login.";
+            return RedirectToAction("Login", "Account");
         }
 
         private bool IsValidPassword(string password)

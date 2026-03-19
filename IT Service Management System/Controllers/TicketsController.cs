@@ -16,7 +16,13 @@ namespace IT_Service_Management_System.Controllers
 
         public async Task<IActionResult> Index()
         {
+            var userId = HttpContext.Session.GetInt32("UserId");
+
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
             var tickets = await _context.Tickets
+                .Where(t => t.CreatedById == userId)
                 .Include(t => t.CreatedBy)
                 .ToListAsync();
 
@@ -25,21 +31,33 @@ namespace IT_Service_Management_System.Controllers
 
         public IActionResult Create()
         {
+            if (HttpContext.Session.GetInt32("UserId") == null)
+                return RedirectToAction("Login", "Account");
+
             return View();
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(Ticket ticket, List<IFormFile> files)
         {
+            var userId = HttpContext.Session.GetInt32("UserId");
+
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
             if (!ModelState.IsValid)
                 return View(ticket);
 
             ticket.CreatedAt = DateTime.Now;
-            ticket.CreatedById = 1;
+            ticket.Status = Ticket.TicketStatus.Open;
+
+            // ✅ LINK TO LOGGED-IN USER
+            ticket.CreatedById = userId.Value;
 
             _context.Tickets.Add(ticket);
             await _context.SaveChangesAsync();
 
+            // ✅ HANDLE ATTACHMENTS
             if (files != null && files.Count > 0)
             {
                 var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
@@ -49,24 +67,18 @@ namespace IT_Service_Management_System.Controllers
 
                 foreach (var file in files)
                 {
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                    var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
                     var filePath = Path.Combine(uploadPath, fileName);
 
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await file.CopyToAsync(stream);
-                    }
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await file.CopyToAsync(stream);
 
-                    var attachment = new TicketAttachment
+                    _context.TicketAttachments.Add(new TicketAttachment
                     {
                         FileName = file.FileName,
                         FilePath = "/uploads/" + fileName,
-                        ContentType = file.ContentType,
-                        TicketId = ticket.Id,
-                        UploadedAt = DateTime.Now
-                    };
-
-                    _context.TicketAttachments.Add(attachment);
+                        TicketId = ticket.Id
+                    });
                 }
 
                 await _context.SaveChangesAsync();
@@ -78,15 +90,18 @@ namespace IT_Service_Management_System.Controllers
         public async Task<IActionResult> Details(int id)
         {
             var ticket = await _context.Tickets
-                .Include(t => t.CreatedBy)
-                .Include(t => t.Attachments)
                 .Include(t => t.Messages)
                     .ThenInclude(m => m.Sender)
-                .Include(t => t.Messages)
-                    .ThenInclude(m => m.Attachments)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
-            if (ticket == null) return NotFound();
+                        var userId = HttpContext.Session.GetInt32("UserId");
+
+                        if (ticket == null || userId == null)
+                            return NotFound();
+
+                        // 🔐 Restrict access (optional now)
+                        if (ticket.CreatedById != userId)
+                            return Forbid();
 
             return View(ticket);
         }
