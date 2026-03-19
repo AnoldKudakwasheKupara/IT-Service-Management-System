@@ -176,5 +176,20 @@ namespace IT_Service_Management_System.Controllers
 
             return Ok();
         }
+
+        [HttpPost]
+        public async Task<IActionResult> CloseTicket(int id)
+        {
+            var ticket = await _context.Tickets.FindAsync(id);
+
+            if (ticket == null) return NotFound();
+
+            ticket.Status = Ticket.TicketStatus.Closed;
+
+            _context.Tickets.Update(ticket);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction("Details", new { id });
+        }
     }
 }
