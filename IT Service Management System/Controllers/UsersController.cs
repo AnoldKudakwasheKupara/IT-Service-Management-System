@@ -39,15 +39,24 @@ namespace IT_Service_Management_System.Controllers
         }
 
         [HttpPost]
+        [HttpPost]
         public async Task<IActionResult> Create(User user)
         {
             if (!ModelState.IsValid)
                 return View(user);
 
+            // 🔍 CHECK EMAIL EXISTS
+            var existingUser = await _context.Users
+                .AnyAsync(u => u.Email == user.Email);
+
+            if (existingUser)
+            {
+                ModelState.AddModelError("Email", "This email is already registered.");
+                return View(user);
+            }
+
             user.CreatedAt = DateTime.Now;
             user.IsActive = false;
-
-            // 🔐 Generate token
             user.ResetToken = Guid.NewGuid().ToString();
             user.TokenExpiry = DateTime.Now.AddHours(24);
 
@@ -60,14 +69,31 @@ namespace IT_Service_Management_System.Controllers
                 new { token = user.ResetToken },
                 Request.Scheme);
 
-                        var body = $@"
-                <h3>Welcome to IT Service Management System</h3>
-                <p>Please click the link below to set your password:</p>
-                <a href='{link}'>Set Password</a>
+            var body = $@"
+                <p>Good Day {user.FirstName},</p>
+
+                <p>Welcome to the <strong>IT Service Management System</strong>.</p>
+
+                <p>Your account has been created successfully. To get started, please set your password by clicking the link below:</p>
+
+                <p>
+                    <a href='{link}' style='color:blue; font-weight:bold;'>
+                        Set Your Password
+                    </a>
+                </p>
+
+                <p>This link will expire in 24 hours for security purposes.</p>
+
+                <br/>
+
+                <p>If you did not expect this email, please ignore it.</p>
+
+                <p>Kind Regards,<br/>
+                IT Support Team</p>
             ";
 
-            await _emailService.SendEmailAsync(user.Email, "Set Your Password", body);
 
+            await _emailService.SendEmailAsync(user.Email, "Welcome - Set Your Password", body);
 
             return RedirectToAction("Index");
         }
