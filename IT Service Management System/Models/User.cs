@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using System.ComponentModel.DataAnnotations;
 using static IT_Service_Management_System.Models.Ticket;
 
 namespace IT_Service_Management_System.Models
@@ -8,22 +9,29 @@ namespace IT_Service_Management_System.Models
         public int Id { get; set; }
 
         [Required]
+        [StringLength(50)]
         public string FirstName { get; set; }
 
         [Required]
+        [StringLength(50)]
         public string LastName { get; set; }
 
-        [Required, EmailAddress]
+        [Required]
+        [EmailAddress]
         public string Email { get; set; }
 
         [Required]
         public string PasswordHash { get; set; }
 
+        [Required]
         public UserRole Role { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        [ValidateNever]
         public ICollection<Ticket> TicketsCreated { get; set; }
+
+        [ValidateNever]
         public ICollection<TicketMessage> Messages { get; set; }
     }
 }
