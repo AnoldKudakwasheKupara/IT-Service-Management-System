@@ -80,6 +80,10 @@ namespace IT_Service_Management_System.Controllers
             var ticket = await _context.Tickets
                 .Include(t => t.CreatedBy)
                 .Include(t => t.Attachments)
+                .Include(t => t.Messages)
+                    .ThenInclude(m => m.Sender)
+                .Include(t => t.Messages)
+                    .ThenInclude(m => m.Attachments)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (ticket == null) return NotFound();
