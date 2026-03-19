@@ -1,0 +1,19 @@
+﻿@model IT_Service_Management_System.Models.User
+
+<h2>User Details</h2>
+
+<div class="card">
+    <div class="card-body">
+
+        <p><strong>Name:</strong> @Model.FirstName @Model.LastName</p>
+        <p><strong>Email:</strong> @Model.Email</p>
+        <p><strong>Role:</strong> @Model.Role</p>
+        <p><strong>Created:</strong> @Model.CreatedAt.ToString("yyyy-MM-dd")</p>
+
+    </div>
+</div>
+
+<br />
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+<a asp-action="Index" class="btn btn-secondary">Back</a>

@@ -19,9 +19,11 @@ namespace IT_Service_Management_System.Models
         [Required]
         [EmailAddress]
         public string Email { get; set; }
+        public string? PasswordHash { get; set; }
 
-        [Required]
-        public string PasswordHash { get; set; }
+        public string? ResetToken { get; set; }
+        public DateTime? TokenExpiry { get; set; }
+        public bool IsActive { get; set; } = false;
 
         [Required]
         public UserRole Role { get; set; }

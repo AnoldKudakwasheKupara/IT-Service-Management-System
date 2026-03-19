@@ -19,6 +19,7 @@ namespace IT_Service_Management_System.DbContexts
         {
             base.OnModelCreating(modelBuilder);
 
+            // ✅ ENUMS AS STRINGS
             modelBuilder.Entity<Ticket>()
                 .Property(t => t.Status)
                 .HasConversion<string>();
@@ -31,6 +32,12 @@ namespace IT_Service_Management_System.DbContexts
                 .Property(u => u.Role)
                 .HasConversion<string>();
 
+            // ✅ USER CONSTRAINTS
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
+            // ✅ TICKET RELATIONSHIPS
             modelBuilder.Entity<Ticket>()
                 .HasOne(t => t.CreatedBy)
                 .WithMany(u => u.TicketsCreated)
@@ -43,6 +50,7 @@ namespace IT_Service_Management_System.DbContexts
                 .HasForeignKey(t => t.AssignedToId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ✅ MESSAGE RELATIONSHIPS
             modelBuilder.Entity<TicketMessage>()
                 .HasOne(m => m.Ticket)
                 .WithMany(t => t.Messages)
@@ -55,6 +63,7 @@ namespace IT_Service_Management_System.DbContexts
                 .HasForeignKey(m => m.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ✅ ATTACHMENTS
             modelBuilder.Entity<TicketAttachment>()
                 .HasOne(a => a.Ticket)
                 .WithMany(t => t.Attachments)
@@ -66,6 +75,11 @@ namespace IT_Service_Management_System.DbContexts
                 .WithMany(m => m.Attachments)
                 .HasForeignKey(a => a.TicketMessageId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // ✅ OPTIONAL: REQUIRE EITHER TICKET OR MESSAGE (NOT BOTH NULL)
+            modelBuilder.Entity<TicketAttachment>()
+                .HasCheckConstraint("CK_Attachment_Owner",
+                    "[TicketId] IS NOT NULL OR [TicketMessageId] IS NOT NULL");
         }
     }
 }

@@ -1,0 +1,42 @@
+﻿@model IT_Service_Management_System.Models.User
+
+<h2>Edit User</h2>
+
+<form asp-action="Edit" method="post">
+
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-2">
+        <label>First Name</label>
+        <input asp-for="FirstName" class="form-control" />
+    </div>
+
+    <div class="mb-2">
+        <label>Last Name</label>
+        <input asp-for="LastName" class="form-control" />
+    </div>
+
+    <div class="mb-2">
+        <label>Email</label>
+        <input asp-for="Email" class="form-control" />
+    </div>
+
+    <div class="mb-2">
+        <label>Password</label>
+        <input asp-for="PasswordHash" type="password" class="form-control" />
+    </div>
+
+    <div class="mb-2">
+        <label>Role</label>
+        <select asp-for="Role"
+                asp-items="Html.GetEnumSelectList<IT_Service_Management_System.Models.Ticket.UserRole>()"
+                class="form-control">
+        </select>
+    </div>
+
+    <br />
+
+    <button type="submit" class="btn btn-success">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+
+</form>

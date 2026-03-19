@@ -38,7 +38,6 @@ namespace IT_Service_Management_System.Controllers
             return View();
         }
 
-        // 🔹 CREATE USER
         [HttpPost]
         public async Task<IActionResult> Create(User user)
         {
@@ -46,9 +45,23 @@ namespace IT_Service_Management_System.Controllers
                 return View(user);
 
             user.CreatedAt = DateTime.Now;
+            user.IsActive = false;
+
+            // 🔐 Generate token
+            user.ResetToken = Guid.NewGuid().ToString();
+            user.TokenExpiry = DateTime.Now.AddHours(24);
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
+
+            // 📧 Send email
+            var link = Url.Action(
+                "SetPassword",
+                "Account",
+                new { token = user.ResetToken },
+                Request.Scheme);
+
+            await SendEmail(user.Email, link);
 
             return RedirectToAction("Index");
         }
@@ -98,6 +111,12 @@ namespace IT_Service_Management_System.Controllers
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index");
+        }
+
+        private async Task SendEmail(string toEmail, string link)
+        {
+            // TEMP: just log to console
+            Console.WriteLine($"Send this link to user: {link}");
         }
     }
 }
