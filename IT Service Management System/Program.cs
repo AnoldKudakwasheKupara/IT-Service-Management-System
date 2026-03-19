@@ -1,6 +1,7 @@
 using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Hubs;
 using IT_Service_Management_System.Models;
+using IT_Service_Management_System.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddSignalR();
+
+builder.Services.AddScoped<EmailService>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(

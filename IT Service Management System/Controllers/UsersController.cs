@@ -1,5 +1,6 @@
 ﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
+using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,20 +9,20 @@ namespace IT_Service_Management_System.Controllers
     public class UsersController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly EmailService _emailService;
 
-        public UsersController(ApplicationDbContext context)
+        public UsersController(ApplicationDbContext context, EmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
-        // 🔹 LIST USERS
         public async Task<IActionResult> Index()
         {
             var users = await _context.Users.ToListAsync();
             return View(users);
         }
 
-        // 🔹 VIEW USER DETAILS
         public async Task<IActionResult> Details(int id)
         {
             var user = await _context.Users
@@ -32,7 +33,6 @@ namespace IT_Service_Management_System.Controllers
             return View(user);
         }
 
-        // 🔹 SHOW CREATE FORM
         public IActionResult Create()
         {
             return View();
@@ -54,14 +54,20 @@ namespace IT_Service_Management_System.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // 📧 Send email
             var link = Url.Action(
                 "SetPassword",
                 "Account",
                 new { token = user.ResetToken },
                 Request.Scheme);
 
-            await SendEmail(user.Email, link);
+                        var body = $@"
+                <h3>Welcome to IT Service Management System</h3>
+                <p>Please click the link below to set your password:</p>
+                <a href='{link}'>Set Password</a>
+            ";
+
+            await _emailService.SendEmailAsync(user.Email, "Set Your Password", body);
+
 
             return RedirectToAction("Index");
         }
