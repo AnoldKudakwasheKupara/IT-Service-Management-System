@@ -17,14 +17,34 @@ namespace IT_Service_Management_System.Controllers
             _emailService = emailService;
         }
 
+        // 🔒 AUTH + ROLE CHECK
+        private IActionResult CheckAccess()
+        {
+            if (HttpContext.Session.GetInt32("UserId") == null)
+                return RedirectToAction("Login", "Account");
+
+            if (HttpContext.Session.GetString("UserRole") != "Admin")
+                return Forbid();
+
+            return null;
+        }
+
+        // 🔹 LIST USERS
         public async Task<IActionResult> Index()
         {
+            var access = CheckAccess();
+            if (access != null) return access;
+
             var users = await _context.Users.ToListAsync();
             return View(users);
         }
 
+        // 🔹 USER DETAILS
         public async Task<IActionResult> Details(int id)
         {
+            var access = CheckAccess();
+            if (access != null) return access;
+
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Id == id);
 
@@ -33,19 +53,25 @@ namespace IT_Service_Management_System.Controllers
             return View(user);
         }
 
+        // 🔹 SHOW CREATE FORM
         public IActionResult Create()
         {
+            var access = CheckAccess();
+            if (access != null) return access;
+
             return View();
         }
 
-        [HttpPost]
+        // 🔹 CREATE USER
         [HttpPost]
         public async Task<IActionResult> Create(User user)
         {
+            var access = CheckAccess();
+            if (access != null) return access;
+
             if (!ModelState.IsValid)
                 return View(user);
 
-            // 🔍 CHECK EMAIL EXISTS
             var existingUser = await _context.Users
                 .AnyAsync(u => u.Email == user.Email);
 
@@ -92,7 +118,6 @@ namespace IT_Service_Management_System.Controllers
                 IT Support Team</p>
             ";
 
-
             await _emailService.SendEmailAsync(user.Email, "Welcome - Set Your Password", body);
 
             return RedirectToAction("Index");
@@ -101,6 +126,9 @@ namespace IT_Service_Management_System.Controllers
         // 🔹 SHOW EDIT FORM
         public async Task<IActionResult> Edit(int id)
         {
+            var access = CheckAccess();
+            if (access != null) return access;
+
             var user = await _context.Users.FindAsync(id);
 
             if (user == null) return NotFound();
@@ -112,6 +140,9 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(User user)
         {
+            var access = CheckAccess();
+            if (access != null) return access;
+
             if (!ModelState.IsValid)
                 return View(user);
 
@@ -121,9 +152,12 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction("Index");
         }
 
-        // 🔹 SHOW DELETE CONFIRMATION
+        // 🔹 DELETE CONFIRMATION
         public async Task<IActionResult> Delete(int id)
         {
+            var access = CheckAccess();
+            if (access != null) return access;
+
             var user = await _context.Users.FindAsync(id);
 
             if (user == null) return NotFound();
@@ -135,6 +169,9 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            var access = CheckAccess();
+            if (access != null) return access;
+
             var user = await _context.Users.FindAsync(id);
 
             if (user == null) return NotFound();
@@ -143,12 +180,6 @@ namespace IT_Service_Management_System.Controllers
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index");
-        }
-
-        private async Task SendEmail(string toEmail, string link)
-        {
-            // TEMP: just log to console
-            Console.WriteLine($"Send this link to user: {link}");
         }
     }
 }
