@@ -134,17 +134,13 @@ namespace IT_Service_Management_System.Controllers
 
             return RedirectToAction("Index");
         }
-
         [HttpPost]
         public async Task<IActionResult> AddReply(int ticketId, string message, List<IFormFile> files)
         {
-            if (string.IsNullOrWhiteSpace(message))
-                return RedirectToAction("Details", new { id = ticketId });
-
             var ticketMessage = new TicketMessage
             {
                 TicketId = ticketId,
-                SenderId = 1,
+                SenderId = _context.Users.First().Id,
                 Message = message,
                 SentAt = DateTime.Now
             };
@@ -161,30 +157,24 @@ namespace IT_Service_Management_System.Controllers
 
                 foreach (var file in files)
                 {
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                    var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
                     var filePath = Path.Combine(uploadPath, fileName);
 
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await file.CopyToAsync(stream);
-                    }
+                    using var stream = new FileStream(filePath, FileMode.Create);
+                    await file.CopyToAsync(stream);
 
-                    var attachment = new TicketAttachment
+                    _context.TicketAttachments.Add(new TicketAttachment
                     {
                         FileName = file.FileName,
                         FilePath = "/uploads/" + fileName,
-                        ContentType = file.ContentType,
-                        TicketMessageId = ticketMessage.Id,
-                        UploadedAt = DateTime.Now
-                    };
-
-                    _context.TicketAttachments.Add(attachment);
+                        TicketMessageId = ticketMessage.Id
+                    });
                 }
 
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction("Details", new { id = ticketId });
+            return Ok();
         }
     }
 }
