@@ -134,5 +134,57 @@ namespace IT_Service_Management_System.Controllers
 
             return RedirectToAction("Index");
         }
+
+        [HttpPost]
+        public async Task<IActionResult> AddReply(int ticketId, string message, List<IFormFile> files)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                return RedirectToAction("Details", new { id = ticketId });
+
+            var ticketMessage = new TicketMessage
+            {
+                TicketId = ticketId,
+                SenderId = 1,
+                Message = message,
+                SentAt = DateTime.Now
+            };
+
+            _context.TicketMessages.Add(ticketMessage);
+            await _context.SaveChangesAsync();
+
+            if (files != null && files.Count > 0)
+            {
+                var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
+
+                if (!Directory.Exists(uploadPath))
+                    Directory.CreateDirectory(uploadPath);
+
+                foreach (var file in files)
+                {
+                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                    var filePath = Path.Combine(uploadPath, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    var attachment = new TicketAttachment
+                    {
+                        FileName = file.FileName,
+                        FilePath = "/uploads/" + fileName,
+                        ContentType = file.ContentType,
+                        TicketMessageId = ticketMessage.Id,
+                        UploadedAt = DateTime.Now
+                    };
+
+                    _context.TicketAttachments.Add(attachment);
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("Details", new { id = ticketId });
+        }
     }
 }
