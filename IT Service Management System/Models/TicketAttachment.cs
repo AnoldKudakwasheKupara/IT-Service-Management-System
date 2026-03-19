@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using System.ComponentModel.DataAnnotations;
 
 namespace IT_Service_Management_System.Models
 {
@@ -17,9 +18,12 @@ namespace IT_Service_Management_System.Models
         public DateTime UploadedAt { get; set; } = DateTime.Now;
 
         public int? TicketId { get; set; }
-        public Ticket Ticket { get; set; }
 
         public int? TicketMessageId { get; set; }
+        [ValidateNever]
+        public Ticket Ticket { get; set; }
+
+        [ValidateNever]
         public TicketMessage TicketMessage { get; set; }
     }
 }

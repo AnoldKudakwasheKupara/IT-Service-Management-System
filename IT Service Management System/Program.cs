@@ -1,9 +1,9 @@
 using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Models;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -12,11 +12,9 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
@@ -31,6 +29,30 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
+
+
+// ✅ SEED DEFAULT USER (THIS FIXES YOUR ERROR)
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    context.Database.Migrate();
+
+    if (!context.Users.Any())
+    {
+        context.Users.Add(new User
+        {
+            FirstName = "Admin",
+            LastName = "User",
+            Email = "admin@test.com",
+            PasswordHash = "123456",
+            Role = Ticket.UserRole.Admin,
+            CreatedAt = DateTime.Now
+        });
+
+        context.SaveChanges();
+    }
+}
 
 
 app.Run();

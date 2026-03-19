@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using System.ComponentModel.DataAnnotations;
 
 namespace IT_Service_Management_System.Models
 {
@@ -21,12 +22,17 @@ namespace IT_Service_Management_System.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public int CreatedById { get; set; }
+        [ValidateNever]
         public User CreatedBy { get; set; }
 
         public int? AssignedToId { get; set; }
+        [ValidateNever]
         public User AssignedTo { get; set; }
 
+        [ValidateNever]
         public ICollection<TicketMessage> Messages { get; set; }
+
+        [ValidateNever]
         public ICollection<TicketAttachment> Attachments { get; set; }
 
         public enum TicketStatus

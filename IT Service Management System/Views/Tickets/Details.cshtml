@@ -2,14 +2,14 @@
 
 <h2>Ticket Details</h2>
 
-<div>
-    <h4>@Model.Title</h4>
-    <p>@Model.Description</p>
+<div class="card mb-3">
+    <div class="card-body">
+        <h4>@Model.Title</h4>
+        <p>@Model.Description</p>
 
-    <p><strong>Category:</strong> @Model.Category</p>
-    <p><strong>Priority:</strong> @Model.Priority</p>
-    <p><strong>Status:</strong> @Model.Status</p>
-    <p><strong>Created By:</strong> @Model.CreatedBy?.FirstName</p>
+        <p><strong>Status:</strong> @Model.Status</p>
+        <p><strong>Priority:</strong> @Model.Priority</p>
+    </div>
 </div>
 
 <h4>Attachments</h4>
@@ -27,3 +27,60 @@ else
 {
     <p>No attachments</p>
 }
+
+<hr />
+
+<h4>Conversation</h4>
+
+<div class="border p-3 mb-3" style="max-height:400px; overflow-y:auto;">
+
+    @if (Model.Messages != null && Model.Messages.Any())
+    {
+        foreach (var msg in Model.Messages.OrderBy(m => m.SentAt))
+        {
+            <div class="mb-3">
+                <strong>@msg.Sender?.FirstName</strong>
+                <small class="text-muted">(@msg.SentAt.ToString("g"))</small>
+
+                <div class="p-2 border rounded mt-1">
+                    @msg.Message
+                </div>
+
+                @if (msg.Attachments != null && msg.Attachments.Any())
+                {
+                    foreach (var file in msg.Attachments)
+                    {
+                        <div>
+                            <a href="@file.FilePath" target="_blank">@file.FileName</a>
+                        </div>
+                    }
+                }
+            </div>
+        }
+    }
+    else
+    {
+        <p>No messages yet</p>
+    }
+
+</div>
+
+<hr />
+
+<h4>Reply</h4>
+
+<form asp-action="AddReply" method="post" enctype="multipart/form-data">
+    <input type="hidden" name="ticketId" value="@Model.Id" />
+
+    <div>
+        <textarea name="message" class="form-control" placeholder="Type your message..." required></textarea>
+    </div>
+
+    <div class="mt-2">
+        <input type="file" name="files" multiple class="form-control" />
+    </div>
+
+    <br />
+
+    <button type="submit" class="btn btn-primary">Send Reply</button>
+</form>
