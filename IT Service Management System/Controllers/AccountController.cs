@@ -86,6 +86,12 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction("Login", "Account");
         }
 
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
         [HttpPost]
         public async Task<IActionResult> ForgotPassword(string email)
         {

@@ -3,11 +3,345 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - IT Service Management System</title>
+    <title>@ViewData["Title"] - Axis IT Helpdesk</title>
     <script type="importmap"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Bootstrap 5 CSS -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/IT_Service_Management_System.styles.css" asp-append-version="true" />
+    
+    <style>
+            /* Modern Global Styles */
+            :root {
+                --primary-dark: #1e4c6b;
+                --primary: #2c7da0;
+                --primary-light: #61a5c2;
+                --secondary: #2c3e4e;
+                --success: #2c9e6e;
+                --danger: #e53e3e;
+                --warning: #f5b042;
+                --info: #3b82f6;
+                --gray-50: #f8fafc;
+                --gray-100: #f1f5f9;
+                --gray-200: #e2e8f0;
+                --gray-300: #cbd5e1;
+                --gray-400: #94a3b8;
+                --gray-500: #64748b;
+                --gray-600: #475569;
+                --gray-700: #334155;
+                --gray-800: #1e293b;
+                --gray-900: #0f172a;
+                --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+                --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+                --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+                --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+                --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            }
+
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #f5f7fa 0%, #eef2f6 100%);
+                color: var(--gray-800);
+                line-height: 1.5;
+                min-height: 100vh;
+            }
+
+            /* Modern Navbar */
+            .navbar-modern {
+                background: rgba(255, 255, 255, 0.98);
+                backdrop-filter: blur(10px);
+                box-shadow: var(--shadow-sm);
+                border-bottom: 1px solid var(--gray-200);
+                padding: 0.75rem 0;
+                transition: all 0.3s ease;
+            }
+
+                .navbar-modern.scrolled {
+                    box-shadow: var(--shadow-md);
+                    background: rgba(255, 255, 255, 0.98);
+                }
+
+            .navbar-brand-modern {
+                font-weight: 700;
+                font-size: 1.35rem;
+                background: linear-gradient(115deg, var(--primary-dark) 0%, var(--primary) 100%);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                letter-spacing: -0.3px;
+                transition: opacity 0.2s;
+            }
+
+                .navbar-brand-modern:hover {
+                    opacity: 0.85;
+                    color: transparent;
+                }
+
+                .navbar-brand-modern i {
+                    background: linear-gradient(115deg, var(--primary-dark) 0%, var(--primary) 100%);
+                    -webkit-background-clip: text;
+                    background-clip: text;
+                    color: transparent;
+                    margin-right: 0.5rem;
+                }
+
+            /* Navigation Links */
+            .nav-link-modern {
+                color: var(--gray-600);
+                font-weight: 500;
+                padding: 0.5rem 1rem;
+                margin: 0 0.125rem;
+                border-radius: 0.5rem;
+                transition: all 0.2s ease;
+                position: relative;
+            }
+
+                .nav-link-modern:hover {
+                    color: var(--primary);
+                    background-color: var(--gray-100);
+                }
+
+                .nav-link-modern.active {
+                    color: var(--primary);
+                    background-color: rgba(44, 125, 160, 0.08);
+                }
+
+                    .nav-link-modern.active::after {
+                        content: '';
+                        position: absolute;
+                        bottom: -0.75rem;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        width: 30px;
+                        height: 3px;
+                        background: linear-gradient(90deg, var(--primary-dark), var(--primary));
+                        border-radius: 3px;
+                    }
+
+            /* User Profile Section */
+            .user-profile {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 0.25rem 0.5rem;
+                background: var(--gray-100);
+                border-radius: 2rem;
+                transition: all 0.2s;
+            }
+
+                .user-profile:hover {
+                    background: var(--gray-200);
+                }
+
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+                background: linear-gradient(135deg, var(--primary), var(--primary-light));
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-weight: 600;
+                font-size: 0.875rem;
+            }
+
+            .user-info {
+                display: flex;
+                flex-direction: column;
+                line-height: 1.3;
+            }
+
+            .user-name {
+                font-weight: 600;
+                font-size: 0.875rem;
+                color: var(--gray-800);
+            }
+
+            .user-role {
+                font-size: 0.7rem;
+                color: var(--gray-500);
+            }
+
+            /* Modern Buttons */
+            .btn-modern {
+                padding: 0.5rem 1.25rem;
+                border-radius: 0.5rem;
+                font-weight: 600;
+                font-size: 0.875rem;
+                transition: all 0.2s ease;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .btn-modern-primary {
+                background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+                border: none;
+                color: white;
+                box-shadow: var(--shadow-sm);
+            }
+
+                .btn-modern-primary:hover {
+                    transform: translateY(-1px);
+                    box-shadow: var(--shadow-md);
+                    color: white;
+                }
+
+            .btn-modern-danger {
+                background: linear-gradient(100deg, #c53030, var(--danger));
+                border: none;
+                color: white;
+            }
+
+                .btn-modern-danger:hover {
+                    transform: translateY(-1px);
+                    box-shadow: var(--shadow-md);
+                    color: white;
+                }
+
+            .btn-modern-outline {
+                background: transparent;
+                border: 1.5px solid var(--gray-300);
+                color: var(--gray-700);
+            }
+
+                .btn-modern-outline:hover {
+                    border-color: var(--primary);
+                    color: var(--primary);
+                    background: rgba(44, 125, 160, 0.05);
+                }
+
+            /* Main Content Area */
+            .main-content {
+                min-height: calc(100vh - 140px);
+                padding: 2rem 0;
+            }
+
+            /* Modern Footer */
+            .footer-modern {
+                background: white;
+                border-top: 1px solid var(--gray-200);
+                padding: 1.5rem 0;
+                margin-top: 3rem;
+                color: var(--gray-500);
+                font-size: 0.875rem;
+            }
+
+                .footer-modern a {
+                    color: var(--primary);
+                    text-decoration: none;
+                    transition: color 0.2s;
+                }
+
+                    .footer-modern a:hover {
+                        color: var(--primary-dark);
+                        text-decoration: underline;
+                    }
+
+            /* Container adjustments */
+            .container-custom {
+                max-width: 1280px;
+                margin: 0 auto;
+                padding: 0 1.5rem;
+            }
+
+            /* Card styling for consistency */
+            .card-modern {
+                background: white;
+                border: none;
+                border-radius: 1rem;
+                box-shadow: var(--shadow-sm);
+                transition: all 0.3s ease;
+            }
+
+                .card-modern:hover {
+                    box-shadow: var(--shadow-md);
+                }
+
+            /* Toast Notifications (optional) */
+            .toast-modern {
+                background: white;
+                border-radius: 0.75rem;
+                box-shadow: var(--shadow-lg);
+                border-left: 4px solid var(--primary);
+            }
+
+            /* Responsive adjustments */
+            @@media (max-width: 768px) {
+                .navbar-brand-modern {
+                    font-size: 1.2rem;
+                }
+            
+                .nav-link-modern.active::after {
+                    display: none;
+                }
+            
+                .user-profile {
+                    padding: 0.25rem 0.75rem;
+                }
+            
+                .user-info {
+                    display: none;
+                }
+            
+                .container-custom {
+                    padding: 0 1rem;
+                }
+            
+                .main-content {
+                    padding: 1rem 0;
+                }
+            }
+
+            /* Loading Spinner */
+            .spinner-modern {
+                width: 40px;
+                height: 40px;
+                border: 3px solid var(--gray-200);
+                border-top-color: var(--primary);
+                border-radius: 50%;
+                animation: spin 0.6s linear infinite;
+            }
+
+            @@keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            /* Scrollbar Styling */
+            ::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: var(--gray-100);
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: var(--gray-400);
+                border-radius: 4px;
+            }
+
+                ::-webkit-scrollbar-thumb:hover {
+                    background: var(--gray-500);
+                }
+    </style>
 </head>
 <body>
 
@@ -16,73 +350,82 @@
         var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
 
         var isLoginPage = currentController == "Account" && currentAction == "Login";
+        var isForgotPasswordPage = currentController == "Account" && currentAction == "ForgotPassword";
+        var isSetPasswordPage = currentController == "Account" && currentAction == "SetPassword";
+        
+        // Hide navbar and footer on authentication pages
+        var isAuthPage = isLoginPage || isForgotPasswordPage || isSetPasswordPage;
     }
 
-    <!-- 🔹 NAVBAR (HIDDEN ON LOGIN PAGE) -->
-    @if (!isLoginPage)
+    <!-- MODERN NAVBAR (HIDDEN ON AUTH PAGES) -->
+    @if (!isAuthPage)
     {
         <header>
-            <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
-                <div class="container-fluid">
-
-                    <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+            <nav class="navbar navbar-modern navbar-expand-lg sticky-top" id="mainNavbar">
+                <div class="container-custom">
+                    <a class="navbar-brand-modern" asp-controller="Home" asp-action="Index">
+                        <i class="fas fa-headset"></i>
                         Axis IT Helpdesk
                     </a>
 
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-icon"></span>
                     </button>
 
-                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-
+                    <div class="collapse navbar-collapse" id="navbarMain">
                         <!-- LEFT MENU -->
-                        <ul class="navbar-nav flex-grow-1">
-
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">
-                                    Home
+                                <a class="nav-link-modern @(currentController == "Home" && currentAction == "Index" ? "active" : "")"
+                                       asp-controller="Home" asp-action="Index">
+                                    <i class="fas fa-home me-1"></i> Dashboard
                                 </a>
                             </li>
 
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Home" asp-action="Privacy">
-                                    Privacy
-                                </a>
-                            </li>
-
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Tickets" asp-action="Index">
-                                    Tickets
+                                <a class="nav-link-modern @(currentController == "Tickets" ? "active" : "")"
+                                       asp-controller="Tickets" asp-action="Index">
+                                    <i class="fas fa-ticket-alt me-1"></i> Tickets
                                 </a>
                             </li>
 
                             @if (Context.Session.GetString("UserRole") == "Admin")
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Users" asp-action="Index">
-                                        Users
+                                    <a class="nav-link-modern @(currentController == "Users" ? "active" : "")"
+                                           asp-controller="Users" asp-action="Index">
+                                        <i class="fas fa-users me-1"></i> Users
                                     </a>
                                 </li>
                             }
 
+                            <li class="nav-item">
+                                <a class="nav-link-modern @(currentController == "Home" && currentAction == "Privacy" ? "active" : "")"
+                                       asp-controller="Home" asp-action="Privacy">
+                                    <i class="fas fa-shield-alt me-1"></i> Privacy
+                                </a>
+                            </li>
                         </ul>
 
-                        <!-- RIGHT MENU -->
-                        <ul class="navbar-nav">
-
+                        <!-- RIGHT MENU / USER SECTION -->
+                        <ul class="navbar-nav ms-auto">
                             @if (Context.Session.GetString("UserName") != null)
                             {
-                                <li class="nav-item d-flex align-items-center me-3">
-                                    <span>
-                                        👤 @Context.Session.GetString("UserName")
-                                        (@Context.Session.GetString("UserRole"))
-                                    </span>
-                                </li>
-
                                 <li class="nav-item">
-                                    <a class="btn btn-danger btn-sm"
-                                           asp-controller="Account"
-                                           asp-action="Logout">
+                                    <div class="user-profile">
+                                        <div class="user-avatar">
+                                            @Context.Session.GetString("UserName")?.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <div class="user-info">
+                                            <span class="user-name">@Context.Session.GetString("UserName")</span>
+                                            <span class="user-role">@Context.Session.GetString("UserRole")</span>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li class="nav-item ms-2">
+                                    <a class="btn-modern btn-modern-danger"
+                                           asp-controller="Account" asp-action="Logout">
+                                        <i class="fas fa-sign-out-alt"></i>
                                         Logout
                                     </a>
                                 </li>
@@ -90,44 +433,135 @@
                             else
                             {
                                 <li class="nav-item">
-                                    <a class="btn btn-primary btn-sm"
-                                           asp-controller="Account"
-                                           asp-action="Login">
+                                    <a class="btn-modern btn-modern-primary"
+                                           asp-controller="Account" asp-action="Login">
+                                        <i class="fas fa-sign-in-alt"></i>
                                         Login
                                     </a>
                                 </li>
                             }
-
                         </ul>
-
                     </div>
                 </div>
             </nav>
         </header>
     }
 
-    <!-- 🔹 MAIN CONTENT -->
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
+    <!-- MAIN CONTENT AREA -->
+    <div class="main-content">
+        <div class="container-custom">
+            <main role="main">
+                @RenderBody()
+            </main>
+        </div>
     </div>
 
-    <!-- 🔹 FOOTER (HIDDEN ON LOGIN PAGE) -->
-    @if (!isLoginPage)
+    <!-- MODERN FOOTER (HIDDEN ON AUTH PAGES) -->
+    @if (!isAuthPage)
     {
-        <footer class="border-top footer text-muted">
-            <div class="container">
-                &copy; 2026 - Axis IT Helpdesk -
-                <a asp-controller="Home" asp-action="Privacy">Privacy</a>
+        <footer class="footer-modern">
+            <div class="container-custom">
+                <div class="row align-items-center">
+                    <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                        <span>&copy; @DateTime.Now.Year - Axis IT Helpdesk</span>
+                        <span class="mx-2">•</span>
+                        <a asp-controller="Home" asp-action="Privacy">Privacy Policy</a>
+                        <span class="mx-2">•</span>
+                        <a href="#" id="supportLink">Support</a>
+                    </div>
+                    <div class="col-md-6 text-center text-md-end">
+                        <span class="badge bg-light text-dark me-2">
+                            <i class="fas fa-shield-alt text-success"></i> SSL Secured
+                        </span>
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-chart-line text-primary"></i> v2.0
+                        </span>
+                    </div>
+                </div>
             </div>
         </footer>
     }
 
+    <!-- SCRIPTS -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+        // Navbar scroll effect
+        const navbar = document.getElementById('mainNavbar');
+        if (navbar) {
+        window.addEventListener('scroll', function() {
+        if (window.scrollY > 10) {
+        navbar.classList.add('scrolled');
+        } else {
+        navbar.classList.remove('scrolled');
+        }
+        });
+        }
+            
+        // Auto-hide alerts after 5 seconds
+        const alerts = document.querySelectorAll('.alert-modern:not(.persistent)');
+        alerts.forEach(alert => {
+        setTimeout(() => {
+        alert.style.transition = 'opacity 0.3s';
+        alert.style.opacity = '0';
+        setTimeout(() => alert.remove(), 300);
+        }, 5000);
+        });
+            
+        // Add active class to current nav item
+        const currentUrl = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link-modern');
+        navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+        if (href && currentUrl.includes(href) && href !== '/' && href !== '/Home/Index') {
+        link.classList.add('active');
+        } else if (currentUrl === '/' || currentUrl === '/Home/Index') {
+        if (link.getAttribute('asp-action') === 'Index' && link.getAttribute('asp-controller') === 'Home') {
+        link.classList.add('active');
+        }
+        }
+        });
+            
+        // Support link modal (optional)
+        const supportLink = document.getElementById('supportLink');
+        if (supportLink) {
+        supportLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        showSupportNotification();
+        });
+        }
+            
+        function showSupportNotification() {
+        // Create a simple toast notification
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '1050';
+        toast.innerHTML = `
+        <div class="toast-modern toast show" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-primary text-white">
+        <i class="fas fa-headset me-2"></i>
+        <strong class="me-auto">Axis IT Support</strong>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body">
+        <i class="fas fa-envelope me-2"></i> support@axisit.com<br>
+        <i class="fas fa-phone me-2"></i> +1 (555) 123-4567<br>
+        <hr class="my-2">
+        <small>Available 24/7 for urgent issues</small>
+        </div>
+        </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+        toast.remove();
+        }, 8000);
+        }
+        });
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 
