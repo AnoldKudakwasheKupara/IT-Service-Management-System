@@ -1,4 +1,5 @@
 ﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

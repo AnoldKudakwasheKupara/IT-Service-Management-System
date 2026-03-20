@@ -405,8 +405,10 @@
                                     @Context.Session.GetString("UserName")?.Substring(0, 1).ToUpper()
                                 </div>
                                 <div class="user-info">
-                                    <span class="user-name">@Context.Session.GetString("UserName")</span>
-                                    <span class="user-role">@Context.Session.GetString("UserRole")</span>
+                                    <a asp-controller="Users" asp-action="Profile" class="text-decoration-none">
+                                        👤 @Context.Session.GetString("UserName")
+                                        (@Context.Session.GetString("UserRole"))
+                                    </a>
                                 </div>
                             </div>
                             <a class="btn-modern btn-modern-danger"

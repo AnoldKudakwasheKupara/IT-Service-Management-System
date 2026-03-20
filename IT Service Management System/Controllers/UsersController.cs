@@ -165,6 +165,51 @@ namespace IT_Service_Management_System.Controllers
             return View(user);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+                return NotFound();
+
+            return View(user);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Profile(User model)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+                return NotFound();
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+            user.Email = model.Email;
+
+            await _context.SaveChangesAsync();
+
+            HttpContext.Session.SetString("UserName", user.FirstName);
+
+            ViewBag.Success = "Profile updated successfully";
+
+            return View(user);
+        }
+
         // 🔹 DELETE USER
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)

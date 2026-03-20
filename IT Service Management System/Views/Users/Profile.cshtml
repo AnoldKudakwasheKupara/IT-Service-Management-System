@@ -1,0 +1,791 @@
+﻿@model IT_Service_Management_System.Models.User
+
+@{
+    ViewData["Title"] = "My Profile - Axis IT Helpdesk";
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-controller="Home" asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-user-circle me-2" style="color: var(--primary);"></i>
+                    My Profile
+                </h1>
+                <p class="text-muted mt-2">Manage your personal information and account settings</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="profile-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-id-card me-2"></i>
+                <span>Personal Information</span>
+            </div>
+            <div class="user-status-badge">
+                <i class="fas fa-circle"></i>
+                <span>Active Account</span>
+            </div>
+        </div>
+
+        <div class="card-body-custom">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="profile-avatar-large">
+                    @((Model.FirstName?.Substring(0, 1) ?? "U") + (Model.LastName?.Substring(0, 1) ?? "S"))
+                </div>
+                <div class="profile-info">
+                    <h2 class="profile-name">@Model.FirstName @Model.LastName</h2>
+                    <div class="profile-meta">
+                        <span class="role-badge @(Model.Role.ToString().ToLower())">
+                            <i class="fas @(Model.Role.ToString() == "Admin" ? "fa-shield-alt" : "fa-user")"></i>
+                            @Model.Role
+                        </span>
+                        <span class="member-since">
+                            <i class="fas fa-calendar-alt"></i>
+                            Member since @Model.CreatedAt.ToString("MMMM yyyy")
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success Message -->
+            @if (ViewBag.Success != null)
+            {
+                <div class="alert-modern alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <span>@ViewBag.Success</span>
+                </div>
+            }
+
+            <!-- Profile Form -->
+            <form asp-action="MyProfile" method="post" id="profileForm">
+                @Html.AntiForgeryToken()
+                
+                <div class="form-grid">
+                    <!-- Left Column -->
+                    <div class="form-column">
+                        <div class="form-group-modern">
+                            <label asp-for="FirstName" class="form-label">
+                                <i class="fas fa-user"></i>
+                                First Name
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input asp-for="FirstName" class="form-control-modern" placeholder="Enter your first name" />
+                            </div>
+                            <span asp-validation-for="FirstName" class="validation-message text-danger"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Your given name as it appears in the system
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="LastName" class="form-label">
+                                <i class="fas fa-user-tag"></i>
+                                Last Name
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input asp-for="LastName" class="form-control-modern" placeholder="Enter your last name" />
+                            </div>
+                            <span asp-validation-for="LastName" class="validation-message text-danger"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Your family name or surname
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Email" class="form-label">
+                                <i class="fas fa-envelope"></i>
+                                Email Address
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-at input-icon"></i>
+                                <input asp-for="Email" class="form-control-modern" placeholder="name@company.com" type="email" />
+                            </div>
+                            <span asp-validation-for="Email" class="validation-message text-danger"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Used for login and notifications
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="form-column">
+                        <div class="form-group-modern">
+                            <label class="form-label">
+                                <i class="fas fa-lock"></i>
+                                Role
+                            </label>
+                            <div class="input-icon-wrapper readonly-field">
+                                <i class="fas fa-tag input-icon"></i>
+                                <input type="text" class="form-control-modern" value="@Model.Role" readonly disabled />
+                            </div>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Role cannot be changed. Contact an administrator for role changes.
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label class="form-label">
+                                <i class="fas fa-calendar-alt"></i>
+                                Account Created
+                            </label>
+                            <div class="input-icon-wrapper readonly-field">
+                                <i class="fas fa-calendar input-icon"></i>
+                                <input type="text" class="form-control-modern" value="@Model.CreatedAt.ToString("MMMM dd, yyyy 'at' HH:mm")" readonly disabled />
+                            </div>
+                        </div>
+
+                        <div class="info-card">
+                            <div class="info-card-header">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Security Tips</span>
+                            </div>
+                            <div class="info-card-content">
+                                <ul class="security-tips">
+                                    <li>
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Keep your personal information up to date</span>
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Use a strong, unique password for your account</span>
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Never share your credentials with anyone</span>
+                                    </li>
+                                    <li>
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Contact support if you notice any suspicious activity</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="password-reset-link">
+                            <a asp-controller="Account" asp-action="ForgotPassword" class="reset-link">
+                                <i class="fas fa-key"></i>
+                                Change Password
+                            </a>
+                            <span class="reset-hint">Update your password for better security</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-save" id="submitBtn">
+                        <i class="fas fa-save"></i>
+                        Update Profile
+                    </button>
+                    <a asp-controller="Home" asp-action="Index" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* My Profile Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+    .btn-back:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+        transform: translateX(-2px);
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Profile Card */
+    .profile-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .user-status-badge {
+        background: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        color: var(--success);
+        border: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .user-status-badge i {
+        font-size: 0.5rem;
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Profile Header */
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--gray-100);
+    }
+
+    .profile-avatar-large {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 2rem;
+        flex-shrink: 0;
+    }
+
+    .profile-info {
+        flex: 1;
+    }
+
+    .profile-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0 0 0.5rem 0;
+    }
+
+    .profile-meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .role-badge.admin {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .role-badge.user {
+        background: var(--gray-100);
+        color: var(--gray-700);
+        border: 1px solid var(--gray-300);
+    }
+
+    .member-since {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Alert Styles */
+    .alert-modern {
+        border-radius: 0.75rem;
+        border: none;
+        padding: 0.85rem 1rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .alert-modern.alert-success {
+        background: #e8f5e9;
+        border-left: 4px solid var(--success);
+        color: #1f6e4a;
+    }
+
+    .alert-modern i {
+        font-size: 1.1rem;
+    }
+
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* Form Groups */
+    .form-group-modern {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-label i {
+        color: var(--primary);
+        font-size: 0.875rem;
+    }
+
+    .required {
+        color: var(--danger);
+        font-size: 1rem;
+    }
+
+    .input-icon-wrapper {
+        position: relative;
+    }
+
+    .input-icon-wrapper i.input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        font-size: 0.875rem;
+        pointer-events: none;
+    }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+    .form-control-modern:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+    }
+
+    .readonly-field .form-control-modern {
+        background: var(--gray-50);
+        cursor: not-allowed;
+        color: var(--gray-600);
+    }
+
+    /* Info Card */
+    .info-card {
+        background: linear-gradient(135deg, var(--gray-50) 0%, #ffffff 100%);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .info-card-header {
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .info-card-content {
+        font-size: 0.75rem;
+    }
+
+    .security-tips {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .security-tips li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+        color: var(--gray-600);
+    }
+
+    .security-tips li i {
+        color: var(--success);
+        font-size: 0.7rem;
+    }
+
+    /* Password Reset Link */
+    .password-reset-link {
+        margin-top: 0.5rem;
+        padding: 0.75rem;
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        text-align: center;
+        border: 1px solid var(--gray-200);
+    }
+
+    .reset-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    .reset-link:hover {
+        color: var(--primary-dark);
+        text-decoration: underline;
+    }
+
+    .reset-hint {
+        display: block;
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        margin-top: 0.25rem;
+    }
+
+    /* Validation Messages */
+    .validation-message {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Form Hints */
+    .form-hint {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-hint i {
+        font-size: 0.7rem;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .btn-save {
+        background: linear-gradient(100deg, var(--success), #1f8a5c);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-cancel:hover {
+        background: var(--gray-50);
+        color: var(--gray-700);
+        text-decoration: none;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('profileForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Form validation
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const firstName = document.querySelector('[name="FirstName"]').value.trim();
+                const lastName = document.querySelector('[name="LastName"]').value.trim();
+                const email = document.querySelector('[name="Email"]').value.trim();
+                
+                if (!firstName) {
+                    e.preventDefault();
+                    showValidationError('First name is required');
+                    document.querySelector('[name="FirstName"]').focus();
+                    return false;
+                }
+                
+                if (!lastName) {
+                    e.preventDefault();
+                    showValidationError('Last name is required');
+                    document.querySelector('[name="LastName"]').focus();
+                    return false;
+                }
+                
+                if (!email) {
+                    e.preventDefault();
+                    showValidationError('Email address is required');
+                    document.querySelector('[name="Email"]').focus();
+                    return false;
+                }
+                
+                // Email format validation
+                const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                if (!emailRegex.test(email)) {
+                    e.preventDefault();
+                    showValidationError('Please enter a valid email address');
+                    document.querySelector('[name="Email"]').focus();
+                    return false;
+                }
+                
+                // Check if any changes were made
+                const originalFirstName = '@Model.FirstName';
+                const originalLastName = '@Model.LastName';
+                const originalEmail = '@Model.Email';
+                
+                if (firstName === originalFirstName && lastName === originalLastName && email === originalEmail) {
+                    e.preventDefault();
+                    showInfoToast('No changes detected. Please modify at least one field.');
+                    return false;
+                }
+                
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating Profile...';
+                
+                return true;
+            });
+        }
+        
+        function showValidationError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert-modern alert-danger';
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                background: #fee;
+                border-left: 4px solid var(--danger);
+                color: #c53030;
+                padding: 1rem 1.5rem;
+                border-radius: 0.75rem;
+                box-shadow: var(--shadow-lg);
+                z-index: 1050;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-size: 0.875rem;
+                animation: slideIn 0.3s ease;
+            `;
+            errorDiv.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.style.opacity = '0';
+                setTimeout(() => errorDiv.remove(), 300);
+            }, 4000);
+        }
+        
+        function showInfoToast(message) {
+            const toastDiv = document.createElement('div');
+            toastDiv.className = 'alert-modern alert-info';
+            toastDiv.style.cssText = `
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                background: #eff6ff;
+                border-left: 4px solid var(--info);
+                color: #1e40af;
+                padding: 1rem 1.5rem;
+                border-radius: 0.75rem;
+                box-shadow: var(--shadow-lg);
+                z-index: 1050;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-size: 0.875rem;
+                animation: slideIn 0.3s ease;
+            `;
+            toastDiv.innerHTML = `
+                <i class="fas fa-info-circle"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toastDiv);
+            
+            setTimeout(() => {
+                toastDiv.style.opacity = '0';
+                setTimeout(() => toastDiv.remove(), 300);
+            }, 3000);
+        }
+        
+        // Auto-hide success message after 5 seconds
+        const successAlert = document.querySelector('.alert-modern.alert-success');
+        if (successAlert) {
+            setTimeout(() => {
+                successAlert.style.opacity = '0';
+                setTimeout(() => successAlert.remove(), 300);
+            }, 5000);
+        }
+        
+        // Add character limits and live validation
+        const nameFields = document.querySelectorAll('[name="FirstName"], [name="LastName"]');
+        nameFields.forEach(field => {
+            field.addEventListener('input', function() {
+                if (this.value.length > 0 && this.value.length < 2) {
+                    this.style.borderColor = 'var(--warning)';
+                } else if (this.value.length >= 2) {
+                    this.style.borderColor = 'var(--success)';
+                } else {
+                    this.style.borderColor = 'var(--gray-200)';
+                }
+            });
+        });
+        
+        const emailField = document.querySelector('[name="Email"]');
+        if (emailField) {
+            emailField.addEventListener('input', function() {
+                const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                if (this.value.length > 0 && emailRegex.test(this.value)) {
+                    this.style.borderColor = 'var(--success)';
+                } else if (this.value.length > 0) {
+                    this.style.borderColor = 'var(--danger)';
+                } else {
+                    this.style.borderColor = 'var(--gray-200)';
+                }
+            });
+        }
+    });
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
