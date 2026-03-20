@@ -1,4 +1,5 @@
 ﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,10 +8,12 @@ namespace IT_Service_Management_System.Controllers
     public class AccountController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly EmailService _emailService;
 
-        public AccountController(ApplicationDbContext context)
+        public AccountController(ApplicationDbContext context, EmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         public IActionResult Login()
@@ -81,6 +84,49 @@ namespace IT_Service_Management_System.Controllers
 
             TempData["Success"] = "Account activated successfully. Please login.";
             return RedirectToAction("Login", "Account");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ForgotPassword(string email)
+        {
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+            {
+                ViewBag.Message = "If the email exists, a reset link has been sent.";
+                return View();
+            }
+
+            user.ResetToken = Guid.NewGuid().ToString();
+            user.TokenExpiry = DateTime.Now.AddHours(1);
+
+            await _context.SaveChangesAsync();
+
+            var link = Url.Action(
+                "SetPassword",
+                "Account",
+                new { token = user.ResetToken },
+                Request.Scheme);
+
+            var body = $@"
+                <p>Good Day {user.FirstName},</p>
+
+                <p>You requested to reset your password.</p>
+
+                <p>Click below to set a new password:</p>
+
+                <p>
+                    <a href='{link}'>Reset Password</a>
+                </p>
+
+                <p>This link expires in 1 hour.</p>
+            ";
+
+            await _emailService.SendEmailAsync(user.Email, "Password Reset", body);
+
+            ViewBag.Message = "If the email exists, a reset link has been sent.";
+            return View();
         }
 
         private bool IsValidPassword(string password)
