@@ -14,21 +14,35 @@ namespace IT_Service_Management_System.Controllers
             _context = context;
         }
 
+        // 🔹 LIST TICKETS
         public async Task<IActionResult> Index()
         {
             var userId = HttpContext.Session.GetInt32("UserId");
+            var role = HttpContext.Session.GetString("UserRole");
 
             if (userId == null)
                 return RedirectToAction("Login", "Account");
 
-            var tickets = await _context.Tickets
-                .Where(t => t.CreatedById == userId)
-                .Include(t => t.CreatedBy)
-                .ToListAsync();
+            List<Ticket> tickets;
+
+            if (role == "Admin")
+            {
+                tickets = await _context.Tickets
+                    .Include(t => t.CreatedBy)
+                    .ToListAsync();
+            }
+            else
+            {
+                tickets = await _context.Tickets
+                    .Where(t => t.CreatedById == userId)
+                    .Include(t => t.CreatedBy)
+                    .ToListAsync();
+            }
 
             return View(tickets);
         }
 
+        // 🔹 CREATE
         public IActionResult Create()
         {
             if (HttpContext.Session.GetInt32("UserId") == null)
@@ -50,14 +64,12 @@ namespace IT_Service_Management_System.Controllers
 
             ticket.CreatedAt = DateTime.Now;
             ticket.Status = Ticket.TicketStatus.Open;
-
-            // ✅ LINK TO LOGGED-IN USER
             ticket.CreatedById = userId.Value;
 
             _context.Tickets.Add(ticket);
             await _context.SaveChangesAsync();
 
-            // ✅ HANDLE ATTACHMENTS
+            // Attachments
             if (files != null && files.Count > 0)
             {
                 var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
@@ -87,27 +99,35 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction("Index");
         }
 
+        // 🔹 DETAILS
         public async Task<IActionResult> Details(int id)
         {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            var role = HttpContext.Session.GetString("UserRole");
+
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
             var ticket = await _context.Tickets
                 .Include(t => t.Messages)
                     .ThenInclude(m => m.Sender)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
-                        var userId = HttpContext.Session.GetInt32("UserId");
+            if (ticket == null)
+                return NotFound();
 
-                        if (ticket == null || userId == null)
-                            return NotFound();
-
-                        // 🔐 Restrict access (optional now)
-                        if (ticket.CreatedById != userId)
-                            return Forbid();
+            if (role != "Admin" && ticket.CreatedById != userId)
+                return Forbid();
 
             return View(ticket);
         }
 
+        // 🔹 EDIT (ADMIN ONLY)
         public async Task<IActionResult> Edit(int id)
         {
+            if (HttpContext.Session.GetString("UserRole") != "Admin")
+                return Forbid();
+
             var ticket = await _context.Tickets.FindAsync(id);
             if (ticket == null) return NotFound();
 
@@ -117,6 +137,9 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(Ticket ticket)
         {
+            if (HttpContext.Session.GetString("UserRole") != "Admin")
+                return Forbid();
+
             if (!ModelState.IsValid) return View(ticket);
 
             _context.Tickets.Update(ticket);
@@ -125,8 +148,12 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction("Index");
         }
 
+        // 🔹 DELETE (ADMIN ONLY)
         public async Task<IActionResult> Delete(int id)
         {
+            if (HttpContext.Session.GetString("UserRole") != "Admin")
+                return Forbid();
+
             var ticket = await _context.Tickets.FindAsync(id);
             if (ticket == null) return NotFound();
 
@@ -136,7 +163,11 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (HttpContext.Session.GetString("UserRole") != "Admin")
+                return Forbid();
+
             var ticket = await _context.Tickets.FindAsync(id);
+            if (ticket == null) return NotFound();
 
             var attachments = _context.TicketAttachments.Where(a => a.TicketId == id);
             var messages = _context.TicketMessages.Where(m => m.TicketId == id);
@@ -149,13 +180,20 @@ namespace IT_Service_Management_System.Controllers
 
             return RedirectToAction("Index");
         }
+
+        // 🔹 REPLY
         [HttpPost]
         public async Task<IActionResult> AddReply(int ticketId, string message, List<IFormFile> files)
         {
+            var userId = HttpContext.Session.GetInt32("UserId");
+
+            if (userId == null)
+                return Unauthorized();
+
             var ticketMessage = new TicketMessage
             {
                 TicketId = ticketId,
-                SenderId = _context.Users.First().Id,
+                SenderId = userId.Value,
                 Message = message,
                 SentAt = DateTime.Now
             };
@@ -192,9 +230,13 @@ namespace IT_Service_Management_System.Controllers
             return Ok();
         }
 
+        // 🔹 CLOSE (ADMIN ONLY)
         [HttpPost]
         public async Task<IActionResult> CloseTicket(int id)
         {
+            if (HttpContext.Session.GetString("UserRole") != "Admin")
+                return Forbid();
+
             var ticket = await _context.Tickets.FindAsync(id);
 
             if (ticket == null) return NotFound();
