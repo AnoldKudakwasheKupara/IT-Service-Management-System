@@ -1,34 +1,552 @@
 ﻿@model IEnumerable<IT_Service_Management_System.Models.User>
 
-<h2>Users</h2>
+@{
+    ViewData["Title"] = "Users - Axis IT Helpdesk";
+}
 
-<a asp-action="Create" class="btn btn-primary mb-3">+ Add User</a>
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="page-title">
+                <i class="fas fa-users me-2" style="color: var(--primary);"></i>
+                User Management
+            </h1>
+            <p class="text-muted mt-2">Manage system users and their access permissions</p>
+        </div>
+        <a asp-action="Create" class="btn-create-user">
+            <i class="fas fa-plus-circle me-2"></i>
+            Add New User
+        </a>
+    </div>
+</div>
 
-<table class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Date Created</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var user in Model)
+<div class="users-container">
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count()</h3>
+                <p>Total Users</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count(u => u.Role.ToString() == "Admin")</h3>
+                <p>Administrators</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count(u => u.Role.ToString() == "User")</h3>
+                <p>Regular Users</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count(u => u.CreatedAt >= DateTime.Now.AddDays(-30))</h3>
+                <p>New (30 days)</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="users-card">
+        <div class="card-header-custom">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-list me-2"></i>
+                    <span>User Directory</span>
+                </div>
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search users..." class="search-input">
+                </div>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="users-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-user me-1"></i> Name</th>
+                        <th><i class="fas fa-envelope me-1"></i> Email</th>
+                        <th><i class="fas fa-tag me-1"></i> Role</th>
+                        <th><i class="fas fa-calendar me-1"></i> Date Created</th>
+                        <th><i class="fas fa-cog me-1"></i> Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr data-search="@user.FirstName @user.LastName @user.Email @user.Role">
+                            <td class="user-name-cell">
+                                <div class="user-avatar-small">
+                                    @((user.FirstName?.Substring(0, 1) ?? "U") + (user.LastName?.Substring(0, 1) ?? "S"))
+                                </div>
+                                <div class="user-name-info">
+                                    <strong>@user.FirstName @user.LastName</strong>
+                                </div>
+                            </td>
+                            <td class="user-email">@user.Email</td>
+                            <td>
+                                @{
+                                    var roleString = user.Role.ToString();
+                                    if (roleString == "Admin")
+                                    {
+                                        <span class="role-badge role-admin">
+                                            <i class="fas fa-shield-alt"></i> Admin
+                                        </span>
+                                    }
+                                    else if (roleString == "User")
+                                    {
+                                        <span class="role-badge role-user">
+                                            <i class="fas fa-user"></i> User
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="role-badge role-guest">
+                                            <i class="fas fa-user-friends"></i> @roleString
+                                        </span>
+                                    }
+                                }
+                            </td>
+                            <td class="date-created">@user.CreatedAt.ToString("MMM dd, yyyy")</td>
+                            <td class="action-buttons">
+                                <a asp-action="Details" asp-route-id="@user.Id" class="action-btn btn-view" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@user.Id" class="action-btn btn-edit" title="Edit User">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@user.Id" class="action-btn btn-delete" title="Delete User" onclick="return confirm('Are you sure you want to delete this user?');">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        @if (!Model.Any())
         {
-            <tr>
-                <td>@user.FirstName @user.LastName</td>
-                <td>@user.Email</td>
-                <td>@user.Role</td>
-                <td>@user.CreatedAt.ToString("yyyy-MM-dd")</td>
-
-                <td>
-                    <a asp-action="Details" asp-route-id="@user.Id" class="btn btn-sm btn-info">View</a>
-                    <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-warning">Edit</a>
-                    <a asp-action="Delete" asp-route-id="@user.Id" class="btn btn-sm btn-danger">Delete</a>
-                </td>
-            </tr>
+            <div class="empty-state">
+                <i class="fas fa-users-slash"></i>
+                <h3>No users found</h3>
+                <p>Get started by adding your first user</p>
+                <a asp-action="Create" class="btn-create-user-sm">
+                    <i class="fas fa-plus-circle"></i> Add User
+                </a>
+            </div>
         }
-    </tbody>
-</table>
+    </div>
+</div>
+
+<style>
+    /* Users Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Stats Cards */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* Create User Button */
+    .btn-create-user {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+        .btn-create-user:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* Users Card */
+    .users-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+    }
+
+    /* Search Box */
+    .search-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+        .search-box i {
+            position: absolute;
+            left: 0.75rem;
+            color: var(--gray-400);
+            font-size: 0.875rem;
+        }
+
+    .search-input {
+        padding: 0.5rem 0.75rem 0.5rem 2rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        width: 250px;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    /* Table Styles */
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .users-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .users-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .users-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .users-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .users-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+    /* User Name Cell */
+    .user-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .user-avatar-small {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+    }
+
+    .user-name-info strong {
+        color: var(--gray-800);
+        font-size: 0.875rem;
+    }
+
+    /* Email Cell */
+    .user-email {
+        color: var(--gray-600);
+        font-size: 0.875rem;
+    }
+
+    /* Role Badges */
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .role-admin {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .role-user {
+        background: var(--gray-100);
+        color: var(--gray-700);
+        border: 1px solid var(--gray-300);
+    }
+
+    .role-guest {
+        background: var(--info);
+        color: white;
+    }
+
+    /* Date Created */
+    .date-created {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+    }
+
+    .btn-view {
+        background: var(--gray-100);
+        color: var(--info);
+    }
+
+        .btn-view:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-edit {
+        background: var(--gray-100);
+        color: var(--warning);
+    }
+
+        .btn-edit:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-delete {
+        background: var(--gray-100);
+        color: var(--danger);
+    }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    .btn-create-user-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-create-user-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+</style>
+
+<script>
+    // Search functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const table = document.getElementById('usersTable');
+        const rows = table.querySelectorAll('tbody tr');
+        
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                
+                rows.forEach(row => {
+                    const searchData = row.getAttribute('data-search')?.toLowerCase() || '';
+                    const textContent = row.textContent.toLowerCase();
+                    
+                    if (searchTerm === '' || searchData.includes(searchTerm) || textContent.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Show empty state if no results
+                const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+                const emptyState = document.querySelector('.empty-state');
+                const tableBody = table.querySelector('tbody');
+                
+                if (visibleRows.length === 0 && rows.length > 0) {
+                    if (!emptyState) {
+                        const noResultsDiv = document.createElement('div');
+                        noResultsDiv.className = 'empty-state';
+                        noResultsDiv.innerHTML = `
+                            <i class="fas fa-search"></i>
+                            <h3>No matching users found</h3>
+                            <p>Try adjusting your search terms</p>
+                        `;
+                        table.parentNode.appendChild(noResultsDiv);
+                        table.style.display = 'none';
+                    }
+                } else {
+                    const existingEmpty = table.parentNode.querySelector('.empty-state:not(.original)');
+                    if (existingEmpty) existingEmpty.remove();
+                    table.style.display = '';
+                }
+            });
+        }
+    });
+</script>

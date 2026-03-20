@@ -1,42 +1,642 @@
 ﻿@model IT_Service_Management_System.Models.User
 
-<h2>Edit User</h2>
+@{
+    ViewData["Title"] = "Edit User - Axis IT Helpdesk";
+}
 
-<form asp-action="Edit" method="post">
-
-    <input type="hidden" asp-for="Id" />
-
-    <div class="mb-2">
-        <label>First Name</label>
-        <input asp-for="FirstName" class="form-control" />
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-user-edit me-2" style="color: var(--primary);"></i>
+                    Edit User
+                </h1>
+                <p class="text-muted mt-2">Update user information and permissions</p>
+            </div>
+        </div>
     </div>
 
-    <div class="mb-2">
-        <label>Last Name</label>
-        <input asp-for="LastName" class="form-control" />
+    <div class="edit-user-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-user-circle me-2"></i>
+                <span>User Information</span>
+            </div>
+            <div class="user-badge">
+                <i class="fas fa-id-card"></i>
+                ID: @Model.Id
+            </div>
+        </div>
+
+        <form asp-action="Edit" method="post" id="editUserForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            <div class="card-body-custom">
+                <div class="form-grid">
+                    <!-- Left Column -->
+                    <div class="form-column">
+                        <div class="form-group-modern">
+                            <label asp-for="FirstName" class="form-label">
+                                <i class="fas fa-user"></i>
+                                First Name
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input asp-for="FirstName" class="form-control-modern" placeholder="Enter first name" />
+                            </div>
+                            <span asp-validation-for="FirstName" class="text-danger validation-message"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="LastName" class="form-label">
+                                <i class="fas fa-user-tag"></i>
+                                Last Name
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input asp-for="LastName" class="form-control-modern" placeholder="Enter last name" />
+                            </div>
+                            <span asp-validation-for="LastName" class="text-danger validation-message"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Email" class="form-label">
+                                <i class="fas fa-envelope"></i>
+                                Email Address
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-at input-icon"></i>
+                                <input asp-for="Email" class="form-control-modern" placeholder="name@company.com" type="email" />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger validation-message"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> User will use this email to login
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="form-column">
+                        <div class="form-group-modern">
+                            <label asp-for="PasswordHash" class="form-label">
+                                <i class="fas fa-lock"></i>
+                                Password
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-key input-icon"></i>
+                                <input asp-for="PasswordHash" type="password" class="form-control-modern" placeholder="Leave blank to keep current password" id="password" />
+                                <button type="button" class="password-toggle" id="togglePassword">
+                                    <i class="far fa-eye-slash"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="PasswordHash" class="text-danger validation-message"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Leave blank to keep the current password
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern" id="confirmPasswordGroup" style="display: none;">
+                            <label class="form-label">
+                                <i class="fas fa-check-circle"></i>
+                                Confirm New Password
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-redo-alt input-icon"></i>
+                                <input type="password" class="form-control-modern" placeholder="Confirm new password" id="confirmPassword" />
+                                <button type="button" class="password-toggle" id="toggleConfirmPassword">
+                                    <i class="far fa-eye-slash"></i>
+                                </button>
+                            </div>
+                            <div id="passwordMatchError" class="validation-message text-danger" style="display: none;">
+                                <i class="fas fa-times-circle"></i> Passwords do not match
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Role" class="form-label">
+                                <i class="fas fa-tag"></i>
+                                User Role
+                            </label>
+                            <div class="select-wrapper">
+                                <i class="fas fa-chevron-down select-icon"></i>
+                                <select asp-for="Role" class="form-control-modern" id="roleSelect">
+                                    <option value="">Select a role</option>
+                                    @foreach (var role in Enum.GetValues(typeof(IT_Service_Management_System.Models.Ticket.UserRole)))
+                                    {
+                                        var roleValue = role.ToString();
+                                        <option value="@roleValue" selected="@(Model.Role.ToString() == roleValue)">
+                                            @roleValue
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <span asp-validation-for="Role" class="text-danger validation-message"></span>
+                            <div class="role-info" id="roleInfo">
+                                <i class="fas fa-shield-alt"></i>
+                                <span id="roleDescription"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-save">
+                        <i class="fas fa-save"></i>
+                        Save Changes
+                    </button>
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </form>
     </div>
+</div>
 
-    <div class="mb-2">
-        <label>Email</label>
-        <input asp-for="Email" class="form-control" />
-    </div>
+<style>
+    /* Edit User Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
 
-    <div class="mb-2">
-        <label>Password</label>
-        <input asp-for="PasswordHash" type="password" class="form-control" />
-    </div>
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
 
-    <div class="mb-2">
-        <label>Role</label>
-        <select asp-for="Role"
-                asp-items="Html.GetEnumSelectList<IT_Service_Management_System.Models.Ticket.UserRole>()"
-                class="form-control">
-        </select>
-    </div>
+    .page-header {
+        margin-bottom: 2rem;
+    }
 
-    <br />
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
 
-    <button type="submit" class="btn btn-success">Save</button>
-    <a asp-action="Index" class="btn btn-secondary">Back</a>
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+        }
 
-</form>
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Edit User Card */
+    .edit-user-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .user-badge {
+        background: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* Form Groups */
+    .form-group-modern {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .form-label i {
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
+
+    .input-icon-wrapper {
+        position: relative;
+    }
+
+        .input-icon-wrapper i.input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+        .form-control-modern:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    /* Select Styling */
+    .select-wrapper {
+        position: relative;
+    }
+
+        .select-wrapper select {
+            appearance: none;
+            cursor: pointer;
+            background: white;
+        }
+
+    .select-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        pointer-events: none;
+        font-size: 0.75rem;
+    }
+
+    /* Password Toggle */
+    .password-toggle {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: var(--gray-400);
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .password-toggle:hover {
+            color: var(--primary);
+        }
+
+    /* Validation Messages */
+    .validation-message {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Form Hints */
+    .form-hint {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .form-hint i {
+            font-size: 0.7rem;
+        }
+
+    /* Role Info */
+    .role-info {
+        background: var(--gray-50);
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-left: 3px solid var(--primary);
+    }
+
+        .role-info i {
+            color: var(--primary);
+        }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .btn-save {
+        background: linear-gradient(100deg, var(--success), #1f8a5c);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+    }
+
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Password visibility toggles
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordGroup = document.getElementById('confirmPasswordGroup');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const togglePassword = document.getElementById('togglePassword');
+        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
+        const passwordMatchError = document.getElementById('passwordMatchError');
+        
+        // Show confirm password field when user starts typing in password field
+        if (passwordInput) {
+            passwordInput.addEventListener('input', function() {
+                if (this.value.length > 0) {
+                    confirmPasswordGroup.style.display = 'block';
+                } else {
+                    confirmPasswordGroup.style.display = 'none';
+                    if (confirmPasswordInput) confirmPasswordInput.value = '';
+                    if (passwordMatchError) passwordMatchError.style.display = 'none';
+                }
+            });
+        }
+        
+        // Password visibility toggle for main password
+        if (togglePassword && passwordInput) {
+            togglePassword.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                const icon = this.querySelector('i');
+                if (type === 'text') {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                } else {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
+            });
+        }
+        
+        // Password visibility toggle for confirm password
+        if (toggleConfirmPassword && confirmPasswordInput) {
+            toggleConfirmPassword.addEventListener('click', function() {
+                const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                confirmPasswordInput.setAttribute('type', type);
+                
+                const icon = this.querySelector('i');
+                if (type === 'text') {
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                } else {
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                }
+            });
+        }
+        
+        // Password match validation
+        if (confirmPasswordInput && passwordInput) {
+            function checkPasswordMatch() {
+                if (confirmPasswordGroup.style.display === 'block' && confirmPasswordInput.value.length > 0) {
+                    if (passwordInput.value !== confirmPasswordInput.value) {
+                        passwordMatchError.style.display = 'flex';
+                        return false;
+                    } else {
+                        passwordMatchError.style.display = 'none';
+                        return true;
+                    }
+                }
+                return true;
+            }
+            
+            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+            passwordInput.addEventListener('input', checkPasswordMatch);
+        }
+        
+        // Role selection description
+        const roleSelect = document.getElementById('roleSelect');
+        const roleDescription = document.getElementById('roleDescription');
+        
+        const roleDescriptions = {
+            'Admin': 'Full system access. Can manage users, tickets, and system settings.',
+            'User': 'Standard user access. Can create and manage their own tickets.',
+            'Guest': 'Limited access. Can only view assigned tickets.'
+        };
+        
+        function updateRoleDescription() {
+            const selectedRole = roleSelect.value;
+            if (selectedRole && roleDescriptions[selectedRole]) {
+                roleDescription.textContent = roleDescriptions[selectedRole];
+                roleDescription.parentElement.style.display = 'flex';
+            } else {
+                roleDescription.textContent = 'Select a role to see permissions';
+                roleDescription.parentElement.style.display = 'flex';
+            }
+        }
+        
+        if (roleSelect) {
+            updateRoleDescription();
+            roleSelect.addEventListener('change', updateRoleDescription);
+        }
+        
+        // Form validation before submit
+        const form = document.getElementById('editUserForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Check password match if password is being changed
+                if (passwordInput && passwordInput.value.length > 0) {
+                    if (confirmPasswordInput.value !== passwordInput.value) {
+                        e.preventDefault();
+                        passwordMatchError.style.display = 'flex';
+                        confirmPasswordInput.focus();
+                        return false;
+                    }
+                }
+                
+                // Validate required fields
+                const firstName = document.querySelector('[name="FirstName"]').value.trim();
+                const lastName = document.querySelector('[name="LastName"]').value.trim();
+                const email = document.querySelector('[name="Email"]').value.trim();
+                const role = roleSelect.value;
+                
+                if (!firstName) {
+                    e.preventDefault();
+                    showValidationError('First Name is required');
+                    return false;
+                }
+                
+                if (!lastName) {
+                    e.preventDefault();
+                    showValidationError('Last Name is required');
+                    return false;
+                }
+                
+                if (!email) {
+                    e.preventDefault();
+                    showValidationError('Email is required');
+                    return false;
+                }
+                
+                if (!role) {
+                    e.preventDefault();
+                    showValidationError('Please select a role');
+                    return false;
+                }
+                
+                // Email format validation
+                const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+                if (!emailRegex.test(email)) {
+                    e.preventDefault();
+                    showValidationError('Please enter a valid email address');
+                    return false;
+                }
+                
+                return true;
+            });
+        }
+        
+        function showValidationError(message) {
+            // Check if error already exists
+            let errorDiv = document.querySelector('.validation-error-toast');
+            if (errorDiv) errorDiv.remove();
+            
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'alert-modern alert-danger validation-error-toast';
+            errorDiv.style.position = 'fixed';
+            errorDiv.style.top = '1rem';
+            errorDiv.style.right = '1rem';
+            errorDiv.style.zIndex = '1050';
+            errorDiv.style.maxWidth = '400px';
+            errorDiv.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.style.opacity = '0';
+                setTimeout(() => errorDiv.remove(), 300);
+            }, 4000);
+        }
+    });
+</script>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
