@@ -25,6 +25,7 @@ namespace IT_Service_Management_System.Controllers
 
             List<Ticket> tickets;
 
+
             if (role == "Admin")
             {
                 tickets = await _context.Tickets
