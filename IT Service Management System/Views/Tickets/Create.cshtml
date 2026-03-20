@@ -1,36 +1,886 @@
 ﻿@model IT_Service_Management_System.Models.Ticket
 
-<h2>Create Ticket</h2>
+@{
+    ViewData["Title"] = "Create Ticket - Axis IT Helpdesk";
+}
 
-<form asp-action="Create" method="post" enctype="multipart/form-data">
-
-    <div>
-        <label>Title</label>
-        <input asp-for="Title" class="form-control" />
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-plus-circle me-2" style="color: var(--success);"></i>
+                    Create New Ticket
+                </h1>
+                <p class="text-muted mt-2">Submit a new support request or report an issue</p>
+            </div>
+        </div>
     </div>
 
-    <div>
-        <label>Description</label>
-        <textarea asp-for="Description" class="form-control"></textarea>
+    <div class="create-ticket-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-ticket-alt me-2"></i>
+                <span>Ticket Information</span>
+            </div>
+            <div class="form-steps">
+                <span class="step active">1</span>
+                <span class="step-line"></span>
+                <span class="step">2</span>
+                <span class="step-line"></span>
+                <span class="step">3</span>
+            </div>
+        </div>
+
+        <form asp-action="Create" method="post" enctype="multipart/form-data" id="createTicketForm">
+            @Html.AntiForgeryToken()
+            
+            <div class="card-body-custom">
+                <div class="form-grid">
+                    <!-- Left Column -->
+                    <div class="form-column">
+                        <div class="form-group-modern">
+                            <label asp-for="Title" class="form-label">
+                                <i class="fas fa-heading"></i>
+                                Ticket Title
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-ticket-alt input-icon"></i>
+                                <input asp-for="Title" class="form-control-modern" placeholder="Enter a clear, descriptive title" autocomplete="off" />
+                            </div>
+                            <span asp-validation-for="Title" class="validation-message text-danger"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Brief summary of the issue (e.g., "Unable to access email")
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Category" class="form-label">
+                                <i class="fas fa-folder"></i>
+                                Category
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-tag input-icon"></i>
+                                <input asp-for="Category" class="form-control-modern" placeholder="e.g., Hardware, Software, Network, Email" autocomplete="off" />
+                            </div>
+                            <span asp-validation-for="Category" class="validation-message text-danger"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Categorize the issue for faster routing
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Priority" class="form-label">
+                                <i class="fas fa-flag"></i>
+                                Priority Level
+                                <span class="required">*</span>
+                            </label>
+                            <div class="select-wrapper">
+                                <i class="fas fa-chevron-down select-icon"></i>
+                                <select asp-for="Priority" class="form-control-modern" id="prioritySelect">
+                                    <option value="">Select priority</option>
+                                    @foreach (var priority in Enum.GetValues(typeof(IT_Service_Management_System.Models.Ticket.TicketPriority)))
+                                    {
+                                        var priorityValue = priority.ToString();
+                                        <option value="@priorityValue">
+                                            @priorityValue
+                                        </option>
+                                    }
+                                </select>
+                            </div>
+                            <span asp-validation-for="Priority" class="validation-message text-danger"></span>
+                            <div class="priority-info" id="priorityInfo" style="display: none;">
+                                <i class="fas fa-info-circle"></i>
+                                <span id="priorityDescription"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="form-column">
+                        <div class="form-group-modern">
+                            <label asp-for="Description" class="form-label">
+                                <i class="fas fa-align-left"></i>
+                                Description
+                                <span class="required">*</span>
+                            </label>
+                            <div class="textarea-wrapper">
+                                <i class="fas fa-file-alt textarea-icon"></i>
+                                <textarea asp-for="Description" class="form-control-textarea" rows="6" placeholder="Provide detailed information about the issue..."></textarea>
+                            </div>
+                            <span asp-validation-for="Description" class="validation-message text-danger"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Include steps to reproduce, error messages, and any relevant details
+                            </div>
+                            <div class="char-counter">
+                                <span id="charCount">0</span> characters
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label class="form-label">
+                                <i class="fas fa-paperclip"></i>
+                                Attachments
+                            </label>
+                            <div class="file-upload-area" id="fileUploadArea">
+                                <input type="file" name="files" id="fileInput" multiple style="display: none;" />
+                                <div class="upload-placeholder" onclick="document.getElementById('fileInput').click()">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>Click to upload or drag and drop</p>
+                                    <span>Support for images, documents, and archives (Max 10MB each)</span>
+                                </div>
+                                <div id="fileList" class="file-list"></div>
+                            </div>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Accepted formats: Images, PDF, DOC, DOCX, ZIP (Max 10MB per file)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tips Section -->
+                <div class="tips-section">
+                    <div class="tips-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Tips for a Better Ticket</span>
+                    </div>
+                    <div class="tips-grid">
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Be specific in your title</span>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Include error messages if any</span>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Add screenshots when possible</span>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Set appropriate priority level</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <i class="fas fa-paper-plane"></i>
+                        Submit Ticket
+                    </button>
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </form>
     </div>
+</div>
 
-    <div>
-        <label>Category</label>
-        <input asp-for="Category" class="form-control" />
-    </div>
+<style>
+    /* Create Ticket Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
 
-    <div>
-        <label>Priority</label>
-        <select asp-for="Priority" asp-items="Html.GetEnumSelectList<IT_Service_Management_System.Models.Ticket.TicketPriority>()" class="form-control"></select>
-    </div>
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
 
-    <div>
-        <label>Attachments</label>
-        <input type="file" name="files" multiple class="form-control" />
-    </div>
+    .page-header {
+        margin-bottom: 2rem;
+    }
 
-    <br />
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
 
-    <button type="submit" class="btn btn-primary">Submit Ticket</button>
+    .btn-back:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+        transform: translateX(-2px);
+    }
 
-</form>
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Create Ticket Card */
+    .create-ticket-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .form-steps {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step {
+        width: 30px;
+        height: 30px;
+        background: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+    }
+
+    .step.active {
+        background: var(--success);
+        border-color: var(--success);
+        color: white;
+    }
+
+    .step-line {
+        width: 40px;
+        height: 2px;
+        background: var(--gray-300);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* Form Groups */
+    .form-group-modern {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-label i {
+        color: var(--primary);
+        font-size: 0.875rem;
+    }
+
+    .required {
+        color: var(--danger);
+        font-size: 1rem;
+    }
+
+    .input-icon-wrapper {
+        position: relative;
+    }
+
+    .input-icon-wrapper i.input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        font-size: 0.875rem;
+        pointer-events: none;
+    }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+    .form-control-modern:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+    }
+
+    /* Textarea Styling */
+    .textarea-wrapper {
+        position: relative;
+    }
+
+    .textarea-icon {
+        position: absolute;
+        left: 1rem;
+        top: 1rem;
+        color: var(--gray-400);
+        font-size: 0.875rem;
+        pointer-events: none;
+    }
+
+    .form-control-textarea {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        resize: vertical;
+    }
+
+    .form-control-textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+    }
+
+    .char-counter {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        text-align: right;
+    }
+
+    /* Select Styling */
+    .select-wrapper {
+        position: relative;
+    }
+
+    .select-wrapper select {
+        appearance: none;
+        cursor: pointer;
+        background: white;
+    }
+
+    .select-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        pointer-events: none;
+        font-size: 0.75rem;
+    }
+
+    /* Priority Info */
+    .priority-info {
+        background: var(--gray-50);
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-left: 3px solid var(--primary);
+    }
+
+    .priority-info i {
+        color: var(--primary);
+    }
+
+    /* File Upload Area */
+    .file-upload-area {
+        border: 2px dashed var(--gray-300);
+        border-radius: 0.75rem;
+        transition: all 0.2s;
+        background: var(--gray-50);
+    }
+
+    .file-upload-area:hover {
+        border-color: var(--primary);
+        background: var(--gray-100);
+    }
+
+    .upload-placeholder {
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .upload-placeholder i {
+        font-size: 2rem;
+        color: var(--gray-400);
+        margin-bottom: 0.5rem;
+    }
+
+    .upload-placeholder p {
+        margin: 0;
+        font-weight: 500;
+        color: var(--gray-600);
+    }
+
+    .upload-placeholder span {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+    }
+
+    .file-list {
+        padding: 0.5rem;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .file-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+    }
+
+    .file-info i {
+        color: var(--primary);
+    }
+
+    .file-size {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        margin-left: 0.5rem;
+    }
+
+    .remove-file {
+        background: none;
+        border: none;
+        color: var(--danger);
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+    }
+
+    .remove-file:hover {
+        background: var(--gray-100);
+    }
+
+    /* Tips Section */
+    .tips-section {
+        background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-left: 3px solid var(--info);
+    }
+
+    .tips-header {
+        font-weight: 600;
+        color: var(--info);
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .tip-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--gray-700);
+    }
+
+    .tip-item i {
+        color: var(--success);
+    }
+
+    /* Validation Messages */
+    .validation-message {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Form Hints */
+    .form-hint {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-hint i {
+        font-size: 0.7rem;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .btn-submit {
+        background: linear-gradient(100deg, var(--success), #1f8a5c);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-cancel:hover {
+        background: var(--gray-50);
+        color: var(--gray-700);
+        text-decoration: none;
+    }
+
+
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Priority descriptions
+        const prioritySelect = document.getElementById('prioritySelect');
+        const priorityInfo = document.getElementById('priorityInfo');
+        const priorityDescription = document.getElementById('priorityDescription');
+        
+        const priorityDescriptions = {
+            'Low': 'Minor issue with minimal impact. Will be addressed when time permits.',
+            'Medium': 'Moderate impact affecting some users. Should be addressed in a timely manner.',
+            'High': 'Significant impact affecting multiple users. Requires immediate attention.',
+            'Critical': 'System-wide impact causing major disruption. Requires urgent resolution.'
+        };
+        
+        function updatePriorityDescription() {
+            var selectedPriority = prioritySelect.value;
+            if (selectedPriority && priorityDescriptions[selectedPriority]) {
+                priorityDescription.textContent = priorityDescriptions[selectedPriority];
+                priorityInfo.style.display = 'flex';
+                
+                // Add visual color coding
+                if (selectedPriority === 'Critical') {
+                    priorityInfo.style.borderLeftColor = 'var(--danger)';
+                    priorityInfo.querySelector('i').style.color = 'var(--danger)';
+                } else if (selectedPriority === 'High') {
+                    priorityInfo.style.borderLeftColor = '#e67e22';
+                    priorityInfo.querySelector('i').style.color = '#e67e22';
+                } else if (selectedPriority === 'Medium') {
+                    priorityInfo.style.borderLeftColor = 'var(--warning)';
+                    priorityInfo.querySelector('i').style.color = 'var(--warning)';
+                } else {
+                    priorityInfo.style.borderLeftColor = 'var(--gray-500)';
+                    priorityInfo.querySelector('i').style.color = 'var(--gray-500)';
+                }
+            } else {
+                priorityInfo.style.display = 'none';
+            }
+        }
+        
+        if (prioritySelect) {
+            prioritySelect.addEventListener('change', updatePriorityDescription);
+        }
+        
+        // Character counter
+        const descriptionTextarea = document.querySelector('[asp-for="Description"]');
+        const charCountSpan = document.getElementById('charCount');
+        
+        if (descriptionTextarea && charCountSpan) {
+            function updateCharCount() {
+                charCountSpan.textContent = descriptionTextarea.value.length;
+            }
+            descriptionTextarea.addEventListener('input', updateCharCount);
+            updateCharCount();
+        }
+        
+        // File upload handling
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        let selectedFiles = [];
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function updateFileList() {
+            fileList.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <i class="fas fa-file-alt"></i>
+                        <span>${file.name}</span>
+                        <span class="file-size">(${formatFileSize(file.size)})</span>
+                    </div>
+                    <button type="button" class="remove-file" data-index="${index}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                fileList.appendChild(fileItem);
+            });
+            
+            // Add remove event listeners
+            document.querySelectorAll('.remove-file').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const index = parseInt(this.getAttribute('data-index'));
+                    selectedFiles.splice(index, 1);
+                    updateFileList();
+                    updateFileInput();
+                });
+            });
+        }
+        
+        function updateFileInput() {
+            const dataTransfer = new DataTransfer();
+            selectedFiles.forEach(file => dataTransfer.items.add(file));
+            fileInput.files = dataTransfer.files;
+        }
+        
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                const newFiles = Array.from(this.files);
+                selectedFiles = [...selectedFiles, ...newFiles];
+                updateFileList();
+            });
+            
+            // Drag and drop functionality
+            fileUploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--primary)';
+                this.style.background = 'var(--gray-100)';
+            });
+            
+            fileUploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--gray-300)';
+                this.style.background = 'var(--gray-50)';
+            });
+            
+            fileUploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--gray-300)';
+                this.style.background = 'var(--gray-50)';
+                
+                const files = Array.from(e.dataTransfer.files);
+                selectedFiles = [...selectedFiles, ...files];
+                updateFileList();
+                updateFileInput();
+            });
+        }
+        
+        // Form validation
+        const form = document.getElementById('createTicketForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                var title = document.querySelector('[name="Title"]').value.trim();
+                var description = descriptionTextarea ? descriptionTextarea.value.trim() : '';
+                var category = document.querySelector('[name="Category"]').value.trim();
+                var priority = prioritySelect ? prioritySelect.value : '';
+                
+                if (!title) {
+                    e.preventDefault();
+                    showValidationError('Ticket title is required');
+                    document.querySelector('[name="Title"]').focus();
+                    return false;
+                }
+                
+                if (title.length < 5) {
+                    e.preventDefault();
+                    showValidationError('Title must be at least 5 characters');
+                    document.querySelector('[name="Title"]').focus();
+                    return false;
+                }
+                
+                if (!description) {
+                    e.preventDefault();
+                    showValidationError('Description is required');
+                    descriptionTextarea.focus();
+                    return false;
+                }
+                
+                if (description.length < 10) {
+                    e.preventDefault();
+                    showValidationError('Description must be at least 10 characters');
+                    descriptionTextarea.focus();
+                    return false;
+                }
+                
+                if (!category) {
+                    e.preventDefault();
+                    showValidationError('Category is required');
+                    document.querySelector('[name="Category"]').focus();
+                    return false;
+                }
+                
+                if (!priority) {
+                    e.preventDefault();
+                    showValidationError('Please select a priority level');
+                    prioritySelect.focus();
+                    return false;
+                }
+                
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting Ticket...';
+                
+                return true;
+            });
+        }
+        
+        function showValidationError(message) {
+            var errorDiv = document.querySelector('.validation-toast');
+            if (errorDiv) errorDiv.remove();
+            
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'validation-toast';
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                background: var(--danger);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.75rem;
+                box-shadow: var(--shadow-lg);
+                z-index: 1050;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-size: 0.875rem;
+                animation: slideIn 0.3s ease;
+            `;
+            errorDiv.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(function() {
+                errorDiv.style.animation = 'slideOut 0.3s ease';
+                setTimeout(function() { errorDiv.remove(); }, 300);
+            }, 4000);
+        }
+    });
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

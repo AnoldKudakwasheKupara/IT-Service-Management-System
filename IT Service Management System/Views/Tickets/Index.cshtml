@@ -1,54 +1,823 @@
 ﻿@model IEnumerable<IT_Service_Management_System.Models.Ticket>
 
-<h2>Ticket Dashboard</h2>
+@{
+    ViewData["Title"] = "Ticket Dashboard - Axis IT Helpdesk";
+}
 
-<a asp-action="Create" class="btn btn-primary mb-3">+ Create New Ticket</a>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-ticket-alt me-2" style="color: var(--primary);"></i>
+                    Ticket Dashboard
+                </h1>
+                <p class="text-muted mt-2">Manage and track all support tickets</p>
+            </div>
+            <a asp-action="Create" class="btn-create-ticket">
+                <i class="fas fa-plus-circle me-2"></i>
+                Create New Ticket
+            </a>
+        </div>
+    </div>
 
-<table class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>Title</th>
-            <th>Priority</th>
-            <th>Status</th>
-            <th>Created By</th>
-            <th>Date</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var ticket in Model)
+    <!-- Statistics Cards -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count()</h3>
+                <p>Total Tickets</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count(t => t.Status.ToString() == "Open")</h3>
+                <p>Open Tickets</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <i class="fas fa-spinner"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count(t => t.Status.ToString() == "InProgress")</h3>
+                <p>In Progress</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count(t => t.Status.ToString() == "Resolved")</h3>
+                <p>Resolved</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Filter Tickets</span>
+        </div>
+        <div class="filters-body">
+            <div class="filter-group">
+                <label>Status</label>
+                <select id="statusFilter" class="filter-select">
+                    <option value="">All Status</option>
+                    <option value="Open">Open</option>
+                    <option value="InProgress">In Progress</option>
+                    <option value="Resolved">Resolved</option>
+                    <option value="Closed">Closed</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Priority</label>
+                <select id="priorityFilter" class="filter-select">
+                    <option value="">All Priorities</option>
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Critical">Critical</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Search</label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search by title or creator..." class="search-input">
+                </div>
+            </div>
+            <button class="btn-clear-filters" id="clearFilters">
+                <i class="fas fa-undo-alt"></i>
+                Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Tickets Table -->
+    <div class="tickets-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Ticket List</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span id="visibleCount">@Model.Count()</span> tickets shown
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="tickets-table" id="ticketsTable">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-heading me-1"></i> Title</th>
+                        <th><i class="fas fa-flag me-1"></i> Priority</th>
+                        <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                        <th><i class="fas fa-user me-1"></i> Created By</th>
+                        <th><i class="fas fa-calendar me-1"></i> Date</th>
+                        <th><i class="fas fa-cog me-1"></i> Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ticket in Model)
+                    {
+                        <tr data-title="@ticket.Title" data-creator="@ticket.CreatedBy.FirstName @ticket.CreatedBy.LastName" data-status="@ticket.Status.ToString()" data-priority="@ticket.Priority.ToString()">
+                            <td class="ticket-title-cell">
+                                <div class="ticket-title">
+                                    <i class="fas fa-ticket-alt"></i>
+                                    <span>@ticket.Title</span>
+                                </div>
+                            </td>
+                            <td>
+                                @{
+                                    var priority = ticket.Priority.ToString();
+                                    if (priority == "Critical")
+                                    {
+                                        <span class="priority-badge priority-critical">
+                                            <i class="fas fa-exclamation-circle"></i> Critical
+                                        </span>
+                                    }
+                                    else if (priority == "High")
+                                    {
+                                        <span class="priority-badge priority-high">
+                                            <i class="fas fa-arrow-up"></i> High
+                                        </span>
+                                    }
+                                    else if (priority == "Medium")
+                                    {
+                                        <span class="priority-badge priority-medium">
+                                            <i class="fas fa-minus"></i> Medium
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="priority-badge priority-low">
+                                            <i class="fas fa-arrow-down"></i> Low
+                                        </span>
+                                    }
+                                }
+                            </td>
+                            <td>
+                                @{
+                                    var status = ticket.Status.ToString();
+                                    if (status == "Open")
+                                    {
+                                        <span class="status-badge status-open">
+                                            <i class="fas fa-circle"></i> Open
+                                        </span>
+                                    }
+                                    else if (status == "InProgress")
+                                    {
+                                        <span class="status-badge status-progress">
+                                            <i class="fas fa-spinner fa-pulse"></i> In Progress
+                                        </span>
+                                    }
+                                    else if (status == "Resolved")
+                                    {
+                                        <span class="status-badge status-resolved">
+                                            <i class="fas fa-check-circle"></i> Resolved
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge status-closed">
+                                            <i class="fas fa-ban"></i> Closed
+                                        </span>
+                                    }
+                                }
+                            </td>
+                            <td class="creator-cell">
+                                <div class="creator-info">
+                                    <div class="creator-avatar-small">
+                                        @((ticket.CreatedBy.FirstName?.Substring(0, 1) ?? "U") + (ticket.CreatedBy.LastName?.Substring(0, 1) ?? "S"))
+                                    </div>
+                                    <span>@ticket.CreatedBy.FirstName @ticket.CreatedBy.LastName</span>
+                                </div>
+                            </td>
+                            <td class="date-cell">
+                                <i class="far fa-calendar-alt"></i>
+                                @ticket.CreatedAt.ToString("MMM dd, yyyy")
+                            </td>
+                            <td class="action-buttons">
+                                <a asp-action="Details" asp-route-id="@ticket.Id" class="action-btn btn-view" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@ticket.Id" class="action-btn btn-edit" title="Edit Ticket">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@ticket.Id" class="action-btn btn-delete" title="Delete Ticket" onclick="return confirm('Are you sure you want to delete this ticket?');">
+                                    <i class="fas fa-trash-alt"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        @if (!Model.Any())
         {
-            <tr>
-                <td>@ticket.Title</td>
-                <td>@ticket.Priority</td>
-
-                <td>
-                    @if (ticket.Status.ToString() == "Open")
-                    {
-                        <span class="badge bg-warning">Open</span>
-                    }
-                    else if (ticket.Status.ToString() == "InProgress")
-                    {
-                        <span class="badge bg-info">In Progress</span>
-                    }
-                    else if (ticket.Status.ToString() == "Resolved")
-                    {
-                        <span class="badge bg-success">Resolved</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-secondary">Closed</span>
-                    }
-                </td>
-                <td>@ticket.CreatedBy.FirstName</td>
-                <td>@ticket.CreatedAt.ToString("yyyy-MM-dd")</td>
-
-                <td>
-                    <a asp-action="Details" asp-route-id="@ticket.Id" class="btn btn-sm btn-info">View</a>
-                    <a asp-action="Edit" asp-route-id="@ticket.Id" class="btn btn-sm btn-warning">Edit</a>
-                    <a asp-action="Delete" asp-route-id="@ticket.Id" class="btn btn-sm btn-danger">Delete</a>
-                </td>
-            </tr>
+            <div class="empty-state">
+                <i class="fas fa-ticket-alt"></i>
+                <h3>No tickets found</h3>
+                <p>Get started by creating your first support ticket</p>
+                <a asp-action="Create" class="btn-create-ticket-sm">
+                    <i class="fas fa-plus-circle"></i> Create Ticket
+                </a>
+            </div>
         }
-    </tbody>
-</table>
+    </div>
+</div>
+
+<style>
+    /* Ticket Dashboard Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Create Ticket Button */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* Statistics Cards */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+    }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* Filters Card */
+    .filters-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .filters-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filters-body {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 180px;
+    }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        cursor: pointer;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    .search-wrapper {
+        position: relative;
+    }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+        }
+
+    .search-input {
+        width: 100%;
+        padding: 0.625rem 0.75rem 0.625rem 2rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    .btn-clear-filters {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-clear-filters:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+        }
+
+    /* Tickets Card */
+    .tickets-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* Table Styles */
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tickets-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+    /* Ticket Title */
+    .ticket-title-cell {
+        font-weight: 500;
+    }
+
+    .ticket-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .ticket-title i {
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+    /* Priority Badges */
+    .priority-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .priority-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .priority-high {
+        background: #fff5f5;
+        color: #e67e22;
+        border: 1px solid #ffe0d4;
+    }
+
+    .priority-medium {
+        background: var(--gray-100);
+        color: var(--warning);
+        border: 1px solid var(--gray-300);
+    }
+
+    .priority-low {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-open {
+        background: #fff5e6;
+        color: var(--warning);
+        border: 1px solid #ffe0b3;
+    }
+
+    .status-progress {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    .status-resolved {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .status-closed {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    /* Creator Info */
+    .creator-cell {
+        min-width: 140px;
+    }
+
+    .creator-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .creator-avatar-small {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .date-cell {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+    }
+
+    .btn-view {
+        background: var(--gray-100);
+        color: var(--info);
+    }
+
+        .btn-view:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-edit {
+        background: var(--gray-100);
+        color: var(--warning);
+    }
+
+        .btn-edit:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-delete {
+        background: var(--gray-100);
+        color: var(--danger);
+    }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    .btn-create-ticket-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-create-ticket-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusFilter = document.getElementById('statusFilter');
+        const priorityFilter = document.getElementById('priorityFilter');
+        const searchInput = document.getElementById('searchInput');
+        const clearFilters = document.getElementById('clearFilters');
+        const table = document.getElementById('ticketsTable');
+        const rows = table.querySelectorAll('tbody tr');
+        const visibleCountSpan = document.getElementById('visibleCount');
+        
+        function filterTickets() {
+            const statusValue = statusFilter ? statusFilter.value.toLowerCase() : '';
+            const priorityValue = priorityFilter ? priorityFilter.value.toLowerCase() : '';
+            const searchValue = searchInput ? searchInput.value.toLowerCase() : '';
+            
+            let visibleCount = 0;
+            
+            rows.forEach(row => {
+                const title = row.getAttribute('data-title')?.toLowerCase() || '';
+                const creator = row.getAttribute('data-creator')?.toLowerCase() || '';
+                const status = row.getAttribute('data-status')?.toLowerCase() || '';
+                const priority = row.getAttribute('data-priority')?.toLowerCase() || '';
+                
+                let show = true;
+                
+                if (statusValue && status !== statusValue) {
+                    show = false;
+                }
+                
+                if (priorityValue && priority !== priorityValue) {
+                    show = false;
+                }
+                
+                if (searchValue && !title.includes(searchValue) && !creator.includes(searchValue)) {
+                    show = false;
+                }
+                
+                if (show) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+            
+            if (visibleCountSpan) {
+                visibleCountSpan.textContent = visibleCount;
+            }
+            
+            // Show no results message
+            const emptyState = document.querySelector('.empty-state:not(.original)');
+            if (visibleCount === 0 && rows.length > 0) {
+                if (!emptyState) {
+                    const noResultsDiv = document.createElement('div');
+                    noResultsDiv.className = 'empty-state';
+                    noResultsDiv.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <h3>No matching tickets found</h3>
+                        <p>Try adjusting your filters or search terms</p>
+                    `;
+                    table.parentNode.appendChild(noResultsDiv);
+                    table.style.display = 'none';
+                }
+            } else {
+                if (emptyState) emptyState.remove();
+                table.style.display = '';
+            }
+        }
+        
+        if (statusFilter) statusFilter.addEventListener('change', filterTickets);
+        if (priorityFilter) priorityFilter.addEventListener('change', filterTickets);
+        if (searchInput) searchInput.addEventListener('keyup', filterTickets);
+        
+        if (clearFilters) {
+            clearFilters.addEventListener('click', function() {
+                if (statusFilter) statusFilter.value = '';
+                if (priorityFilter) priorityFilter.value = '';
+                if (searchInput) searchInput.value = '';
+                filterTickets();
+            });
+        }
+        
+        // Initialize filter
+        filterTickets();
+    });
+</script>

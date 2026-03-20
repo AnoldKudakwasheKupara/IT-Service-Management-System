@@ -1,15 +1,703 @@
 ﻿@model IT_Service_Management_System.Models.Ticket
 
-<h2>Delete Ticket</h2>
+@{
+    ViewData["Title"] = "Delete Ticket - Axis IT Helpdesk";
+    var status = Model.Status.ToString();
+}
 
-<h4>Are you sure you want to delete this ticket?</h4>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-trash-alt me-2" style="color: var(--danger);"></i>
+                    Delete Ticket
+                </h1>
+                <p class="text-muted mt-2">This action cannot be undone</p>
+            </div>
+        </div>
+    </div>
 
-<div>
-    <strong>@Model.Title</strong>
+    <div class="delete-warning-card">
+        <div class="warning-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="warning-title">Are you absolutely sure?</h3>
+        <p class="warning-message">This action will permanently delete this ticket and all associated data.</p>
+    </div>
+
+    <div class="ticket-details-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-ticket-alt me-2"></i>
+                <span>Ticket to Delete</span>
+            </div>
+            <div class="ticket-id-badge">
+                <i class="fas fa-hashtag"></i>
+                Ticket #@Model.Id
+            </div>
+        </div>
+
+        <div class="card-body-custom">
+            <!-- Ticket Summary -->
+            <div class="ticket-summary">
+                <div class="ticket-icon">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+                <div class="ticket-summary-info">
+                    <h3 class="ticket-title">@Model.Title</h3>
+                    <div class="ticket-meta">
+                        <div class="meta-badge">
+                            <i class="fas fa-flag"></i>
+                            @{
+                                var priority = Model.Priority.ToString();
+                                if (priority == "Critical")
+                                {
+                                    <span class="priority-text critical">Critical Priority</span>
+                                }
+                                else if (priority == "High")
+                                {
+                                    <span class="priority-text high">High Priority</span>
+                                }
+                                else if (priority == "Medium")
+                                {
+                                    <span class="priority-text medium">Medium Priority</span>
+                                }
+                                else
+                                {
+                                    <span class="priority-text low">Low Priority</span>
+                                }
+                            }
+                        </div>
+                        <div class="meta-badge">
+                            <i class="fas fa-chart-simple"></i>
+                            @if (status == "Open")
+                            {
+                                <span class="status-text open">Open</span>
+                            }
+                            else if (status == "InProgress")
+                            {
+                                <span class="status-text progress">In Progress</span>
+                            }
+                            else if (status == "Resolved")
+                            {
+                                <span class="status-text resolved">Resolved</span>
+                            }
+                            else
+                            {
+                                <span class="status-text closed">Closed</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ticket Details -->
+            <div class="ticket-details">
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-align-left"></i>
+                        Description
+                    </div>
+                    <div class="detail-value description-preview">
+                        @(Model.Description.Length > 150 ? Model.Description.Substring(0, 150) + "..." : Model.Description)
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-user"></i>
+                        Created By
+                    </div>
+                    <div class="detail-value">
+                        <div class="creator-info">
+                            <div class="creator-avatar-small">
+                                @((Model.CreatedBy.FirstName?.Substring(0, 1) ?? "U") + (Model.CreatedBy.LastName?.Substring(0, 1) ?? "S"))
+                            </div>
+                            <span>@Model.CreatedBy.FirstName @Model.CreatedBy.LastName</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-calendar"></i>
+                        Created Date
+                    </div>
+                    <div class="detail-value">
+                        @Model.CreatedAt.ToString("MMMM dd, yyyy 'at' HH:mm")
+                    </div>
+                </div>
+            </div>
+
+            <!-- Associated Data Warning -->
+            <div class="associated-data-warning">
+                <div class="warning-detail-item">
+                    <i class="fas fa-comments"></i>
+                    <div>
+                        <strong>Conversation History</strong>
+                        <span>@(Model.Messages?.Count() ?? 0) message(s) will be permanently deleted</span>
+                    </div>
+                </div>
+                <div class="warning-detail-item">
+                    <i class="fas fa-paperclip"></i>
+                    <div>
+                        <strong>Attachments</strong>
+                        <span>@(Model.Attachments?.Count() ?? 0) attachment(s) will be permanently deleted</span>
+                    </div>
+                </div>
+                <div class="warning-detail-item">
+                    <i class="fas fa-history"></i>
+                    <div>
+                        <strong>Activity Log</strong>
+                        <span>All ticket activity and history will be removed</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warning Details -->
+            <div class="warning-details">
+                <div class="warning-detail-item">
+                    <i class="fas fa-database"></i>
+                    <div>
+                        <strong>Data Loss Warning</strong>
+                        <span>All ticket information, including messages and attachments, will be permanently deleted.</span>
+                    </div>
+                </div>
+                <div class="warning-detail-item">
+                    <i class="fas fa-clock"></i>
+                    <div>
+                        <strong>Irreversible Action</strong>
+                        <span>This action cannot be undone. You will not be able to recover this ticket or its data.</span>
+                    </div>
+                </div>
+                <div class="warning-detail-item">
+                    <i class="fas fa-chart-line"></i>
+                    <div>
+                        <strong>Analytics Impact</strong>
+                        <span>This ticket will be removed from all reports and analytics.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Form -->
+            <form asp-action="Delete" method="post" id="deleteForm" class="delete-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                
+                <div class="confirmation-checkbox">
+                    <input type="checkbox" id="confirmDelete" required>
+                    <label for="confirmDelete">
+                        I understand that this action is permanent and cannot be undone
+                    </label>
+                </div>
+
+                <div class="action-buttons-container">
+                    <button type="submit" class="btn-delete" id="deleteButton" disabled>
+                        <i class="fas fa-trash-alt"></i>
+                        Permanently Delete Ticket
+                    </button>
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 
-<form asp-action="Delete">
-    <input type="hidden" asp-for="Id" />
-    <button type="submit" class="btn btn-danger">Delete</button>
-    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-</form>
+<style>
+    /* Delete Ticket Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --danger-dark: #c53030;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+    .btn-back:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+        transform: translateX(-2px);
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Warning Card */
+    .delete-warning-card {
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+        border: 1px solid #fed7d7;
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .warning-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--danger);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .warning-icon i {
+        font-size: 3rem;
+        color: white;
+    }
+
+    .warning-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--danger-dark);
+        margin: 0 0 0.5rem 0;
+    }
+
+    .warning-message {
+        color: var(--gray-600);
+        margin: 0;
+    }
+
+    /* Ticket Details Card */
+    .ticket-details-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .ticket-id-badge {
+        background: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Ticket Summary */
+    .ticket-summary {
+        display: flex;
+        gap: 1.5rem;
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .ticket-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--gray-200), var(--gray-300));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--gray-500);
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .ticket-summary-info {
+        flex: 1;
+    }
+
+    .ticket-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0 0 0.75rem 0;
+    }
+
+    .ticket-meta {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .meta-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .priority-text.critical { color: var(--danger); font-weight: 600; }
+    .priority-text.high { color: #e67e22; font-weight: 600; }
+    .priority-text.medium { color: var(--warning); font-weight: 600; }
+    .priority-text.low { color: var(--gray-500); font-weight: 600; }
+    .status-text.open { color: var(--warning); font-weight: 600; }
+    .status-text.progress { color: var(--info); font-weight: 600; }
+    .status-text.resolved { color: var(--success); font-weight: 600; }
+    .status-text.closed { color: var(--gray-500); font-weight: 600; }
+
+    /* Ticket Details */
+    .ticket-details {
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .detail-row {
+        display: flex;
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        width: 120px;
+        font-weight: 600;
+        color: var(--gray-600);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .detail-value {
+        flex: 1;
+        color: var(--gray-700);
+        font-size: 0.875rem;
+    }
+
+    .description-preview {
+        color: var(--gray-600);
+        line-height: 1.5;
+    }
+
+    .creator-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .creator-avatar-small {
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.7rem;
+    }
+
+    /* Associated Data Warning */
+    .associated-data-warning {
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        border-left: 3px solid var(--warning);
+    }
+
+    /* Warning Details */
+    .warning-details {
+        background: #fff5f5;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        border-left: 3px solid var(--danger);
+    }
+
+    .warning-detail-item {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .warning-detail-item i {
+        font-size: 1rem;
+        margin-top: 0.125rem;
+    }
+
+    .associated-data-warning .warning-detail-item i {
+        color: var(--warning);
+    }
+
+    .warning-details .warning-detail-item i {
+        color: var(--danger);
+    }
+
+    .warning-detail-item div {
+        flex: 1;
+    }
+
+    .warning-detail-item strong {
+        display: block;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        margin-bottom: 0.25rem;
+    }
+
+    .warning-detail-item span {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        line-height: 1.4;
+    }
+
+    /* Confirmation Checkbox */
+    .confirmation-checkbox {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        border-left: 3px solid var(--danger);
+    }
+
+    .confirmation-checkbox input[type="checkbox"] {
+        margin-right: 0.75rem;
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+    }
+
+    .confirmation-checkbox label {
+        color: var(--gray-700);
+        font-size: 0.875rem;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    /* Action Buttons */
+    .action-buttons-container {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-delete {
+        background: linear-gradient(100deg, var(--danger-dark), var(--danger));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-delete:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        filter: brightness(1.05);
+    }
+
+    .btn-delete:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-cancel:hover {
+        background: var(--gray-50);
+        color: var(--gray-700);
+        text-decoration: none;
+    }
+
+    .btn-delete:active:not(:disabled) {
+        transform: scale(0.98);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmCheckbox = document.getElementById('confirmDelete');
+        const deleteButton = document.getElementById('deleteButton');
+        const deleteForm = document.getElementById('deleteForm');
+
+        // Enable/disable delete button based on checkbox
+        if (confirmCheckbox && deleteButton) {
+            confirmCheckbox.addEventListener('change', function() {
+                deleteButton.disabled = !this.checked;
+            });
+        }
+
+        // Form submission with additional confirmation
+        if (deleteForm) {
+            deleteForm.addEventListener('submit', function(e) {
+                if (!confirmCheckbox.checked) {
+                    e.preventDefault();
+                    showWarningToast('Please confirm that you understand this action is permanent');
+                    confirmCheckbox.focus();
+                    return false;
+                }
+
+                // Final confirmation dialog with ticket details
+                const ticketTitle = document.querySelector('.ticket-title')?.innerText || 'this ticket';
+                const confirmed = confirm(
+                    '⚠️ WARNING: This action is permanent and cannot be undone.\n\n' +
+                    `Are you absolutely sure you want to delete "${ticketTitle}"?\n\n` +
+                    'This will permanently delete:\n' +
+                    '• All messages and conversation history\n' +
+                    '• All attachments and files\n' +
+                    '• All ticket activity logs\n\n' +
+                    'This action cannot be reversed.'
+                );
+
+                if (!confirmed) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable button to prevent double submission
+                deleteButton.disabled = true;
+                deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting Ticket...';
+            });
+        }
+
+        // Helper function to show toast notifications
+        function showWarningToast(message) {
+            const existingToast = document.querySelector('.warning-toast');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'warning-toast';
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 2rem;
+                right: 2rem;
+                background: var(--danger);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.75rem;
+                box-shadow: var(--shadow-lg);
+                z-index: 1050;
+                animation: slideIn 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-size: 0.875rem;
+            `;
+            toast.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Add hover effect to delete button when checkbox is checked
+        if (confirmCheckbox && deleteButton) {
+            confirmCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    deleteButton.style.animation = 'shake 0.5s ease';
+                    setTimeout(() => {
+                        deleteButton.style.animation = '';
+                    }, 500);
+                }
+            });
+        }
+    });
+</script>

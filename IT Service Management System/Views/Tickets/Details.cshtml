@@ -1,193 +1,959 @@
 ﻿@model IT_Service_Management_System.Models.Ticket
 
-<h2>Ticket Details</h2>
+@{
+    ViewData["Title"] = $"Ticket #{Model.Id} - Axis IT Helpdesk";
+    var isClosed = Model.Status.ToString() == "Closed";
+}
 
-<div class="card mb-3">
-    <div class="card-body">
-
-        <h4>
-            @Model.Title
-
-            @if (Model.Status == IT_Service_Management_System.Models.Ticket.TicketStatus.Closed)
-            {
-                <span class="badge bg-secondary">Closed</span>
-            }
-            else if (Model.Status == IT_Service_Management_System.Models.Ticket.TicketStatus.Open)
-            {
-                <span class="badge bg-warning">Open</span>
-            }
-            else if (Model.Status == IT_Service_Management_System.Models.Ticket.TicketStatus.InProgress)
-            {
-                <span class="badge bg-info">In Progress</span>
-            }
-        </h4>
-
-        <p>@Model.Description</p>
-
-        <p><strong>Status:</strong> @Model.Status</p>
-        <p><strong>Priority:</strong> @Model.Priority</p>
-
-        <!-- ✅ CLOSE BUTTON -->
-        @if (Model.Status != IT_Service_Management_System.Models.Ticket.TicketStatus.Closed)
-        {
-            <form asp-action="CloseTicket" method="post" class="mt-2">
-                <input type="hidden" name="id" value="@Model.Id" />
-                <button type="submit" class="btn btn-danger">
-                    Close Ticket
-                </button>
-            </form>
-        }
-        else
-        {
-            <div class="mt-2">
-                <span class="badge bg-secondary">This ticket is closed</span>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-ticket-alt me-2" style="color: var(--primary);"></i>
+                    Ticket Details
+                </h1>
+                <p class="text-muted mt-2">View and manage ticket information</p>
             </div>
-        }
-
-    </div>
-</div>
-
-<h4>Attachments</h4>
-
-@if (Model.Attachments != null && Model.Attachments.Any())
-{
-    foreach (var file in Model.Attachments)
-    {
-        <div>
-            <a href="@file.FilePath" target="_blank">@file.FileName</a>
         </div>
-    }
-}
-else
-{
-    <p>No attachments</p>
-}
+    </div>
 
-<hr />
-
-<h4>Conversation</h4>
-
-<div id="chatBox" class="border p-3 mb-3" style="max-height:400px; overflow-y:auto;">
-
-    @if (Model.Messages != null && Model.Messages.Any())
-    {
-        foreach (var msg in Model.Messages.OrderBy(m => m.SentAt))
-        {
-            <div class="mb-3">
-                <strong>@msg.Sender?.FirstName</strong>
-                <small class="text-muted">(@msg.SentAt.ToString("g"))</small>
-
-                <div class="p-2 border rounded mt-1">
-                    @msg.Message
-                </div>
-
-                @if (msg.Attachments != null && msg.Attachments.Any())
+    <!-- Main Ticket Card -->
+    <div class="ticket-details-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-ticket-alt me-2"></i>
+                <span>Ticket #@Model.Id</span>
+            </div>
+            <div class="ticket-status-badge @(isClosed ? "closed" : "active")">
+                @if (isClosed)
                 {
-                    foreach (var file in msg.Attachments)
-                    {
-                        <div>
-                            <a href="@file.FilePath" target="_blank">@file.FileName</a>
-                        </div>
-                    }
+                    <i class="fas fa-ban"></i>
+                    <span>Closed</span>
+                }
+                else
+                {
+                    <i class="fas fa-circle"></i>
+                    <span>Active</span>
                 }
             </div>
-        }
-    }
-    else
-    {
-        <p>No messages yet</p>
-    }
+        </div>
 
+        <div class="card-body-custom">
+            <!-- Ticket Header with Title and Status -->
+            <div class="ticket-header">
+                <div class="ticket-title-section">
+                    <h2 class="ticket-title">@Model.Title</h2>
+                    <div class="ticket-badges">
+                        @{
+                            var status = Model.Status.ToString();
+                            if (status == "Open")
+                            {
+                                <span class="status-badge status-open">
+                                    <i class="fas fa-circle"></i> Open
+                                </span>
+                            }
+                            else if (status == "InProgress")
+                            {
+                                <span class="status-badge status-progress">
+                                    <i class="fas fa-spinner fa-pulse"></i> In Progress
+                                </span>
+                            }
+                            else if (status == "Resolved")
+                            {
+                                <span class="status-badge status-resolved">
+                                    <i class="fas fa-check-circle"></i> Resolved
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-closed">
+                                    <i class="fas fa-ban"></i> Closed
+                                </span>
+                            }
+                        }
+                        
+                        @{
+                            var priority = Model.Priority.ToString();
+                            if (priority == "Critical")
+                            {
+                                <span class="priority-badge priority-critical">
+                                    <i class="fas fa-exclamation-circle"></i> Critical
+                                </span>
+                            }
+                            else if (priority == "High")
+                            {
+                                <span class="priority-badge priority-high">
+                                    <i class="fas fa-arrow-up"></i> High
+                                </span>
+                            }
+                            else if (priority == "Medium")
+                            {
+                                <span class="priority-badge priority-medium">
+                                    <i class="fas fa-minus"></i> Medium
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="priority-badge priority-low">
+                                    <i class="fas fa-arrow-down"></i> Low
+                                </span>
+                            }
+                        }
+                    </div>
+                </div>
+                <div class="ticket-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-user"></i>
+                        <div>
+                            <label>Created by</label>
+                            <span>@Model.CreatedBy.FirstName @Model.CreatedBy.LastName</span>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <i class="fas fa-calendar"></i>
+                        <div>
+                            <label>Created</label>
+                            <span>@Model.CreatedAt.ToString("MMMM dd, yyyy 'at' HH:mm")</span>
+                        </div>
+                    </div>
+            </div>
+
+            <!-- Description Section -->
+            <div class="description-section">
+                <h3 class="section-title">
+                    <i class="fas fa-align-left"></i>
+                    Description
+                </h3>
+                <div class="description-content">
+                    @Model.Description
+                </div>
+            </div>
+
+            <!-- Close Ticket Button -->
+            @if (!isClosed)
+            {
+                <div class="close-ticket-section">
+                    <form asp-action="CloseTicket" method="post" id="closeTicketForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="button" class="btn-close-ticket" onclick="confirmCloseTicket()">
+                            <i class="fas fa-lock"></i>
+                            Close Ticket
+                        </button>
+                    </form>
+                    <div class="close-hint">
+                        <i class="fas fa-info-circle"></i>
+                        Closing the ticket will prevent further replies
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="closed-alert">
+                    <i class="fas fa-lock"></i>
+                    <div>
+                        <strong>This ticket is closed</strong>
+                        <p>No further replies or changes can be made to this ticket.</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Attachments Section -->
+    <div class="attachments-card">
+        <div class="card-header-custom">
+            <i class="fas fa-paperclip me-2"></i>
+            <span>Attachments</span>
+            <span class="attachment-count">@(Model.Attachments?.Count() ?? 0) files</span>
+        </div>
+        <div class="card-body-custom">
+            @if (Model.Attachments != null && Model.Attachments.Any())
+            {
+                <div class="attachments-grid">
+                    @foreach (var file in Model.Attachments)
+                    {
+                        <div class="attachment-item">
+                            <i class="fas fa-file-alt"></i>
+                            <div class="attachment-info">
+                                <a href="@file.FilePath" target="_blank" class="attachment-link">@file.FileName</a>
+                                <span class="attachment-meta">Uploaded @file.UploadedAt.ToString("MMM dd, yyyy")</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-attachments">
+                    <i class="fas fa-paperclip"></i>
+                    <p>No attachments</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Conversation Section -->
+    <div class="conversation-card">
+        <div class="card-header-custom">
+            <i class="fas fa-comments me-2"></i>
+            <span>Conversation History</span>
+            <span class="message-count">@(Model.Messages?.Count() ?? 0) messages</span>
+        </div>
+        
+        <div class="chat-container" id="chatBox">
+            @if (Model.Messages != null && Model.Messages.Any())
+            {
+                foreach (var msg in Model.Messages.OrderBy(m => m.SentAt))
+                {
+                    <div class="message-item @(msg.SenderId == Model.CreatedBy.Id ? "user-message" : "support-message")">
+                        <div class="message-header">
+                            <div class="message-sender">
+                                <div class="sender-avatar">
+                                    @((msg.Sender?.FirstName?.Substring(0, 1) ?? "U") + (msg.Sender?.LastName?.Substring(0, 1) ?? "S"))
+                                </div>
+                                <div>
+                                    <strong>@msg.Sender?.FirstName @msg.Sender?.LastName</strong>
+                                    <span class="message-time">@msg.SentAt.ToString("MMM dd, yyyy HH:mm")</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="message-content">
+                            @msg.Message
+                        </div>
+                        @if (msg.Attachments != null && msg.Attachments.Any())
+                        {
+                            <div class="message-attachments">
+                                @foreach (var file in msg.Attachments)
+                                {
+                                    <a href="@file.FilePath" target="_blank" class="attachment-link-sm">
+                                        <i class="fas fa-paperclip"></i> @file.FileName
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-conversation">
+                    <i class="fas fa-comments"></i>
+                    <p>No messages yet</p>
+                    <span>Be the first to reply to this ticket</span>
+                </div>
+            }
+        </div>
+
+        <!-- Reply Section -->
+        @if (!isClosed)
+        {
+            <div class="reply-section">
+                <h3 class="reply-title">
+                    <i class="fas fa-reply"></i>
+                    Reply to Ticket
+                </h3>
+                <form id="chatForm" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="ticketId" value="@Model.Id" />
+                    
+                    <div class="reply-input-wrapper">
+                        <textarea id="messageInput" class="reply-textarea" placeholder="Type your reply here..." rows="3"></textarea>
+                        <div class="reply-actions">
+                            <div class="file-upload-wrapper">
+                                <label for="fileInput" class="file-upload-btn">
+                                    <i class="fas fa-paperclip"></i>
+                                    Attach files
+                                </label>
+                                <input type="file" id="fileInput" multiple style="display: none;" />
+                                <span id="fileNameDisplay" class="file-name-display"></span>
+                            </div>
+                            <button type="button" onclick="sendMessage()" class="btn-send-reply">
+                                <i class="fas fa-paper-plane"></i>
+                                Send Reply
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        }
+    </div>
 </div>
 
-<hr />
+<style>
+    /* Ticket Details Page Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
 
-<!-- ✅ CONDITIONAL REPLY -->
-@if (Model.Status != IT_Service_Management_System.Models.Ticket.TicketStatus.Closed)
-{
-    <h4>Reply</h4>
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
 
-    <form id="chatForm" enctype="multipart/form-data">
-        <input type="hidden" id="ticketId" value="@Model.Id" />
+    .page-header {
+        margin-bottom: 2rem;
+    }
 
-        <div>
-            <textarea id="messageInput" class="form-control" placeholder="Type your message..." required></textarea>
-        </div>
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
 
-        <div class="mt-2">
-            <input type="file" id="fileInput" multiple class="form-control" />
-        </div>
+    .btn-back:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+        transform: translateX(-2px);
+    }
 
-        <br />
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
 
-        <button type="button" onclick="sendMessage()" class="btn btn-primary">
-            Send Reply
-        </button>
-    </form>
-}
-else
-{
-    <div class="alert alert-warning">
-        This ticket is closed. No further replies allowed.
-    </div>
-}
+    /* Cards */
+    .ticket-details-card, .attachments-card, .conversation-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
 
-@section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-    <script>
-        const ticketId = document.getElementById("ticketId")?.value;
+    .card-body-custom {
+        padding: 1.5rem;
+    }
 
-        const connection = new signalR.HubConnectionBuilder()
-        .withUrl("/chathub")
-        .build();
+    /* Ticket Status Badge */
+    .ticket-status-badge {
+        margin-left: auto;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
 
-        connection.start().then(function () {
-        if (ticketId)
-        connection.invoke("JoinTicketGroup", ticketId);
+    .ticket-status-badge.active {
+        background: #e6f5e9;
+        color: var(--success);
+    }
+
+    .ticket-status-badge.closed {
+        background: var(--gray-100);
+        color: var(--gray-500);
+    }
+
+    /* Ticket Header */
+    .ticket-header {
+        border-bottom: 1px solid var(--gray-200);
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .ticket-title-section {
+        margin-bottom: 1rem;
+    }
+
+    .ticket-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0 0 0.75rem 0;
+    }
+
+    .ticket-badges {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .status-badge, .priority-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-open { background: #fff5e6; color: var(--warning); border: 1px solid #ffe0b3; }
+    .status-progress { background: #e6f0ff; color: var(--info); border: 1px solid #cce4ff; }
+    .status-resolved { background: #e6f5e9; color: var(--success); border: 1px solid #c6e0c9; }
+    .status-closed { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-300); }
+    .priority-critical { background: #fee; color: var(--danger); border: 1px solid #fed7d7; }
+    .priority-high { background: #fff5f5; color: #e67e22; border: 1px solid #ffe0d4; }
+    .priority-medium { background: var(--gray-100); color: var(--warning); border: 1px solid var(--gray-300); }
+    .priority-low { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-300); }
+
+    /* Meta Items */
+    .ticket-meta {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    .meta-item i {
+        width: 24px;
+        color: var(--primary);
+    }
+
+    .meta-item label {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray-500);
+        display: block;
+        margin-bottom: 0.125rem;
+    }
+
+    .meta-item span {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    /* Description Section */
+    .description-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .description-content {
+        background: var(--gray-50);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        line-height: 1.6;
+        color: var(--gray-700);
+    }
+
+    /* Close Ticket Section */
+    .close-ticket-section {
+        background: #fff5f5;
+        border: 1px solid #fed7d7;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .btn-close-ticket {
+        background: linear-gradient(100deg, var(--danger), #c53030);
+        color: white;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .btn-close-ticket:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .close-hint {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .closed-alert {
+        background: var(--gray-50);
+        border-left: 3px solid var(--gray-500);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .closed-alert i {
+        font-size: 1.5rem;
+        color: var(--gray-500);
+    }
+
+    /* Attachments */
+    .attachments-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .attachment-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .attachment-item:hover {
+        background: var(--gray-100);
+    }
+
+    .attachment-item i {
+        font-size: 1.25rem;
+        color: var(--primary);
+    }
+
+    .attachment-info {
+        flex: 1;
+    }
+
+    .attachment-link {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 500;
+        display: block;
+        font-size: 0.875rem;
+    }
+
+    .attachment-link:hover {
+        text-decoration: underline;
+    }
+
+    .attachment-meta {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+    }
+
+    .empty-attachments {
+        text-align: center;
+        padding: 2rem;
+        color: var(--gray-400);
+    }
+
+    /* Chat Container */
+    .chat-container {
+        max-height: 500px;
+        overflow-y: auto;
+        padding: 1rem;
+        background: var(--gray-50);
+    }
+
+    .message-item {
+        margin-bottom: 1rem;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .user-message .message-content {
+        background: white;
+        border-left: 3px solid var(--primary);
+    }
+
+    .support-message .message-content {
+        background: #e6f0ff;
+        border-left: 3px solid var(--info);
+    }
+
+    .message-header {
+        margin-bottom: 0.5rem;
+    }
+
+    .message-sender {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .sender-avatar {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+
+    .message-time {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        margin-left: 0.5rem;
+    }
+
+    .message-content {
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        margin-left: 2.5rem;
+        background: white;
+        line-height: 1.5;
+    }
+
+    .message-attachments {
+        margin-left: 2.5rem;
+        margin-top: 0.5rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .attachment-link-sm {
+        font-size: 0.7rem;
+        color: var(--primary);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .empty-conversation {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-400);
+    }
+
+    /* Reply Section */
+    .reply-section {
+        border-top: 1px solid var(--gray-200);
+        padding: 1.5rem;
+    }
+
+    .reply-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .reply-textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        font-size: 0.875rem;
+        font-family: 'Inter', sans-serif;
+        resize: vertical;
+        transition: all 0.2s;
+    }
+
+    .reply-textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+    }
+
+    .reply-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 0.75rem;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .file-upload-wrapper {
+        flex: 1;
+    }
+
+    .file-upload-btn {
+        background: var(--gray-100);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    .file-upload-btn:hover {
+        background: var(--gray-200);
+    }
+
+    .file-name-display {
+        margin-left: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--gray-500);
+    }
+
+    .btn-send-reply {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .btn-send-reply:hover {
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<script>
+    const ticketId = document.getElementById("ticketId")?.value;
+    let connection;
+
+    // Initialize SignalR
+    if (ticketId) {
+        connection = new signalR.HubConnectionBuilder()
+            .withUrl("/chathub")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.start()
+            .then(function() {
+                console.log("SignalR connected");
+                connection.invoke("JoinTicketGroup", ticketId);
+            })
+            .catch(function(err) {
+                console.error("SignalR connection error: ", err);
+            });
+
+        connection.on("ReceiveMessage", function(user, message, time) {
+            const chatBox = document.getElementById("chatBox");
+            const msgDiv = document.createElement("div");
+            msgDiv.classList.add("message-item", "support-message");
+            msgDiv.innerHTML = `
+                <div class="message-header">
+                    <div class="message-sender">
+                        <div class="sender-avatar">${user.charAt(0)}</div>
+                        <div>
+                            <strong>${user}</strong>
+                            <span class="message-time">${time}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="message-content">${escapeHtml(message)}</div>
+            `;
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
         });
+    }
 
-        connection.on("ReceiveMessage", function (user, message, time) {
-
-        const chatBox = document.getElementById("chatBox");
-
-        const msgDiv = document.createElement("div");
-        msgDiv.classList.add("mb-3");
-
-        msgDiv.innerHTML = `
-        <strong>${user}</strong>
-        <small class="text-muted">(${time})</small>
-        <div class="p-2 border rounded mt-1">${message}</div>
-        `;
-
-        chatBox.appendChild(msgDiv);
-        chatBox.scrollTop = chatBox.scrollHeight;
+    // File input display
+    const fileInput = document.getElementById('fileInput');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                fileNameDisplay.textContent = `${this.files.length} file(s) selected`;
+            } else {
+                fileNameDisplay.textContent = '';
+            }
         });
+    }
 
-        function sendMessage() {
-        const message = document.getElementById("messageInput").value;
-
-        if (!message) return;
+    function sendMessage() {
+        const message = document.getElementById("messageInput").value.trim();
+        if (!message) {
+            showNotification('Please enter a message', 'warning');
+            return;
+        }
 
         const formData = new FormData();
         formData.append("ticketId", ticketId);
         formData.append("message", message);
-
+        
         const files = document.getElementById("fileInput").files;
         for (let i = 0; i < files.length; i++) {
-        formData.append("files", files[i]);
+            formData.append("files", files[i]);
         }
+
+        const sendBtn = document.querySelector('.btn-send-reply');
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
 
         fetch("/Tickets/AddReply", {
-        method: "POST",
-        body: formData
+            method: "POST",
+            body: formData,
+            headers: {
+                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+            }
         })
-        .then(() => {
-        connection.invoke("SendMessage", ticketId, "Admin", message, new Date().toLocaleString());
-
-        document.getElementById("messageInput").value = "";
-        document.getElementById("fileInput").value = "";
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                if (connection) {
+                    connection.invoke("SendMessage", ticketId, "Admin", message, new Date().toLocaleString());
+                }
+                
+                // Add message to chat immediately
+                const chatBox = document.getElementById("chatBox");
+                const msgDiv = document.createElement("div");
+                msgDiv.classList.add("message-item", "support-message");
+                msgDiv.innerHTML = `
+                    <div class="message-header">
+                        <div class="message-sender">
+                            <div class="sender-avatar">A</div>
+                            <div>
+                                <strong>Admin</strong>
+                                <span class="message-time">Just now</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="message-content">${escapeHtml(message)}</div>
+                `;
+                chatBox.appendChild(msgDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+                
+                // Clear form
+                document.getElementById("messageInput").value = "";
+                document.getElementById("fileInput").value = "";
+                fileNameDisplay.textContent = "";
+                showNotification('Message sent successfully', 'success');
+            } else {
+                showNotification(data.message || 'Failed to send message', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Failed to send message. Please try again.', 'error');
+        })
+        .finally(() => {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reply';
         });
+    }
+
+    function confirmCloseTicket() {
+        if (confirm('Are you sure you want to close this ticket?\n\nClosing the ticket will prevent any further replies.')) {
+            document.getElementById('closeTicketForm').submit();
         }
-    </script>
+    }
+
+    function showNotification(message, type) {
+        const notification = document.createElement('div');
+        notification.className = 'notification-toast';
+        const colors = {
+            success: '#2c9e6e',
+            error: '#e53e3e',
+            warning: '#f5b042'
+        };
+        notification.style.cssText = `
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: ${colors[type] || colors.success};
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow-lg);
+            z-index: 1050;
+            animation: slideIn 0.3s ease;
+            font-size: 0.875rem;
+        `;
+        notification.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${message}`;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Auto-scroll to bottom of chat
+    const chatBox = document.getElementById('chatBox');
+    if (chatBox) {
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }
