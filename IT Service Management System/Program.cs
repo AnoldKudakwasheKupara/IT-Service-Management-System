@@ -40,7 +40,7 @@ app.MapHub<ChatHub>("/chathub");
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
+    pattern: "{controller=Account}/{action=Login}/{id?}")
     .WithStaticAssets();
 
 using (var scope = app.Services.CreateScope())

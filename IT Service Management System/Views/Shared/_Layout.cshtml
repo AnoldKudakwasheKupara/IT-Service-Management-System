@@ -11,102 +11,118 @@
 </head>
 <body>
 
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
 
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
-                    Axis IT Helpdesk
-                </a>
+        var isLoginPage = currentController == "Account" && currentAction == "Login";
+    }
 
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
+    <!-- 🔹 NAVBAR (HIDDEN ON LOGIN PAGE) -->
+    @if (!isLoginPage)
+    {
+        <header>
+            <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+                <div class="container-fluid">
 
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                        Axis IT Helpdesk
+                    </a>
 
-                    <!-- LEFT MENU -->
-                    <ul class="navbar-nav flex-grow-1">
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">
-                                Home
-                            </a>
-                        </li>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Home" asp-action="Privacy">
-                                Privacy
-                            </a>
-                        </li>
+                        <!-- LEFT MENU -->
+                        <ul class="navbar-nav flex-grow-1">
 
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-controller="Tickets" asp-action="Index">
-                                Tickets
-                            </a>
-                        </li>
-
-                        @if (Context.Session.GetString("UserRole") == "Admin")
-                        {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-controller="Users" asp-action="Index">
-                                    Users
+                                <a class="nav-link text-dark" asp-controller="Home" asp-action="Index">
+                                    Home
                                 </a>
-                            </li>
-                        }
-
-                    </ul>
-
-                    <!-- RIGHT MENU -->
-                    <ul class="navbar-nav">
-
-                        @if (Context.Session.GetString("UserName") != null)
-                        {
-                            <li class="nav-item d-flex align-items-center me-3">
-                                <span>
-                                    👤 @Context.Session.GetString("UserName")
-                                    (@Context.Session.GetString("UserRole"))
-                                </span>
                             </li>
 
                             <li class="nav-item">
-                                <a class="btn btn-danger btn-sm"
-                                       asp-controller="Account"
-                                       asp-action="Logout">
-                                    Logout
+                                <a class="nav-link text-dark" asp-controller="Home" asp-action="Privacy">
+                                    Privacy
                                 </a>
                             </li>
-                        }
-                        else
-                        {
+
                             <li class="nav-item">
-                                <a class="btn btn-primary btn-sm"
-                                       asp-controller="Account"
-                                       asp-action="Login">
-                                    Login
+                                <a class="nav-link text-dark" asp-controller="Tickets" asp-action="Index">
+                                    Tickets
                                 </a>
                             </li>
-                        }
 
-                    </ul>
+                            @if (Context.Session.GetString("UserRole") == "Admin")
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Users" asp-action="Index">
+                                        Users
+                                    </a>
+                                </li>
+                            }
 
+                        </ul>
+
+                        <!-- RIGHT MENU -->
+                        <ul class="navbar-nav">
+
+                            @if (Context.Session.GetString("UserName") != null)
+                            {
+                                <li class="nav-item d-flex align-items-center me-3">
+                                    <span>
+                                        👤 @Context.Session.GetString("UserName")
+                                        (@Context.Session.GetString("UserRole"))
+                                    </span>
+                                </li>
+
+                                <li class="nav-item">
+                                    <a class="btn btn-danger btn-sm"
+                                           asp-controller="Account"
+                                           asp-action="Logout">
+                                        Logout
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <a class="btn btn-primary btn-sm"
+                                           asp-controller="Account"
+                                           asp-action="Login">
+                                        Login
+                                    </a>
+                                </li>
+                            }
+
+                        </ul>
+
+                    </div>
                 </div>
-            </div>
-        </nav>
-    </header>
+            </nav>
+        </header>
+    }
 
+    <!-- 🔹 MAIN CONTENT -->
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Axis IT Helpdesk -
-            <a asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    <!-- 🔹 FOOTER (HIDDEN ON LOGIN PAGE) -->
+    @if (!isLoginPage)
+    {
+        <footer class="border-top footer text-muted">
+            <div class="container">
+                &copy; 2026 - Axis IT Helpdesk -
+                <a asp-controller="Home" asp-action="Privacy">Privacy</a>
+            </div>
+        </footer>
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
