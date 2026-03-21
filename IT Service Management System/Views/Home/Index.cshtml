@@ -1,8 +1,278 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Dashboard - Axis IT Helpdesk";
+    
+    // Get ticket statistics from ViewBag or calculate from your data
+    var totalTickets = ViewBag.TotalTickets ?? 0;
+    var openTickets = ViewBag.OpenTickets ?? 0;
+    var inProgressTickets = ViewBag.InProgressTickets ?? 0;
+    var resolvedTickets = ViewBag.ResolvedTickets ?? 0;
+    var closedTickets = ViewBag.ClosedTickets ?? 0;
+    var highPriorityTickets = ViewBag.HighPriorityTickets ?? 0;
+    var criticalPriorityTickets = ViewBag.CriticalPriorityTickets ?? 0;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Dashboard</h1>
+        <p class="dashboard-subtitle">Welcome back! Here's an overview of your ticket system</p>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon total">
+                <i class="fas fa-ticket-alt"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@totalTickets</h3>
+                <p>Total Tickets</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon open">
+                <i class="fas fa-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@openTickets</h3>
+                <p>Open Tickets</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon progress">
+                <i class="fas fa-spinner"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@inProgressTickets</h3>
+                <p>In Progress</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon resolved">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@resolvedTickets</h3>
+                <p>Resolved</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon closed">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@closedTickets</h3>
+                <p>Closed</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon priority">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(highPriorityTickets + criticalPriorityTickets)</h3>
+                <p>High Priority</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h3 class="section-title">Quick Actions</h3>
+        <div class="action-buttons">
+            <a asp-controller="Tickets" asp-action="Create" class="action-btn create-btn">
+                <i class="fas fa-plus-circle"></i>
+                Create New Ticket
+            </a>
+            <a asp-controller="Tickets" asp-action="Index" class="action-btn view-btn">
+                <i class="fas fa-list"></i>
+                View All Tickets
+            </a>
+            <a asp-controller="Users" asp-action="Profile" class="action-btn profile-btn">
+                <i class="fas fa-user-circle"></i>
+                My Profile
+            </a>
+        </div>
+    </div>
 </div>
+
+<style>
+    /* Dashboard Styles */
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .dashboard-header {
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0 0 0.5rem 0;
+    }
+
+    .dashboard-subtitle {
+        color: var(--gray-500);
+        margin: 0;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+        .stat-icon.total {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        .stat-icon.open {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .stat-icon.progress {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+        }
+
+        .stat-icon.resolved {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .stat-icon.closed {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+            color: white;
+        }
+
+        .stat-icon.priority {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+    .stat-info {
+        flex: 1;
+    }
+
+        .stat-info h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            color: var(--gray-800);
+        }
+
+        .stat-info p {
+            margin: 0;
+            color: var(--gray-500);
+            font-size: 0.875rem;
+        }
+
+    /* Quick Actions */
+    .quick-actions {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin: 0 0 1rem 0;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .create-btn {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+
+        .create-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            color: white;
+            text-decoration: none;
+        }
+
+    .view-btn {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+
+        .view-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            color: white;
+            text-decoration: none;
+        }
+
+    .profile-btn {
+        background: var(--gray-100);
+        color: var(--gray-700);
+        border: 1px solid var(--gray-300);
+    }
+
+        .profile-btn:hover {
+            background: var(--gray-200);
+            text-decoration: none;
+            color: var(--gray-800);
+        }
+</style>

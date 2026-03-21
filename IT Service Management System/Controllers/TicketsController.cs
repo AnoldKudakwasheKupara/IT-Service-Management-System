@@ -2,6 +2,7 @@
 using IT_Service_Management_System.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static IT_Service_Management_System.Models.Ticket;
 
 namespace IT_Service_Management_System.Controllers
 {
@@ -231,7 +232,71 @@ namespace IT_Service_Management_System.Controllers
             return Ok();
         }
 
-        // 🔹 CLOSE (ADMIN ONLY)
+        [HttpGet]
+        public async Task<IActionResult> GetStats()
+        {
+            var stats = new
+            {
+                total = await _context.Tickets.CountAsync(),
+                open = await _context.Tickets.CountAsync(t => t.Status == TicketStatus.Open),
+                inProgress = await _context.Tickets.CountAsync(t => t.Status == TicketStatus.InProgress),
+                resolved = await _context.Tickets.CountAsync(t => t.Status == TicketStatus.Resolved)
+            };
+            return Json(stats);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetRecent(int count = 5)
+        {
+            var tickets = await _context.Tickets
+                .Include(t => t.CreatedBy)
+                .OrderByDescending(t => t.CreatedAt)
+                .Take(count)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.Title,
+                    Priority = t.Priority.ToString(),
+                    Status = t.Status.ToString(),
+                    CreatedAt = t.CreatedAt
+                })
+                .ToListAsync();
+            return Json(tickets);
+        }
+
+        [HttpGet("api/tickets/stats")]
+        public async Task<IActionResult> GetTicketStats()
+        {
+            var stats = new
+            {
+                total = await _context.Tickets.CountAsync(),
+                open = await _context.Tickets.CountAsync(t => t.Status == TicketStatus.Open),
+                inProgress = await _context.Tickets.CountAsync(t => t.Status == TicketStatus.InProgress),
+                resolved = await _context.Tickets.CountAsync(t => t.Status == TicketStatus.Resolved)
+            };
+            return Ok(stats);
+        }
+
+        [HttpGet("api/tickets/recent")]
+        public async Task<IActionResult> GetRecentTickets(int count = 5)
+        {
+            var tickets = await _context.Tickets
+                .Include(t => t.CreatedBy)
+                .OrderByDescending(t => t.CreatedAt)
+                .Take(count)
+                .Select(t => new
+                {
+                    t.Id,
+                    t.Title,
+                    Priority = t.Priority.ToString(),
+                    Status = t.Status.ToString(),
+                    CreatedAt = t.CreatedAt
+                })
+                .ToListAsync();
+            return Ok(tickets);
+        }
+
+
         [HttpPost]
         public async Task<IActionResult> CloseTicket(int id)
         {
