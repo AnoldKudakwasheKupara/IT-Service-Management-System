@@ -181,7 +181,11 @@ namespace IT_Service_Management_System.Controllers
             if (HttpContext.Session.GetString("UserRole") != "Admin")
                 return Forbid();
 
-            var ticket = await _context.Tickets.FindAsync(id);
+            var ticket = await _context.Tickets
+                .Include(t => t.CreatedBy)
+                .Include(t => t.Messages)
+                .Include(t => t.Attachments)
+                .FirstOrDefaultAsync(t => t.Id == id);
             if (ticket == null) return NotFound();
 
             return View(ticket);
@@ -193,7 +197,11 @@ namespace IT_Service_Management_System.Controllers
             if (HttpContext.Session.GetString("UserRole") != "Admin")
                 return Forbid();
 
-            var ticket = await _context.Tickets.FindAsync(id);
+            var ticket = await _context.Tickets
+                .Include(t => t.CreatedBy)
+                .Include(t => t.Messages)
+                .Include(t => t.Attachments)
+                .FirstOrDefaultAsync(t => t.Id == id);
             if (ticket == null) return NotFound();
 
             var attachments = _context.TicketAttachments.Where(a => a.TicketId == id);

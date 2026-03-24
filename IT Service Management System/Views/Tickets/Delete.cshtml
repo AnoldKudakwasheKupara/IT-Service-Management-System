@@ -632,19 +632,19 @@
 
                 // Final confirmation dialog with ticket details
                 const ticketTitle = document.querySelector('.ticket-title')?.innerText || 'this ticket';
-                const confirmed = confirm(
-                    '⚠️ WARNING: This action is permanent and cannot be undone.\n\n' +
-                    `Are you absolutely sure you want to delete "${ticketTitle}"?\n\n` +
-                    'This will permanently delete:\n' +
-                    '• All messages and conversation history\n' +
-                    '• All attachments and files\n' +
-                    '• All ticket activity logs\n\n' +
-                    'This action cannot be reversed.'
-                );
+                if (deleteForm) {
+                    deleteForm.addEventListener('submit', function(e) {
+                        if (!confirmCheckbox.checked) {
+                            e.preventDefault();
+                            showWarningToast('Please confirm that you understand this action is permanent');
+                            confirmCheckbox.focus();
+                            return false;
+                        }
 
-                if (!confirmed) {
-                    e.preventDefault();
-                    return false;
+                        // Disable button to prevent double submission
+                        deleteButton.disabled = true;
+                        deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting Ticket...';
+                    });
                 }
 
                 // Disable button to prevent double submission
