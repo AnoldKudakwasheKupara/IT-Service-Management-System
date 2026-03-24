@@ -3,12 +3,11 @@
 @{
     ViewData["Title"] = "Audit Logs - Axis IT Helpdesk";
     
-    // Get filter values from ViewBag or QueryString
-    var searchFilter = ViewBag.SearchFilter ?? Context.Request.Query["search"].ToString();
-    var actionFilter = ViewBag.ActionFilter ?? Context.Request.Query["action"].ToString();
-    var entityFilter = ViewBag.EntityFilter ?? Context.Request.Query["entity"].ToString();
-    var startDateFilter = ViewBag.StartDateFilter ?? Context.Request.Query["startDate"].ToString();
-    var endDateFilter = ViewBag.EndDateFilter ?? Context.Request.Query["endDate"].ToString();
+    // Pagination values
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var totalPages = ViewBag.TotalPages ?? 1;
+    var hasPreviousPage = ViewBag.HasPreviousPage ?? false;
+    var hasNextPage = ViewBag.HasNextPage ?? false;
 }
 
 <div class="page-container">
@@ -67,70 +66,6 @@
         </div>
     </div>
 
-    <!-- Filters Section -->
-    <div class="filters-card">
-        <div class="filters-header">
-            <i class="fas fa-filter"></i>
-            <span>Filter Audit Logs</span>
-        </div>
-        <form method="get" id="filterForm" class="filters-body">
-            <div class="filter-group">
-                <label>Search</label>
-                <div class="search-wrapper">
-                    <i class="fas fa-search"></i>
-                    <input type="text" name="search" class="filter-input" placeholder="Search user or details..." value="@searchFilter" />
-                </div>
-            </div>
-
-            <div class="filter-group">
-                <label>Action</label>
-                <div class="select-wrapper">
-                    <i class="fas fa-chevron-down select-icon"></i>
-                    <select name="action" class="filter-select">
-                        <option value="">All Actions</option>
-                        <option value="Created" selected="@(actionFilter == "Created")">Created</option>
-                        <option value="Updated" selected="@(actionFilter == "Updated")">Updated</option>
-                        <option value="Deleted" selected="@(actionFilter == "Deleted")">Deleted</option>
-                        <option value="Login" selected="@(actionFilter == "Login")">Login</option>
-                        <option value="Logout" selected="@(actionFilter == "Logout")">Logout</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="filter-group">
-                <label>Entity</label>
-                <div class="select-wrapper">
-                    <i class="fas fa-chevron-down select-icon"></i>
-                    <select name="entity" class="filter-select">
-                        <option value="">All Entities</option>
-                        <option value="Ticket" selected="@(entityFilter == "Ticket")">Ticket</option>
-                        <option value="User" selected="@(entityFilter == "User")">User</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="filter-group">
-                <label>Date Range</label>
-                <div class="date-range">
-                    <input type="date" name="startDate" class="filter-input" placeholder="Start Date" value="@startDateFilter" />
-                    <span>to</span>
-                    <input type="date" name="endDate" class="filter-input" placeholder="End Date" value="@endDateFilter" />
-                </div>
-            </div>
-
-            <div class="filter-actions">
-                <button type="submit" class="btn-apply">
-                    <i class="fas fa-search"></i>
-                    Apply Filters
-                </button>
-                <a asp-action="Index" class="btn-clear">
-                    <i class="fas fa-undo-alt"></i>
-                    Clear
-                </a>
-            </div>
-        </form>
-    </div>
-
     <!-- Audit Logs Table -->
     <div class="logs-card">
         <div class="card-header-custom">
@@ -140,135 +75,234 @@
             </div>
             <div class="log-count">
                 <i class="fas fa-chart-simple"></i>
-                <span>@Model.Count()</span> entries found
+                <span>@ViewBag.TotalCount</span> total entries | Showing @Model.Count() on page @currentPage of @totalPages
             </div>
         </div>
 
         <div class="table-responsive">
-            <table class="logs-table">
-                <thead>
-                    <tr>
-                        <th><i class="fas fa-user me-1"></i> User</th>
-                        <th><i class="fas fa-tag me-1"></i> Action</th>
-                        <th><i class="fas fa-database me-1"></i> Entity</th>
-                        <th><i class="fas fa-info-circle me-1"></i> Details</th>
-                        <th><i class="fas fa-network-wired me-1"></i> IP Address</th>
-                        <th><i class="fas fa-calendar me-1"></i> Date & Time</th>
-                        <th><i class="fas fa-map-marker-alt me-1"></i> Location</th>
-                        <th><i class="fas fa-laptop me-1"></i> Device</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var log in Model)
-                    {
+            @if (Model != null && Model.Any())
+            {
+                <table class="logs-table">
+                    <thead>
                         <tr>
-                            <td class="user-cell">
-                                <div class="user-info">
-                                    <div class="user-avatar-small">
-                                        @(log.UserName?.Substring(0, 1).ToUpper() ?? "U")
+                            <th><i class="fas fa-user me-1"></i> User</th>
+                            <th><i class="fas fa-tag me-1"></i> Action</th>
+                            <th><i class="fas fa-database me-1"></i> Entity</th>
+                            <th><i class="fas fa-info-circle me-1"></i> Details</th>
+                            <th><i class="fas fa-network-wired me-1"></i> IP Address</th>
+                            <th><i class="fas fa-calendar me-1"></i> Date & Time</th>
+                            <th><i class="fas fa-map-marker-alt me-1"></i> Location</th>
+                            <th><i class="fas fa-laptop me-1"></i> Device</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var log in Model)
+                        {
+                            <tr>
+                                <td class="user-cell">
+                                    <div class="user-info">
+                                        <div class="user-avatar-small">
+                                            @(log.UserName?.Substring(0, 1).ToUpper() ?? "U")
+                                        </div>
+                                        <span>@log.UserName</span>
                                     </div>
-                                    <span>@log.UserName</span>
-                                </div>
-                            </td>
-                            <td>
-                                @{
-                                    var action = log.Action;
-                                    if (action == "Created")
+                                </td>
+                                <td>
+                                    @{
+                                        var action = log.Action;
+                                        if (action == "Created")
+                                        {
+                                            <span class="action-badge action-created">
+                                                <i class="fas fa-plus-circle"></i> Created
+                                            </span>
+                                        }
+                                        else if (action == "Updated")
+                                        {
+                                            <span class="action-badge action-updated">
+                                                <i class="fas fa-edit"></i> Updated
+                                            </span>
+                                        }
+                                        else if (action == "Deleted")
+                                        {
+                                            <span class="action-badge action-deleted">
+                                                <i class="fas fa-trash-alt"></i> Deleted
+                                            </span>
+                                        }
+                                        else if (action == "Login")
+                                        {
+                                            <span class="action-badge action-login">
+                                                <i class="fas fa-sign-in-alt"></i> Login
+                                            </span>
+                                        }
+                                        else if (action == "Logout")
+                                        {
+                                            <span class="action-badge action-logout">
+                                                <i class="fas fa-sign-out-alt"></i> Logout
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="action-badge action-other">
+                                                <i class="fas fa-circle"></i> @action
+                                            </span>
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @if (log.Entity == "Ticket")
                                     {
-                                        <span class="action-badge action-created">
-                                            <i class="fas fa-plus-circle"></i> Created
+                                        <span class="entity-badge entity-ticket">
+                                            <i class="fas fa-ticket-alt"></i> Ticket
                                         </span>
                                     }
-                                    else if (action == "Updated")
+                                    else if (log.Entity == "User")
                                     {
-                                        <span class="action-badge action-updated">
-                                            <i class="fas fa-edit"></i> Updated
-                                        </span>
-                                    }
-                                    else if (action == "Deleted")
-                                    {
-                                        <span class="action-badge action-deleted">
-                                            <i class="fas fa-trash-alt"></i> Deleted
-                                        </span>
-                                    }
-                                    else if (action == "Login")
-                                    {
-                                        <span class="action-badge action-login">
-                                            <i class="fas fa-sign-in-alt"></i> Login
-                                        </span>
-                                    }
-                                    else if (action == "Logout")
-                                    {
-                                        <span class="action-badge action-logout">
-                                            <i class="fas fa-sign-out-alt"></i> Logout
+                                        <span class="entity-badge entity-user">
+                                            <i class="fas fa-user"></i> User
                                         </span>
                                     }
                                     else
                                     {
-                                        <span class="action-badge action-other">
-                                            <i class="fas fa-circle"></i> @action
-                                        </span>
+                                        <span class="entity-badge entity-other">@log.Entity</span>
                                     }
-                                }
-                            </td>
-                            <td>
-                                @if (log.Entity == "Ticket")
-                                {
-                                    <span class="entity-badge entity-ticket">
-                                        <i class="fas fa-ticket-alt"></i> Ticket
-                                    </span>
-                                }
-                                else if (log.Entity == "User")
-                                {
-                                    <span class="entity-badge entity-user">
-                                        <i class="fas fa-user"></i> User
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="entity-badge entity-other">@log.Entity</span>
-                                }
-                            </td>
-                            <td class="details-cell" title="@log.Details">
-                                @(log.Details?.Length > 50 ? log.Details.Substring(0, 50) + "..." : log.Details)
-                            </td>
-                            <td class="ip-cell">
-                                <code>@log.IpAddress</code>
-                            </td>
-                            <td class="date-cell">
-                                <i class="far fa-calendar-alt"></i>
-                                @log.Timestamp.ToString("yyyy-MM-dd HH:mm")
-                            </td>
-                            <td class="location-cell">
-                                <i class="fas fa-map-marker-alt"></i>
-                                @log.Location
-                            </td>
-                            <td class="device-cell">
-                                <i class="fas @(log.Device?.Contains("Mobile") == true ? "fa-mobile-alt" : "fa-laptop")"></i>
-                                @log.Device
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                                </td>
+                                <td class="details-cell" title="@log.Details">
+                                    @(log.Details?.Length > 50 ? log.Details.Substring(0, 50) + "..." : log.Details)
+                                </td>
+                                <td class="ip-cell">
+                                    <code>@log.IpAddress</code>
+                                </td>
+                                <td class="date-cell">
+                                    <i class="far fa-calendar-alt"></i>
+                                    @log.Timestamp.ToString("yyyy-MM-dd HH:mm")
+                                </td>
+                                <td class="location-cell">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    @log.Location
+                                </td>
+                                <td class="device-cell">
+                                    <i class="fas @(log.Device?.Contains("Mobile") == true ? "fa-mobile-alt" : "fa-laptop")"></i>
+                                    @log.Device
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-history"></i>
+                    <h3>No audit logs found</h3>
+                    <p>There are no activity logs to display at this time</p>
+                </div>
+            }
         </div>
 
-        @if (!Model.Any())
+        <!-- Pagination -->
+        @if (totalPages > 1)
         {
-            <div class="empty-state">
-                <i class="fas fa-history"></i>
-                <h3>No audit logs found</h3>
-                <p>Try adjusting your filters or check back later</p>
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    Showing page @currentPage of @totalPages
+                </div>
+                <div class="pagination-controls">
+                    @if (hasPreviousPage)
+                    {
+                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" class="pagination-btn">
+                            <i class="fas fa-chevron-left"></i>
+                            Previous
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="pagination-btn disabled">
+                            <i class="fas fa-chevron-left"></i>
+                            Previous
+                        </span>
+                    }
+
+                    @{
+                        // Display page numbers
+                        int startPage = Math.Max(1, currentPage - 2);
+                        int endPage = Math.Min(totalPages, currentPage + 2);
+                        
+                        if (startPage > 1)
+                        {
+                            <a asp-action="Index" asp-route-page="1" class="pagination-number">1</a>
+                            if (startPage > 2)
+                            {
+                                <span class="pagination-dots">...</span>
+                            }
+                        }
+
+                        for (int i = startPage; i <= endPage; i++)
+                        {
+                            if (i == currentPage)
+                            {
+                                <span class="pagination-number active">@i</span>
+                            }
+                            else
+                            {
+                                <a asp-action="Index" asp-route-page="@i" class="pagination-number">@i</a>
+                            }
+                        }
+
+                        if (endPage < totalPages)
+                        {
+                            if (endPage < totalPages - 1)
+                            {
+                                <span class="pagination-dots">...</span>
+                            }
+                            <a asp-action="Index" asp-route-page="@totalPages" class="pagination-number">@totalPages</a>
+                        }
+                    }
+
+                    @if (hasNextPage)
+                    {
+                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" class="pagination-btn">
+                            Next
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="pagination-btn disabled">
+                            Next
+                            <i class="fas fa-chevron-right"></i>
+                        </span>
+                    }
+                </div>
             </div>
         }
     </div>
 </div>
 
 <style>
-    /* Keep all the CSS styles from the previous version */
+    /* Audit Logs Page Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+    }
+
     .page-container {
         max-width: 1400px;
         margin: 0 auto;
+        padding: 0 1rem;
     }
 
     .page-header {
@@ -337,25 +371,10 @@
         flex-shrink: 0;
     }
 
-    .stat-icon.total {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        color: white;
-    }
-
-    .stat-icon.created {
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: white;
-    }
-
-    .stat-icon.updated {
-        background: linear-gradient(135deg, #f5b042, #e6a017);
-        color: white;
-    }
-
-    .stat-icon.deleted {
-        background: linear-gradient(135deg, #e53e3e, #c53030);
-        color: white;
-    }
+    .stat-icon.total { background: linear-gradient(135deg, var(--info), #2563eb); color: white; }
+    .stat-icon.created { background: linear-gradient(135deg, var(--success), #059669); color: white; }
+    .stat-icon.updated { background: linear-gradient(135deg, var(--warning), #e6a017); color: white; }
+    .stat-icon.deleted { background: linear-gradient(135deg, var(--danger), #c53030); color: white; }
 
     .stat-info h3 {
         font-size: 1.5rem;
@@ -368,163 +387,6 @@
         margin: 0;
         color: var(--gray-500);
         font-size: 0.875rem;
-    }
-
-    .filters-card {
-        background: white;
-        border-radius: 1rem;
-        overflow: hidden;
-        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-        border: 1px solid var(--gray-200);
-        margin-bottom: 1.5rem;
-    }
-
-    .filters-header {
-        background: var(--gray-50);
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--gray-200);
-        font-weight: 600;
-        color: var(--gray-700);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .filters-body {
-        padding: 1.5rem;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1rem;
-        align-items: flex-end;
-    }
-
-    .filter-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .filter-group label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--gray-600);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .search-wrapper {
-        position: relative;
-    }
-
-    .search-wrapper i {
-        position: absolute;
-        left: 0.75rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--gray-400);
-        font-size: 0.875rem;
-    }
-
-    .filter-input {
-        width: 100%;
-        padding: 0.625rem 0.75rem 0.625rem 2rem;
-        border: 1.5px solid var(--gray-200);
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-        transition: all 0.2s;
-        font-family: 'Inter', sans-serif;
-    }
-
-    .filter-input:focus {
-        outline: none;
-        border-color: #2c7da0;
-        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
-    }
-
-    .select-wrapper {
-        position: relative;
-    }
-
-    .select-wrapper select {
-        appearance: none;
-        width: 100%;
-        padding: 0.625rem 2rem 0.625rem 0.75rem;
-        border: 1.5px solid var(--gray-200);
-        border-radius: 0.5rem;
-        font-size: 0.875rem;
-        background: white;
-        cursor: pointer;
-    }
-
-    .select-icon {
-        position: absolute;
-        right: 0.75rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--gray-400);
-        pointer-events: none;
-        font-size: 0.75rem;
-    }
-
-    .date-range {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .date-range input {
-        flex: 1;
-    }
-
-    .date-range span {
-        color: var(--gray-500);
-        font-size: 0.75rem;
-    }
-
-    .filter-actions {
-        display: flex;
-        gap: 0.75rem;
-    }
-
-    .btn-apply {
-        background: linear-gradient(100deg, #1e4c6b, #2c7da0);
-        color: white;
-        padding: 0.625rem 1.25rem;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        font-size: 0.875rem;
-        border: none;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-    }
-
-    .btn-apply:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    }
-
-    .btn-clear {
-        background: white;
-        color: var(--gray-600);
-        padding: 0.625rem 1.25rem;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        font-size: 0.875rem;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        border: 1px solid var(--gray-300);
-        transition: all 0.2s;
-    }
-
-    .btn-clear:hover {
-        background: var(--gray-50);
-        text-decoration: none;
-        color: var(--gray-700);
     }
 
     .logs-card {
@@ -595,7 +457,7 @@
     .user-avatar-small {
         width: 32px;
         height: 32px;
-        background: linear-gradient(135deg, #2c7da0, #61a5c2);
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -616,10 +478,10 @@
         font-weight: 600;
     }
 
-    .action-created { background: #e6f5e9; color: #2c9e6e; }
-    .action-updated { background: #fff5e6; color: #f5b042; }
-    .action-deleted { background: #fee; color: #e53e3e; }
-    .action-login { background: #e6f0ff; color: #3b82f6; }
+    .action-created { background: #e6f5e9; color: var(--success); }
+    .action-updated { background: #fff5e6; color: var(--warning); }
+    .action-deleted { background: #fee; color: var(--danger); }
+    .action-login { background: #e6f0ff; color: var(--info); }
     .action-logout { background: var(--gray-100); color: var(--gray-600); }
     .action-other { background: var(--gray-100); color: var(--gray-600); }
 
@@ -633,14 +495,14 @@
         font-weight: 600;
     }
 
-    .entity-ticket { background: #e6f0ff; color: #3b82f6; }
-    .entity-user { background: #e6f5e9; color: #2c9e6e; }
+    .entity-ticket { background: #e6f0ff; color: var(--info); }
+    .entity-user { background: #e6f5e9; color: var(--success); }
     .entity-other { background: var(--gray-100); color: var(--gray-600); }
 
     .details-cell {
         max-width: 250px;
         color: var(--gray-600);
-        cursor: pointer;
+        cursor: help;
     }
 
     .ip-cell code {
@@ -666,6 +528,98 @@
         font-size: 4rem;
         color: var(--gray-300);
         margin-bottom: 1rem;
+    }
+
+    /* Pagination Styles */
+    .pagination-container {
+        padding: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        background: white;
+    }
+
+    .pagination-info {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .pagination-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: white;
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        color: var(--gray-700);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .pagination-btn:hover:not(.disabled) {
+        background: var(--gray-50);
+        border-color: var(--primary);
+        color: var(--primary);
+        transform: translateY(-1px);
+    }
+
+    .pagination-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: var(--gray-50);
+    }
+
+    .pagination-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 0.5rem;
+        background: white;
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        color: var(--gray-700);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+    .pagination-number:hover {
+        background: var(--gray-50);
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .pagination-number.active {
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-color: var(--primary);
+        color: white;
+    }
+
+    .pagination-dots {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        color: var(--gray-500);
+        font-size: 0.875rem;
     }
 </style>
 
