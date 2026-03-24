@@ -1,0 +1,82 @@
+﻿@model IEnumerable<IT_Service_Management_System.Models.AuditLog>
+
+@{
+    ViewData["Title"] = "Audit Logs";
+}
+
+<h2 class="mb-4">📊 Audit Logs</h2>
+
+<!-- 🔍 FILTERS -->
+<form method="get" class="row mb-3">
+
+    <div class="col-md-3">
+        <input type="text" name="search" class="form-control" placeholder="Search user/details..." />
+    </div>
+
+    <div class="col-md-2">
+        <select name="action" class="form-control">
+            <option value="">All Actions</option>
+            <option>Created</option>
+            <option>Updated</option>
+            <option>Deleted</option>
+            <option>Login</option>
+            <option>Logout</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <select name="entity" class="form-control">
+            <option value="">All Entities</option>
+            <option>Ticket</option>
+            <option>User</option>
+        </select>
+    </div>
+
+    <div class="col-md-2">
+        <button class="btn btn-primary w-100">Filter</button>
+    </div>
+
+</form>
+
+<!-- 📋 TABLE -->
+<div class="table-responsive">
+    <table class="table table-bordered table-hover">
+
+        <thead class="table-dark">
+            <tr>
+                <th>User</th>
+                <th>Action</th>
+                <th>Entity</th>
+                <th>Details</th>
+                <th>IP</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var log in Model)
+            {
+                <tr>
+                    <td>@log.UserName</td>
+
+                    <td>
+                        <span class="badge bg-info">
+                            @log.Action
+                        </span>
+                    </td>
+
+                    <td>@log.Entity</td>
+
+                    <td>@log.Details</td>
+
+                    <td>@log.IpAddress</td>
+
+                    <td>
+                        @log.Timestamp.ToString("yyyy-MM-dd HH:mm")
+                    </td>
+                </tr>
+            }
+        </tbody>
+
+    </table>
+</div>
