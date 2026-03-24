@@ -147,14 +147,22 @@ namespace IT_Service_Management_System.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(Ticket ticket)
+        public async Task<IActionResult> Edit(Ticket updatedTicket)
         {
             if (HttpContext.Session.GetString("UserRole") != "Admin")
                 return Forbid();
 
-            if (!ModelState.IsValid) return View(ticket);
+            if (!ModelState.IsValid) return View(updatedTicket);
 
-            _context.Tickets.Update(ticket);
+            var ticket = await _context.Tickets.FindAsync(updatedTicket.Id);
+            if (ticket == null) return NotFound();
+
+            // Update ONLY editable fields
+            ticket.Title = updatedTicket.Title;
+            ticket.Description = updatedTicket.Description;
+            ticket.Status = updatedTicket.Status;
+            ticket.Priority = updatedTicket.Priority;
+
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index");

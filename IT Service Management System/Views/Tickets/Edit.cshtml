@@ -100,6 +100,12 @@
                             </div>
                         </div>
 
+                        <p>
+    @(Model.CreatedBy != null 
+        ? Model.CreatedBy.FirstName + " " + Model.CreatedBy.LastName 
+        : "N/A")
+</p>
+
                         <div class="form-group-modern">
                             <label asp-for="Priority" class="form-label">
                                 <i class="fas fa-flag"></i>
@@ -131,7 +137,11 @@
                                 <i class="fas fa-user"></i>
                                 <div>
                                     <label>Created By</label>
-                                    <p>@Model.CreatedBy.FirstName @Model.CreatedBy.LastName</p>
+                                    <p>
+                                        @(Model.CreatedBy != null 
+                                            ? Model.CreatedBy.FirstName + " " + Model.CreatedBy.LastName 
+                                            : "N/A")
+                                    </p>
                                 </div>
                             </div>
                             <div class="metadata-item">
