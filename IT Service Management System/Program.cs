@@ -18,6 +18,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<AuditService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

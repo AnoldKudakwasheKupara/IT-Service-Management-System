@@ -1,5 +1,6 @@
 ﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
+using IT_Service_Management_System.Services; // ✅ ADDED
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using static IT_Service_Management_System.Models.Ticket;
@@ -9,10 +10,12 @@ namespace IT_Service_Management_System.Controllers
     public class TicketsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly AuditService _auditService; // ✅ ADDED
 
-        public TicketsController(ApplicationDbContext context)
+        public TicketsController(ApplicationDbContext context, AuditService auditService) // ✅ UPDATED CONSTRUCTOR
         {
             _context = context;
+            _auditService = auditService;
         }
 
         // 🔹 LIST TICKETS
@@ -25,7 +28,6 @@ namespace IT_Service_Management_System.Controllers
                 return RedirectToAction("Login", "Account");
 
             List<Ticket> tickets;
-
 
             if (role == "Admin")
             {
@@ -70,6 +72,9 @@ namespace IT_Service_Management_System.Controllers
 
             _context.Tickets.Add(ticket);
             await _context.SaveChangesAsync();
+
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Created", "Ticket", ticket.Id, $"Ticket '{ticket.Title}' created");
 
             // Attachments
             if (files != null && files.Count > 0)
@@ -157,13 +162,15 @@ namespace IT_Service_Management_System.Controllers
             var ticket = await _context.Tickets.FindAsync(updatedTicket.Id);
             if (ticket == null) return NotFound();
 
-            // Update ONLY editable fields
             ticket.Title = updatedTicket.Title;
             ticket.Description = updatedTicket.Description;
             ticket.Status = updatedTicket.Status;
             ticket.Priority = updatedTicket.Priority;
 
             await _context.SaveChangesAsync();
+
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Updated", "Ticket", ticket.Id, $"Ticket '{ticket.Title}' updated");
 
             return RedirectToAction("Index");
         }
@@ -198,6 +205,9 @@ namespace IT_Service_Management_System.Controllers
 
             await _context.SaveChangesAsync();
 
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Deleted", "Ticket", id, $"Ticket ID {id} deleted");
+
             return RedirectToAction("Index");
         }
 
@@ -220,6 +230,9 @@ namespace IT_Service_Management_System.Controllers
 
             _context.TicketMessages.Add(ticketMessage);
             await _context.SaveChangesAsync();
+
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Reply Added", "Ticket", ticketId, "User replied to ticket");
 
             if (files != null && files.Count > 0)
             {
@@ -250,71 +263,6 @@ namespace IT_Service_Management_System.Controllers
             return Ok();
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetStats()
-        {
-            var stats = new
-            {
-                total = await _context.Tickets.CountAsync(),
-                open = await _context.Tickets.CountAsync(t => t.Status == TicketStatus.Open),
-                inProgress = await _context.Tickets.CountAsync(t => t.Status == TicketStatus.InProgress),
-                resolved = await _context.Tickets.CountAsync(t => t.Status == TicketStatus.Resolved)
-            };
-            return Json(stats);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetRecent(int count = 5)
-        {
-            var tickets = await _context.Tickets
-                .Include(t => t.CreatedBy)
-                .OrderByDescending(t => t.CreatedAt)
-                .Take(count)
-                .Select(t => new
-                {
-                    t.Id,
-                    t.Title,
-                    Priority = t.Priority.ToString(),
-                    Status = t.Status.ToString(),
-                    CreatedAt = t.CreatedAt
-                })
-                .ToListAsync();
-            return Json(tickets);
-        }
-
-        [HttpGet("api/tickets/stats")]
-        public async Task<IActionResult> GetTicketStats()
-        {
-            var stats = new
-            {
-                total = await _context.Tickets.CountAsync(),
-                open = await _context.Tickets.CountAsync(t => t.Status == TicketStatus.Open),
-                inProgress = await _context.Tickets.CountAsync(t => t.Status == TicketStatus.InProgress),
-                resolved = await _context.Tickets.CountAsync(t => t.Status == TicketStatus.Resolved)
-            };
-            return Ok(stats);
-        }
-
-        [HttpGet("api/tickets/recent")]
-        public async Task<IActionResult> GetRecentTickets(int count = 5)
-        {
-            var tickets = await _context.Tickets
-                .Include(t => t.CreatedBy)
-                .OrderByDescending(t => t.CreatedAt)
-                .Take(count)
-                .Select(t => new
-                {
-                    t.Id,
-                    t.Title,
-                    Priority = t.Priority.ToString(),
-                    Status = t.Status.ToString(),
-                    CreatedAt = t.CreatedAt
-                })
-                .ToListAsync();
-            return Ok(tickets);
-        }
-
-
         [HttpPost]
         public async Task<IActionResult> CloseTicket(int id)
         {
@@ -329,6 +277,9 @@ namespace IT_Service_Management_System.Controllers
 
             _context.Tickets.Update(ticket);
             await _context.SaveChangesAsync();
+
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Closed", "Ticket", id, "Ticket closed");
 
             return RedirectToAction("Details", new { id });
         }
