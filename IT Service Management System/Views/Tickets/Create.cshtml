@@ -692,7 +692,7 @@
         }
         
         // Character counter
-        const descriptionTextarea = document.querySelector('[asp-for="Description"]');
+        const descriptionTextarea = document.getElementById('Description');
         const charCountSpan = document.getElementById('charCount');
         
         if (descriptionTextarea && charCountSpan) {
@@ -791,7 +791,7 @@
         if (form) {
             form.addEventListener('submit', function(e) {
                 var title = document.querySelector('[name="Title"]').value.trim();
-                var description = descriptionTextarea ? descriptionTextarea.value.trim() : '';
+                var description = descriptionTextarea.value.trim();
                 var category = document.querySelector('[name="Category"]').value.trim();
                 var priority = prioritySelect ? prioritySelect.value : '';
                 

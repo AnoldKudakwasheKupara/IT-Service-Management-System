@@ -111,8 +111,12 @@ namespace IT_Service_Management_System.Controllers
                 return RedirectToAction("Login", "Account");
 
             var ticket = await _context.Tickets
+                .Include(t => t.CreatedBy)
+                .Include(t => t.Attachments)
                 .Include(t => t.Messages)
                     .ThenInclude(m => m.Sender)
+                .Include(t => t.Messages)
+                    .ThenInclude(m => m.Attachments)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (ticket == null)
@@ -124,13 +128,19 @@ namespace IT_Service_Management_System.Controllers
             return View(ticket);
         }
 
-        // 🔹 EDIT (ADMIN ONLY)
         public async Task<IActionResult> Edit(int id)
         {
             if (HttpContext.Session.GetString("UserRole") != "Admin")
                 return Forbid();
 
-            var ticket = await _context.Tickets.FindAsync(id);
+            var ticket = await _context.Tickets
+                .Include(t => t.CreatedBy)
+                .Include(t => t.Attachments)
+                .Include(t => t.Messages)
+                    .ThenInclude(m => m.Sender)
+                .Include(t => t.Messages)
+                    .ThenInclude(m => m.Attachments)
+                .FirstOrDefaultAsync(t => t.Id == id);
             if (ticket == null) return NotFound();
 
             return View(ticket);
