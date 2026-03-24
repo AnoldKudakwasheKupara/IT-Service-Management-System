@@ -1,6 +1,568 @@
 ﻿@{
-    ViewData["Title"] = "Privacy Policy";
+    ViewData["Title"] = "Privacy Policy - Axis IT Helpdesk";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-controller="Home" asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-shield-alt me-2" style="color: var(--info);"></i>
+                    Privacy Policy
+                </h1>
+                <p class="text-muted mt-2">Axis IT Helpdesk System</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="privacy-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-lock me-2"></i>
+                <span>Data Protection & Privacy</span>
+            </div>
+            <div class="effective-date">
+                <i class="fas fa-calendar-alt"></i>
+                Effective: @DateTime.Now.ToString("MMMM dd, yyyy")
+            </div>
+        </div>
+
+        <div class="card-body-custom">
+            <!-- Introduction Section -->
+            <div class="policy-section">
+                <div class="section-icon">
+                    <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="section-content">
+                    <h3 class="section-title">1. Introduction</h3>
+                    <p class="section-text">
+                        This system is designed to manage IT service requests while ensuring the protection
+                        of user data and system activity. We are committed to safeguarding your privacy and
+                        maintaining the confidentiality of your information.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Information Collection Section -->
+            <div class="policy-section">
+                <div class="section-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div class="section-content">
+                    <h3 class="section-title">2. Information We Collect</h3>
+                    <ul class="info-list">
+                        <li>
+                            <i class="fas fa-user"></i>
+                            <span>User name and email address</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-clock"></i>
+                            <span>Login activity and timestamps</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-network-wired"></i>
+                            <span>IP address and device information</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-history"></i>
+                            <span>Audit logs of system actions</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Use of Information Section -->
+            <div class="policy-section">
+                <div class="section-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="section-content">
+                    <h3 class="section-title">3. Use of Information</h3>
+                    <p class="section-text">
+                        Data is used to manage tickets, monitor system usage, improve performance,
+                        and ensure security. We analyze usage patterns to enhance the helpdesk experience
+                        and maintain system integrity.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Audit Logging Section -->
+            <div class="policy-section">
+                <div class="section-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="section-content">
+                    <h3 class="section-title">4. Audit Logging</h3>
+                    <div class="audit-badges">
+                        <span class="audit-badge">
+                            <i class="fas fa-plus-circle"></i> Create
+                        </span>
+                        <span class="audit-badge">
+                            <i class="fas fa-edit"></i> Update
+                        </span>
+                        <span class="audit-badge">
+                            <i class="fas fa-trash-alt"></i> Delete
+                        </span>
+                        <span class="audit-badge">
+                            <i class="fas fa-sign-in-alt"></i> Login
+                        </span>
+                        <span class="audit-badge">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </span>
+                    </div>
+                    <p class="section-text mt-3">
+                        All critical actions are logged for accountability and security monitoring.
+                        These logs help us detect suspicious activities and maintain system integrity.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Data Security Section -->
+            <div class="policy-section">
+                <div class="section-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="section-content">
+                    <h3 class="section-title">5. Data Security</h3>
+                    <div class="security-features">
+                        <div class="security-item">
+                            <i class="fas fa-user-lock"></i>
+                            <span>Role-based access control</span>
+                        </div>
+                        <div class="security-item">
+                            <i class="fas fa-key"></i>
+                            <span>Secure authentication</span>
+                        </div>
+                        <div class="security-item">
+                            <i class="fas fa-lock"></i>
+                            <span>Encrypted communication</span>
+                        </div>
+                        <div class="security-item">
+                            <i class="fas fa-database"></i>
+                            <span>Secure data storage</span>
+                        </div>
+                    </div>
+                    <p class="section-text mt-3">
+                        We implement industry-standard security measures to protect your data
+                        from unauthorized access, alteration, or destruction.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Data Sharing Section -->
+            <div class="policy-section">
+                <div class="section-icon">
+                    <i class="fas fa-handshake"></i>
+                </div>
+                <div class="section-content">
+                    <h3 class="section-title">6. Data Sharing</h3>
+                    <div class="info-card">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <strong>We do not sell or share user data.</strong>
+                            <p>Access is restricted to authorized administrators only. Your information is never shared with third parties without your explicit consent.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Responsibility Section -->
+            <div class="policy-section">
+                <div class="section-icon">
+                    <i class="fas fa-user-check"></i>
+                </div>
+                <div class="section-content">
+                    <h3 class="section-title">7. User Responsibility</h3>
+                    <ul class="responsibility-list">
+                        <li>
+                            <i class="fas fa-key"></i>
+                            <span>Keep login credentials secure</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-users-slash"></i>
+                            <span>Do not share accounts</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Report suspicious activity immediately</span>
+                        </li>
+                        <li>
+                            <i class="fas fa-sync-alt"></i>
+                            <span>Update passwords regularly</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Contact Section -->
+            <div class="policy-section contact-section">
+                <div class="section-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="section-content">
+                    <h3 class="section-title">8. Contact Us</h3>
+                    <div class="contact-info">
+                        <div class="contact-item">
+                            <i class="fas fa-envelope"></i>
+                            <div>
+                                <label>Email</label>
+                                <a href="mailto:kuparaanold@gmail.com">kuparaanold@gmail.com</a>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-phone-alt"></i>
+                            <div>
+                                <label>Phone</label>
+                                <a href="tel:0777818621">0777818621</a>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <i class="fas fa-clock"></i>
+                            <div>
+                                <label>Support Hours</label>
+                                <span>Monday - Friday, 7:45 - 16:45 </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Privacy Policy Page Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+        }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Privacy Card */
+    .privacy-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .effective-date {
+        font-size: 0.75rem;
+        font-weight: normal;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Policy Sections */
+    .policy-section {
+        display: flex;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+        .policy-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+    .section-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+        .section-icon i {
+            font-size: 1.25rem;
+            color: white;
+        }
+
+    .section-content {
+        flex: 1;
+    }
+
+    .section-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0 0 0.75rem 0;
+    }
+
+    .section-text {
+        color: var(--gray-600);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Info Lists */
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+        .info-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+        }
+
+            .info-list li i {
+                width: 20px;
+                color: var(--primary);
+                font-size: 0.875rem;
+            }
+
+    /* Audit Badges */
+    .audit-badges {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+
+    .audit-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.375rem 0.875rem;
+        background: var(--gray-100);
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    /* Security Features */
+    .security-features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .security-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+    }
+
+        .security-item i {
+            color: var(--success);
+            font-size: 1rem;
+        }
+
+    /* Info Card */
+    .info-card {
+        background: #e6f5e9;
+        border-left: 3px solid var(--success);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+        .info-card i {
+            color: var(--success);
+            font-size: 1.25rem;
+        }
+
+        .info-card div {
+            flex: 1;
+        }
+
+        .info-card strong {
+            display: block;
+            color: var(--gray-800);
+            margin-bottom: 0.25rem;
+        }
+
+        .info-card p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+    /* Responsibility List */
+    .responsibility-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+        .responsibility-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+        }
+
+            .responsibility-list li i {
+                width: 20px;
+                color: var(--warning);
+                font-size: 0.875rem;
+            }
+
+    /* Contact Section */
+    .contact-section .section-icon {
+        background: linear-gradient(135deg, var(--info), #2563eb);
+    }
+
+    .contact-info {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        transition: all 0.2s;
+    }
+
+        .contact-item:hover {
+            background: var(--gray-100);
+            transform: translateX(5px);
+        }
+
+        .contact-item i {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 1.125rem;
+        }
+
+        .contact-item div {
+            flex: 1;
+        }
+
+        .contact-item label {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gray-500);
+            margin-bottom: 0.25rem;
+        }
+
+        .contact-item a, .contact-item span {
+            color: var(--gray-800);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+            .contact-item a:hover {
+                color: var(--primary);
+                text-decoration: underline;
+            }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">

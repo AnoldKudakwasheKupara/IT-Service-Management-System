@@ -27,5 +27,10 @@ namespace IT_Service_Management_System.Controllers
 
             return View();
         }
+
+        public IActionResult Privacy()
+        {
+            return View();
+        }
     }
 }
