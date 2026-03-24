@@ -50,6 +50,8 @@
                 <th>Details</th>
                 <th>IP</th>
                 <th>Date</th>
+                <th>Location</th>
+                <th>Device</th>
             </tr>
         </thead>
 
@@ -74,6 +76,8 @@
                     <td>
                         @log.Timestamp.ToString("yyyy-MM-dd HH:mm")
                     </td>
+                    <td>@log.Location</td>
+                    <td>@log.Device</td>
                 </tr>
             }
         </tbody>
