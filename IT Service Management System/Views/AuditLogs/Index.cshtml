@@ -1,86 +1,690 @@
 ﻿@model IEnumerable<IT_Service_Management_System.Models.AuditLog>
 
 @{
-    ViewData["Title"] = "Audit Logs";
+    ViewData["Title"] = "Audit Logs - Axis IT Helpdesk";
+    
+    // Get filter values from ViewBag or QueryString
+    var searchFilter = ViewBag.SearchFilter ?? Context.Request.Query["search"].ToString();
+    var actionFilter = ViewBag.ActionFilter ?? Context.Request.Query["action"].ToString();
+    var entityFilter = ViewBag.EntityFilter ?? Context.Request.Query["entity"].ToString();
+    var startDateFilter = ViewBag.StartDateFilter ?? Context.Request.Query["startDate"].ToString();
+    var endDateFilter = ViewBag.EndDateFilter ?? Context.Request.Query["endDate"].ToString();
 }
 
-<h2 class="mb-4">📊 Audit Logs</h2>
-
-<!-- 🔍 FILTERS -->
-<form method="get" class="row mb-3">
-
-    <div class="col-md-3">
-        <input type="text" name="search" class="form-control" placeholder="Search user/details..." />
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-controller="Home" asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-history me-2" style="color: var(--info);"></i>
+                    Audit Logs
+                </h1>
+                <p class="text-muted mt-2">Track system activity and user actions</p>
+            </div>
+        </div>
     </div>
 
-    <div class="col-md-2">
-        <select name="action" class="form-control">
-            <option value="">All Actions</option>
-            <option>Created</option>
-            <option>Updated</option>
-            <option>Deleted</option>
-            <option>Login</option>
-            <option>Logout</option>
-        </select>
+    <!-- Statistics Cards -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon total">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@ViewBag.TotalCount</h3>
+                <p>Total Events</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon created">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@ViewBag.CreatedCount</h3>
+                <p>Created</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon updated">
+                <i class="fas fa-edit"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@ViewBag.UpdatedCount</h3>
+                <p>Updated</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon deleted">
+                <i class="fas fa-trash-alt"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@ViewBag.DeletedCount</h3>
+                <p>Deleted</p>
+            </div>
+        </div>
     </div>
 
-    <div class="col-md-2">
-        <select name="entity" class="form-control">
-            <option value="">All Entities</option>
-            <option>Ticket</option>
-            <option>User</option>
-        </select>
+    <!-- Filters Section -->
+    <div class="filters-card">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Filter Audit Logs</span>
+        </div>
+        <form method="get" id="filterForm" class="filters-body">
+            <div class="filter-group">
+                <label>Search</label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" class="filter-input" placeholder="Search user or details..." value="@searchFilter" />
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Action</label>
+                <div class="select-wrapper">
+                    <i class="fas fa-chevron-down select-icon"></i>
+                    <select name="action" class="filter-select">
+                        <option value="">All Actions</option>
+                        <option value="Created" selected="@(actionFilter == "Created")">Created</option>
+                        <option value="Updated" selected="@(actionFilter == "Updated")">Updated</option>
+                        <option value="Deleted" selected="@(actionFilter == "Deleted")">Deleted</option>
+                        <option value="Login" selected="@(actionFilter == "Login")">Login</option>
+                        <option value="Logout" selected="@(actionFilter == "Logout")">Logout</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Entity</label>
+                <div class="select-wrapper">
+                    <i class="fas fa-chevron-down select-icon"></i>
+                    <select name="entity" class="filter-select">
+                        <option value="">All Entities</option>
+                        <option value="Ticket" selected="@(entityFilter == "Ticket")">Ticket</option>
+                        <option value="User" selected="@(entityFilter == "User")">User</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>Date Range</label>
+                <div class="date-range">
+                    <input type="date" name="startDate" class="filter-input" placeholder="Start Date" value="@startDateFilter" />
+                    <span>to</span>
+                    <input type="date" name="endDate" class="filter-input" placeholder="End Date" value="@endDateFilter" />
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn-apply">
+                    <i class="fas fa-search"></i>
+                    Apply Filters
+                </button>
+                <a asp-action="Index" class="btn-clear">
+                    <i class="fas fa-undo-alt"></i>
+                    Clear
+                </a>
+            </div>
+        </form>
     </div>
 
-    <div class="col-md-2">
-        <button class="btn btn-primary w-100">Filter</button>
+    <!-- Audit Logs Table -->
+    <div class="logs-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Activity Log</span>
+            </div>
+            <div class="log-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count()</span> entries found
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="logs-table">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-user me-1"></i> User</th>
+                        <th><i class="fas fa-tag me-1"></i> Action</th>
+                        <th><i class="fas fa-database me-1"></i> Entity</th>
+                        <th><i class="fas fa-info-circle me-1"></i> Details</th>
+                        <th><i class="fas fa-network-wired me-1"></i> IP Address</th>
+                        <th><i class="fas fa-calendar me-1"></i> Date & Time</th>
+                        <th><i class="fas fa-map-marker-alt me-1"></i> Location</th>
+                        <th><i class="fas fa-laptop me-1"></i> Device</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var log in Model)
+                    {
+                        <tr>
+                            <td class="user-cell">
+                                <div class="user-info">
+                                    <div class="user-avatar-small">
+                                        @(log.UserName?.Substring(0, 1).ToUpper() ?? "U")
+                                    </div>
+                                    <span>@log.UserName</span>
+                                </div>
+                            </td>
+                            <td>
+                                @{
+                                    var action = log.Action;
+                                    if (action == "Created")
+                                    {
+                                        <span class="action-badge action-created">
+                                            <i class="fas fa-plus-circle"></i> Created
+                                        </span>
+                                    }
+                                    else if (action == "Updated")
+                                    {
+                                        <span class="action-badge action-updated">
+                                            <i class="fas fa-edit"></i> Updated
+                                        </span>
+                                    }
+                                    else if (action == "Deleted")
+                                    {
+                                        <span class="action-badge action-deleted">
+                                            <i class="fas fa-trash-alt"></i> Deleted
+                                        </span>
+                                    }
+                                    else if (action == "Login")
+                                    {
+                                        <span class="action-badge action-login">
+                                            <i class="fas fa-sign-in-alt"></i> Login
+                                        </span>
+                                    }
+                                    else if (action == "Logout")
+                                    {
+                                        <span class="action-badge action-logout">
+                                            <i class="fas fa-sign-out-alt"></i> Logout
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="action-badge action-other">
+                                            <i class="fas fa-circle"></i> @action
+                                        </span>
+                                    }
+                                }
+                            </td>
+                            <td>
+                                @if (log.Entity == "Ticket")
+                                {
+                                    <span class="entity-badge entity-ticket">
+                                        <i class="fas fa-ticket-alt"></i> Ticket
+                                    </span>
+                                }
+                                else if (log.Entity == "User")
+                                {
+                                    <span class="entity-badge entity-user">
+                                        <i class="fas fa-user"></i> User
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="entity-badge entity-other">@log.Entity</span>
+                                }
+                            </td>
+                            <td class="details-cell" title="@log.Details">
+                                @(log.Details?.Length > 50 ? log.Details.Substring(0, 50) + "..." : log.Details)
+                            </td>
+                            <td class="ip-cell">
+                                <code>@log.IpAddress</code>
+                            </td>
+                            <td class="date-cell">
+                                <i class="far fa-calendar-alt"></i>
+                                @log.Timestamp.ToString("yyyy-MM-dd HH:mm")
+                            </td>
+                            <td class="location-cell">
+                                <i class="fas fa-map-marker-alt"></i>
+                                @log.Location
+                            </td>
+                            <td class="device-cell">
+                                <i class="fas @(log.Device?.Contains("Mobile") == true ? "fa-mobile-alt" : "fa-laptop")"></i>
+                                @log.Device
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-history"></i>
+                <h3>No audit logs found</h3>
+                <p>Try adjusting your filters or check back later</p>
+            </div>
+        }
     </div>
-
-</form>
-
-<!-- 📋 TABLE -->
-<div class="table-responsive">
-    <table class="table table-bordered table-hover">
-
-        <thead class="table-dark">
-            <tr>
-                <th>User</th>
-                <th>Action</th>
-                <th>Entity</th>
-                <th>Details</th>
-                <th>IP</th>
-                <th>Date</th>
-                <th>Location</th>
-                <th>Device</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            @foreach (var log in Model)
-            {
-                <tr>
-                    <td>@log.UserName</td>
-
-                    <td>
-                        <span class="badge bg-info">
-                            @log.Action
-                        </span>
-                    </td>
-
-                    <td>@log.Entity</td>
-
-                    <td>@log.Details</td>
-
-                    <td>@log.IpAddress</td>
-
-                    <td>
-                        @log.Timestamp.ToString("yyyy-MM-dd HH:mm")
-                    </td>
-                    <td>@log.Location</td>
-                    <td>@log.Device</td>
-                </tr>
-            }
-        </tbody>
-
-    </table>
 </div>
+
+<style>
+    /* Keep all the CSS styles from the previous version */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+    .btn-back:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+        transform: translateX(-2px);
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .stat-icon.total {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+
+    .stat-icon.created {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+    }
+
+    .stat-icon.updated {
+        background: linear-gradient(135deg, #f5b042, #e6a017);
+        color: white;
+    }
+
+    .stat-icon.deleted {
+        background: linear-gradient(135deg, #e53e3e, #c53030);
+        color: white;
+    }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    .filters-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .filters-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filters-body {
+        padding: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filter-group label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .search-wrapper {
+        position: relative;
+    }
+
+    .search-wrapper i {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        font-size: 0.875rem;
+    }
+
+    .filter-input {
+        width: 100%;
+        padding: 0.625rem 0.75rem 0.625rem 2rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .filter-input:focus {
+        outline: none;
+        border-color: #2c7da0;
+        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+    }
+
+    .select-wrapper {
+        position: relative;
+    }
+
+    .select-wrapper select {
+        appearance: none;
+        width: 100%;
+        padding: 0.625rem 2rem 0.625rem 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        background: white;
+        cursor: pointer;
+    }
+
+    .select-icon {
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        pointer-events: none;
+        font-size: 0.75rem;
+    }
+
+    .date-range {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .date-range input {
+        flex: 1;
+    }
+
+    .date-range span {
+        color: var(--gray-500);
+        font-size: 0.75rem;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .btn-apply {
+        background: linear-gradient(100deg, #1e4c6b, #2c7da0);
+        color: white;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .btn-apply:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    .btn-clear {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: 1px solid var(--gray-300);
+        transition: all 0.2s;
+    }
+
+    .btn-clear:hover {
+        background: var(--gray-50);
+        text-decoration: none;
+        color: var(--gray-700);
+    }
+
+    .logs-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .log-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    .logs-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .logs-table thead {
+        background: var(--gray-50);
+        border-bottom: 2px solid var(--gray-200);
+    }
+
+    .logs-table th {
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--gray-600);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .logs-table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        vertical-align: middle;
+        font-size: 0.875rem;
+    }
+
+    .logs-table tbody tr:hover {
+        background-color: var(--gray-50);
+    }
+
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .user-avatar-small {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, #2c7da0, #61a5c2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .action-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .action-created { background: #e6f5e9; color: #2c9e6e; }
+    .action-updated { background: #fff5e6; color: #f5b042; }
+    .action-deleted { background: #fee; color: #e53e3e; }
+    .action-login { background: #e6f0ff; color: #3b82f6; }
+    .action-logout { background: var(--gray-100); color: var(--gray-600); }
+    .action-other { background: var(--gray-100); color: var(--gray-600); }
+
+    .entity-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .entity-ticket { background: #e6f0ff; color: #3b82f6; }
+    .entity-user { background: #e6f5e9; color: #2c9e6e; }
+    .entity-other { background: var(--gray-100); color: var(--gray-600); }
+
+    .details-cell {
+        max-width: 250px;
+        color: var(--gray-600);
+        cursor: pointer;
+    }
+
+    .ip-cell code {
+        background: var(--gray-100);
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.75rem;
+        font-family: monospace;
+    }
+
+    .date-cell, .location-cell, .device-cell {
+        color: var(--gray-500);
+        white-space: nowrap;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--gray-300);
+        margin-bottom: 1rem;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add data-label attributes for responsive table
+        const tableHeaders = document.querySelectorAll('.logs-table th');
+        const tableRows = document.querySelectorAll('.logs-table tbody tr');
+        
+        tableRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                if (tableHeaders[index]) {
+                    const headerText = tableHeaders[index].innerText.replace(/[^\w\s]/g, '').trim();
+                    cell.setAttribute('data-label', headerText);
+                }
+            });
+        });
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
