@@ -10,11 +10,13 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
+        private readonly AuditService _auditService; // ✅ ADDED
 
-        public UsersController(ApplicationDbContext context, EmailService emailService)
+        public UsersController(ApplicationDbContext context, EmailService emailService, AuditService auditService) // ✅ UPDATED
         {
             _context = context;
             _emailService = emailService;
+            _auditService = auditService;
         }
 
         // 🔒 AUTH + ROLE CHECK
@@ -89,6 +91,9 @@ namespace IT_Service_Management_System.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Created", "User", user.Id, $"User {user.Email} created");
+
             var link = Url.Action(
                 "SetPassword",
                 "Account",
@@ -149,6 +154,9 @@ namespace IT_Service_Management_System.Controllers
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Updated", "User", user.Id, $"User {user.Email} updated");
+
             return RedirectToAction("Index");
         }
 
@@ -203,6 +211,9 @@ namespace IT_Service_Management_System.Controllers
 
             await _context.SaveChangesAsync();
 
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Profile Updated", "User", user.Id, "User updated profile");
+
             HttpContext.Session.SetString("UserName", user.FirstName);
 
             ViewBag.Success = "Profile updated successfully";
@@ -223,6 +234,9 @@ namespace IT_Service_Management_System.Controllers
 
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
+
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Deleted", "User", id, $"User ID {id} deleted");
 
             return RedirectToAction("Index");
         }
