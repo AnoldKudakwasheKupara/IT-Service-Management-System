@@ -10,11 +10,13 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
+        private readonly AuditService _auditService; // ✅ ADDED
 
-        public AccountController(ApplicationDbContext context, EmailService emailService)
+        public AccountController(ApplicationDbContext context, EmailService emailService, AuditService auditService) // ✅ UPDATED
         {
             _context = context;
             _emailService = emailService;
+            _auditService = auditService;
         }
 
         public IActionResult Login()
@@ -30,6 +32,9 @@ namespace IT_Service_Management_System.Controllers
 
             if (user == null || user.PasswordHash != password || !user.IsActive)
             {
+                // ✅ AUDIT LOG (FAILED LOGIN)
+                await _auditService.LogAsync("Login Failed", "User", null, $"Failed login attempt for {email}");
+
                 ViewBag.Error = "Invalid credentials or account not activated.";
                 return View();
             }
@@ -38,11 +43,22 @@ namespace IT_Service_Management_System.Controllers
             HttpContext.Session.SetString("UserName", user.FirstName);
             HttpContext.Session.SetString("UserRole", user.Role.ToString());
 
+            // ✅ AUDIT LOG (SUCCESS LOGIN)
+            await _auditService.LogAsync("Login", "User", user.Id, $"User {user.Email} logged in");
+
             return RedirectToAction("Index", "Home");
         }
 
         public IActionResult Logout()
         {
+            var userId = HttpContext.Session.GetInt32("UserId");
+
+            // ✅ AUDIT LOG
+            if (userId != null)
+            {
+                _auditService.LogAsync("Logout", "User", userId, "User logged out");
+            }
+
             HttpContext.Session.Clear();
             return RedirectToAction("Login");
         }
@@ -83,6 +99,9 @@ namespace IT_Service_Management_System.Controllers
 
             await _context.SaveChangesAsync();
 
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Set Password", "User", user.Id, "User set/activated password");
+
             TempData["Success"] = "Account activated successfully. Please login.";
             return RedirectToAction("Login", "Account");
         }
@@ -109,6 +128,9 @@ namespace IT_Service_Management_System.Controllers
             user.TokenExpiry = DateTime.Now.AddHours(1);
 
             await _context.SaveChangesAsync();
+
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Forgot Password", "User", user.Id, "Password reset requested");
 
             var link = Url.Action(
                 "SetPassword",
