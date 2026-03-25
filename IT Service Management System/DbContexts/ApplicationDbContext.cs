@@ -16,6 +16,7 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<TicketAttachment> TicketAttachments { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<Asset> Assets { get; set; }
+        public DbSet<AssetHistory> AssetHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
