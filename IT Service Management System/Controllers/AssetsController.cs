@@ -57,6 +57,7 @@ namespace IT_Service_Management_System.Controllers
         {
             var vm = new AssetCreateViewModel
             {
+
                 Asset = new Asset(),
                 Users = _context.Users.ToList()
             };
@@ -70,6 +71,10 @@ namespace IT_Service_Management_System.Controllers
         {
             if (ModelState.IsValid)
             {
+
+                vm.Asset.Status = GetStatusFromEvent(vm.Asset.EventType);
+
+
                 _context.Add(vm.Asset);
                 _context.SaveChanges();
                 return RedirectToAction(nameof(Index));
@@ -171,6 +176,51 @@ namespace IT_Service_Management_System.Controllers
                 "Id",
                 "FullName"
             );
+        }
+
+        private string GetStatusFromEvent(string eventType)
+        {
+            return eventType switch
+            {
+                "Issued" => "Assigned",
+                "Repair" => "Under Repair",
+                "Stolen" => "Stolen",
+                "Retired" => "Retired",
+                "Returned" => "Available",
+                _ => "Available"
+            };
+        }
+
+        private void LogAssetEvent(int assetId, string eventType, int? userId, string performedBy, string remarks, string condition)
+        {
+            var asset = _context.Assets.Find(assetId);
+
+            if (asset == null) return;
+
+            // 🔥 Update status automatically
+            asset.Status = eventType switch
+            {
+                "Issued" => "Assigned",
+                "Returned" => "Available",
+                "Repair" => "Under Repair",
+                "Stolen" => "Stolen",
+                "Retired" => "Retired",
+                _ => asset.Status
+            };
+
+            // 🔁 Create history automatically
+            var history = new AssetHistory
+            {
+                AssetId = assetId,
+                Date = DateTime.Now,
+                UserId = userId,
+                EventType = eventType,
+                Condition = condition,
+                PerformedBy = performedBy,
+                Remarks = remarks
+            };
+
+            _context.AssetHistories.Add(history);
         }
     }
 }

@@ -42,7 +42,7 @@
                     <h2 class="asset-name">@Model.ItemName</h2>
                     <div class="asset-status">
                         @{
-                            var status = Model.Status ?? "Available";
+                            var status = Model.Status.ToString();
                             if (status == "Available")
                             {
                                 <span class="status-badge status-available">
