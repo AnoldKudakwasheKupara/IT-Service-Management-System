@@ -271,23 +271,51 @@ namespace IT_Service_Management_System.Controllers
             return Ok();
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Close(int id)
+        {
+            if (HttpContext.Session.GetString("UserRole") != "Admin")
+                return Forbid();
+
+            var ticket = await _context.Tickets
+                .Include(t => t.CreatedBy)
+                .FirstOrDefaultAsync(t => t.Id == id);
+
+            if (ticket == null) return NotFound();
+
+            // ✅ Audit (intent)
+            await _auditService.LogAsync("Close Viewed", "Ticket", id, "User opened close ticket page");
+
+            return View(ticket);
+        }
+
         [HttpPost]
-        public async Task<IActionResult> CloseTicket(int id)
+        public async Task<IActionResult> Close(int id, string closingNotes)
         {
             if (HttpContext.Session.GetString("UserRole") != "Admin")
                 return Forbid();
 
             var ticket = await _context.Tickets.FindAsync(id);
-
             if (ticket == null) return NotFound();
 
             ticket.Status = Ticket.TicketStatus.Closed;
 
+            // Optional: store notes (if you have column)
+            if (!string.IsNullOrEmpty(closingNotes))
+            {
+                ticket.Description += $"\n\n[Closing Notes]: {closingNotes}";
+            }
+
             _context.Tickets.Update(ticket);
             await _context.SaveChangesAsync();
 
-            // ✅ AUDIT LOG
-            await _auditService.LogAsync("Closed", "Ticket", id, "Ticket closed");
+            // ✅ Audit log with notes
+            await _auditService.LogAsync(
+                "Closed",
+                "Ticket",
+                id,
+                $"Ticket closed. Notes: {closingNotes ?? "None"}"
+            );
 
             return RedirectToAction("Details", new { id });
         }

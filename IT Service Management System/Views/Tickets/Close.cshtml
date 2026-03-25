@@ -1,0 +1,70 @@
+﻿@model IT_Service_Management_System.Models.Ticket
+
+@{
+    ViewData["Title"] = "Close Ticket";
+}
+
+<div class="page-container">
+
+    <h2 class="mb-4">
+        🔒 Close Ticket #@Model.Id
+    </h2>
+
+    <!-- WARNING -->
+    <div class="alert alert-warning">
+        <strong>Warning:</strong> Closing this ticket will prevent further replies.
+    </div>
+
+    <!-- TICKET SUMMARY -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h4>@Model.Title</h4>
+            <p class="text-muted">@Model.Description</p>
+
+            <small>
+                Created by: @Model.CreatedBy?.FirstName @Model.CreatedBy?.LastName
+            </small>
+        </div>
+    </div>
+
+    <!-- FORM -->
+    <form asp-action="Close" method="post">
+
+        <input type="hidden" name="id" value="@Model.Id" />
+
+        <!-- OPTIONAL NOTES -->
+        <div class="mb-3">
+            <label class="form-label">Closing Notes (Optional)</label>
+            <textarea name="closingNotes" class="form-control" rows="4"
+                      placeholder="Add any notes about resolution..."></textarea>
+        </div>
+
+        <!-- CONFIRM -->
+        <div class="form-check mb-3">
+            <input type="checkbox" id="confirmClose" class="form-check-input" required />
+            <label class="form-check-label">
+                I confirm that this ticket should be closed
+            </label>
+        </div>
+
+        <!-- ACTIONS -->
+        <button type="submit" class="btn btn-danger" id="closeBtn" disabled>
+            🔒 Close Ticket
+        </button>
+
+        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
+            Cancel
+        </a>
+
+    </form>
+
+</div>
+
+<script>
+    const checkbox = document.getElementById("confirmClose");
+    const button = document.getElementById("closeBtn");
+
+    checkbox.addEventListener("change", function () {
+        button.disabled = !this.checked;
+    });
+</script>
