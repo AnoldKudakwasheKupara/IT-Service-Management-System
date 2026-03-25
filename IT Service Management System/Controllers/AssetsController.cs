@@ -1,5 +1,6 @@
 ﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
+using IT_Service_Management_System.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -52,27 +53,33 @@ namespace IT_Service_Management_System.Controllers
             return View(asset);
         }
 
-        // ➕ CREATE (GET)
+        [HttpGet]
         public IActionResult Create()
         {
-            LoadUsers();
-            return View();
+            var vm = new AssetCreateViewModel
+            {
+                Asset = new Asset(),
+                Users = _context.Users.ToList()
+            };
+
+            return View(vm);
         }
 
-        // ➕ CREATE (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Asset asset)
+        public IActionResult Create(AssetCreateViewModel vm)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(asset);
+                _context.Add(vm.Asset);
                 _context.SaveChanges();
                 return RedirectToAction(nameof(Index));
             }
 
-            LoadUsers();
-            return View(asset);
+            // reload users if validation fails
+            vm.Users = _context.Users.ToList();
+
+            return View(vm);
         }
 
         // ✏️ EDIT (GET)

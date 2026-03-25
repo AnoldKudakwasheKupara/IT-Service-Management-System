@@ -1,57 +1,76 @@
-﻿@model IT_Service_Management_System.Models.Asset
+﻿@model IT_Service_Management_System.ViewModels.AssetCreateViewModel
+
+@{
+    ViewData["Title"] = "Add Asset Record";
+}
 
 <h2>Add Asset Record</h2>
 
-<form asp-action="Create">
-    <div class="form-group">
+<form asp-action="Create" method="post">
+
+    <div class="form-group mb-3">
         <label>Date</label>
-        <input asp-for="Date" type="date" class="form-control"
+        <input asp-for="Asset.Date" type="date" class="form-control"
                value="@DateTime.Now.ToString("yyyy-MM-dd")" />
     </div>
 
-    <div class="form-group">
+    <div class="form-group mb-3">
         <label>User</label>
-        <select asp-for="UserId" asp-items="ViewBag.Users" class="form-control">
+        <select asp-for="Asset.UserId" class="form-control">
             <option value="">-- Select User --</option>
+
+            @foreach (var user in Model.Users)
+            {
+                <option value="@user.Id">
+                    @user.FirstName @user.LastName
+                </option>
+            }
         </select>
     </div>
 
-    <div class="form-group">
+    <div class="form-group mb-3">
         <label>Item Name</label>
-        <input asp-for="ItemName" class="form-control" />
+        <input asp-for="Asset.ItemName" class="form-control" />
     </div>
 
-    <div class="form-group">
+    <div class="form-group mb-3">
         <label>Serial Number</label>
-        <input asp-for="SerialNumber" class="form-control" />
+        <input asp-for="Asset.SerialNumber" class="form-control" />
     </div>
 
-    <div class="form-group">
+    <div class="form-group mb-3">
         <label>Action</label>
-        <select asp-for="ActionType" class="form-control">
+        <select asp-for="Asset.ActionType" class="form-control">
             <option>Issued</option>
             <option>Returned</option>
         </select>
     </div>
 
-    <div class="form-group">
+    <div class="form-group mb-3">
         <label>Condition</label>
-        <select asp-for="Condition" class="form-control">
+        <select asp-for="Asset.Condition" class="form-control">
             <option>New</option>
             <option>Old</option>
         </select>
     </div>
 
-    <div class="form-group">
+    <div class="form-group mb-3">
         <label>Issued By</label>
-        <input asp-for="IssuedBy" class="form-control" />
+        <input asp-for="Asset.IssuedBy" class="form-control" />
     </div>
 
-    <div class="form-group">
+    <div class="form-group mb-3">
         <label>Remarks</label>
-        <input asp-for="Remarks" class="form-control" />
+        <input asp-for="Asset.Remarks" class="form-control" />
     </div>
 
     <button type="submit" class="btn btn-success mt-3">Save</button>
     <a asp-action="Index" class="btn btn-secondary mt-3">Back</a>
+
 </form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
