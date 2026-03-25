@@ -39,16 +39,15 @@ namespace IT_Service_Management_System.Controllers
             return View(data);
         }
 
-        // 👁️ DETAILS
-        public IActionResult Details(int? id)
+        public IActionResult Details(int id)
         {
-            if (id == null) return NotFound();
-
             var asset = _context.Assets
-                .Include(a => a.User)
+                .Include(a => a.History)
+                    .ThenInclude(h => h.User)
                 .FirstOrDefault(a => a.Id == id);
 
-            if (asset == null) return NotFound();
+            if (asset == null)
+                return NotFound();
 
             return View(asset);
         }
