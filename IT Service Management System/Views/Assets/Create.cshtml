@@ -128,6 +128,10 @@
                                 <select asp-for="Asset.ActionType" class="form-control-modern" id="actionSelect">
                                     <option value="Issued">Issued</option>
                                     <option value="Returned">Returned</option>
+                                    <option value="Repair">Repair</option>
+                                    <option value="Upgrade">Upgrade</option>
+                                    <option value="Stolen">Stolen</option>
+                                    <option value="Retired">Retired</option>
                                 </select>
                             </div>
                             <span asp-validation-for="Asset.ActionType" class="validation-message text-danger"></span>

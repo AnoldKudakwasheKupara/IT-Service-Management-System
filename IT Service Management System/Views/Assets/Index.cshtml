@@ -151,10 +151,34 @@
                                             <i class="fas fa-hand-holding"></i> Issued
                                         </span>
                                     }
-                                    else
+                                    else if (item.ActionType == "Returned")
                                     {
                                         <span class="action-badge action-returned">
                                             <i class="fas fa-undo-alt"></i> Returned
+                                        </span>
+                                    }
+                                    else if (item.ActionType == "Repair")
+                                    {
+                                        <span class="action-badge action-repair">
+                                            <i class="fas fa-tools"></i> Repair
+                                        </span>
+                                    }
+                                    else if (item.ActionType == "Upgrade")
+                                    {
+                                        <span class="action-badge action-upgrade">
+                                            <i class="fas fa-arrow-up"></i> Upgrade
+                                        </span>
+                                    }
+                                    else if (item.ActionType == "Stolen")
+                                    {
+                                        <span class="action-badge action-stolen">
+                                            <i class="fas fa-exclamation-triangle"></i> Stolen
+                                        </span>
+                                    }
+                                    else if (item.ActionType == "Retired")
+                                    {
+                                        <span class="action-badge action-retired">
+                                            <i class="fas fa-archive"></i> Retired
                                         </span>
                                     }
                                 </td>

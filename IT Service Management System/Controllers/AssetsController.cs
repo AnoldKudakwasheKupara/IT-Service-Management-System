@@ -108,8 +108,24 @@ namespace IT_Service_Management_System.Controllers
 
             if (ModelState.IsValid)
             {
-                _context.Update(vm.Asset);
+                var asset = _context.Assets.Find(id);
+
+                if (asset == null)
+                    return NotFound();
+
+                asset.Date = vm.Asset.Date;
+                asset.UserId = vm.Asset.UserId;
+                asset.ItemName = vm.Asset.ItemName;
+                asset.SerialNumber = vm.Asset.SerialNumber;
+
+                asset.ActionType = vm.Asset.ActionType;
+
+                asset.Condition = vm.Asset.Condition;
+                asset.IssuedBy = vm.Asset.IssuedBy;
+                asset.Remarks = vm.Asset.Remarks;
+
                 _context.SaveChanges();
+
                 return RedirectToAction(nameof(Index));
             }
 

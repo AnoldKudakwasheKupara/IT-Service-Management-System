@@ -126,6 +126,10 @@
                                 <select asp-for="Asset.ActionType" class="form-control-modern" id="actionSelect">
                                     <option value="Issued" selected="@(Model.Asset.ActionType == "Issued")">Issued</option>
                                     <option value="Returned" selected="@(Model.Asset.ActionType == "Returned")">Returned</option>
+                                    <option value="Repair" selected="@(Model.Asset.ActionType == "Repair")">Repair</option>
+                                    <option value="Upgrade" selected="@(Model.Asset.ActionType == "Upgrade")">Upgrade</option>
+                                    <option value="Stolen" selected="@(Model.Asset.ActionType == "Stolen")">Stolen</option>
+                                    <option value="Retired" selected="@(Model.Asset.ActionType == "Retired")">Retired</option>
                                 </select>
                             </div>
                             <span asp-validation-for="Asset.ActionType" class="validation-message text-danger"></span>

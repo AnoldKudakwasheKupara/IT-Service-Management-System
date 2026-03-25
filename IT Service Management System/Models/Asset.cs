@@ -20,5 +20,7 @@ namespace IT_Service_Management_System.Models
 
         public string IssuedBy { get; set; }
         public string Remarks { get; set; }
+
+        public string? EventType { get; set; }
     }
 }
