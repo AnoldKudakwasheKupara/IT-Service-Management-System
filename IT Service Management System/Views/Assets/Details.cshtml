@@ -1,21 +1,609 @@
 ﻿@model IT_Service_Management_System.Models.Asset
 
-<h2>Asset Details</h2>
+@{
+    ViewData["Title"] = $"Asset Details - {Model.ItemName} - Axis IT Helpdesk";
+}
 
-<div class="card">
-    <div class="card-body">
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-box-open me-2" style="color: var(--info);"></i>
+                    Asset Details
+                </h1>
+                <p class="text-muted mt-2">View complete asset information and transaction details</p>
+            </div>
+        </div>
+    </div>
 
-        <p><strong>Date:</strong> @Model.Date.ToShortDateString()</p>
-        <p><strong>User:</strong> @Model.User?.FirstName</p>
-        <p><strong>Item:</strong> @Model.ItemName</p>
-        <p><strong>Serial:</strong> @Model.SerialNumber</p>
-        <p><strong>Action:</strong> @Model.ActionType</p>
-        <p><strong>Condition:</strong> @Model.Condition</p>
-        <p><strong>Issued By:</strong> @Model.IssuedBy</p>
-        <p><strong>Remarks:</strong> @Model.Remarks</p>
+    <div class="asset-details-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-box me-2"></i>
+                <span>Asset Information</span>
+            </div>
+            <div class="asset-id-badge">
+                <i class="fas fa-hashtag"></i>
+                Asset ID: @Model.Id
+            </div>
+        </div>
 
+        <div class="card-body-custom">
+            <!-- Asset Summary Header -->
+            <div class="asset-summary">
+                <div class="asset-icon">
+                    <i class="fas fa-laptop"></i>
+                </div>
+                <div class="asset-summary-info">
+                    <h2 class="asset-name">@Model.ItemName</h2>
+                    <div class="asset-badges">
+                        @if (Model.ActionType == "Issued")
+                        {
+                            <span class="action-badge action-issued">
+                                <i class="fas fa-hand-holding"></i> Issued
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="action-badge action-returned">
+                                <i class="fas fa-undo-alt"></i> Returned
+                            </span>
+                        }
+                        
+                        @if (Model.Condition == "New")
+                        {
+                            <span class="condition-badge condition-new">
+                                <i class="fas fa-star"></i> New
+                            </span>
+                        }
+                        else if (Model.Condition == "Good")
+                        {
+                            <span class="condition-badge condition-good">
+                                <i class="fas fa-check-circle"></i> Good
+                            </span>
+                        }
+                        else if (Model.Condition == "Fair")
+                        {
+                            <span class="condition-badge condition-fair">
+                                <i class="fas fa-minus-circle"></i> Fair
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="condition-badge condition-poor">
+                                <i class="fas fa-exclamation-triangle"></i> Poor
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details Grid -->
+            <div class="details-grid">
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>Transaction Date</label>
+                        <p>@Model.Date.ToString("MMMM dd, yyyy")</p>
+                        <span class="detail-sub">@Model.Date.ToString("dddd")</span>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>User</label>
+                        <p>@Model.User?.FirstName @Model.User?.LastName</p>
+                        <span class="detail-sub">@Model.User?.Email</span>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-barcode"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>Serial Number</label>
+                        <p><code>@Model.SerialNumber</code></p>
+                        <span class="detail-sub">Unique identifier</span>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>Issued By</label>
+                        <p>@Model.IssuedBy</p>
+                        <span class="detail-sub">Authorized personnel</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information Section -->
+            <div class="additional-info">
+                <h3 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    Additional Information
+                </h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Item Name:</span>
+                        <span class="info-value">@Model.ItemName</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Action Type:</span>
+                        <span class="info-value">@Model.ActionType</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Condition:</span>
+                        <span class="info-value condition-value @(Model.Condition.ToLower())">
+                            <i class="fas @(Model.Condition == "New" ? "fa-star" : Model.Condition == "Good" ? "fa-check-circle" : Model.Condition == "Fair" ? "fa-minus-circle" : "fa-exclamation-triangle")"></i>
+                            @Model.Condition
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Record ID:</span>
+                        <span class="info-value">#@Model.Id</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Remarks Section -->
+            @if (!string.IsNullOrEmpty(Model.Remarks))
+            {
+                <div class="remarks-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-comment"></i>
+                        Remarks
+                    </h3>
+                    <div class="remarks-content">
+                        <i class="fas fa-quote-left"></i>
+                        <p>@Model.Remarks</p>
+                    </div>
+                </div>
+            }
+
+            <!-- Action Buttons -->
+            <div class="action-buttons-container">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-edit">
+                    <i class="fas fa-pencil-alt"></i>
+                    Edit Asset
+                </a>
+                <a asp-action="Index" class="btn-back-to-list">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Asset Register
+                </a>
+                <button type="button" class="btn-print" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                    Print Details
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
-<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary mt-3">Edit</a>
-<a asp-action="Index" class="btn btn-secondary mt-3">Back</a>
+<style>
+    /* Asset Details Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+    .btn-back:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+        transform: translateX(-2px);
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Asset Details Card */
+    .asset-details-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .asset-id-badge {
+        background: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Asset Summary */
+    .asset-summary {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--gray-100);
+    }
+
+    .asset-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .asset-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+
+    .asset-summary-info {
+        flex: 1;
+    }
+
+    .asset-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0 0 0.75rem 0;
+    }
+
+    .asset-badges {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .action-badge, .condition-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.375rem 0.875rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .action-issued {
+        background: #e6f5e9;
+        color: var(--success);
+    }
+
+    .action-returned {
+        background: #fff5e6;
+        color: var(--warning);
+    }
+
+    .condition-new {
+        background: #e6f0ff;
+        color: var(--info);
+    }
+
+    .condition-good {
+        background: #e6f5e9;
+        color: var(--success);
+    }
+
+    .condition-fair {
+        background: #fff5e6;
+        color: var(--warning);
+    }
+
+    .condition-poor {
+        background: #fee;
+        color: var(--danger);
+    }
+
+    /* Details Grid */
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .detail-card {
+        background: var(--gray-50);
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        gap: 1rem;
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+    .detail-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        background: white;
+    }
+
+    .detail-icon {
+        width: 48px;
+        height: 48px;
+        background: white;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        border: 1px solid var(--gray-200);
+    }
+
+    .detail-content {
+        flex: 1;
+    }
+
+    .detail-content label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray-500);
+        font-weight: 600;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .detail-content p {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin: 0 0 0.5rem 0;
+    }
+
+    .detail-content code {
+        background: var(--gray-100);
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-family: monospace;
+    }
+
+    .detail-sub {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+    }
+
+    /* Additional Information */
+    .additional-info {
+        margin-bottom: 2rem;
+        padding-top: 0.5rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .info-grid {
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+    }
+
+    .info-value {
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .condition-value.new { color: var(--info); }
+    .condition-value.good { color: var(--success); }
+    .condition-value.fair { color: var(--warning); }
+    .condition-value.poor { color: var(--danger); }
+
+    /* Remarks Section */
+    .remarks-section {
+        margin-bottom: 2rem;
+    }
+
+    .remarks-content {
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        display: flex;
+        gap: 0.75rem;
+        border-left: 3px solid var(--primary);
+    }
+
+    .remarks-content i {
+        color: var(--primary);
+        font-size: 1rem;
+        opacity: 0.5;
+    }
+
+    .remarks-content p {
+        margin: 0;
+        color: var(--gray-600);
+        line-height: 1.5;
+    }
+
+    /* Action Buttons */
+    .action-buttons-container {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        flex-wrap: wrap;
+    }
+
+    .btn-edit {
+        background: linear-gradient(100deg, var(--warning), #e6a017);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-edit:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-back-to-list {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-back-to-list:hover {
+        background: var(--gray-50);
+        color: var(--gray-700);
+        text-decoration: none;
+    }
+
+    .btn-print {
+        background: white;
+        color: var(--info);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--info);
+        font-size: 0.875rem;
+        cursor: pointer;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-print:hover {
+        background: var(--info);
+        color: white;
+        transform: translateY(-2px);
+    }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
