@@ -1,0 +1,21 @@
+﻿@model IT_Service_Management_System.Models.Asset
+
+<h2>Asset Details</h2>
+
+<div class="card">
+    <div class="card-body">
+
+        <p><strong>Date:</strong> @Model.Date.ToShortDateString()</p>
+        <p><strong>User:</strong> @Model.User?.FirstName</p>
+        <p><strong>Item:</strong> @Model.ItemName</p>
+        <p><strong>Serial:</strong> @Model.SerialNumber</p>
+        <p><strong>Action:</strong> @Model.ActionType</p>
+        <p><strong>Condition:</strong> @Model.Condition</p>
+        <p><strong>Issued By:</strong> @Model.IssuedBy</p>
+        <p><strong>Remarks:</strong> @Model.Remarks</p>
+
+    </div>
+</div>
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary mt-3">Edit</a>
+<a asp-action="Index" class="btn btn-secondary mt-3">Back</a>

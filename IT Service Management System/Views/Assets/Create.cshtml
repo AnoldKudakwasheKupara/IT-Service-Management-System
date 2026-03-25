@@ -1,0 +1,57 @@
+﻿@model IT_Service_Management_System.Models.Asset
+
+<h2>Add Asset Record</h2>
+
+<form asp-action="Create">
+    <div class="form-group">
+        <label>Date</label>
+        <input asp-for="Date" type="date" class="form-control"
+               value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+    </div>
+
+    <div class="form-group">
+        <label>User</label>
+        <select asp-for="UserId" asp-items="ViewBag.Users" class="form-control">
+            <option value="">-- Select User --</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Item Name</label>
+        <input asp-for="ItemName" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>Serial Number</label>
+        <input asp-for="SerialNumber" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>Action</label>
+        <select asp-for="ActionType" class="form-control">
+            <option>Issued</option>
+            <option>Returned</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Condition</label>
+        <select asp-for="Condition" class="form-control">
+            <option>New</option>
+            <option>Old</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Issued By</label>
+        <input asp-for="IssuedBy" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>Remarks</label>
+        <input asp-for="Remarks" class="form-control" />
+    </div>
+
+    <button type="submit" class="btn btn-success mt-3">Save</button>
+    <a asp-action="Index" class="btn btn-secondary mt-3">Back</a>
+</form>

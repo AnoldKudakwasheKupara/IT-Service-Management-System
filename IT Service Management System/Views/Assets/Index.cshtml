@@ -1,0 +1,62 @@
+﻿@model IEnumerable<IT_Service_Management_System.Models.Asset>
+
+@{
+    ViewData["Title"] = "Asset Register";
+}
+
+<h2>Asset Register</h2>
+
+<form method="get" class="mb-3">
+    <input type="text" name="search" class="form-control"
+           placeholder="Search by name, item, serial..." />
+</form>
+
+<a asp-action="Create" class="btn btn-primary mb-3">+ Add Record</a>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Date</th>
+            <th>User</th>
+            <th>Item</th>
+            <th>Serial Number</th>
+            <th>Action</th>
+            <th>Condition</th>
+            <th>Issued By</th>
+            <th>Remarks</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Date.ToShortDateString()</td>
+                <td>@item.User?.FirstName </td>
+                <td>@item.ItemName</td>
+                <td>@item.SerialNumber</td>
+
+                <td>
+                    <span class="badge @(item.ActionType == "Issued" ? "bg-success" : "bg-secondary")">
+                        @item.ActionType
+                    </span>
+                </td>
+
+                <td>
+                    <span class="badge @(item.Condition == "New" ? "bg-info" : "bg-warning")">
+                        @item.Condition
+                    </span>
+                </td>
+
+                <td>@item.IssuedBy</td>
+                <td>@item.Remarks</td>
+
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
