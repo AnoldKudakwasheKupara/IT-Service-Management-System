@@ -82,37 +82,41 @@ namespace IT_Service_Management_System.Controllers
             return View(vm);
         }
 
-        // ✏️ EDIT (GET)
-        public IActionResult Edit(int? id)
+        [HttpGet]
+        public IActionResult Edit(int id)
         {
-            if (id == null) return NotFound();
-
             var asset = _context.Assets.Find(id);
-            if (asset == null) return NotFound();
 
-            LoadUsers();
-            return View(asset);
+            if (asset == null)
+                return NotFound();
+
+            var vm = new AssetCreateViewModel
+            {
+                Asset = asset,
+                Users = _context.Users.ToList()
+            };
+
+            return View(vm);
         }
 
-        // ✏️ EDIT (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, Asset asset)
+        public IActionResult Edit(int id, AssetCreateViewModel vm)
         {
-            if (id != asset.Id) return NotFound();
+            if (id != vm.Asset.Id)
+                return NotFound();
 
             if (ModelState.IsValid)
             {
-                _context.Update(asset);
+                _context.Update(vm.Asset);
                 _context.SaveChanges();
                 return RedirectToAction(nameof(Index));
             }
 
-            LoadUsers();
-            return View(asset);
+            vm.Users = _context.Users.ToList();
+            return View(vm);
         }
 
-        // ❌ DELETE (GET)
         public IActionResult Delete(int? id)
         {
             if (id == null) return NotFound();
