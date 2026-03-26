@@ -122,14 +122,6 @@
         </div>
     </div>
 
-    <!-- Add History Event Button -->
-    <div class="action-bar">
-        <a asp-controller="AssetHistories" asp-action="Create" asp-route-assetId="@Model.Id" class="btn-add-history">
-            <i class="fas fa-plus-circle"></i>
-            Add History Event
-        </a>
-    </div>
-
     <!-- Asset History Section -->
     <div class="history-card">
         <div class="card-header-custom">
@@ -139,7 +131,7 @@
             </div>
             <div class="history-count">
                 <i class="fas fa-chart-simple"></i>
-                <span>@Model.History.Count()</span> events recorded
+                <span>@(Model.History?.Count() ?? 0)</span> events recorded
             </div>
         </div>
 
@@ -228,7 +220,7 @@
                                     <div class="timeline-detail-item">
                                         <i class="fas fa-user"></i>
                                         <strong>User:</strong>
-                                        <span>@item.User?.FirstName</span>
+                                        <span>@(item.User?.FirstName ?? "N/A")</span>
                                     </div>
                                     <div class="timeline-detail-item">
                                         <i class="fas fa-chart-line"></i>
@@ -282,10 +274,6 @@
                     <i class="fas fa-history"></i>
                     <h3>No History Events</h3>
                     <p>This asset has no recorded history yet</p>
-                    <a asp-controller="AssetHistories" asp-action="Create" asp-route-assetId="@Model.Id" class="btn-add-history-sm">
-                        <i class="fas fa-plus-circle"></i>
-                        Add First History Event
-                    </a>
                 </div>
             }
         </div>
@@ -528,31 +516,6 @@
             font-family: monospace;
         }
 
-    /* Action Bar */
-    .action-bar {
-        margin-bottom: 1.5rem;
-    }
-
-    .btn-add-history {
-        background: linear-gradient(100deg, var(--success), #1f8a5c);
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.75rem;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-    }
-
-        .btn-add-history:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-            color: white;
-            text-decoration: none;
-        }
-
     /* History Card */
     .history-card {
         background: white;
@@ -763,26 +726,7 @@
         }
 
         .empty-state p {
-            margin-bottom: 1.5rem;
-        }
-
-    .btn-add-history-sm {
-        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-        transition: all 0.2s;
-    }
-
-        .btn-add-history-sm:hover {
-            transform: translateY(-2px);
-            color: white;
-            text-decoration: none;
+            margin-bottom: 0;
         }
 </style>
 
