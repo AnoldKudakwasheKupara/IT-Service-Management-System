@@ -7,6 +7,7 @@
 <h2>Edit SSL Certificate</h2>
 
 <form asp-action="Edit">
+
     <input type="hidden" asp-for="Id" />
 
     <div class="form-group">
@@ -27,8 +28,21 @@
         <span asp-validation-for="ExpiryDate" class="text-danger"></span>
     </div>
 
+    <div class="form-check mt-3">
+        <input asp-for="IsRenewed" class="form-check-input" />
+        <label class="form-check-label">Certificate Renewed</label>
+    </div>
+
+    <div class="mt-2">
+        <small class="text-muted">
+            Last Renewed:
+            @(Model.LastRenewedDate?.ToString("yyyy-MM-dd") ?? "Not yet renewed")
+        </small>
+    </div>
+
     <button type="submit" class="btn btn-warning mt-3">Update</button>
     <a asp-action="Index" class="btn btn-secondary mt-3">Back</a>
+
 </form>
 
 @section Scripts {

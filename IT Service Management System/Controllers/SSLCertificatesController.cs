@@ -80,12 +80,18 @@ namespace IT_Service_Management_System.Controllers
             {
                 try
                 {
+                    // 🔥 Auto set renewal date
+                    if (cert.IsRenewed)
+                    {
+                        cert.LastRenewedDate = DateTime.Now;
+                    }
+
                     _context.Update(cert);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!SSLCertificateExists(cert.Id))
+                    if (!_context.SSLCertificates.Any(e => e.Id == cert.Id))
                         return NotFound();
                     else
                         throw;

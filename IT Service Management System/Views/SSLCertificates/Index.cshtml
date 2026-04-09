@@ -18,8 +18,10 @@
         <tr>
             <th>System</th>
             <th>URL</th>
-            <th>Expiry Date</th>
+            <th>Expiry</th>
             <th>Status</th>
+            <th>Renewal</th>
+            <th>Last Renewed</th>
             <th width="220"></th>
         </tr>
     </thead>
@@ -35,15 +37,34 @@
 
             <tr>
                 <td>@cert.SystemName</td>
+
                 <td>
                     <a href="@cert.URL" target="_blank">@cert.URL</a>
                 </td>
+
                 <td>@cert.ExpiryDate.ToString("yyyy-MM-dd")</td>
+
                 <td>
                     <span class="badge bg-@badgeClass">
                         @(days < 0 ? "Expired" : $"{days} days left")
                     </span>
                 </td>
+
+                <td>
+                    @if (cert.IsRenewed)
+                    {
+                        <span class="badge bg-success">Renewed</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Pending</span>
+                    }
+                </td>
+
+                <td>
+                    @(cert.LastRenewedDate?.ToString("yyyy-MM-dd") ?? "-")
+                </td>
+
                 <td>
                     <a asp-action="Details" asp-route-id="@cert.Id" class="btn btn-info btn-sm">View</a>
                     <a asp-action="Edit" asp-route-id="@cert.Id" class="btn btn-warning btn-sm">Edit</a>

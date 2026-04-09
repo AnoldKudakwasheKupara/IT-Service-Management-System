@@ -7,6 +7,7 @@
 <h2>Add SSL Certificate</h2>
 
 <form asp-action="Create">
+
     <div class="form-group">
         <label>System Name</label>
         <input asp-for="SystemName" class="form-control" />
@@ -25,8 +26,14 @@
         <span asp-validation-for="ExpiryDate" class="text-danger"></span>
     </div>
 
+    <div class="form-check mt-3">
+        <input asp-for="IsRenewed" class="form-check-input" />
+        <label class="form-check-label">Mark as Renewed</label>
+    </div>
+
     <button type="submit" class="btn btn-success mt-3">Save</button>
     <a asp-action="Index" class="btn btn-secondary mt-3">Back</a>
+
 </form>
 
 @section Scripts {
