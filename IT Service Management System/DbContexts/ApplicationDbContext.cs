@@ -18,6 +18,7 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<Asset> Assets { get; set; }
         public DbSet<AssetHistory> AssetHistories { get; set; }
         public DbSet<Department> Departments { get; set; }
+        public DbSet<SSLCertificate> SSLCertificates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
