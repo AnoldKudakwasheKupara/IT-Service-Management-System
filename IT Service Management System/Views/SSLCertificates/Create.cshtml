@@ -1,0 +1,34 @@
+﻿@model SSLCertificate
+
+@{
+    ViewData["Title"] = "Add SSL Certificate";
+}
+
+<h2>Add SSL Certificate</h2>
+
+<form asp-action="Create">
+    <div class="form-group">
+        <label>System Name</label>
+        <input asp-for="SystemName" class="form-control" />
+        <span asp-validation-for="SystemName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mt-3">
+        <label>URL</label>
+        <input asp-for="URL" class="form-control" />
+        <span asp-validation-for="URL" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mt-3">
+        <label>Expiry Date</label>
+        <input asp-for="ExpiryDate" type="date" class="form-control" />
+        <span asp-validation-for="ExpiryDate" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-success mt-3">Save</button>
+    <a asp-action="Index" class="btn btn-secondary mt-3">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

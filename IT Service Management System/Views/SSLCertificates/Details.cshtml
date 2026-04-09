@@ -1,0 +1,30 @@
+﻿@model SSLCertificate
+
+@{
+    ViewData["Title"] = "SSL Certificate Details";
+}
+
+<h2>SSL Certificate Details</h2>
+
+<div class="mt-3">
+    <dl class="row">
+        <dt class="col-sm-2">System</dt>
+        <dd class="col-sm-10">@Model.SystemName</dd>
+
+        <dt class="col-sm-2">URL</dt>
+        <dd class="col-sm-10">
+            <a href="@Model.URL" target="_blank">@Model.URL</a>
+        </dd>
+
+        <dt class="col-sm-2">Expiry Date</dt>
+        <dd class="col-sm-10">@Model.ExpiryDate.ToString("yyyy-MM-dd")</dd>
+
+        <dt class="col-sm-2">Days Remaining</dt>
+        <dd class="col-sm-10">
+            @( (Model.ExpiryDate - DateTime.Now).Days ) days
+        </dd>
+    </dl>
+</div>
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+<a asp-action="Index" class="btn btn-secondary">Back</a>
