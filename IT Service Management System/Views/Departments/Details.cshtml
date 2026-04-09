@@ -1,23 +1,425 @@
 ﻿@model Department
 
 @{
-    ViewData["Title"] = "Department Details";
+    ViewData["Title"] = $"Department Details - {Model.Name} - Axis IT Helpdesk";
 }
 
-<h2>Department Details</h2>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-building me-2" style="color: var(--info);"></i>
+                    Department Details
+                </h1>
+                <p class="text-muted mt-2">View complete department information</p>
+            </div>
+        </div>
+    </div>
 
-<div class="mt-3">
-    <dl class="row">
-        <dt class="col-sm-2">Name</dt>
-        <dd class="col-sm-10">@Model.Name</dd>
+    <div class="department-details-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-building me-2"></i>
+                <span>Department Information</span>
+            </div>
+            <div class="department-id-badge">
+                <i class="fas fa-hashtag"></i>
+                ID: @Model.Id
+            </div>
+        </div>
 
-        <dt class="col-sm-2">Description</dt>
-        <dd class="col-sm-10">@Model.Description</dd>
+        <div class="card-body-custom">
+            <!-- Department Summary Header -->
+            <div class="department-summary">
+                <div class="department-icon-large">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="department-summary-info">
+                    <h2 class="department-name">@Model.Name</h2>
+                    <div class="department-meta">
+                        <span class="meta-badge">
+                            <i class="fas fa-calendar-alt"></i>
+                            Created: @Model.CreatedAt.ToString("MMMM dd, yyyy")
+                        </span>
+                       
+                    </div>
+                </div>
+            </div>
 
-        <dt class="col-sm-2">Created</dt>
-        <dd class="col-sm-10">@Model.CreatedAt.ToString("yyyy-MM-dd")</dd>
-    </dl>
+            <!-- Description Section -->
+            <div class="description-section">
+                <h3 class="section-title">
+                    <i class="fas fa-align-left"></i>
+                    Description
+                </h3>
+                <div class="description-content">
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <p>@Model.Description</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No description provided.</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Additional Information Section -->
+            <div class="additional-info">
+                <h3 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    Additional Information
+                </h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Department ID:</span>
+                        <span class="info-value">#@Model.Id</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Department Name:</span>
+                        <span class="info-value">@Model.Name</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Created Date:</span>
+                        <span class="info-value">@Model.CreatedAt.ToString("MMMM dd, yyyy 'at' HH:mm")</span>
+                    </div>
+                   
+                    <div class="info-item">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value status-active">
+                            <i class="fas fa-check-circle"></i> Active
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons-container">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-edit">
+                    <i class="fas fa-pencil-alt"></i>
+                    Edit Department
+                </a>
+                <a asp-action="Index" class="btn-back-to-list">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Departments
+                </a>
+                <button type="button" class="btn-print" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                    Print Details
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
-<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
-<a asp-action="Index" class="btn btn-secondary">Back</a>
+<style>
+    /* Department Details Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+        }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Department Details Card */
+    .department-details-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .department-id-badge {
+        background: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Department Summary */
+    .department-summary {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--gray-100);
+    }
+
+    .department-icon-large {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+        .department-icon-large i {
+            font-size: 2.5rem;
+            color: white;
+        }
+
+    .department-summary-info {
+        flex: 1;
+    }
+
+    .department-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0 0 0.75rem 0;
+    }
+
+    .department-meta {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .meta-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--gray-500);
+    }
+
+    /* Description Section */
+    .description-section {
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .description-content {
+        background: var(--gray-50);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        line-height: 1.6;
+        color: var(--gray-700);
+    }
+
+        .description-content p {
+            margin: 0;
+        }
+
+    /* Additional Information */
+    .additional-info {
+        margin-bottom: 2rem;
+    }
+
+    .info-grid {
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+    }
+
+    .info-value {
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .info-value.status-active {
+            color: var(--success);
+        }
+
+            .info-value.status-active i {
+                font-size: 0.75rem;
+            }
+
+    /* Action Buttons */
+    .action-buttons-container {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        flex-wrap: wrap;
+    }
+
+    .btn-edit {
+        background: linear-gradient(100deg, var(--warning), #e6a017);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-back-to-list {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-back-to-list:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+    .btn-print {
+        background: white;
+        color: var(--info);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--info);
+        font-size: 0.875rem;
+        cursor: pointer;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-print:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">

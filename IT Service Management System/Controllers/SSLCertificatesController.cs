@@ -80,10 +80,20 @@ namespace IT_Service_Management_System.Controllers
             {
                 try
                 {
-                    // 🔥 Auto set renewal date
-                    if (cert.IsRenewed)
+                    var existingCert = await _context.SSLCertificates
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(c => c.Id == id);
+
+                    if (existingCert == null)
+                        return NotFound();
+
+                    // 🔥 Detect if renewal checkbox was just ticked
+                    if (!existingCert.IsRenewed && cert.IsRenewed)
                     {
                         cert.LastRenewedDate = DateTime.Now;
+
+                        // ✅ Reset expiry to 1 year from now
+                        cert.ExpiryDate = DateTime.Now.AddYears(1);
                     }
 
                     _context.Update(cert);
@@ -102,7 +112,6 @@ namespace IT_Service_Management_System.Controllers
 
             return View(cert);
         }
-
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
