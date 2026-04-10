@@ -19,6 +19,7 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<AssetHistory> AssetHistories { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<SSLCertificate> SSLCertificates { get; set; }
+        public DbSet<PaymentSchedule> PaymentSchedules { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
