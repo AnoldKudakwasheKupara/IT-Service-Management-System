@@ -1,0 +1,82 @@
+﻿@model IT_Service_Management_System.Models.PaymentSchedule
+
+@{
+    ViewData["Title"] = "Edit Payment Schedule";
+}
+
+<h2>Edit Payment Schedule</h2>
+
+<form asp-action="Edit">
+
+    <input type="hidden" asp-for="Id" />
+
+    <div class="form-group">
+        <label asp-for="ServiceName"></label>
+        <input asp-for="ServiceName" class="form-control" />
+        <span asp-validation-for="ServiceName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Amount"></label>
+        <input asp-for="Amount" class="form-control" />
+        <span asp-validation-for="Amount" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Frequency"></label>
+        <select asp-for="Frequency" class="form-control" id="frequencyDropdown"
+                asp-items="Html.GetEnumSelectList<PaymentFrequency>()">
+        </select>
+        <span asp-validation-for="Frequency" class="text-danger"></span>
+    </div>
+
+    <!-- Monthly -->
+    <div class="form-group" id="monthlyField">
+        <label asp-for="DayOfMonth">Day of Month</label>
+        <input asp-for="DayOfMonth" class="form-control" />
+        <span asp-validation-for="DayOfMonth" class="text-danger"></span>
+    </div>
+
+    <!-- Annual -->
+    <div class="form-group" id="annualField">
+        <label asp-for="FixedDate">Fixed Date</label>
+        <input asp-for="FixedDate" type="date" class="form-control" />
+        <span asp-validation-for="FixedDate" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Departments"></label>
+        <input asp-for="Departments" class="form-control" />
+        <span asp-validation-for="Departments" class="text-danger"></span>
+    </div>
+
+    <br />
+
+    <button type="submit" class="btn btn-success">Update</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        function toggleFields() {
+            var freq = document.getElementById("frequencyDropdown").value;
+
+            document.getElementById("monthlyField").style.display =
+                freq === "Monthly" ? "block" : "none";
+
+            document.getElementById("annualField").style.display =
+                freq === "Annual" ? "block" : "none";
+        }
+
+        document.getElementById("frequencyDropdown").addEventListener("change", toggleFields);
+
+        window.onload = function () {
+            toggleFields();
+        };
+    </script>
+}

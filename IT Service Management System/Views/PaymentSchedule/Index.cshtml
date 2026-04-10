@@ -1,0 +1,40 @@
+﻿@model IEnumerable<IT_Service_Management_System.Models.PaymentSchedule>
+
+@{
+    ViewData["Title"] = "Payment Schedules";
+}
+
+<h2>Payment Schedules</h2>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">+ New Schedule</a>
+</p>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Service</th>
+            <th>Amount</th>
+            <th>Frequency</th>
+            <th>Next Run</th>
+            <th>Departments</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ServiceName</td>
+                <td>@item.Amount.ToString("C")</td>
+                <td>@item.Frequency</td>
+                <td>@item.NextRunDate.ToShortDateString()</td>
+                <td>@item.Departments</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

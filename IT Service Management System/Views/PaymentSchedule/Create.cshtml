@@ -1,0 +1,65 @@
+﻿@model IT_Service_Management_System.Models.PaymentSchedule
+
+@{
+    ViewData["Title"] = "Create Payment Schedule";
+}
+
+<h2>Create Payment Schedule</h2>
+
+<form asp-action="Create">
+    <div class="form-group">
+        <label asp-for="ServiceName"></label>
+        <input asp-for="ServiceName" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Amount"></label>
+        <input asp-for="Amount" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Frequency"></label>
+        <select asp-for="Frequency" class="form-control" id="frequencyDropdown"
+                asp-items="Html.GetEnumSelectList<PaymentFrequency>()">
+        </select>
+    </div>
+
+    <!-- Monthly -->
+    <div class="form-group" id="monthlyField">
+        <label>Day of Month</label>
+        <input asp-for="DayOfMonth" class="form-control" />
+    </div>
+
+    <!-- Annual -->
+    <div class="form-group" id="annualField">
+        <label>Fixed Date</label>
+        <input asp-for="FixedDate" type="date" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Departments"></label>
+        <input asp-for="Departments" class="form-control" />
+    </div>
+
+    <br />
+    <button type="submit" class="btn btn-success">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</form>
+
+@section Scripts {
+    <script>
+        function toggleFields() {
+            var freq = document.getElementById("frequencyDropdown").value;
+
+            document.getElementById("monthlyField").style.display =
+                freq == "Monthly" ? "block" : "none";
+
+            document.getElementById("annualField").style.display =
+                freq == "Annual" ? "block" : "none";
+        }
+
+        document.getElementById("frequencyDropdown").addEventListener("change", toggleFields);
+
+        window.onload = toggleFields;
+    </script>
+}

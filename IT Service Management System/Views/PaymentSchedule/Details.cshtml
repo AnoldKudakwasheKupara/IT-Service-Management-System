@@ -1,0 +1,55 @@
+﻿@model IT_Service_Management_System.Models.PaymentSchedule
+
+@{
+    ViewData["Title"] = "Schedule Details";
+}
+
+<h2>Schedule Details</h2>
+
+<div class="card">
+    <div class="card-body">
+
+        <h4>@Model.ServiceName</h4>
+        <hr />
+
+        <dl class="row">
+
+            <dt class="col-sm-3">Amount</dt>
+            <dd class="col-sm-9">@Model.Amount.ToString("C")</dd>
+
+            <dt class="col-sm-3">Frequency</dt>
+            <dd class="col-sm-9">@Model.Frequency</dd>
+
+            <dt class="col-sm-3">Next Run Date</dt>
+            <dd class="col-sm-9">@Model.NextRunDate.ToShortDateString()</dd>
+
+            @if (Model.Frequency == PaymentFrequency.Monthly)
+            {
+                <dt class="col-sm-3">Day of Month</dt>
+                <dd class="col-sm-9">@Model.DayOfMonth</dd>
+            }
+
+            @if (Model.Frequency == PaymentFrequency.Annual)
+            {
+                <dt class="col-sm-3">Fixed Date</dt>
+                <dd class="col-sm-9">@Model.FixedDate?.ToShortDateString()</dd>
+            }
+
+            <dt class="col-sm-3">Departments</dt>
+            <dd class="col-sm-9">@Model.Departments</dd>
+
+            <dt class="col-sm-3">Status</dt>
+            <dd class="col-sm-9">
+                @(Model.IsActive ? "Active" : "Inactive")
+            </dd>
+
+        </dl>
+
+    </div>
+</div>
+
+<br />
+
+<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+<a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
+<a asp-action="Index" class="btn btn-secondary">Back</a>

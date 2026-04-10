@@ -58,6 +58,16 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        // ✅ DETAILS
+        [HttpPost]
+                public async Task<IActionResult> Details(int id)
+        {
+            var schedule = await _context.PaymentSchedules
+                .FirstOrDefaultAsync(m => m.Id == id);
+            if (schedule == null) return NotFound();
+            return View(schedule);
+        }
+
         // ✅ EDIT (GET)
         public async Task<IActionResult> Edit(int id)
         {
