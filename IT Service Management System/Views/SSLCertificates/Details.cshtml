@@ -1,45 +1,618 @@
 ﻿@model SSLCertificate
 
 @{
-    ViewData["Title"] = "SSL Certificate Details";
+    ViewData["Title"] = $"SSL Certificate Details - {Model.SystemName} - Axis IT Helpdesk";
+    var days = (Model.ExpiryDate - DateTime.Now).Days;
+    var isExpired = days < 0;
+    var isExpiringSoon = days >= 0 && days <= 30;
 }
 
-<h2>SSL Certificate Details</h2>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-lock me-2" style="color: var(--info);"></i>
+                    SSL Certificate Details
+                </h1>
+                <p class="text-muted mt-2">View complete certificate information and status</p>
+            </div>
+        </div>
+    </div>
 
-<div class="mt-3">
-    <dl class="row">
+    <div class="certificate-details-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-certificate me-2"></i>
+                <span>Certificate Information</span>
+            </div>
+            <div class="certificate-id-badge">
+                <i class="fas fa-hashtag"></i>
+                ID: @Model.Id
+            </div>
+        </div>
 
-        <dt class="col-sm-2">System</dt>
-        <dd class="col-sm-10">@Model.SystemName</dd>
+        <div class="card-body-custom">
+            <!-- Certificate Summary Header -->
+            <div class="certificate-summary">
+                <div class="certificate-icon-large">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <div class="certificate-summary-info">
+                    <h2 class="certificate-name">@Model.SystemName</h2>
+                    <div class="certificate-status">
+                        @if (isExpired)
+                        {
+                            <span class="status-badge status-expired">
+                                <i class="fas fa-times-circle"></i> Expired
+                            </span>
+                        }
+                        else if (days <= 7)
+                        {
+                            <span class="status-badge status-critical">
+                                <i class="fas fa-exclamation-circle"></i> Critical - @days days left
+                            </span>
+                        }
+                        else if (days <= 30)
+                        {
+                            <span class="status-badge status-warning">
+                                <i class="fas fa-exclamation-triangle"></i> @days days left
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="status-badge status-healthy">
+                                <i class="fas fa-check-circle"></i> @days days left
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
 
-        <dt class="col-sm-2">URL</dt>
-        <dd class="col-sm-10">
-            <a href="@Model.URL" target="_blank">@Model.URL</a>
-        </dd>
+            <!-- Details Grid -->
+            <div class="details-grid">
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>System Name</label>
+                        <p>@Model.SystemName</p>
+                        <span class="detail-sub">System using this certificate</span>
+                    </div>
+                </div>
 
-        <dt class="col-sm-2">Expiry</dt>
-        <dd class="col-sm-10">@Model.ExpiryDate.ToString("yyyy-MM-dd")</dd>
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>URL / Domain</label>
+                        <p>
+                            <a href="@Model.URL" target="_blank" class="url-link">
+                                @Model.URL
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </p>
+                        <span class="detail-sub">Certificate is installed on this domain</span>
+                    </div>
+                </div>
 
-        <dt class="col-sm-2">Status</dt>
-        <dd class="col-sm-10">
-            @{
-                var days = (Model.ExpiryDate - DateTime.Now).Days;
-            }
-            @(days < 0 ? "Expired" : $"{days} days remaining")
-        </dd>
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>Expiry Date</label>
+                        <p>@Model.ExpiryDate.ToString("MMMM dd, yyyy")</p>
+                        <span class="detail-sub">@Model.ExpiryDate.ToString("dddd")</span>
+                    </div>
+                </div>
 
-        <dt class="col-sm-2">Renewal Status</dt>
-        <dd class="col-sm-10">
-            @(Model.IsRenewed ? "Renewed" : "Pending")
-        </dd>
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>Renewal Status</label>
+                        <p>
+                            @if (Model.IsRenewed)
+                            {
+                                <span class="renewal-badge renewed">
+                                    <i class="fas fa-check-circle"></i> Renewed
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="renewal-badge pending">
+                                    <i class="fas fa-clock"></i> Pending
+                                </span>
+                            }
+                        </p>
+                        <span class="detail-sub">Certificate renewal status</span>
+                    </div>
+                </div>
+            </div>
 
-        <dt class="col-sm-2">Last Renewed</dt>
-        <dd class="col-sm-10">
-            @(Model.LastRenewedDate?.ToString("yyyy-MM-dd") ?? "-")
-        </dd>
+            <!-- Additional Information Section -->
+            <div class="additional-info">
+                <h3 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    Additional Information
+                </h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Certificate ID:</span>
+                        <span class="info-value">#@Model.Id</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">System Name:</span>
+                        <span class="info-value">@Model.SystemName</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Expiry Date:</span>
+                        <span class="info-value">@Model.ExpiryDate.ToString("MMMM dd, yyyy")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Days Remaining:</span>
+                        <span class="info-value @(isExpired ? "text-danger" : isExpiringSoon ? "text-warning" : "text-success")">
+                            @(isExpired ? "Expired" : $"{days} days")
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Last Renewed:</span>
+                        <span class="info-value">@(Model.LastRenewedDate?.ToString("MMMM dd, yyyy") ?? "Not yet renewed")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Certificate Status:</span>
+                        <span class="info-value">
+                            @if (isExpired)
+                            {
+                                <span class="text-danger">
+                                    <i class="fas fa-times-circle"></i> Expired
+                                </span>
+                            }
+                            else if (days <= 30)
+                            {
+                                <span class="text-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Expiring Soon
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-success">
+                                    <i class="fas fa-check-circle"></i> Active
+                                </span>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
 
-    </dl>
+            <!-- Action Buttons -->
+            <div class="action-buttons-container">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-edit">
+                    <i class="fas fa-pencil-alt"></i>
+                    Edit Certificate
+                </a>
+                <a asp-action="Index" class="btn-back-to-list">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Certificates
+                </a>
+                <button type="button" class="btn-print" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                    Print Details
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
-<a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
-<a asp-action="Index" class="btn btn-secondary">Back</a>
+<style>
+    /* SSL Certificate Details Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+        }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Certificate Details Card */
+    .certificate-details-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .certificate-id-badge {
+        background: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Certificate Summary */
+    .certificate-summary {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--gray-100);
+    }
+
+    .certificate-icon-large {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+        .certificate-icon-large i {
+            font-size: 2.5rem;
+            color: white;
+        }
+
+    .certificate-summary-info {
+        flex: 1;
+    }
+
+    .certificate-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0 0 0.75rem 0;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.375rem 0.875rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-healthy {
+        background: #e6f5e9;
+        color: var(--success);
+    }
+
+    .status-warning {
+        background: #fff5e6;
+        color: var(--warning);
+    }
+
+    .status-critical {
+        background: #fee;
+        color: var(--danger);
+    }
+
+    .status-expired {
+        background: #fee;
+        color: var(--danger);
+    }
+
+    /* Details Grid */
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .detail-card {
+        background: var(--gray-50);
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        gap: 1rem;
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .detail-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            background: white;
+        }
+
+    .detail-icon {
+        width: 48px;
+        height: 48px;
+        background: white;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        border: 1px solid var(--gray-200);
+    }
+
+    .detail-content {
+        flex: 1;
+    }
+
+        .detail-content label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gray-500);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-content p {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin: 0 0 0.5rem 0;
+        }
+
+    .url-link {
+        color: var(--primary);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .url-link:hover {
+            text-decoration: underline;
+            color: var(--primary-dark);
+        }
+
+    .detail-sub {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+    }
+
+    .renewal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+        .renewal-badge.renewed {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+        .renewal-badge.pending {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+    /* Additional Information */
+    .additional-info {
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .info-grid {
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+    }
+
+    .info-value {
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .text-danger {
+        color: var(--danger) !important;
+    }
+
+    .text-warning {
+        color: var(--warning) !important;
+    }
+
+    .text-success {
+        color: var(--success) !important;
+    }
+
+    /* Action Buttons */
+    .action-buttons-container {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        flex-wrap: wrap;
+    }
+
+    .btn-edit {
+        background: linear-gradient(100deg, var(--warning), #e6a017);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-back-to-list {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-back-to-list:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+    .btn-print {
+        background: white;
+        color: var(--info);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--info);
+        font-size: 0.875rem;
+        cursor: pointer;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-print:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+        }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
