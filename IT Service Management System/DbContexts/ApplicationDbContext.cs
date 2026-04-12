@@ -20,12 +20,12 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<Department> Departments { get; set; }
         public DbSet<SSLCertificate> SSLCertificates { get; set; }
         public DbSet<PaymentSchedule> PaymentSchedules { get; set; }
+        public DbSet<Payment> Payments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // ✅ ENUMS AS STRINGS
             modelBuilder.Entity<Ticket>()
                 .Property(t => t.Status)
                 .HasConversion<string>();
@@ -38,12 +38,10 @@ namespace IT_Service_Management_System.DbContexts
                 .Property(u => u.Role)
                 .HasConversion<string>();
 
-            // ✅ USER CONSTRAINTS
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
 
-            // ✅ TICKET RELATIONSHIPS
             modelBuilder.Entity<Ticket>()
                 .HasOne(t => t.CreatedBy)
                 .WithMany(u => u.TicketsCreated)
@@ -69,7 +67,6 @@ namespace IT_Service_Management_System.DbContexts
                 .HasForeignKey(m => m.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ✅ ATTACHMENTS
             modelBuilder.Entity<TicketAttachment>()
                 .HasOne(a => a.Ticket)
                 .WithMany(t => t.Attachments)
@@ -82,7 +79,7 @@ namespace IT_Service_Management_System.DbContexts
                 .HasForeignKey(a => a.TicketMessageId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ✅ OPTIONAL: REQUIRE EITHER TICKET OR MESSAGE (NOT BOTH NULL)
+
             modelBuilder.Entity<TicketAttachment>()
                 .HasCheckConstraint("CK_Attachment_Owner",
                     "[TicketId] IS NOT NULL OR [TicketMessageId] IS NOT NULL");
