@@ -18,11 +18,13 @@ public class PaymentScheduleController : Controller
         return View(await _context.PaymentSchedules.ToListAsync());
     }
 
-    // DETAILS
     public async Task<IActionResult> Details(int id)
     {
-        var schedule = await _context.PaymentSchedules.FindAsync(id);
-        if (schedule == null) return NotFound();
+        var schedule = await _context.PaymentSchedules
+            .FirstOrDefaultAsync(m => m.Id == id);
+
+        if (schedule == null)
+            return NotFound();
 
         return View(schedule);
     }
@@ -55,50 +57,42 @@ public class PaymentScheduleController : Controller
     public async Task<IActionResult> Edit(int id)
     {
         var schedule = await _context.PaymentSchedules.FindAsync(id);
-        if (schedule == null) return NotFound();
+        if (schedule == null)
+            return NotFound();
 
         return View(schedule);
     }
 
-    //// EDIT (POST)
-    //[HttpPost]
-    //[ValidateAntiForgeryToken]
-    //public async Task<IActionResult> Edit(int id, PaymentSchedule model)
-    //{
-    //    if (id != model.Id) return NotFound();
+    // EDIT (POST)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(int id, PaymentSchedule model)
+    {
+        if (id != model.Id)
+            return NotFound();
 
-    //    if (!ModelState.IsValid)
-    //        return View(model);
+        if (!ModelState.IsValid)
+            return View(model);
 
-    //    if (model.Frequency == PaymentFrequency.Monthly)
-    //    {
-    //        if (!model.DayOfMonth.HasValue)
-    //        {
-    //            ModelState.AddModelError("DayOfMonth", "Day of Month is required.");
-    //            return View(model);
-    //        }
+        try
+        {
+            // 🔥 Recalculate Next Run Date
+            model.NextRunDate = CalculateNextRun(model);
 
-    //        model.FixedDate = null;
-    //    }
+            _context.Update(model);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!_context.PaymentSchedules.Any(e => e.Id == model.Id))
+                return NotFound();
+            else
+                throw;
+        }
 
-    //    if (model.Frequency == PaymentFrequency.Annual)
-    //    {
-    //        if (!model.FixedDate.HasValue)
-    //        {
-    //            ModelState.AddModelError("FixedDate", "Fixed Date is required.");
-    //            return View(model);
-    //        }
+        return RedirectToAction(nameof(Index));
+    }
 
-    //        model.DayOfMonth = null;
-    //    }
-
-    //    model.NextRunDate = CalculateNextRun(model);
-
-    //    _context.Update(model);
-    //    await _context.SaveChangesAsync();
-
-    //    return RedirectToAction(nameof(Index));
-    //}
 
     // DELETE
     public async Task<IActionResult> Delete(int id)
