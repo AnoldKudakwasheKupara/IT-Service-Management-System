@@ -1,73 +1,703 @@
 ﻿@model IT_Service_Management_System.Models.PaymentSchedule
 
 @{
-    ViewData["Title"] = "Payment Schedule Details";
+    ViewData["Title"] = $"Payment Schedule Details - {Model.ServiceName} - Axis IT Helpdesk";
+    var frequencyString = Model.Frequency.ToString();
+    var daysUntilNextRun = (Model.NextRunDate - DateTime.Now).Days;
+    var isUrgent = daysUntilNextRun <= 7;
+    var isOverdue = daysUntilNextRun < 0;
 }
 
-<h2>Payment Schedule Details</h2>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-calendar-alt me-2" style="color: var(--info);"></i>
+                    Payment Schedule Details
+                </h1>
+                <p class="text-muted mt-2">View complete payment schedule information</p>
+            </div>
+        </div>
+    </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
+    <div class="schedule-details-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-calendar-alt me-2"></i>
+                <span>Schedule Information</span>
+            </div>
+            <div class="schedule-id-badge">
+                <i class="fas fa-hashtag"></i>
+                ID: @Model.Id
+            </div>
+        </div>
 
-        <h4 class="mb-3">@Model.ServiceName</h4>
-        <hr />
+        <div class="card-body-custom">
+            <!-- Schedule Summary Header -->
+            <div class="schedule-summary">
+                <div class="schedule-icon-large">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="schedule-summary-info">
+                    <h2 class="schedule-name">@Model.ServiceName</h2>
+                    <div class="schedule-status">
+                        @if (Model.IsActive)
+                        {
+                            <span class="status-badge status-active">
+                                <i class="fas fa-check-circle"></i> Active
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="status-badge status-inactive">
+                                <i class="fas fa-ban"></i> Inactive
+                            </span>
+                        }
+                        
+                        @if (isOverdue)
+                        {
+                            <span class="status-badge status-overdue">
+                                <i class="fas fa-exclamation-circle"></i> Overdue
+                            </span>
+                        }
+                        else if (isUrgent)
+                        {
+                            <span class="status-badge status-urgent">
+                                <i class="fas fa-exclamation-triangle"></i> Due Soon
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
 
-        <dl class="row">
+            <!-- Details Grid -->
+            <div class="details-grid">
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>Amount</label>
+                        <p>@Model.Amount.ToString("C", new System.Globalization.CultureInfo("en-US"))</p>
+                        <span class="detail-sub">Payment amount in USD</span>
+                    </div>
+                </div>
 
-            <!-- Amount -->
-            <dt class="col-sm-3">Amount</dt>
-            <dd class="col-sm-9">
-                @Model.Amount.ToString("C", new System.Globalization.CultureInfo("en-US"))
-            </dd>
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>Frequency</label>
+                        <p>
+                            @{
+                                if (frequencyString == "Monthly")
+                                {
+                                    <span class="frequency-badge frequency-monthly">
+                                        <i class="fas fa-calendar-alt"></i> Monthly
+                                    </span>
+                                }
+                                else if (frequencyString == "Quarterly")
+                                {
+                                    <span class="frequency-badge frequency-quarterly">
+                                        <i class="fas fa-calendar-week"></i> Quarterly
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="frequency-badge frequency-annual">
+                                        <i class="fas fa-calendar-year"></i> Annual
+                                    </span>
+                                }
+                            }
+                        </p>
+                        <span class="detail-sub">Payment frequency</span>
+                    </div>
+                </div>
 
-            <!-- Frequency -->
-            <dt class="col-sm-3">Frequency</dt>
-            <dd class="col-sm-9">
-                @Model.Frequency
-            </dd>
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>Payment Date</label>
+                        <p>@Model.PaymentDate.ToString("dddd, MMMM dd, yyyy")</p>
+                        <span class="detail-sub">@Model.PaymentDate.ToString("dddd")</span>
+                    </div>
+                </div>
 
-            <!-- Payment Date -->
-            <dt class="col-sm-3">Payment Date</dt>
-            <dd class="col-sm-9">
-                @Model.PaymentDate.ToString("dddd, dd MMM yyyy")
-            </dd>
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-calendar-week"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>Next Run Date</label>
+                        <p>
+                            @if (isOverdue)
+                            {
+                                <span class="next-run-badge overdue">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    @Model.NextRunDate.ToString("MMMM dd, yyyy")
+                                </span>
+                            }
+                            else if (isUrgent)
+                            {
+                                <span class="next-run-badge urgent">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    @Model.NextRunDate.ToString("MMMM dd, yyyy")
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="next-run-badge normal">
+                                    <i class="fas fa-calendar-check"></i>
+                                    @Model.NextRunDate.ToString("MMMM dd, yyyy")
+                                </span>
+                            }
+                        </p>
+                        <span class="detail-sub">
+                            @(isOverdue ? "Payment is overdue" : isUrgent ? "Payment due soon" : $"{daysUntilNextRun} days remaining")
+                        </span>
+                    </div>
+                </div>
+            </div>
 
-            <!-- Next Run -->
-            <dt class="col-sm-3">Next Run Date</dt>
-            <dd class="col-sm-9">
-                <span class="badge bg-info text-dark">
-                    @Model.NextRunDate.ToString("dddd, dd MMM yyyy")
-                </span>
-            </dd>
+            <!-- Additional Information Section -->
+            <div class="additional-info">
+                <h3 class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    Additional Information
+                </h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Schedule ID:</span>
+                        <span class="info-value">#@Model.Id</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Service Name:</span>
+                        <span class="info-value">@Model.ServiceName</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Amount:</span>
+                        <span class="info-value amount-value">@Model.Amount.ToString("C", new System.Globalization.CultureInfo("en-US"))</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Frequency:</span>
+                        <span class="info-value">@frequencyString</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Payment Date:</span>
+                        <span class="info-value">@Model.PaymentDate.ToString("MMMM dd, yyyy")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Next Run:</span>
+                        <span class="info-value @(isOverdue ? "text-danger" : isUrgent ? "text-warning" : "text-success")">
+                            @Model.NextRunDate.ToString("MMMM dd, yyyy")
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Departments:</span>
+                        <span class="info-value">@(string.IsNullOrEmpty(Model.Departments) ? "Not specified" : Model.Departments)</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value">
+                            @if (Model.IsActive)
+                            {
+                                <span class="text-success">
+                                    <i class="fas fa-check-circle"></i> Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-secondary">
+                                    <i class="fas fa-ban"></i> Inactive
+                                </span>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
 
-            <!-- Departments -->
-            <dt class="col-sm-3">Departments</dt>
-            <dd class="col-sm-9">
-                @Model.Departments
-            </dd>
-
-            <!-- Status -->
-            <dt class="col-sm-3">Status</dt>
-            <dd class="col-sm-9">
-                @if (Model.IsActive)
-                {
-                    <span class="badge bg-success">Active</span>
-                }
-                else
-                {
-                    <span class="badge bg-secondary">Inactive</span>
-                }
-            </dd>
-
-        </dl>
-
+            <!-- Action Buttons -->
+            <div class="action-buttons-container">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-edit">
+                    <i class="fas fa-pencil-alt"></i>
+                    Edit Schedule
+                </a>
+                <a asp-action="Delete" asp-route-id="@Model.Id" class="btn-delete-record">
+                    <i class="fas fa-trash-alt"></i>
+                    Delete Schedule
+                </a>
+                <a asp-action="Index" class="btn-back-to-list">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Schedules
+                </a>
+                <button type="button" class="btn-print" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                    Print Details
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
-<br />
+<style>
+    /* Payment Schedule Details Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
 
-<div>
-    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
-    <a asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger">Delete</a>
-    <a asp-action="Index" class="btn btn-secondary">Back</a>
-</div>
+    .page-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+        }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Schedule Details Card */
+    .schedule-details-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .schedule-id-badge {
+        background: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Schedule Summary */
+    .schedule-summary {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+        padding-bottom: 2rem;
+        border-bottom: 2px solid var(--gray-100);
+    }
+
+    .schedule-icon-large {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+        .schedule-icon-large i {
+            font-size: 2.5rem;
+            color: white;
+        }
+
+    .schedule-summary-info {
+        flex: 1;
+    }
+
+    .schedule-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0 0 0.75rem 0;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.375rem 0.875rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+
+    .status-active {
+        background: #e6f5e9;
+        color: var(--success);
+    }
+
+    .status-inactive {
+        background: var(--gray-100);
+        color: var(--gray-500);
+    }
+
+    .status-overdue {
+        background: #fee;
+        color: var(--danger);
+    }
+
+    .status-urgent {
+        background: #fff5e6;
+        color: var(--warning);
+    }
+
+    /* Details Grid */
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .detail-card {
+        background: var(--gray-50);
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        gap: 1rem;
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .detail-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            background: white;
+        }
+
+    .detail-icon {
+        width: 48px;
+        height: 48px;
+        background: white;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        border: 1px solid var(--gray-200);
+    }
+
+    .detail-content {
+        flex: 1;
+    }
+
+        .detail-content label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gray-500);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-content p {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin: 0 0 0.5rem 0;
+        }
+
+    .detail-sub {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+    }
+
+    /* Frequency Badges */
+    .frequency-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .frequency-monthly {
+        background: #e6f0ff;
+        color: var(--info);
+    }
+
+    .frequency-quarterly {
+        background: #fff5e6;
+        color: var(--warning);
+    }
+
+    .frequency-annual {
+        background: #e6f5e9;
+        color: var(--success);
+    }
+
+    /* Next Run Badges */
+    .next-run-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+        .next-run-badge.overdue {
+            background: #fee;
+            color: var(--danger);
+        }
+
+        .next-run-badge.urgent {
+            background: #fff5e6;
+            color: var(--warning);
+        }
+
+        .next-run-badge.normal {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+    /* Additional Information */
+    .additional-info {
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .info-grid {
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+    }
+
+    .info-value {
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .amount-value {
+        color: var(--success);
+        font-weight: 700;
+    }
+
+    .text-danger {
+        color: var(--danger) !important;
+    }
+
+    .text-warning {
+        color: var(--warning) !important;
+    }
+
+    .text-success {
+        color: var(--success) !important;
+    }
+
+    /* Action Buttons */
+    .action-buttons-container {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        flex-wrap: wrap;
+    }
+
+    .btn-edit {
+        background: linear-gradient(100deg, var(--warning), #e6a017);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-delete-record {
+        background: linear-gradient(100deg, var(--danger), #c53030);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-delete-record:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-back-to-list {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-back-to-list:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+    .btn-print {
+        background: white;
+        color: var(--info);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--info);
+        font-size: 0.875rem;
+        cursor: pointer;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-print:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+        }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">

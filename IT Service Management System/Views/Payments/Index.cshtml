@@ -1,0 +1,40 @@
+﻿@model IEnumerable<Payment>
+
+<h2>Payments</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Service</th>
+            <th>Amount</th>
+            <th>Due Date</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.ServiceName</td>
+                <td>@item.Amount.ToString("C", new System.Globalization.CultureInfo("en-US"))</td>
+                <td>@item.DueDate.ToShortDateString()</td>
+
+                <td>
+                    @if (item.Status == "Paid")
+                    {
+                        <span class="badge bg-success">Paid</span>
+                    }
+                    else if (item.Status == "Overdue")
+                    {
+                        <span class="badge bg-danger">Overdue</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark">Pending</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

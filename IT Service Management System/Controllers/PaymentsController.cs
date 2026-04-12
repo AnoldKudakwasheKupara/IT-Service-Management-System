@@ -18,8 +18,11 @@ namespace IT_Service_Management_System.Controllers
         {
             await GeneratePayments();
 
-            var schedules = await _context.PaymentSchedules.ToListAsync();
-            return View(schedules);
+            var payments = await _context.Payments
+                .Include(p => p.PaymentSchedule)
+                .ToListAsync();
+
+            return View(payments);
         }
 
         public async Task GeneratePayments()

@@ -1,60 +1,838 @@
 ﻿@model IT_Service_Management_System.Models.PaymentSchedule
 
 @{
-    ViewData["Title"] = "Create Payment Schedule";
+    ViewData["Title"] = "Create Payment Schedule - Axis IT Helpdesk";
 }
 
-<h2>Create Payment Schedule</h2>
-
-<form asp-action="Create" method="post">
-
-    <div asp-validation-summary="All" class="text-danger"></div>
-
-    <!-- Service Name -->
-    <div class="form-group">
-        <label asp-for="ServiceName"></label>
-        <input asp-for="ServiceName" class="form-control" />
-        <span asp-validation-for="ServiceName" class="text-danger"></span>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-plus-circle me-2" style="color: var(--success);"></i>
+                    Create Payment Schedule
+                </h1>
+                <p class="text-muted mt-2">Create a new recurring payment schedule for services</p>
+            </div>
+        </div>
     </div>
 
-    <!-- Amount -->
-    <div class="form-group">
-        <label asp-for="Amount"></label>
-        <input asp-for="Amount" type="number" step="0.01" class="form-control" />
-        <span asp-validation-for="Amount" class="text-danger"></span>
+    <div class="create-schedule-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-calendar-alt me-2"></i>
+                <span>Schedule Information</span>
+            </div>
+            <div class="form-steps">
+                <span class="step active">1</span>
+                <span class="step-line"></span>
+                <span class="step">2</span>
+                <span class="step-line"></span>
+                <span class="step">3</span>
+            </div>
+        </div>
+
+        <form asp-action="Create" method="post" id="createScheduleForm">
+            @Html.AntiForgeryToken()
+            
+            <div asp-validation-summary="All" class="validation-summary"></div>
+            
+            <div class="card-body-custom">
+                <div class="form-grid">
+                    <!-- Left Column -->
+                    <div class="form-column">
+                        <div class="form-group-modern">
+                            <label asp-for="ServiceName" class="form-label">
+                                <i class="fas fa-server"></i>
+                                Service Name
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-tag input-icon"></i>
+                                <input asp-for="ServiceName" class="form-control-modern" placeholder="Enter service name" />
+                            </div>
+                            <span asp-validation-for="ServiceName" class="validation-message text-danger"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Name of the service or subscription
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Amount" class="form-label">
+                                <i class="fas fa-dollar-sign"></i>
+                                Amount (USD)
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-group-modern">
+                                <span class="input-group-text-modern">$</span>
+                                <input asp-for="Amount" type="number" step="0.01" class="form-control-modern amount-input" placeholder="0.00" />
+                            </div>
+                            <span asp-validation-for="Amount" class="validation-message text-danger"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Payment amount in US Dollars
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Frequency" class="form-label">
+                                <i class="fas fa-clock"></i>
+                                Payment Frequency
+                                <span class="required">*</span>
+                            </label>
+                            <div class="select-wrapper">
+                                <i class="fas fa-chevron-down select-icon"></i>
+                                <select asp-for="Frequency" class="form-control-modern" id="frequencySelect">
+                                    <option value="Monthly">Monthly</option>
+                                    <option value="Quarterly">Quarterly</option>
+                                    <option value="Annual">Annual</option>
+                                </select>
+                            </div>
+                            <span asp-validation-for="Frequency" class="validation-message text-danger"></span>
+                            <div class="frequency-info" id="frequencyInfo">
+                                <i class="fas fa-info-circle"></i>
+                                <span id="frequencyDescription"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="form-column">
+                        <div class="form-group-modern">
+                            <label asp-for="PaymentDate" class="form-label">
+                                <i class="fas fa-calendar"></i>
+                                Payment Date
+                                <span class="required">*</span>
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-calendar-alt input-icon"></i>
+                                <input asp-for="PaymentDate" type="date" class="form-control-modern" />
+                            </div>
+                            <span asp-validation-for="PaymentDate" class="validation-message text-danger"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Day of month/year when payment is due
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="NextRunDate" class="form-label">
+                                <i class="fas fa-calendar-week"></i>
+                                Next Run Date
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-calendar-check input-icon"></i>
+                                <input asp-for="NextRunDate" type="date" class="form-control-modern" />
+                            </div>
+                            <span asp-validation-for="NextRunDate" class="validation-message text-danger"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Date when the next payment will be processed (auto-calculated if left blank)
+                            </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Departments" class="form-label">
+                                <i class="fas fa-building"></i>
+                                Departments
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-building input-icon"></i>
+                                <input asp-for="Departments" class="form-control-modern" placeholder="Enter department names" />
+                            </div>
+                            <span asp-validation-for="Departments" class="validation-message text-danger"></span>
+                            <div class="form-hint">
+                                <i class="fas fa-info-circle"></i> Departments responsible for this payment (comma-separated)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Section -->
+                <div class="preview-section" id="previewSection" style="display: none;">
+                    <h4 class="preview-title">
+                        <i class="fas fa-chart-line"></i>
+                        Schedule Preview
+                    </h4>
+                    <div class="preview-content">
+                        <div class="preview-item">
+                            <span class="preview-label">Next Payment:</span>
+                            <span class="preview-value" id="nextPaymentPreview">-</span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">Payment Status:</span>
+                            <span class="preview-value" id="paymentStatusPreview">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tips Section -->
+                <div class="tips-section">
+                    <div class="tips-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Payment Schedule Tips</span>
+                    </div>
+                    <div class="tips-grid">
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Set payment dates aligned with billing cycles</span>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Use Next Run Date to track upcoming payments</span>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Assign departments for accountability</span>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Review schedules regularly for accuracy</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-save" id="submitBtn">
+                        <i class="fas fa-save"></i>
+                        Create Schedule
+                    </button>
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </form>
     </div>
+</div>
 
-    <!-- Frequency -->
-    <div class="form-group">
-        <label asp-for="Frequency"></label>
-        <select asp-for="Frequency"
-                class="form-control"
-                asp-items="Html.GetEnumSelectList<PaymentFrequency>()">
-        </select>
-        <span asp-validation-for="Frequency" class="text-danger"></span>
-    </div>
+<style>
+    /* Create Payment Schedule Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
 
-    <!-- Payment Date -->
-    <div class="form-group">
-        <label asp-for="PaymentDate">Payment Date</label>
-        <input asp-for="PaymentDate" type="date" class="form-control" />
-        <span asp-validation-for="PaymentDate" class="text-danger"></span>
-    </div>
+    .page-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
 
-    <!-- Departments -->
-    <div class="form-group">
-        <label asp-for="Departments"></label>
-        <input asp-for="Departments" class="form-control" />
-        <span asp-validation-for="Departments" class="text-danger"></span>
-    </div>
+    .page-header {
+        margin-bottom: 2rem;
+    }
 
-    <br />
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
 
-    <!-- Buttons -->
-    <button type="submit" class="btn btn-success">Save</button>
-    <a asp-action="Index" class="btn btn-secondary">Back</a>
+    .btn-back:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+        transform: translateX(-2px);
+    }
 
-</form>
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Create Schedule Card */
+    .create-schedule-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .form-steps {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step {
+        width: 30px;
+        height: 30px;
+        background: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+    }
+
+    .step.active {
+        background: var(--success);
+        border-color: var(--success);
+        color: white;
+    }
+
+    .step-line {
+        width: 40px;
+        height: 2px;
+        background: var(--gray-300);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Validation Summary */
+    .validation-summary {
+        background: #fee;
+        border-left: 3px solid var(--danger);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1.5rem;
+        color: var(--danger);
+        font-size: 0.875rem;
+    }
+
+    .validation-summary ul {
+        margin: 0.5rem 0 0 1.5rem;
+    }
+
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    /* Form Groups */
+    .form-group-modern {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-label i {
+        color: var(--primary);
+        font-size: 0.875rem;
+    }
+
+    .required {
+        color: var(--danger);
+        font-size: 1rem;
+    }
+
+    .input-icon-wrapper {
+        position: relative;
+    }
+
+    .input-icon-wrapper i.input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        font-size: 0.875rem;
+        pointer-events: none;
+    }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+    .form-control-modern:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+    }
+
+    /* Input Group Styling */
+    .input-group-modern {
+        display: flex;
+        align-items: center;
+    }
+
+    .input-group-text-modern {
+        background: var(--gray-100);
+        border: 1.5px solid var(--gray-200);
+        border-right: none;
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        border-radius: 0.75rem 0 0 0.75rem;
+    }
+
+    .amount-input {
+        border-radius: 0 0.75rem 0.75rem 0;
+        padding-left: 1rem;
+    }
+
+    /* Select Styling */
+    .select-wrapper {
+        position: relative;
+    }
+
+    .select-wrapper select {
+        appearance: none;
+        width: 100%;
+        padding: 0.75rem 2.5rem 0.75rem 1rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        cursor: pointer;
+        background: white;
+    }
+
+    .select-wrapper select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+    }
+
+    .select-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        pointer-events: none;
+        font-size: 0.75rem;
+    }
+
+    /* Frequency Info */
+    .frequency-info {
+        background: var(--gray-50);
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-left: 3px solid var(--primary);
+    }
+
+    /* Preview Section */
+    .preview-section {
+        background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-left: 3px solid var(--info);
+    }
+
+    .preview-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: var(--info);
+        margin: 0 0 0.75rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .preview-content {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .preview-item {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .preview-label {
+        font-weight: 600;
+        color: var(--gray-600);
+    }
+
+    .preview-value {
+        color: var(--gray-800);
+        font-weight: 500;
+    }
+
+    /* Tips Section */
+    .tips-section {
+        background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-left: 3px solid var(--info);
+    }
+
+    .tips-header {
+        font-weight: 600;
+        color: var(--info);
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .tip-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--gray-700);
+    }
+
+    .tip-item i {
+        color: var(--success);
+    }
+
+    /* Validation Messages */
+    .validation-message {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Form Hints */
+    .form-hint {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-hint i {
+        font-size: 0.7rem;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .btn-save {
+        background: linear-gradient(100deg, var(--success), #1f8a5c);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-cancel:hover {
+        background: var(--gray-50);
+        color: var(--gray-700);
+        text-decoration: none;
+    }
+
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const frequencySelect = document.getElementById('frequencySelect');
+        const frequencyDescription = document.getElementById('frequencyDescription');
+        const paymentDateInput = document.querySelector('[asp-for="PaymentDate"]');
+        const nextRunDateInput = document.querySelector('[asp-for="NextRunDate"]');
+        const previewSection = document.getElementById('previewSection');
+        const nextPaymentPreview = document.getElementById('nextPaymentPreview');
+        const paymentStatusPreview = document.getElementById('paymentStatusPreview');
+        
+        // Frequency descriptions
+        const frequencyDescriptions = {
+            'Monthly': 'Payment is due every month on the specified date',
+            'Quarterly': 'Payment is due every 3 months',
+            'Annual': 'Payment is due once per year'
+        };
+        
+        function updateFrequencyDescription() {
+            var selectedFrequency = frequencySelect.value;
+            if (selectedFrequency && frequencyDescriptions[selectedFrequency]) {
+                frequencyDescription.textContent = frequencyDescriptions[selectedFrequency];
+                
+                // Update visual styling
+                var frequencyInfo = document.getElementById('frequencyInfo');
+                if (selectedFrequency === 'Monthly') {
+                    frequencyInfo.style.borderLeftColor = 'var(--info)';
+                    frequencyInfo.querySelector('i').style.color = 'var(--info)';
+                } else if (selectedFrequency === 'Quarterly') {
+                    frequencyInfo.style.borderLeftColor = 'var(--warning)';
+                    frequencyInfo.querySelector('i').style.color = 'var(--warning)';
+                } else {
+                    frequencyInfo.style.borderLeftColor = 'var(--success)';
+                    frequencyInfo.querySelector('i').style.color = 'var(--success)';
+                }
+            }
+        }
+        
+        if (frequencySelect) {
+            updateFrequencyDescription();
+            frequencySelect.addEventListener('change', updateFrequencyDescription);
+        }
+        
+        // Calculate next run date based on payment date and frequency
+        function calculateNextRunDate() {
+            if (!paymentDateInput.value) return null;
+            
+            const paymentDate = new Date(paymentDateInput.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const frequency = frequencySelect.value;
+            
+            let nextRun = new Date(paymentDate);
+            
+            if (frequency === 'Monthly') {
+                while (nextRun <= today) {
+                    nextRun.setMonth(nextRun.getMonth() + 1);
+                }
+            } else if (frequency === 'Quarterly') {
+                while (nextRun <= today) {
+                    nextRun.setMonth(nextRun.getMonth() + 3);
+                }
+            } else if (frequency === 'Annual') {
+                while (nextRun <= today) {
+                    nextRun.setFullYear(nextRun.getFullYear() + 1);
+                }
+            }
+            
+            return nextRun;
+        }
+        
+        // Update preview
+        function updatePreview() {
+            const paymentDate = paymentDateInput.value;
+            let nextRun = nextRunDateInput.value ? new Date(nextRunDateInput.value) : calculateNextRunDate();
+            
+            if (paymentDate && nextRun) {
+                previewSection.style.display = 'block';
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                nextPaymentPreview.textContent = nextRun.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                
+                if (nextRun < today) {
+                    paymentStatusPreview.innerHTML = '<span class="text-danger"><i class="fas fa-exclamation-circle"></i> Overdue</span>';
+                } else if (nextRun <= new Date(today.setDate(today.getDate() + 7))) {
+                    paymentStatusPreview.innerHTML = '<span class="text-warning"><i class="fas fa-exclamation-triangle"></i> Upcoming Soon</span>';
+                } else {
+                    paymentStatusPreview.innerHTML = '<span class="text-success"><i class="fas fa-check-circle"></i> On Track</span>';
+                }
+                
+                // Auto-fill next run date if empty
+                if (!nextRunDateInput.value) {
+                    const year = nextRun.getFullYear();
+                    const month = String(nextRun.getMonth() + 1).padStart(2, '0');
+                    const day = String(nextRun.getDate()).padStart(2, '0');
+                    nextRunDateInput.value = `${year}-${month}-${day}`;
+                }
+            } else {
+                previewSection.style.display = 'none';
+            }
+        }
+        
+        if (paymentDateInput && frequencySelect) {
+            paymentDateInput.addEventListener('change', updatePreview);
+            frequencySelect.addEventListener('change', updatePreview);
+            updatePreview();
+        }
+        
+        // Form validation
+        const form = document.getElementById('createScheduleForm');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                var serviceName = document.querySelector('[name="ServiceName"]').value.trim();
+                var amount = document.querySelector('[name="Amount"]').value;
+                var paymentDate = paymentDateInput.value;
+                var frequency = frequencySelect.value;
+                
+                if (!serviceName) {
+                    e.preventDefault();
+                    showValidationError('Service name is required');
+                    document.querySelector('[name="ServiceName"]').focus();
+                    return false;
+                }
+                
+                if (serviceName.length < 2) {
+                    e.preventDefault();
+                    showValidationError('Service name must be at least 2 characters');
+                    document.querySelector('[name="ServiceName"]').focus();
+                    return false;
+                }
+                
+                if (!amount || parseFloat(amount) <= 0) {
+                    e.preventDefault();
+                    showValidationError('Please enter a valid amount greater than 0');
+                    document.querySelector('[name="Amount"]').focus();
+                    return false;
+                }
+                
+                if (!paymentDate) {
+                    e.preventDefault();
+                    showValidationError('Payment date is required');
+                    paymentDateInput.focus();
+                    return false;
+                }
+                
+                if (!frequency) {
+                    e.preventDefault();
+                    showValidationError('Please select a frequency');
+                    frequencySelect.focus();
+                    return false;
+                }
+                
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Schedule...';
+                
+                return true;
+            });
+        }
+        
+        function showValidationError(message) {
+            var errorDiv = document.querySelector('.validation-toast');
+            if (errorDiv) errorDiv.remove();
+            
+            errorDiv = document.createElement('div');
+            errorDiv.className = 'validation-toast';
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                background: var(--danger);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.75rem;
+                box-shadow: var(--shadow-lg);
+                z-index: 1050;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-size: 0.875rem;
+                animation: slideIn 0.3s ease;
+            `;
+            errorDiv.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(function() {
+                errorDiv.style.animation = 'slideOut 0.3s ease';
+                setTimeout(function() { errorDiv.remove(); }, 300);
+            }, 4000);
+        }
+    });
+</script>
 
 @section Scripts {
     @{

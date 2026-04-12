@@ -1,56 +1,629 @@
 ﻿@model IEnumerable<IT_Service_Management_System.Models.PaymentSchedule>
 
 @{
-    ViewData["Title"] = "Payment Schedules";
+    ViewData["Title"] = "Payment Schedules - Axis IT Helpdesk";
+    var totalAmount = Model.Sum(m => m.Amount);
+    var monthlyCount = Model.Count(m => m.Frequency.ToString() == "Monthly");
+    var annualCount = Model.Count(m => m.Frequency.ToString() == "Annual");
 }
 
-<h2>Payment Schedules</h2>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-calendar-alt me-2" style="color: var(--primary);"></i>
+                    Payment Schedules
+                </h1>
+                <p class="text-muted mt-2">Manage recurring service payment schedules and track upcoming payments</p>
+            </div>
+            <a asp-action="Create" class="btn-create-schedule">
+                <i class="fas fa-plus-circle me-2"></i>
+                New Schedule
+            </a>
+        </div>
+    </div>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">+ New Schedule</a>
-</p>
+    <!-- Statistics Cards -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon total">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count()</h3>
+                <p>Total Schedules</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon amount">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@totalAmount.ToString("C", new System.Globalization.CultureInfo("en-US"))</h3>
+                <p>Total Amount</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon monthly">
+                <i class="fas fa-calendar-month"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@monthlyCount</h3>
+                <p>Monthly</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon annual">
+                <i class="fas fa-calendar-week"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@annualCount</h3>
+                <p>Annual</p>
+            </div>
+        </div>
+    </div>
 
-<table class="table table-bordered table-striped">
-    <thead class="table-light">
-        <tr>
-            <th>Service</th>
-            <th>Amount (USD)</th>
-            <th>Frequency</th>
-            <th>Payment Date</th>
-            <th>Next Run</th>
-            <th>Departments</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
+    <!-- Payment Schedules Table -->
+    <div class="schedules-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Payment Schedule List</span>
+            </div>
+            <div class="schedule-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count()</span> schedules found
+            </div>
+        </div>
 
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.ServiceName</td>
+        <div class="table-responsive">
+            @if (Model != null && Model.Any())
+            {
+                <table class="schedules-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-server me-1"></i> Service</th>
+                            <th><i class="fas fa-dollar-sign me-1"></i> Amount</th>
+                            <th><i class="fas fa-clock me-1"></i> Frequency</th>
+                            <th><i class="fas fa-calendar-day me-1"></i> Payment Date</th>
+                            <th><i class="fas fa-calendar-week me-1"></i> Next Run</th>
+                            <th><i class="fas fa-building me-1"></i> Departments</th>
+                            <th><i class="fas fa-cog me-1"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.OrderBy(s => s.NextRunDate))
+                        {
+                            var daysUntilNextRun = (item.NextRunDate - DateTime.Now).Days;
+                            var isUrgent = daysUntilNextRun <= 7;
+                            var frequencyString = item.Frequency.ToString();
 
-                <td>
-                    @item.Amount.ToString("C", new System.Globalization.CultureInfo("en-US"))
-                </td>
+                            <tr @(isUrgent ? "class=urgent-row" : "")>
+                                <td class="service-cell">
+                                    <div class="service-info">
+                                        <div class="service-icon">
+                                            <i class="fas fa-server"></i>
+                                        </div>
+                                        <div class="service-name-info">
+                                            <strong>@item.ServiceName</strong>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="amount-cell">
+                                    <span class="amount-value">@item.Amount.ToString("C", new System.Globalization.CultureInfo("en-US"))</span>
+                                </td>
+                                <td>
+                                    @{
+                                        if (frequencyString == "Monthly")
+                                        {
+                                            <span class="frequency-badge frequency-monthly">
+                                                <i class="fas fa-calendar-alt"></i> Monthly
+                                            </span>
+                                        }
+                                        else if (frequencyString == "Quarterly")
+                                        {
+                                            <span class="frequency-badge frequency-quarterly">
+                                                <i class="fas fa-calendar-week"></i> Quarterly
+                                            </span>
+                                        }
+                                        else if (frequencyString == "Annual")
+                                        {
+                                            <span class="frequency-badge frequency-annual">
+                                                <i class="fas fa-calendar-year"></i> Annual
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="frequency-badge frequency-other">
+                                                <i class="fas fa-clock"></i> @frequencyString
+                                            </span>
+                                        }
+                                    }
+                                </td>
+                                <td class="date-cell">
+                                    <i class="far fa-calendar-alt"></i>
+                                    @item.PaymentDate.ToString("MMM dd, yyyy")
+                                </td>
+                                <td class="next-run-cell">
+                                    @if (isUrgent)
+                                    {
+                                        <span class="next-run-badge urgent">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            @item.NextRunDate.ToString("MMM dd, yyyy")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="next-run-badge normal">
+                                            <i class="fas fa-calendar-check"></i>
+                                            @item.NextRunDate.ToString("MMM dd, yyyy")
+                                        </span>
+                                    }
+                                </td>
+                                <td class="departments-cell">
+                                    <div class="departments-list">
+                                        <i class="fas fa-building"></i>
+                                        <span>@item.Departments</span>
+                                    </div>
+                                </td>
+                                <td class="action-buttons">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="action-btn btn-view" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="action-btn btn-edit" title="Edit Schedule">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="action-btn btn-delete" title="Delete Schedule" onclick="return confirm('Are you sure you want to delete this payment schedule?');">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-calendar-alt"></i>
+                    <h3>No payment schedules found</h3>
+                    <p>Get started by creating your first payment schedule</p>
+                    <a asp-action="Create" class="btn-create-schedule-sm">
+                        <i class="fas fa-plus-circle"></i> New Schedule
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
 
-                <td>@item.Frequency</td>
+<style>
+    /* Payment Schedules Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
 
-                <td>@item.PaymentDate.ToShortDateString()</td>
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
 
-                <td>
-                    <span class="badge bg-info text-dark">
-                        @item.NextRunDate.ToShortDateString()
-                    </span>
-                </td>
+    .page-header {
+        margin-bottom: 2rem;
+    }
 
-                <td>@item.Departments</td>
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
 
-                           <td>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
-                </td>
-            </tr>
+    /* Create Schedule Button */
+    .btn-create-schedule {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+        .btn-create-schedule:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
         }
-    </tbody>
-</table>
+
+    /* Statistics Cards */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+        .stat-icon.total {
+            background: linear-gradient(135deg, var(--info), #2563eb);
+            color: white;
+        }
+
+        .stat-icon.amount {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .stat-icon.monthly {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+        }
+
+        .stat-icon.quarterly {
+            background: linear-gradient(135deg, var(--warning), #e6a017);
+            color: white;
+        }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* Schedules Card */
+    .schedules-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .schedule-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* Table Styles */
+    .schedules-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .schedules-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .schedules-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .schedules-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+
+        .schedules-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .schedules-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+        .schedules-table tr.urgent-row {
+            background-color: rgba(245, 176, 66, 0.08);
+        }
+
+    /* Service Cell */
+    .service-cell {
+        min-width: 180px;
+    }
+
+    .service-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .service-icon {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .service-name-info strong {
+        color: var(--gray-800);
+        font-size: 0.875rem;
+    }
+
+    /* Amount Cell */
+    .amount-cell {
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .amount-value {
+        font-weight: 700;
+        color: var(--success);
+    }
+
+    /* Frequency Badges */
+    .frequency-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .frequency-monthly {
+        background: #e6f0ff;
+        color: var(--info);
+    }
+
+    .frequency-quarterly {
+        background: #fff5e6;
+        color: var(--warning);
+    }
+
+    .frequency-annual {
+        background: #e6f5e9;
+        color: var(--success);
+    }
+
+    .frequency-other {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+    /* Date Cells */
+    .date-cell, .next-run-cell {
+        color: var(--gray-600);
+        white-space: nowrap;
+    }
+
+    /* Next Run Badges */
+    .next-run-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+        .next-run-badge.urgent {
+            background: #fee;
+            color: var(--danger);
+        }
+
+        .next-run-badge.normal {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+    /* Departments Cell */
+    .departments-cell {
+        max-width: 200px;
+    }
+
+    .departments-list {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--gray-600);
+    }
+
+        .departments-list i {
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+    }
+
+    .btn-view {
+        background: var(--gray-100);
+        color: var(--info);
+    }
+
+        .btn-view:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-edit {
+        background: var(--gray-100);
+        color: var(--warning);
+    }
+
+        .btn-edit:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-delete {
+        background: var(--gray-100);
+        color: var(--danger);
+    }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    .btn-create-schedule-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-create-schedule-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add data-label attributes for responsive table
+        const tableHeaders = document.querySelectorAll('.schedules-table th');
+        const tableRows = document.querySelectorAll('.schedules-table tbody tr');
+        
+        tableRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                if (tableHeaders[index]) {
+                    const headerText = tableHeaders[index].innerText.replace(/[^\w\s]/g, '').trim();
+                    cell.setAttribute('data-label', headerText);
+                }
+            });
+        });
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
