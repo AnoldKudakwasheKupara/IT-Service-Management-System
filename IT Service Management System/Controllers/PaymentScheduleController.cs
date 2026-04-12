@@ -41,30 +41,7 @@ public class PaymentScheduleController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        // ✅ FIX: Handle Monthly
-        if (model.Frequency == PaymentFrequency.Monthly)
-        {
-            if (!model.DayOfMonth.HasValue)
-            {
-                ModelState.AddModelError("DayOfMonth", "Day of Month is required.");
-                return View(model);
-            }
-
-            model.FixedDate = null; // clean unused field
-        }
-
-        // ✅ FIX: Handle Annual
-        if (model.Frequency == PaymentFrequency.Annual)
-        {
-            if (!model.FixedDate.HasValue)
-            {
-                ModelState.AddModelError("FixedDate", "Fixed Date is required.");
-                return View(model);
-            }
-
-            model.DayOfMonth = null; // clean unused field
-        }
-
+        // 🔥 SIMPLE LOGIC
         model.NextRunDate = CalculateNextRun(model);
         model.IsActive = true;
 
@@ -83,45 +60,45 @@ public class PaymentScheduleController : Controller
         return View(schedule);
     }
 
-    // EDIT (POST)
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, PaymentSchedule model)
-    {
-        if (id != model.Id) return NotFound();
+    //// EDIT (POST)
+    //[HttpPost]
+    //[ValidateAntiForgeryToken]
+    //public async Task<IActionResult> Edit(int id, PaymentSchedule model)
+    //{
+    //    if (id != model.Id) return NotFound();
 
-        if (!ModelState.IsValid)
-            return View(model);
+    //    if (!ModelState.IsValid)
+    //        return View(model);
 
-        if (model.Frequency == PaymentFrequency.Monthly)
-        {
-            if (!model.DayOfMonth.HasValue)
-            {
-                ModelState.AddModelError("DayOfMonth", "Day of Month is required.");
-                return View(model);
-            }
+    //    if (model.Frequency == PaymentFrequency.Monthly)
+    //    {
+    //        if (!model.DayOfMonth.HasValue)
+    //        {
+    //            ModelState.AddModelError("DayOfMonth", "Day of Month is required.");
+    //            return View(model);
+    //        }
 
-            model.FixedDate = null;
-        }
+    //        model.FixedDate = null;
+    //    }
 
-        if (model.Frequency == PaymentFrequency.Annual)
-        {
-            if (!model.FixedDate.HasValue)
-            {
-                ModelState.AddModelError("FixedDate", "Fixed Date is required.");
-                return View(model);
-            }
+    //    if (model.Frequency == PaymentFrequency.Annual)
+    //    {
+    //        if (!model.FixedDate.HasValue)
+    //        {
+    //            ModelState.AddModelError("FixedDate", "Fixed Date is required.");
+    //            return View(model);
+    //        }
 
-            model.DayOfMonth = null;
-        }
+    //        model.DayOfMonth = null;
+    //    }
 
-        model.NextRunDate = CalculateNextRun(model);
+    //    model.NextRunDate = CalculateNextRun(model);
 
-        _context.Update(model);
-        await _context.SaveChangesAsync();
+    //    _context.Update(model);
+    //    await _context.SaveChangesAsync();
 
-        return RedirectToAction(nameof(Index));
-    }
+    //    return RedirectToAction(nameof(Index));
+    //}
 
     // DELETE
     public async Task<IActionResult> Delete(int id)
@@ -147,31 +124,30 @@ public class PaymentScheduleController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // 🔁 CORE LOGIC
     private DateTime CalculateNextRun(PaymentSchedule s)
     {
         var today = DateTime.Today;
 
         if (s.Frequency == PaymentFrequency.Monthly)
         {
-            var day = s.DayOfMonth ?? 1;
+            var next = s.PaymentDate;
 
-            var next = new DateTime(today.Year, today.Month, day);
-
-            if (next < today)
+            while (next < today)
+            {
                 next = next.AddMonths(1);
+            }
 
             return next;
         }
 
-        if (s.Frequency == PaymentFrequency.Annual && s.FixedDate.HasValue)
+        if (s.Frequency == PaymentFrequency.Annual)
         {
-            var date = s.FixedDate.Value;
+            var next = s.PaymentDate;
 
-            var next = new DateTime(today.Year, date.Month, date.Day);
-
-            if (next < today)
+            while (next < today)
+            {
                 next = next.AddYears(1);
+            }
 
             return next;
         }

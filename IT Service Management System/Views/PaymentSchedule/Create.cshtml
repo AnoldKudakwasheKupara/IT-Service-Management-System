@@ -29,24 +29,16 @@
         <label asp-for="Frequency"></label>
         <select asp-for="Frequency"
                 class="form-control"
-                id="frequencyDropdown"
                 asp-items="Html.GetEnumSelectList<PaymentFrequency>()">
         </select>
         <span asp-validation-for="Frequency" class="text-danger"></span>
     </div>
 
-    <!-- Monthly -->
-    <div class="form-group" id="monthlyField">
-        <label asp-for="DayOfMonth">Day of Month</label>
-        <input asp-for="DayOfMonth" type="number" min="1" max="31" class="form-control" />
-        <span asp-validation-for="DayOfMonth" class="text-danger"></span>
-    </div>
-
-    <!-- Annual -->
-    <div class="form-group" id="annualField">
-        <label asp-for="FixedDate">Fixed Date</label>
-        <input asp-for="FixedDate" type="date" class="form-control" />
-        <span asp-validation-for="FixedDate" class="text-danger"></span>
+    <!-- Payment Date -->
+    <div class="form-group">
+        <label asp-for="PaymentDate">Payment Date</label>
+        <input asp-for="PaymentDate" type="date" class="form-control" />
+        <span asp-validation-for="PaymentDate" class="text-danger"></span>
     </div>
 
     <!-- Departments -->
@@ -68,34 +60,4 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-
-    <script>
-        function toggleFields() {
-            var freq = document.getElementById("frequencyDropdown").value;
-
-            var monthly = document.getElementById("monthlyField");
-            var annual = document.getElementById("annualField");
-
-            if (freq === "Monthly") {
-                monthly.style.display = "block";
-                annual.style.display = "none";
-
-                // Ensure value exists to avoid null
-                let dayInput = document.querySelector('[name="DayOfMonth"]');
-                if (!dayInput.value) {
-                    dayInput.value = 1;
-                }
-            }
-            else {
-                monthly.style.display = "none";
-                annual.style.display = "block";
-            }
-        }
-
-        document.getElementById("frequencyDropdown").addEventListener("change", toggleFields);
-
-        window.onload = function () {
-            toggleFields();
-        };
-    </script>
 }
