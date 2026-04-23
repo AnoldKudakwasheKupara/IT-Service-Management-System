@@ -21,6 +21,8 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<SSLCertificate> SSLCertificates { get; set; }
         public DbSet<PaymentSchedule> PaymentSchedules { get; set; }
         public DbSet<Payment> Payments { get; set; }
+        public DbSet<Activity> Activities { get; set; }
+        public DbSet<ActivityCategory> ActivityCategories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
