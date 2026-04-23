@@ -1,0 +1,27 @@
+﻿@model IEnumerable<IT_Service_Management_System.Models.ActivityCategory>
+
+<h2 class="mb-4">Activity Categories</h2>
+
+<a asp-action="Create" class="btn btn-success mb-3">+ Add Category</a>
+
+<table class="table table-hover">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td class="text-end">
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-dark">View</a>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

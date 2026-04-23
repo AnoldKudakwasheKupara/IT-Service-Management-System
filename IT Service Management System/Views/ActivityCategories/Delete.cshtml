@@ -1,0 +1,14 @@
+﻿@model IT_Service_Management_System.Models.ActivityCategory
+
+<h2 class="mb-4 text-danger">Delete Category</h2>
+
+<p>Are you sure you want to delete this category?</p>
+
+<h5>@Model.Name</h5>
+
+<form asp-action="Delete">
+    <input type="hidden" asp-for="Id" />
+
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

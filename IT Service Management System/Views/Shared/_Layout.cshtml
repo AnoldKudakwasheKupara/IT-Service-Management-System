@@ -421,6 +421,14 @@
                         </li>
 
                         <li class="nav-item">
+                            <a class="nav-link-modern @(currentController == "ActivityCategories" ? "active" : "")"
+                                   asp-controller="ActivityCategories" asp-action="Index">
+                                <i class="fas fa-list"></i>
+                                Activity Categories
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
                             <a class="nav-link-modern @(currentController == "PaymentSchedule" ? "active" : "")"
                                    asp-controller="PaymentSchedule" asp-action="Index">
                                 <i class="fas fa-calendar-dollar"></i>

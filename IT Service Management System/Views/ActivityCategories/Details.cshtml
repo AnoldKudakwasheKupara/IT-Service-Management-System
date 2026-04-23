@@ -1,0 +1,29 @@
+﻿@model IT_Service_Management_System.Models.ActivityCategory
+
+@{
+    ViewData["Title"] = "Category Details";
+}
+
+<h2 class="mb-4">Category Details</h2>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+
+        <h4>@Model.Name</h4>
+
+        <hr />
+
+        <p><strong>Category ID:</strong> @Model.Id</p>
+
+        <div class="mt-3">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                Edit
+            </a>
+
+            <a asp-action="Index" class="btn btn-secondary">
+                Back
+            </a>
+        </div>
+
+    </div>
+</div>
