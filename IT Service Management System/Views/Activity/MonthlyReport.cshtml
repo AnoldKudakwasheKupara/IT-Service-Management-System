@@ -1,0 +1,96 @@
+﻿@model IEnumerable<IGrouping<DateTime, IT_Service_Management_System.Models.Activity>>
+
+@{
+    ViewData["Title"] = "Monthly Report";
+    int month = ViewBag.Month;
+    int year = ViewBag.Year;
+}
+
+<h2 class="mb-4">Monthly Report</h2>
+
+<form method="get" class="row mb-4">
+    <div class="col-md-3">
+        <input type="number" name="month" value="@month" class="form-control" placeholder="Month (1-12)" />
+    </div>
+    <div class="col-md-3">
+        <input type="number" name="year" value="@year" class="form-control" placeholder="Year" />
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-primary">Load</button>
+    </div>
+</form>
+
+@{
+    double grandTotalMinutes = 0;
+}
+
+@foreach (var dayGroup in Model)
+{
+    var dayTotal = dayGroup
+        .Where(a => a.Duration.HasValue)
+        .Sum(a => a.Duration.Value.TotalMinutes);
+
+    grandTotalMinutes += dayTotal;
+}
+
+<div class="mb-4">
+    <h5>
+        Total This Month:
+        <span class="text-success">
+            @( (int)(grandTotalMinutes / 60) )h @( (int)(grandTotalMinutes % 60) )m
+        </span>
+    </h5>
+</div>
+
+@foreach (var day in Model)
+{
+    var dayMinutes = day
+        .Where(a => a.Duration.HasValue)
+        .Sum(a => a.Duration.Value.TotalMinutes);
+
+    var hours = (int)(dayMinutes / 60);
+    var minutes = (int)(dayMinutes % 60);
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header d-flex justify-content-between">
+            <strong>@day.Key.ToString("dddd, dd MMM yyyy")</strong>
+            <span class="text-primary">@hours h @minutes m</span>
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in day)
+                    {
+                        <tr>
+                            <td>@item.Title</td>
+                            <td>
+                                <span class="badge bg-primary">
+                                    @item.Category?.Name
+                                </span>
+                            </td>
+                            <td>@item.StartTime.ToString("HH:mm")</td>
+                            <td>@(item.EndTime?.ToString("HH:mm") ?? "Ongoing")</td>
+                            <td>
+                                @(item.Duration.HasValue
+                                    ? $"{(int)item.Duration.Value.TotalHours}h {item.Duration.Value.Minutes}m"
+                                    : "-")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+}

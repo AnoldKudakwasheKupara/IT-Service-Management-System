@@ -40,7 +40,6 @@ namespace IT_Service_Management_System.Controllers
 
             return View(activities);
         }
-
         public async Task<IActionResult> Details(int id)
         {
             var access = CheckAccess();
@@ -56,7 +55,6 @@ namespace IT_Service_Management_System.Controllers
 
             return View(activity);
         }
-
         public IActionResult Create()
         {
             var access = CheckAccess();
@@ -65,7 +63,6 @@ namespace IT_Service_Management_System.Controllers
             ViewData["CategoryId"] = new SelectList(_context.ActivityCategories, "Id", "Name");
             return View();
         }
-
         [HttpPost]
         public async Task<IActionResult> Create(Activity activity)
         {
@@ -88,7 +85,6 @@ namespace IT_Service_Management_System.Controllers
 
             return RedirectToAction("Index");
         }
-
         public async Task<IActionResult> Edit(int id)
         {
             var access = CheckAccess();
@@ -105,7 +101,6 @@ namespace IT_Service_Management_System.Controllers
 
             return View(activity);
         }
-
         [HttpPost]
         public async Task<IActionResult> Edit(Activity activity)
         {
@@ -135,7 +130,6 @@ namespace IT_Service_Management_System.Controllers
 
             return RedirectToAction("Index");
         }
-
         public async Task<IActionResult> Delete(int id)
         {
             var access = CheckAccess();
@@ -193,6 +187,39 @@ namespace IT_Service_Management_System.Controllers
                 .GroupBy(a => a.StartTime.Date)
                 .OrderBy(g => g.Key)
                 .ToList();
+
+            return View(grouped);
+        }
+        public async Task<IActionResult> MonthlyReport(int? month, int? year)
+        {
+            var access = CheckAccess();
+            if (access != null) return access;
+
+            var userId = HttpContext.Session.GetInt32("UserId");
+
+            var today = DateTime.Today;
+
+            int selectedMonth = month ?? today.Month;
+            int selectedYear = year ?? today.Year;
+
+            var start = new DateTime(selectedYear, selectedMonth, 1);
+            var end = start.AddMonths(1);
+
+            var activities = await _context.Activities
+                .Include(a => a.Category)
+                .Where(a => a.UserId == userId.ToString()
+                    && a.StartTime >= start
+                    && a.StartTime < end)
+                .OrderBy(a => a.StartTime)
+                .ToListAsync();
+
+            var grouped = activities
+                .GroupBy(a => a.StartTime.Date)
+                .OrderBy(g => g.Key)
+                .ToList();
+
+            ViewBag.Month = selectedMonth;
+            ViewBag.Year = selectedYear;
 
             return View(grouped);
         }
