@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IT_Service_Management_System.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260423124844_AddActivityTrackerss")]
-    partial class AddActivityTrackerss
+    [Migration("20260423174325_AddActivityTrackersss")]
+    partial class AddActivityTrackersss
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
