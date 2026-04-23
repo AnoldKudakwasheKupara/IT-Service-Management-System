@@ -170,5 +170,31 @@ namespace IT_Service_Management_System.Controllers
 
             return RedirectToAction("Index");
         }
+        public async Task<IActionResult> WeeklyReport()
+        {
+            var access = CheckAccess();
+            if (access != null) return access;
+
+            var userId = HttpContext.Session.GetInt32("UserId");
+
+            var today = DateTime.Today;
+            var startOfWeek = today.AddDays(-(int)today.DayOfWeek);
+            var endOfWeek = startOfWeek.AddDays(7);
+
+            var activities = await _context.Activities
+                .Include(a => a.Category)
+                .Where(a => a.UserId == userId.ToString()
+                    && a.StartTime >= startOfWeek
+                    && a.StartTime < endOfWeek)
+                .OrderBy(a => a.StartTime)
+                .ToListAsync();
+
+            var grouped = activities
+                .GroupBy(a => a.StartTime.Date)
+                .OrderBy(g => g.Key)
+                .ToList();
+
+            return View(grouped);
+        }
     }
 }

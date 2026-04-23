@@ -1,0 +1,85 @@
+﻿@model IEnumerable<IGrouping<DateTime, IT_Service_Management_System.Models.Activity>>
+
+@{
+    ViewData["Title"] = "Weekly Report";
+}
+
+<h2 class="mb-4">Weekly Report</h2>
+
+@{
+    double grandTotalMinutes = 0;
+}
+
+@foreach (var dayGroup in Model)
+{
+    var dayTotal = dayGroup
+        .Where(a => a.Duration.HasValue)
+        .Sum(a => a.Duration.Value.TotalMinutes);
+
+    grandTotalMinutes += dayTotal;
+
+    var hours = (int)(dayTotal / 60);
+    var minutes = (int)(dayTotal % 60);
+}
+
+<div class="mb-4">
+    <h5>
+        Total This Week:
+        <span class="text-success">
+            @( (int)(grandTotalMinutes / 60) )h @( (int)(grandTotalMinutes % 60) )m
+        </span>
+    </h5>
+</div>
+
+@foreach (var day in Model)
+{
+    var dayMinutes = day
+        .Where(a => a.Duration.HasValue)
+        .Sum(a => a.Duration.Value.TotalMinutes);
+
+    var hours = (int)(dayMinutes / 60);
+    var minutes = (int)(dayMinutes % 60);
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header d-flex justify-content-between">
+            <strong>@day.Key.ToString("dddd, dd MMM yyyy")</strong>
+            <span class="text-primary">@hours h @minutes m</span>
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in day)
+                    {
+                        <tr>
+                            <td>@item.Title</td>
+                            <td>
+                                <span class="badge bg-primary">
+                                    @item.Category?.Name
+                                </span>
+                            </td>
+                            <td>@item.StartTime.ToString("HH:mm")</td>
+                            <td>@(item.EndTime?.ToString("HH:mm") ?? "Ongoing")</td>
+                            <td>
+                                @(item.Duration.HasValue
+                                    ? $"{(int)item.Duration.Value.TotalHours}h {item.Duration.Value.Minutes}m"
+                                    : "-")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+}
