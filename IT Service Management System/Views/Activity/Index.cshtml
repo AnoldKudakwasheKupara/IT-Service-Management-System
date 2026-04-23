@@ -2,13 +2,42 @@
 
 @{
     ViewData["Title"] = "Today's Activities";
+
+    var totalMinutes = Model
+        .Where(a => a.Duration.HasValue)
+        .Sum(a => a.Duration.Value.TotalMinutes);
+
+    var totalHours = (int)(totalMinutes / 60);
+    var totalMins = (int)(totalMinutes % 60);
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Today's Activities</h2>
+
+    <div>
+        <h2 class="mb-1">Today's Activities</h2>
+
+        <div class="btn-group mt-2">
+            <a asp-action="WeeklyReport" class="btn btn-outline-primary btn-sm">
+                📅 Weekly
+            </a>
+
+            <a asp-action="MonthlyReport" class="btn btn-outline-secondary btn-sm">
+                📊 Monthly
+            </a>
+        </div>
+    </div>
+
     <a asp-action="Create" class="btn btn-success">
         + Log Activity
     </a>
+
+</div>
+
+<div class="mb-3">
+    <strong>Total Time Today:</strong>
+    <span class="text-success">
+        @totalHours h @totalMins m
+    </span>
 </div>
 
 @if (!Model.Any())
@@ -34,29 +63,38 @@ else
                     </tr>
                 </thead>
                 <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>@item.Title</td>
-                        <td>
-                            <span class="badge bg-primary">
-                                @item.Category?.Name
-                            </span>
-                        </td>
-                        <td>@item.StartTime.ToString("HH:mm")</td>
-                        <td>@(item.EndTime?.ToString("HH:mm") ?? "-")</td>
-                        <td>
-                            @(item.Duration.HasValue 
-                                ? $"{item.Duration.Value.Hours}h {item.Duration.Value.Minutes}m"
-                                : "-")
-                        </td>
-                        <td class="text-end">
-                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-dark">View</a>
-                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
-                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
-                        </td>
-                    </tr>
-                }
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.Title</td>
+
+                            <td>
+                                <span class="badge bg-primary">
+                                    @item.Category?.Name
+                                </span>
+                            </td>
+
+                            <td>@item.StartTime.ToString("HH:mm")</td>
+
+                            <td>
+                                @(item.EndTime.HasValue
+                                    ? item.EndTime.Value.ToString("HH:mm")
+                                    : "<span class='text-muted'>Ongoing</span>")
+                            </td>
+
+                            <td>
+                                @(item.Duration.HasValue
+                                    ? $"{(int)item.Duration.Value.TotalHours}h {item.Duration.Value.Minutes}m"
+                                    : "<span class='text-muted'>-</span>")
+                            </td>
+
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-dark">View</a>
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
 

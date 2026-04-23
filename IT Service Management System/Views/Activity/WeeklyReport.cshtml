@@ -4,7 +4,13 @@
     ViewData["Title"] = "Weekly Report";
 }
 
-<h2 class="mb-4">Weekly Report</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Weekly Report</h2>
+
+    <a asp-action="Index" class="btn btn-outline-secondary">
+        ← Back to Activities
+    </a>
+</div>
 
 @{
     double grandTotalMinutes = 0;
