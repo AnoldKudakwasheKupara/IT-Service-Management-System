@@ -1,0 +1,65 @@
+﻿@model IEnumerable<IT_Service_Management_System.Models.Activity>
+
+@{
+    ViewData["Title"] = "Today's Activities";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Today's Activities</h2>
+    <a asp-action="Create" class="btn btn-success">
+        + Log Activity
+    </a>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No activities logged today.
+    </div>
+}
+else
+{
+    <div class="card shadow-sm">
+        <div class="card-body">
+
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th>Duration</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Title</td>
+                        <td>
+                            <span class="badge bg-primary">
+                                @item.Category?.Name
+                            </span>
+                        </td>
+                        <td>@item.StartTime.ToString("HH:mm")</td>
+                        <td>@(item.EndTime?.ToString("HH:mm") ?? "-")</td>
+                        <td>
+                            @(item.Duration.HasValue 
+                                ? $"{item.Duration.Value.Hours}h {item.Duration.Value.Minutes}m"
+                                : "-")
+                        </td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-dark">View</a>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+
+        </div>
+    </div>
+}
