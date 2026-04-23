@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IT_Service_Management_System.Models
@@ -7,7 +8,7 @@ namespace IT_Service_Management_System.Models
     {
         public int Id { get; set; }
 
-        [Required]
+        [ValidateNever]
         public string UserId { get; set; } 
 
         [Required]
@@ -34,6 +35,7 @@ namespace IT_Service_Management_System.Models
         }
 
         public int CategoryId { get; set; }
+        [ValidateNever]
         public ActivityCategory Category { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
