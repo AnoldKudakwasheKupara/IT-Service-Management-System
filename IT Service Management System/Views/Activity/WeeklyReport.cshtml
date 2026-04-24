@@ -1,91 +1,645 @@
 ﻿@model IEnumerable<IGrouping<DateTime, IT_Service_Management_System.Models.Activity>>
 
 @{
-    ViewData["Title"] = "Weekly Report";
+    ViewData["Title"] = "Weekly Report - Axis IT Helpdesk";
+    
+    var startDate = Model.Any() ? Model.Min(g => g.Key) : DateTime.Now;
+    var endDate = Model.Any() ? Model.Max(g => g.Key) : DateTime.Now;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Weekly Report</h2>
-
-    <a asp-action="Index" class="btn btn-outline-secondary">
-        ← Back to Activities
-    </a>
-</div>
-
-@{
-    double grandTotalMinutes = 0;
-}
-
-@foreach (var dayGroup in Model)
-{
-    var dayTotal = dayGroup
-        .Where(a => a.Duration.HasValue)
-        .Sum(a => a.Duration.Value.TotalMinutes);
-
-    grandTotalMinutes += dayTotal;
-
-    var hours = (int)(dayTotal / 60);
-    var minutes = (int)(dayTotal % 60);
-}
-
-<div class="mb-4">
-    <h5>
-        Total This Week:
-        <span class="text-success">
-            @( (int)(grandTotalMinutes / 60) )h @( (int)(grandTotalMinutes % 60) )m
-        </span>
-    </h5>
-</div>
-
-@foreach (var day in Model)
-{
-    var dayMinutes = day
-        .Where(a => a.Duration.HasValue)
-        .Sum(a => a.Duration.Value.TotalMinutes);
-
-    var hours = (int)(dayMinutes / 60);
-    var minutes = (int)(dayMinutes % 60);
-
-    <div class="card mb-4 shadow-sm">
-        <div class="card-header d-flex justify-content-between">
-            <strong>@day.Key.ToString("dddd, dd MMM yyyy")</strong>
-            <span class="text-primary">@hours h @minutes m</span>
-        </div>
-
-        <div class="card-body">
-
-            <table class="table table-sm">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Category</th>
-                        <th>Start</th>
-                        <th>End</th>
-                        <th>Duration</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in day)
-                    {
-                        <tr>
-                            <td>@item.Title</td>
-                            <td>
-                                <span class="badge bg-primary">
-                                    @item.Category?.Name
-                                </span>
-                            </td>
-                            <td>@item.StartTime.ToString("HH:mm")</td>
-                            <td>@(item.EndTime?.ToString("HH:mm") ?? "Ongoing")</td>
-                            <td>
-                                @(item.Duration.HasValue
-                                    ? $"{(int)item.Duration.Value.TotalHours}h {item.Duration.Value.Minutes}m"
-                                    : "-")
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-calendar-week me-2" style="color: var(--info);"></i>
+                    Weekly Report
+                </h1>
+                <p class="text-muted mt-2">View activity reports by week</p>
+            </div>
+            <a asp-action="Index" class="btn-back-to-list">
+                <i class="fas fa-arrow-left"></i>
+                Back to Activities
+            </a>
         </div>
     </div>
-}
+
+    @{
+        double grandTotalMinutes = 0;
+    }
+
+    @foreach (var dayGroup in Model)
+    {
+        var dayTotal = dayGroup
+            .Where(a => a.Duration.HasValue)
+            .Sum(a => a.Duration.Value.TotalMinutes);
+
+        grandTotalMinutes += dayTotal;
+    }
+
+    <!-- Summary Card -->
+    <div class="summary-card mb-4">
+        <div class="summary-icon">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="summary-info">
+            <h4>Weekly Summary</h4>
+            <div class="summary-dates">
+                <i class="fas fa-calendar-alt"></i>
+                <span>@startDate.ToString("MMM dd") - @endDate.ToString("MMM dd, yyyy")</span>
+            </div>
+            <div class="summary-total">
+                <span class="total-label">Total Time:</span>
+                <span class="total-value">
+                    @((int)(grandTotalMinutes / 60))h @((int)(grandTotalMinutes % 60))m
+                </span>
+            </div>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="activities-card">
+            <div class="card-header-custom">
+                <div>
+                    <i class="fas fa-list me-2"></i>
+                    <span>Daily Activity Breakdown</span>
+                </div>
+                <div class="activity-count">
+                    <i class="fas fa-chart-simple"></i>
+                    <span>@Model.Count()</span> days with activity
+                </div>
+            </div>
+
+            <div class="card-body-custom">
+                @foreach (var day in Model.OrderByDescending(d => d.Key))
+                {
+                    var dayMinutes = day
+                        .Where(a => a.Duration.HasValue)
+                        .Sum(a => a.Duration.Value.TotalMinutes);
+
+                    var hours = (int)(dayMinutes / 60);
+                    var minutes = (int)(dayMinutes % 60);
+                    var isWeekend = day.Key.DayOfWeek == DayOfWeek.Saturday || day.Key.DayOfWeek == DayOfWeek.Sunday;
+                    var isToday = day.Key.Date == DateTime.Now.Date;
+
+                    <div class="day-card @(isWeekend ? "weekend-day" : "") @(isToday ? "today-day" : "")">
+                        <div class="day-header">
+                            <div class="day-info">
+                                <div class="day-icon">
+                                    <i class="fas fa-calendar-day"></i>
+                                </div>
+                                <div class="day-details">
+                                    <h3 class="day-date">@day.Key.ToString("dddd, dd MMM yyyy")</h3>
+                                    <div class="day-badges">
+                                        <span class="day-badge @(isWeekend ? "weekend" : "weekday")">
+                                            @(isWeekend ? "Weekend" : "Weekday")
+                                        </span>
+                                        @if (isToday)
+                                        {
+                                            <span class="day-badge today">
+                                                <i class="fas fa-star"></i> Today
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="day-total">
+                                <i class="fas fa-clock"></i>
+                                <span class="total-hours">@hours h @minutes m</span>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="activities-table">
+                                <thead>
+                                    <tr>
+                                        <th><i class="fas fa-heading me-1"></i> Title</th>
+                                        <th><i class="fas fa-tag me-1"></i> Category</th>
+                                        <th><i class="fas fa-hourglass-start me-1"></i> Start</th>
+                                        <th><i class="fas fa-hourglass-end me-1"></i> End</th>
+                                        <th><i class="fas fa-stopwatch me-1"></i> Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in day.OrderBy(a => a.StartTime))
+                                    {
+                                        var isOngoing = !item.EndTime.HasValue;
+
+                                        <tr class="@(isOngoing ? "ongoing-row" : "")">
+                                            <td class="title-cell">
+                                                <div class="activity-info">
+                                                    <div class="activity-icon-small">
+                                                        <i class="fas fa-tasks"></i>
+                                                    </div>
+                                                    <span>@item.Title</span>
+                                                </div>
+                                            </td>
+
+                                            <td class="category-cell">
+                                                @if (item.Category != null)
+                                                {
+                                                    <span class="category-badge">
+                                                        <i class="fas fa-folder"></i>
+                                                        @item.Category.Name
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+
+                                            <td class="time-cell">
+                                                <i class="far fa-clock"></i>
+                                                @item.StartTime.ToString("HH:mm")
+                                            </td>
+
+                                            <td class="time-cell">
+                                                @if (isOngoing)
+                                                {
+                                                    <span class="ongoing-badge-small">
+                                                        <i class="fas fa-play-circle"></i> Ongoing
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span>
+                                                        <i class="far fa-clock"></i>
+                                                        @item.EndTime.Value.ToString("HH:mm")
+                                                    </span>
+                                                }
+                                            </td>
+
+                                            <td class="duration-cell">
+                                                @if (item.Duration.HasValue)
+                                                {
+                                                    var durHours = (int)item.Duration.Value.TotalHours;
+                                                    var durMinutes = item.Duration.Value.Minutes;
+
+                                                    if (durHours > 0)
+                                                    {
+                                                        <span class="duration-badge-small">@durHours h @durMinutes m</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="duration-badge-small">@durMinutes m</span>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">-</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-calendar-week"></i>
+            <h3>No activities found</h3>
+            <p>No activities were logged for this week</p>
+            <a asp-action="Index" class="btn-back-to-activities">
+                <i class="fas fa-arrow-left"></i>
+                Back to Activities
+            </a>
+        </div>
+    }
+</div>
+
+<style>
+    /* Weekly Report Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .btn-back-to-list {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+    }
+
+        .btn-back-to-list:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+    /* Summary Card */
+    .summary-card {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        border-radius: 1rem;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        color: white;
+        margin-bottom: 1.5rem;
+    }
+
+    .summary-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+    }
+
+    .summary-info h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .summary-dates {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-total {
+        display: flex;
+        gap: 0.5rem;
+        align-items: baseline;
+    }
+
+    .total-label {
+        font-size: 0.875rem;
+        opacity: 0.9;
+    }
+
+    .total-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+    }
+
+    /* Activities Card */
+    .activities-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .activity-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* Day Card */
+    .day-card {
+        background: white;
+        border-radius: 0.75rem;
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        transition: all 0.2s;
+    }
+
+        .day-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .day-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .day-card.weekend-day {
+            background: rgba(245, 176, 66, 0.03);
+        }
+
+        .day-card.today-day {
+            border: 2px solid var(--primary);
+        }
+
+    .day-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .day-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .day-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+    }
+
+    .day-details h3 {
+        margin: 0 0 0.25rem 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .day-badges {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .day-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.125rem 0.5rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+        .day-badge.weekday {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+        .day-badge.weekend {
+            background: #fff5e6;
+            color: var(--warning);
+        }
+
+        .day-badge.today {
+            background: #e6f0ff;
+            color: var(--info);
+        }
+
+    .day-total {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--success);
+    }
+
+        .day-total i {
+            font-size: 1.1rem;
+        }
+
+    /* Activities Table */
+    .activities-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .activities-table thead {
+            background: var(--gray-50);
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .activities-table th {
+            padding: 0.75rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .activities-table td {
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid var(--gray-100);
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+
+        .activities-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .activities-table tbody tr:hover {
+            background-color: var(--gray-50);
+        }
+
+        .activities-table tr.ongoing-row {
+            background-color: rgba(44, 125, 160, 0.03);
+        }
+
+    .title-cell {
+        min-width: 200px;
+    }
+
+    .activity-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .activity-icon-small {
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .category-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: #e6f0ff;
+        color: var(--info);
+    }
+
+    .time-cell {
+        color: var(--gray-600);
+        white-space: nowrap;
+    }
+
+    .ongoing-badge-small {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.125rem 0.5rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: #fff5e6;
+        color: var(--warning);
+    }
+
+    .duration-badge-small {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.125rem 0.5rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid var(--gray-200);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    .btn-back-to-activities {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-back-to-activities:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add data-label attributes for responsive table
+        const tables = document.querySelectorAll('.activities-table');
+        
+        tables.forEach(table => {
+            const headers = table.querySelectorAll('thead th');
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                cells.forEach((cell, index) => {
+                    if (headers[index]) {
+                        const headerText = headers[index].innerText.replace(/[^\w\s]/g, '').trim();
+                        cell.setAttribute('data-label', headerText);
+                    }
+                });
+            });
+        });
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">

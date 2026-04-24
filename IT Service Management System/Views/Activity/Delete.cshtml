@@ -1,24 +1,646 @@
 ﻿@model IT_Service_Management_System.Models.Activity
 
 @{
-    ViewData["Title"] = "Delete Activity";
+    ViewData["Title"] = "Delete Activity - Axis IT Helpdesk";
+    var isOngoing = !Model.EndTime.HasValue;
 }
 
-<h2 class="mb-4 text-danger">Delete Activity</h2>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-trash-alt me-2" style="color: var(--danger);"></i>
+                    Delete Activity
+                </h1>
+                <p class="text-muted mt-2">This action cannot be undone</p>
+            </div>
+        </div>
+    </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
+    <div class="delete-warning-card">
+        <div class="warning-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="warning-title">Are you absolutely sure?</h3>
+        <p class="warning-message">This action will permanently delete this activity from the system.</p>
+    </div>
 
-        <p>Are you sure you want to delete this activity?</p>
+    <div class="activity-details-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-tasks me-2"></i>
+                <span>Activity to Delete</span>
+            </div>
+            <div class="activity-id-badge">
+                <i class="fas fa-hashtag"></i>
+                ID: @Model.Id
+            </div>
+        </div>
 
-        <h5>@Model.Title</h5>
+        <div class="card-body-custom">
+            <!-- Activity Summary -->
+            <div class="activity-summary">
+                <div class="activity-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <div class="activity-summary-info">
+                    <h2 class="activity-title">@Model.Title</h2>
+                    <div class="activity-status">
+                        @if (isOngoing)
+                        {
+                            <span class="status-badge status-ongoing">
+                                <i class="fas fa-play-circle"></i> Ongoing
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="status-badge status-completed">
+                                <i class="fas fa-check-circle"></i> Completed
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
 
-        <form asp-action="Delete">
-            <input type="hidden" asp-for="Id" />
+            <!-- Activity Details -->
+            <div class="activity-details">
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-tag"></i>
+                        Category
+                    </div>
+                    <div class="detail-value">
+                        @(Model.Category?.Name ?? "Uncategorized")
+                    </div>
+                </div>
 
-            <button type="submit" class="btn btn-danger">Delete</button>
-            <a asp-action="Index" class="btn btn-secondary">Cancel</a>
-        </form>
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-align-left"></i>
+                        Description
+                    </div>
+                    <div class="detail-value description-value">
+                        @(string.IsNullOrEmpty(Model.Description) ? "No description provided" : Model.Description)
+                    </div>
+                </div>
 
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-hourglass-start"></i>
+                        Start Time
+                    </div>
+                    <div class="detail-value">
+                        @Model.StartTime.ToString("dddd, MMMM dd, yyyy 'at' HH:mm")
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-hourglass-end"></i>
+                        End Time
+                    </div>
+                    <div class="detail-value">
+                        @if (Model.EndTime.HasValue)
+                        {
+                            @Model.EndTime.Value.ToString("dddd, MMMM dd, yyyy 'at' HH:mm")
+                        }
+                        else
+                        {
+                            <span class="text-muted">Ongoing - No end time</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-stopwatch"></i>
+                        Duration
+                    </div>
+                    <div class="detail-value">
+                        @if (Model.Duration.HasValue)
+                        {
+                            var hours = Model.Duration.Value.Hours;
+                            var minutes = Model.Duration.Value.Minutes;
+                            if (hours > 0)
+                            {
+                                <span>@hours hours @minutes minutes</span>
+                            }
+                            else
+                            {
+                                <span>@minutes minutes</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted">Not calculated</span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warning Details -->
+            <div class="warning-details">
+                <div class="warning-detail-item">
+                    <i class="fas fa-database"></i>
+                    <div>
+                        <strong>Data Loss Warning</strong>
+                        <span>This activity record will be permanently deleted from the system.</span>
+                    </div>
+                </div>
+                <div class="warning-detail-item">
+                    <i class="fas fa-clock"></i>
+                    <div>
+                        <strong>Irreversible Action</strong>
+                        <span>This action cannot be undone. You will not be able to recover this activity.</span>
+                    </div>
+                </div>
+                <div class="warning-detail-item">
+                    <i class="fas fa-chart-line"></i>
+                    <div>
+                        <strong>Reporting Impact</strong>
+                        <span>This activity will be removed from all reports and analytics.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Form -->
+            <form asp-action="Delete" method="post" id="deleteForm" class="delete-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                
+                <div class="confirmation-checkbox">
+                    <input type="checkbox" id="confirmDelete" required>
+                    <label for="confirmDelete">
+                        I understand that this action is permanent and cannot be undone
+                    </label>
+                </div>
+
+                <div class="action-buttons-container">
+                    <button type="submit" class="btn-delete" id="deleteButton" disabled>
+                        <i class="fas fa-trash-alt"></i>
+                        Permanently Delete Activity
+                    </button>
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+<style>
+    /* Delete Activity Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --danger-dark: #c53030;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+    .btn-back:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+        transform: translateX(-2px);
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Warning Card */
+    .delete-warning-card {
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+        border: 1px solid #fed7d7;
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .warning-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--danger);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .warning-icon i {
+        font-size: 3rem;
+        color: white;
+    }
+
+    .warning-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--danger-dark);
+        margin: 0 0 0.5rem 0;
+    }
+
+    .warning-message {
+        color: var(--gray-600);
+        margin: 0;
+    }
+
+    /* Activity Details Card */
+    .activity-details-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .activity-id-badge {
+        background: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Activity Summary */
+    .activity-summary {
+        display: flex;
+        gap: 1.5rem;
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .activity-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--gray-400), var(--gray-500));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .activity-summary-info {
+        flex: 1;
+    }
+
+    .activity-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0 0 0.75rem 0;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-ongoing {
+        background: #fff5e6;
+        color: var(--warning);
+    }
+
+    .status-completed {
+        background: #e6f5e9;
+        color: var(--success);
+    }
+
+    /* Activity Details */
+    .activity-details {
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .detail-row {
+        display: flex;
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+    .detail-label {
+        width: 120px;
+        font-weight: 600;
+        color: var(--gray-600);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .detail-value {
+        flex: 1;
+        color: var(--gray-700);
+        font-size: 0.875rem;
+    }
+
+    .description-value {
+        white-space: pre-wrap;
+        line-height: 1.5;
+    }
+
+    /* Warning Details */
+    .warning-details {
+        background: #fff5f5;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        border-left: 3px solid var(--danger);
+    }
+
+    .warning-detail-item {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+    .warning-detail-item i {
+        font-size: 1rem;
+        color: var(--danger);
+        margin-top: 0.125rem;
+    }
+
+    .warning-detail-item div {
+        flex: 1;
+    }
+
+    .warning-detail-item strong {
+        display: block;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        margin-bottom: 0.25rem;
+    }
+
+    .warning-detail-item span {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        line-height: 1.4;
+    }
+
+    /* Confirmation Checkbox */
+    .confirmation-checkbox {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        border-left: 3px solid var(--danger);
+    }
+
+    .confirmation-checkbox input[type="checkbox"] {
+        margin-right: 0.75rem;
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+    }
+
+    .confirmation-checkbox label {
+        color: var(--gray-700);
+        font-size: 0.875rem;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    /* Action Buttons */
+    .action-buttons-container {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-delete {
+        background: linear-gradient(100deg, var(--danger-dark), var(--danger));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-delete:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        filter: brightness(1.05);
+    }
+
+    .btn-delete:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-cancel:hover {
+        background: var(--gray-50);
+        color: var(--gray-700);
+        text-decoration: none;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmCheckbox = document.getElementById('confirmDelete');
+        const deleteButton = document.getElementById('deleteButton');
+        const deleteForm = document.getElementById('deleteForm');
+
+        // Enable/disable delete button based on checkbox
+        if (confirmCheckbox && deleteButton) {
+            confirmCheckbox.addEventListener('change', function() {
+                deleteButton.disabled = !this.checked;
+            });
+        }
+
+        // Form submission with additional confirmation
+        if (deleteForm) {
+            deleteForm.addEventListener('submit', function(e) {
+                if (!confirmCheckbox.checked) {
+                    e.preventDefault();
+                    showWarningToast('Please confirm that you understand this action is permanent');
+                    confirmCheckbox.focus();
+                    return false;
+                }
+
+                // Final confirmation dialog with activity details
+                const activityTitle = document.querySelector('.activity-title')?.innerText || 'this activity';
+                const confirmed = confirm(
+                    '⚠️ WARNING: This action is permanent and cannot be undone.\n\n' +
+                    `Are you absolutely sure you want to delete "${activityTitle}"?\n\n` +
+                    'This will permanently delete:\n' +
+                    '• All activity information\n' +
+                    '• Time tracking data\n' +
+                    '• Associated reports\n\n' +
+                    'This action cannot be reversed.'
+                );
+
+                if (!confirmed) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable button to prevent double submission
+                deleteButton.disabled = true;
+                deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting Activity...';
+            });
+        }
+
+        // Helper function to show toast notifications
+        function showWarningToast(message) {
+            const existingToast = document.querySelector('.warning-toast');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'warning-toast';
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 2rem;
+                right: 2rem;
+                background: var(--danger);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.75rem;
+                box-shadow: var(--shadow-lg);
+                z-index: 1050;
+                animation: slideIn 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-size: 0.875rem;
+            `;
+            toast.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Add hover effect to delete button when checkbox is checked
+        if (confirmCheckbox && deleteButton) {
+            confirmCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    deleteButton.style.animation = 'shake 0.5s ease';
+                    setTimeout(() => {
+                        deleteButton.style.animation = '';
+                    }, 500);
+                }
+            });
+        }
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
