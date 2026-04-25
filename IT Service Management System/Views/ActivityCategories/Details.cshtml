@@ -165,6 +165,12 @@
                                                    class="action-link" title="View Activity">
                                                 <i class="fas fa-eye"></i>
                                             </a>
+                                            <a asp-controller="Activities" asp-action="Edit" asp-route-id="@activity.Id" class="action-link" title="Edit Activity">
+                                                <i class="fas fa-pencil-alt"></i>
+                                            </a>
+                                            <a asp-controller="Activities" asp-action="Delete" asp-route-id="@activity.Id" class="action-link" title="Delete Activity">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
                                         </td>
                                     </tr>                                
                                 }

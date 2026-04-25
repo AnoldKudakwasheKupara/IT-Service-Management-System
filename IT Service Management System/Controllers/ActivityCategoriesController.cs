@@ -31,7 +31,10 @@ namespace IT_Service_Management_System.Controllers
             var access = CheckAccess();
             if (access != null) return access;
 
-            var categories = await _context.ActivityCategories.ToListAsync();
+            var categories = await _context.ActivityCategories
+                .Include(c => c.Activities)
+                .ToListAsync();
+
             return View(categories);
         }
 
@@ -41,6 +44,7 @@ namespace IT_Service_Management_System.Controllers
             if (access != null) return access;
 
             var category = await _context.ActivityCategories
+                .Include(c => c.Activities) 
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (category == null) return NotFound();
