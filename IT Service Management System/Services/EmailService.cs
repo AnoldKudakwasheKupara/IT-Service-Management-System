@@ -34,7 +34,7 @@ namespace IT_Service_Management_System.Services
 
             mail.To.Add(toEmail);
 
-            await smtp.SendMailAsync(mail);
+           await smtp.SendMailAsync(mail);
         }
     }
 }
