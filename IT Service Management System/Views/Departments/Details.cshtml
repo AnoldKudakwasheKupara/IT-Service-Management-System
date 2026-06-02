@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = $"Department Details - {Model.Name} - Axis IT Helpdesk";
+    var employeeCount = Model.Users?.Count ?? 0;
+    var hodName = Model.Hod != null ? $"{Model.Hod.FirstName} {Model.Hod.LastName}" : "Not assigned";
+    var hodEmail = Model.Hod?.Email ?? "";
 }
 
 <div class="page-container">
@@ -45,7 +48,10 @@
                             <i class="fas fa-calendar-alt"></i>
                             Created: @Model.CreatedAt.ToString("MMMM dd, yyyy")
                         </span>
-                       
+                        <span class="meta-badge">
+                            <i class="fas fa-users"></i>
+                            @employeeCount @(employeeCount == 1 ? "Employee" : "Employees")
+                        </span>
                     </div>
                 </div>
             </div>
@@ -68,6 +74,41 @@
                 </div>
             </div>
 
+            <!-- Details Grid -->
+            <div class="details-grid">
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>Head of Department</label>
+                        @if (Model.Hod != null)
+                        {
+                            <p>@hodName</p>
+                            <a href="mailto:@hodEmail" class="detail-action">
+                                <i class="fas fa-envelope"></i> @hodEmail
+                            </a>
+                        }
+                        else
+                        {
+                            <p class="text-muted">Not assigned</p>
+                            <span class="detail-sub">No HOD assigned yet</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <div class="detail-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="detail-content">
+                        <label>Team Size</label>
+                        <p>@employeeCount</p>
+                        <span class="detail-sub">@(employeeCount == 1 ? "person" : "people") in this department</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Additional Information Section -->
             <div class="additional-info">
                 <h3 class="section-title">
@@ -84,10 +125,17 @@
                         <span class="info-value">@Model.Name</span>
                     </div>
                     <div class="info-item">
+                        <span class="info-label">Head of Department:</span>
+                        <span class="info-value">@hodName</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Total Employees:</span>
+                        <span class="info-value">@employeeCount</span>
+                    </div>
+                    <div class="info-item">
                         <span class="info-label">Created Date:</span>
                         <span class="info-value">@Model.CreatedAt.ToString("MMMM dd, yyyy 'at' HH:mm")</span>
                     </div>
-                   
                     <div class="info-item">
                         <span class="info-label">Status:</span>
                         <span class="info-value status-active">
@@ -291,6 +339,83 @@
             margin: 0;
         }
 
+    /* Details Grid */
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .detail-card {
+        background: var(--gray-50);
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        gap: 1rem;
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .detail-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            background: white;
+        }
+
+    .detail-icon {
+        width: 48px;
+        height: 48px;
+        background: white;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        border: 1px solid var(--gray-200);
+    }
+
+    .detail-content {
+        flex: 1;
+    }
+
+        .detail-content label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gray-500);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .detail-content p {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin: 0 0 0.5rem 0;
+        }
+
+    .detail-action {
+        font-size: 0.75rem;
+        color: var(--primary);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+        .detail-action:hover {
+            text-decoration: underline;
+        }
+
+    .detail-sub {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+    }
+
     /* Additional Information */
     .additional-info {
         margin-bottom: 2rem;
@@ -418,6 +543,8 @@
             color: white;
             transform: translateY(-2px);
         }
+
+
 
 
 </style>

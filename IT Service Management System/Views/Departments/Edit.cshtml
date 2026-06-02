@@ -35,7 +35,7 @@
         <form asp-action="Edit" method="post" id="editDepartmentForm">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
-            
+
             <div class="card-body-custom">
                 <div class="form-grid">
                     <!-- Left Column -->
@@ -75,6 +75,35 @@
                             <div class="char-counter">
                                 <span id="charCount">0</span> characters
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Head of Department Selection Row -->
+                <div class="form-row">
+                    <div class="form-group-modern">
+                        <label asp-for="HodId" class="form-label">
+                            <i class="fas fa-user-tie"></i>
+                            Head of Department
+                        </label>
+                        <div class="select-wrapper">
+                            <i class="fas fa-chevron-down select-icon"></i>
+                            <select asp-for="HodId" class="form-control-modern">
+                                <option value="">-- Select Head of Department --</option>
+                                @if (ViewBag.Hods != null)
+                                {
+                                    foreach (var hod in ViewBag.Hods)
+                                    {
+                                        <option value="@hod.Id" selected="@(hod.Id == Model.HodId)">
+                                            @hod.FirstName @hod.LastName
+                                        </option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <span asp-validation-for="HodId" class="validation-message text-danger"></span>
+                        <div class="form-hint">
+                            <i class="fas fa-info-circle"></i> Select the department head/manager
                         </div>
                     </div>
                 </div>
@@ -155,11 +184,11 @@
         border: 1px solid var(--gray-200);
     }
 
-    .btn-back:hover {
-        background: var(--gray-50);
-        color: var(--primary);
-        transform: translateX(-2px);
-    }
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+        }
 
     .page-title {
         font-size: 1.875rem;
@@ -217,6 +246,14 @@
         gap: 1.5rem;
     }
 
+    /* Form Row */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
     /* Form Groups */
     .form-group-modern {
         display: flex;
@@ -233,10 +270,10 @@
         gap: 0.5rem;
     }
 
-    .form-label i {
-        color: var(--primary);
-        font-size: 0.875rem;
-    }
+        .form-label i {
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
 
     .required {
         color: var(--danger);
@@ -247,15 +284,15 @@
         position: relative;
     }
 
-    .input-icon-wrapper i.input-icon {
-        position: absolute;
-        left: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--gray-400);
-        font-size: 0.875rem;
-        pointer-events: none;
-    }
+        .input-icon-wrapper i.input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
 
     .form-control-modern {
         width: 100%;
@@ -268,11 +305,11 @@
         background: white;
     }
 
-    .form-control-modern:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
-    }
+        .form-control-modern:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
 
     /* Textarea Styling */
     .textarea-wrapper {
@@ -300,16 +337,48 @@
         resize: vertical;
     }
 
-    .form-control-textarea:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
-    }
+        .form-control-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
 
     .char-counter {
         font-size: 0.7rem;
         color: var(--gray-500);
         text-align: right;
+    }
+
+    /* Select Styling */
+    .select-wrapper {
+        position: relative;
+    }
+
+        .select-wrapper select {
+            appearance: none;
+            width: 100%;
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            font-size: 0.875rem;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            background: white;
+        }
+
+            .select-wrapper select:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+            }
+
+    .select-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        pointer-events: none;
+        font-size: 0.75rem;
     }
 
     /* Validation Messages */
@@ -329,9 +398,9 @@
         gap: 0.5rem;
     }
 
-    .form-hint i {
-        font-size: 0.7rem;
-    }
+        .form-hint i {
+            font-size: 0.7rem;
+        }
 
     /* Metadata Section */
     .metadata-section {
@@ -351,31 +420,31 @@
         font-size: 0.75rem;
     }
 
-    .metadata-item i {
-        width: 24px;
-        color: var(--primary);
-        font-size: 0.875rem;
-    }
+        .metadata-item i {
+            width: 24px;
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
 
-    .metadata-item div {
-        flex: 1;
-    }
+        .metadata-item div {
+            flex: 1;
+        }
 
-    .metadata-item label {
-        font-size: 0.65rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        color: var(--gray-500);
-        display: block;
-        margin-bottom: 0.125rem;
-    }
+        .metadata-item label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gray-500);
+            display: block;
+            margin-bottom: 0.125rem;
+        }
 
-    .metadata-item p {
-        margin: 0;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--gray-700);
-    }
+        .metadata-item p {
+            margin: 0;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-700);
+        }
 
     /* Form Actions */
     .form-actions {
@@ -403,10 +472,10 @@
         justify-content: center;
     }
 
-    .btn-update:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-    }
+        .btn-update:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
 
     .btn-cancel {
         background: white;
@@ -425,11 +494,12 @@
         justify-content: center;
     }
 
-    .btn-cancel:hover {
-        background: var(--gray-50);
-        color: var(--gray-700);
-        text-decoration: none;
-    }
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
 </style>
 
 <script>
@@ -437,7 +507,7 @@
         // Character counter for description
         const descriptionTextarea = document.querySelector('[asp-for="Description"]');
         const charCountSpan = document.getElementById('charCount');
-        
+
         if (descriptionTextarea && charCountSpan) {
             function updateCharCount() {
                 charCountSpan.textContent = descriptionTextarea.value.length;
@@ -445,48 +515,48 @@
             descriptionTextarea.addEventListener('input', updateCharCount);
             updateCharCount();
         }
-        
+
         // Form validation
         const form = document.getElementById('editDepartmentForm');
         const submitBtn = document.getElementById('submitBtn');
-        
+
         if (form) {
             form.addEventListener('submit', function(e) {
                 var name = document.querySelector('[name="Name"]').value.trim();
-                
+
                 if (!name) {
                     e.preventDefault();
                     showValidationError('Department name is required');
                     document.querySelector('[name="Name"]').focus();
                     return false;
                 }
-                
+
                 if (name.length < 2) {
                     e.preventDefault();
                     showValidationError('Department name must be at least 2 characters');
                     document.querySelector('[name="Name"]').focus();
                     return false;
                 }
-                
+
                 if (name.length > 100) {
                     e.preventDefault();
                     showValidationError('Department name must not exceed 100 characters');
                     document.querySelector('[name="Name"]').focus();
                     return false;
                 }
-                
+
                 // Show loading state
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating Department...';
-                
+
                 return true;
             });
         }
-        
+
         function showValidationError(message) {
             var errorDiv = document.querySelector('.validation-toast');
             if (errorDiv) errorDiv.remove();
-            
+
             errorDiv = document.createElement('div');
             errorDiv.className = 'validation-toast';
             errorDiv.style.cssText = `
@@ -510,7 +580,7 @@
                 <span>${message}</span>
             `;
             document.body.appendChild(errorDiv);
-            
+
             setTimeout(function() {
                 errorDiv.style.animation = 'slideOut 0.3s ease';
                 setTimeout(function() { errorDiv.remove(); }, 300);
