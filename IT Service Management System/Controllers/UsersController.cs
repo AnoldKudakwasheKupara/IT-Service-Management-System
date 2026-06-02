@@ -35,9 +35,17 @@ namespace IT_Service_Management_System.Controllers
         public async Task<IActionResult> Index()
         {
             var access = CheckAccess();
-            if (access != null) return access;
+            if (access != null)
+                return access;
 
-            var users = await _context.Users.ToListAsync();
+            var users = await _context.Users
+                .Include(u => u.Department)
+                    .ThenInclude(d => d.Hod)
+                .Include(u => u.Supervisor)
+                .OrderBy(u => u.FirstName)
+                .ThenBy(u => u.LastName)
+                .ToListAsync();
+
             return View(users);
         }
 
