@@ -41,16 +41,20 @@ namespace IT_Service_Management_System.Controllers
             return View(users);
         }
 
-        // 🔹 USER DETAILS
         public async Task<IActionResult> Details(int id)
         {
             var access = CheckAccess();
-            if (access != null) return access;
+            if (access != null)
+                return access;
 
             var user = await _context.Users
+                .Include(u => u.Department)
+                    .ThenInclude(d => d.Hod)
+                .Include(u => u.Supervisor)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
-            if (user == null) return NotFound();
+            if (user == null)
+                return NotFound();
 
             return View(user);
         }
