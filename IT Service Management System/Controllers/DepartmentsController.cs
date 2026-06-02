@@ -14,21 +14,26 @@ namespace IT_Service_Management_System.Controllers
             _context = context;
         }
 
-        // ✅ GET: Departments
         public async Task<IActionResult> Index()
         {
-            var departments = await _context.Departments.ToListAsync();
+            var departments = await _context.Departments
+                .Include(d => d.Hod)
+                .Include(d => d.Users)
+                .OrderBy(d => d.Name)
+                .ToListAsync();
+
             return View(departments);
         }
 
-        // ✅ GET: Departments/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
                 return NotFound();
 
             var department = await _context.Departments
-                .FirstOrDefaultAsync(m => m.Id == id);
+                .Include(d => d.Hod)
+                .Include(d => d.Users)
+                .FirstOrDefaultAsync(d => d.Id == id);
 
             if (department == null)
                 return NotFound();
@@ -36,31 +41,38 @@ namespace IT_Service_Management_System.Controllers
             return View(department);
         }
 
-        // ✅ GET: Departments/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
+            ViewBag.Hods = await _context.Users
+                .OrderBy(u => u.FirstName)
+                .ThenBy(u => u.LastName)
+                .ToListAsync();
+
             return View();
         }
 
-        // ✅ POST: Departments/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Department department)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                department.CreatedAt = DateTime.Now;
+                ViewBag.Hods = await _context.Users
+                    .OrderBy(u => u.FirstName)
+                    .ThenBy(u => u.LastName)
+                    .ToListAsync();
 
-                _context.Add(department);
-                await _context.SaveChangesAsync();
-
-                return RedirectToAction(nameof(Index));
+                return View(department);
             }
 
-            return View(department);
+            department.CreatedAt = DateTime.Now;
+
+            _context.Departments.Add(department);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
-        // ✅ GET: Departments/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -71,10 +83,14 @@ namespace IT_Service_Management_System.Controllers
             if (department == null)
                 return NotFound();
 
+            ViewBag.Hods = await _context.Users
+                .OrderBy(u => u.FirstName)
+                .ThenBy(u => u.LastName)
+                .ToListAsync();
+
             return View(department);
         }
 
-        // ✅ POST: Departments/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Department department)
@@ -82,35 +98,49 @@ namespace IT_Service_Management_System.Controllers
             if (id != department.Id)
                 return NotFound();
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(department);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!DepartmentExists(department.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
+                ViewBag.Hods = await _context.Users
+                    .OrderBy(u => u.FirstName)
+                    .ThenBy(u => u.LastName)
+                    .ToListAsync();
 
-                return RedirectToAction(nameof(Index));
+                return View(department);
             }
 
-            return View(department);
-        }
+            try
+            {
+                var existingDepartment = await _context.Departments
+                    .FirstOrDefaultAsync(d => d.Id == id);
 
-        // ✅ GET: Departments/Delete/5
+                if (existingDepartment == null)
+                    return NotFound();
+
+                existingDepartment.Name = department.Name;
+                existingDepartment.Description = department.Description;
+                existingDepartment.HodId = department.HodId;
+
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!DepartmentExists(department.Id))
+                    return NotFound();
+
+                throw;
+            }
+
+            return RedirectToAction(nameof(Index));
+
+        }
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
                 return NotFound();
 
             var department = await _context.Departments
-                .FirstOrDefaultAsync(m => m.Id == id);
+                .Include(d => d.Hod)
+                .FirstOrDefaultAsync(d => d.Id == id);
 
             if (department == null)
                 return NotFound();
