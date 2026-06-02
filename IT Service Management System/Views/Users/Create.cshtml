@@ -26,11 +26,18 @@
                 <i class="fas fa-user-circle me-2"></i>
                 <span>User Information</span>
             </div>
+            <div class="form-steps">
+                <span class="step active">1</span>
+                <span class="step-line"></span>
+                <span class="step">2</span>
+                <span class="step-line"></span>
+                <span class="step">3</span>
+            </div>
         </div>
 
         <form asp-action="Create" method="post" id="createUserForm">
             @Html.AntiForgeryToken()
-            
+
             <div class="card-body-custom">
                 <div class="form-grid">
                     <!-- Left Column -->
@@ -151,6 +158,79 @@
                     </div>
                 </div>
 
+                <!-- Department and Supervisor Row -->
+                <div class="form-row">
+                    <div class="form-group-modern">
+                        <label asp-for="DepartmentId" class="form-label">
+                            <i class="fas fa-building"></i>
+                            Department
+                        </label>
+                        <div class="select-wrapper">
+                            <i class="fas fa-chevron-down select-icon"></i>
+                            <select asp-for="DepartmentId" class="form-control-modern">
+                                <option value="">Select Department</option>
+                                @foreach (var dept in ViewBag.Departments)
+                                {
+                                    <option value="@dept.Id">@dept.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <span asp-validation-for="DepartmentId" class="validation-message text-danger"></span>
+                        <div class="form-hint">
+                            <i class="fas fa-info-circle"></i> Department the user belongs to
+                        </div>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="SupervisorId" class="form-label">
+                            <i class="fas fa-user-tie"></i>
+                            Supervisor
+                        </label>
+                        <div class="select-wrapper">
+                            <i class="fas fa-chevron-down select-icon"></i>
+                            <select asp-for="SupervisorId" class="form-control-modern">
+                                <option value="">No Supervisor</option>
+                                @foreach (var supervisor in ViewBag.Supervisors)
+                                {
+                                    <option value="@supervisor.Id">
+                                        @supervisor.FirstName @supervisor.LastName
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <span asp-validation-for="SupervisorId" class="validation-message text-danger"></span>
+                        <div class="form-hint">
+                            <i class="fas fa-info-circle"></i> Direct supervisor of this user
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tips Section -->
+                <div class="tips-section">
+                    <div class="tips-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>User Management Tips</span>
+                    </div>
+                    <div class="tips-grid">
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Use real names for better identification</span>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Assign appropriate roles based on responsibilities</span>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Set a secure password (min 8 characters)</span>
+                        </div>
+                        <div class="tip-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Department assignment helps with organization</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Form Actions -->
                 <div class="form-actions">
                     <button type="submit" class="btn-create" id="submitBtn">
@@ -195,6 +275,7 @@
     .page-container {
         max-width: 1000px;
         margin: 0 auto;
+        padding: 0 1rem;
     }
 
     .page-header {
@@ -215,11 +296,11 @@
         border: 1px solid var(--gray-200);
     }
 
-    .btn-back:hover {
-        background: var(--gray-50);
-        color: var(--primary);
-        transform: translateX(-2px);
-    }
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+        }
 
     .page-title {
         font-size: 1.875rem;
@@ -243,6 +324,43 @@
         border-bottom: 1px solid var(--gray-200);
         font-weight: 600;
         color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .form-steps {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step {
+        width: 30px;
+        height: 30px;
+        background: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+    }
+
+        .step.active {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+    .step-line {
+        width: 40px;
+        height: 2px;
+        background: var(--gray-300);
     }
 
     .card-body-custom {
@@ -263,6 +381,14 @@
         gap: 1.5rem;
     }
 
+    /* Form Row for Department and Supervisor */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
     /* Form Groups */
     .form-group-modern {
         display: flex;
@@ -279,10 +405,10 @@
         gap: 0.5rem;
     }
 
-    .form-label i {
-        color: var(--primary);
-        font-size: 0.875rem;
-    }
+        .form-label i {
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
 
     .required {
         color: var(--danger);
@@ -293,15 +419,15 @@
         position: relative;
     }
 
-    .input-icon-wrapper i.input-icon {
-        position: absolute;
-        left: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--gray-400);
-        font-size: 0.875rem;
-        pointer-events: none;
-    }
+        .input-icon-wrapper i.input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
 
     .form-control-modern {
         width: 100%;
@@ -314,11 +440,11 @@
         background: white;
     }
 
-    .form-control-modern:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
-    }
+        .form-control-modern:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
 
     /* Password Toggle */
     .password-toggle {
@@ -337,20 +463,31 @@
         transition: all 0.2s;
     }
 
-    .password-toggle:hover {
-        color: var(--primary);
-    }
+        .password-toggle:hover {
+            color: var(--primary);
+        }
 
     /* Select Styling */
     .select-wrapper {
         position: relative;
     }
 
-    .select-wrapper select {
-        appearance: none;
-        cursor: pointer;
-        background: white;
-    }
+        .select-wrapper select {
+            appearance: none;
+            width: 100%;
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            font-size: 0.875rem;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            background: white;
+        }
+
+            .select-wrapper select:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+            }
 
     .select-icon {
         position: absolute;
@@ -375,9 +512,45 @@
         border-left: 3px solid var(--primary);
     }
 
-    .role-info i {
-        color: var(--primary);
+        .role-info i {
+            color: var(--primary);
+        }
+
+    /* Tips Section */
+    .tips-section {
+        background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-left: 3px solid var(--info);
     }
+
+    .tips-header {
+        font-weight: 600;
+        color: var(--info);
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tips-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .tip-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--gray-700);
+    }
+
+        .tip-item i {
+            color: var(--success);
+        }
 
     /* Validation Messages */
     .validation-message {
@@ -396,9 +569,9 @@
         gap: 0.5rem;
     }
 
-    .form-hint i {
-        font-size: 0.7rem;
-    }
+        .form-hint i {
+            font-size: 0.7rem;
+        }
 
     /* Form Actions */
     .form-actions {
@@ -426,10 +599,10 @@
         justify-content: center;
     }
 
-    .btn-create:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-    }
+        .btn-create:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
 
     .btn-cancel {
         background: white;
@@ -448,11 +621,11 @@
         justify-content: center;
     }
 
-    .btn-cancel:hover {
-        background: var(--gray-50);
-        color: var(--gray-700);
-        text-decoration: none;
-    }
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
 
 </style>
 
@@ -464,16 +637,16 @@
         const togglePassword = document.getElementById('togglePassword');
         const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
         const passwordMatchError = document.getElementById('passwordMatchError');
-        
+
         // Get the actual password input
         const actualPasswordInput = document.querySelector('input[name="PasswordHash"]');
-        
+
         // Password visibility toggle for main password
         if (togglePassword && actualPasswordInput) {
             togglePassword.addEventListener('click', function() {
                 const type = actualPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
                 actualPasswordInput.setAttribute('type', type);
-                
+
                 const icon = this.querySelector('i');
                 if (type === 'text') {
                     icon.classList.remove('fa-eye-slash');
@@ -484,13 +657,13 @@
                 }
             });
         }
-        
+
         // Password visibility toggle for confirm password
         if (toggleConfirmPassword && confirmPasswordInput) {
             toggleConfirmPassword.addEventListener('click', function() {
                 const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
                 confirmPasswordInput.setAttribute('type', type);
-                
+
                 const icon = this.querySelector('i');
                 if (type === 'text') {
                     icon.classList.remove('fa-eye-slash');
@@ -501,13 +674,13 @@
                 }
             });
         }
-        
+
         // Password match validation
         function checkPasswordMatch() {
             if (actualPasswordInput && confirmPasswordInput) {
                 const password = actualPasswordInput.value;
                 const confirmPassword = confirmPasswordInput.value;
-                
+
                 if (confirmPassword.length > 0 && password !== confirmPassword) {
                     passwordMatchError.style.display = 'flex';
                     return false;
@@ -518,11 +691,11 @@
             }
             return true;
         }
-        
+
         if (confirmPasswordInput) {
             confirmPasswordInput.addEventListener('input', checkPasswordMatch);
         }
-        
+
         if (actualPasswordInput) {
             actualPasswordInput.addEventListener('input', function() {
                 if (confirmPasswordInput && confirmPasswordInput.value.length > 0) {
@@ -530,18 +703,18 @@
                 }
             });
         }
-        
+
         // Role description
         const roleSelect = document.getElementById('roleSelect');
         const roleInfo = document.getElementById('roleInfo');
         const roleDescription = document.getElementById('roleDescription');
-        
+
         var roleDescriptions = {
             'Admin': 'Full system access. Can manage users, tickets, and system settings.',
             'User': 'Standard user access. Can create and manage their own tickets.',
             'Guest': 'Limited access. Can only view assigned tickets.'
         };
-        
+
         function updateRoleDescription() {
             var selectedRole = roleSelect.value;
             if (selectedRole && roleDescriptions[selectedRole]) {
@@ -554,17 +727,16 @@
                 roleInfo.style.display = 'none';
             }
         }
-        
+
         if (roleSelect) {
             roleSelect.addEventListener('change', updateRoleDescription);
-            // Initialize role description if a role is pre-selected
             updateRoleDescription();
         }
-        
+
         // Form validation
         const form = document.getElementById('createUserForm');
         const submitBtn = document.getElementById('submitBtn');
-        
+
         if (form) {
             form.addEventListener('submit', function(e) {
                 var firstName = document.querySelector('[name="FirstName"]').value.trim();
@@ -573,28 +745,28 @@
                 var password = actualPasswordInput ? actualPasswordInput.value : '';
                 var confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : '';
                 var role = roleSelect ? roleSelect.value : '';
-                
+
                 if (!firstName) {
                     e.preventDefault();
                     showValidationError('First Name is required');
                     document.querySelector('[name="FirstName"]').focus();
                     return false;
                 }
-                
+
                 if (!lastName) {
                     e.preventDefault();
                     showValidationError('Last Name is required');
                     document.querySelector('[name="LastName"]').focus();
                     return false;
                 }
-                
+
                 if (!email) {
                     e.preventDefault();
                     showValidationError('Email is required');
                     document.querySelector('[name="Email"]').focus();
                     return false;
                 }
-                
+
                 // Email format validation
                 var emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
                 if (!emailRegex.test(email)) {
@@ -603,54 +775,54 @@
                     document.querySelector('[name="Email"]').focus();
                     return false;
                 }
-                
+
                 if (!password) {
                     e.preventDefault();
                     showValidationError('Password is required');
                     actualPasswordInput.focus();
                     return false;
                 }
-                
+
                 if (password.length < 8) {
                     e.preventDefault();
                     showValidationError('Password must be at least 8 characters');
                     actualPasswordInput.focus();
                     return false;
                 }
-                
+
                 if (!confirmPassword) {
                     e.preventDefault();
                     showValidationError('Please confirm your password');
                     confirmPasswordInput.focus();
                     return false;
                 }
-                
+
                 if (password !== confirmPassword) {
                     e.preventDefault();
                     showValidationError('Passwords do not match');
                     confirmPasswordInput.focus();
                     return false;
                 }
-                
+
                 if (!role) {
                     e.preventDefault();
                     showValidationError('Please select a user role');
                     roleSelect.focus();
                     return false;
                 }
-                
+
                 // Show loading state
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
-                
+
                 return true;
             });
         }
-        
+
         function showValidationError(message) {
             var errorDiv = document.querySelector('.validation-toast');
             if (errorDiv) errorDiv.remove();
-            
+
             errorDiv = document.createElement('div');
             errorDiv.className = 'validation-toast';
             errorDiv.style.cssText = `
@@ -674,7 +846,7 @@
                 <span>${message}</span>
             `;
             document.body.appendChild(errorDiv);
-            
+
             setTimeout(function() {
                 errorDiv.style.animation = 'slideOut 0.3s ease';
                 setTimeout(function() { errorDiv.remove(); }, 300);
@@ -683,30 +855,8 @@
     });
 </script>
 
-<style>
-    /* Additional animations */
-    @@keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    @@keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-</style>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

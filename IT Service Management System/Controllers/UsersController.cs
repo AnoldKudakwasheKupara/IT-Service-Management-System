@@ -55,24 +55,45 @@ namespace IT_Service_Management_System.Controllers
             return View(user);
         }
 
-        // 🔹 SHOW CREATE FORM
         public IActionResult Create()
         {
             var access = CheckAccess();
-            if (access != null) return access;
+            if (access != null)
+                return access;
+
+            ViewBag.Departments = _context.Departments
+                .OrderBy(d => d.Name)
+                .ToList();
+
+            ViewBag.Supervisors = _context.Users
+                .OrderBy(u => u.FirstName)
+                .ThenBy(u => u.LastName)
+                .ToList();
 
             return View();
         }
 
-        // 🔹 CREATE USER
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(User user)
         {
             var access = CheckAccess();
-            if (access != null) return access;
+            if (access != null)
+                return access;
 
             if (!ModelState.IsValid)
+            {
+                ViewBag.Departments = _context.Departments
+                    .OrderBy(d => d.Name)
+                    .ToList();
+
+                ViewBag.Supervisors = _context.Users
+                    .OrderBy(u => u.FirstName)
+                    .ThenBy(u => u.LastName)
+                    .ToList();
+
                 return View(user);
+            }
 
             var existingUser = await _context.Users
                 .AnyAsync(u => u.Email == user.Email);
@@ -80,6 +101,16 @@ namespace IT_Service_Management_System.Controllers
             if (existingUser)
             {
                 ModelState.AddModelError("Email", "This email is already registered.");
+
+                ViewBag.Departments = _context.Departments
+                    .OrderBy(d => d.Name)
+                    .ToList();
+
+                ViewBag.Supervisors = _context.Users
+                    .OrderBy(u => u.FirstName)
+                    .ThenBy(u => u.LastName)
+                    .ToList();
+
                 return View(user);
             }
 
@@ -91,8 +122,11 @@ namespace IT_Service_Management_System.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // ✅ AUDIT LOG
-            await _auditService.LogAsync("Created", "User", user.Id, $"User {user.Email} created");
+            await _auditService.LogAsync(
+                "Created",
+                "User",
+                user.Id,
+                $"User {user.Email} created");
 
             var link = Url.Action(
                 "SetPassword",
@@ -101,31 +135,35 @@ namespace IT_Service_Management_System.Controllers
                 Request.Scheme);
 
             var body = $@"
-                <p>Good Day {user.FirstName},</p>
+        <p>Good Day {user.FirstName},</p>
 
-                <p>Welcome to the <strong>IT Service Management System</strong>.</p>
+        <p>Welcome to the <strong>IT Service Management System</strong>.</p>
 
-                <p>Your account has been created successfully. To get started, please set your password by clicking the link below:</p>
+        <p>Your account has been created successfully. To get started, please set your password by clicking the link below:</p>
 
-                <p>
-                    <a href='{link}' style='color:blue; font-weight:bold;'>
-                        Set Your Password
-                    </a>
-                </p>
+        <p>
+            <a href='{link}' style='color:blue; font-weight:bold;'>
+                Set Your Password
+            </a>
+        </p>
 
-                <p>This link will expire in 24 hours for security purposes.</p>
+        <p>This link will expire in 24 hours for security purposes.</p>
 
-                <br/>
+        <br/>
 
-                <p>If you did not expect this email, please ignore it.</p>
+        <p>If you did not expect this email, please ignore it.</p>
 
-                <p>Kind Regards,<br/>
-                IT Support Team</p>
-            ";
+        <p>
+            Kind Regards,<br/>
+            IT Support Team
+        </p>";
 
-            await _emailService.SendEmailAsync(user.Email, "Welcome - Set Your Password", body);
+            await _emailService.SendEmailAsync(
+                user.Email,
+                "Welcome - Set Your Password",
+                body);
 
-            return RedirectToAction("Index");
+            return RedirectToAction(nameof(Index));
         }
 
         // 🔹 SHOW EDIT FORM
