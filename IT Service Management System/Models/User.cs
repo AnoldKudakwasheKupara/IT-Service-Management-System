@@ -19,14 +19,29 @@ namespace IT_Service_Management_System.Models
         [Required]
         [EmailAddress]
         public string Email { get; set; }
+
         public string? PasswordHash { get; set; }
 
         public string? ResetToken { get; set; }
+
         public DateTime? TokenExpiry { get; set; }
+
         public bool IsActive { get; set; } = false;
 
         [Required]
         public UserRole Role { get; set; }
+        public int? DepartmentId { get; set; }
+
+        [ValidateNever]
+        public Department? Department { get; set; }
+
+        public int? SupervisorId { get; set; }
+
+        [ValidateNever]
+        public User? Supervisor { get; set; }
+
+        [ValidateNever]
+        public ICollection<User> Subordinates { get; set; } = new List<User>();
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
