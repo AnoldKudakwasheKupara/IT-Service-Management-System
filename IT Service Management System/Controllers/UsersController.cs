@@ -166,36 +166,84 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // 🔹 SHOW EDIT FORM
         public async Task<IActionResult> Edit(int id)
         {
             var access = CheckAccess();
             if (access != null) return access;
 
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == id);
 
-            if (user == null) return NotFound();
+            if (user == null)
+                return NotFound();
+
+            ViewBag.Departments = await _context.Departments
+                .OrderBy(d => d.Name)
+                .ToListAsync();
+
+            ViewBag.Supervisors = await _context.Users
+                .Where(u => u.Id != id)
+                .OrderBy(u => u.FirstName)
+                .ThenBy(u => u.LastName)
+                .ToListAsync();
 
             return View(user);
         }
 
         // 🔹 UPDATE USER
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(User user)
         {
             var access = CheckAccess();
             if (access != null) return access;
 
             if (!ModelState.IsValid)
-                return View(user);
+            {
+                ViewBag.Departments = await _context.Departments
+                    .OrderBy(d => d.Name)
+                    .ToListAsync();
 
-            _context.Users.Update(user);
+                ViewBag.Supervisors = await _context.Users
+                    .Where(u => u.Id != user.Id)
+                    .OrderBy(u => u.FirstName)
+                    .ThenBy(u => u.LastName)
+                    .ToListAsync();
+
+                return View(user);
+            }
+
+            var existingUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == user.Id);
+
+            if (existingUser == null)
+                return NotFound();
+
+            // Update fields
+            existingUser.FirstName = user.FirstName;
+            existingUser.LastName = user.LastName;
+            existingUser.Email = user.Email;
+            existingUser.Role = user.Role;
+
+            existingUser.DepartmentId = user.DepartmentId;
+            existingUser.SupervisorId = user.SupervisorId;
+
+            // Only update password if supplied
+            if (!string.IsNullOrWhiteSpace(user.PasswordHash))
+            {
+                existingUser.PasswordHash = user.PasswordHash;
+            }
+
             await _context.SaveChangesAsync();
 
             // ✅ AUDIT LOG
-            await _auditService.LogAsync("Updated", "User", user.Id, $"User {user.Email} updated");
+            await _auditService.LogAsync(
+                "Updated",
+                "User",
+                user.Id,
+                $"User {user.Email} updated");
 
-            return RedirectToAction("Index");
+            return RedirectToAction(nameof(Index));
         }
 
         // 🔹 DELETE CONFIRMATION
