@@ -15,6 +15,9 @@
         public string? AccessToken { get; set; }
         public DateTime? EmployeeSubmittedDate { get; set; }
 
+        public bool IsSent { get; set; }
+
+        public DateTime? SentDate { get; set; }
         public ICollection<ClearanceWorkflow> Workflows { get; set; }
             = new List<ClearanceWorkflow>();
     }

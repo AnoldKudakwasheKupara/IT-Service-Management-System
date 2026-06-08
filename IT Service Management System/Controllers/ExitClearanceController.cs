@@ -17,7 +17,41 @@ namespace IT_Service_Management_System.Controllers
             _context = context;
         }
 
+        [HttpGet]
+        public IActionResult Index()
+        {
+            var clearances = _context.ExitClearances
+                .Include(x => x.Employee)
+                .OrderByDescending(x => x.CreatedDate)
+                .ToList();
 
+            return View(clearances);
+        }
+
+
+        [HttpGet]
+        public IActionResult Send(int id)
+        {
+            var clearance = _context.ExitClearances
+                .Include(x => x.Employee)
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            var link =
+                $"{Request.Scheme}://{Request.Host}" +
+                Url.Action("Complete",
+                    "ExitClearance",
+                    new { id = clearance.AccessToken });
+
+            // Email logic here
+
+            TempData["Success"] =
+                $"Clearance sent to {clearance.Employee.Email}";
+
+            return RedirectToAction(nameof(Index));
+        }
 
 
         [HttpGet]
