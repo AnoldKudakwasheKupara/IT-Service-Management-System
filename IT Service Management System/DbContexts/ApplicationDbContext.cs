@@ -116,6 +116,30 @@ namespace IT_Service_Management_System.DbContexts
                 .HasForeignKey(u => u.SupervisorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<ClearanceWorkflow>()
+                .HasOne(c => c.AssignedToUser)
+                .WithMany()
+                .HasForeignKey(c => c.AssignedToUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ExitClearance>()
+                .HasOne(c => c.Employee)
+                .WithMany()
+                .HasForeignKey(c => c.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Department>()
+                .HasOne(d => d.Hod)
+                .WithMany()
+                .HasForeignKey(d => d.HodId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Supervisor)
+                .WithMany(u => u.Subordinates)
+                .HasForeignKey(u => u.SupervisorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
 
             modelBuilder.Entity<TicketAttachment>()
                 .HasCheckConstraint("CK_Attachment_Owner",
