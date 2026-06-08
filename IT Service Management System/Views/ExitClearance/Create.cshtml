@@ -1,0 +1,36 @@
+﻿@using IT_Service_Management_System.ViewModels
+@model CreateExitClearanceVM
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h4>Create Exit Clearance</h4>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Create" method="post">
+
+            <div class="mb-3">
+                <label class="form-label">
+                    Employee
+                </label>
+
+                <select asp-for="EmployeeId"
+                        asp-items="Model.Employees"
+                        class="form-select">
+
+                    <option value="">
+                        Select Employee
+                    </option>
+
+                </select>
+            </div>
+
+            <button class="btn btn-primary">
+                Create Clearance
+            </button>
+
+        </form>
+
+    </div>
+</div>

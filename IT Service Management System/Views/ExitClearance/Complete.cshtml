@@ -1,0 +1,88 @@
+﻿@model IT_Service_Management_System.ViewModels.EmployeeClearanceVM
+
+@{
+    ViewData["Title"] = "Employee Exit Clearance";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h4>Employee Exit Clearance Form</h4>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="Complete" method="post">
+
+            <input asp-for="ExitClearanceId" type="hidden" />
+            <input asp-for="AccessToken" type="hidden" />
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Surname</label>
+                    <input asp-for="Surname" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Department</label>
+                    <input asp-for="Department" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Supervisor</label>
+                    <input asp-for="Supervisor" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Position Held</label>
+                    <input asp-for="PositionHeld" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Length Of Service</label>
+                    <input asp-for="LengthOfService" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Date Of Notice</label>
+                    <input asp-for="DateOfNotice"
+                           type="date"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Last Day Of Work</label>
+                    <input asp-for="LastDayOfWork"
+                           type="date"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Email</label>
+                    <input asp-for="Email"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Forwarding Address</label>
+                    <input asp-for="ForwardingAddress"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label>Employee Signature</label>
+                    <input asp-for="EmployeeSignature"
+                           class="form-control" />
+                </div>
+
+            </div>
+
+            <button type="submit"
+                    class="btn btn-success">
+                Submit Clearance Form
+            </button>
+
+        </form>
+
+    </div>
+</div>
