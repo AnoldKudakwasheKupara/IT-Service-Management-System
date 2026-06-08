@@ -531,6 +531,11 @@ namespace IT_Service_Management_System.Controllers
             return View(clearances);
         }
 
+        private int GetCurrentUserId()
+        {
+            return HttpContext.Session.GetInt32("UserId") ?? 0;
+        }
+
         [HttpGet]
         public IActionResult SupervisorReview(int id)
         {
@@ -555,6 +560,73 @@ namespace IT_Service_Management_System.Controllers
             return View(model);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SupervisorReview(SupervisorApproval model)
+        {
+            var clearance = _context.ExitClearances
+                .Include(x => x.Employee)
+                    .ThenInclude(x => x.Department)
+                        .ThenInclude(x => x.Hod)
+                .FirstOrDefault(x => x.Id == model.ExitClearanceId);
+
+            if (clearance == null)
+                return NotFound();
+
+            var existing = _context.SupervisorApprovals
+                .FirstOrDefault(x =>
+                    x.ExitClearanceId == model.ExitClearanceId);
+
+            if (existing == null)
+            {
+                existing = model;
+                _context.SupervisorApprovals.Add(existing);
+            }
+            else
+            {
+                existing.Approved = model.Approved;
+                existing.Comments = model.Comments;
+            }
+
+            existing.ApprovedDate = DateTime.Now;
+
+            var workflow = _context.ClearanceWorkflows
+                .FirstOrDefault(x =>
+                    x.ExitClearanceId == clearance.Id &&
+                    x.Stage == ClearanceStage.Supervisor &&
+                    !x.Completed);
+
+            if (workflow != null)
+            {
+                workflow.Completed = true;
+                workflow.CompletedDate = DateTime.Now;
+            }
+
+            var hod = clearance.Employee.Department?.Hod;
+
+            if (hod == null)
+            {
+                ModelState.AddModelError("",
+                    "No HOD configured for employee department.");
+
+                return View(model);
+            }
+
+            clearance.CurrentStage = ClearanceStage.HOD;
+
+            _context.ClearanceWorkflows.Add(
+                new ClearanceWorkflow
+                {
+                    ExitClearanceId = clearance.Id,
+                    Stage = ClearanceStage.HOD,
+                    AssignedToUserId = hod.Id,
+                    AssignedDate = DateTime.Now
+                });
+
+            _context.SaveChanges();
+
+            return RedirectToAction(nameof(SupervisorQueue));
+        }
 
 
 
