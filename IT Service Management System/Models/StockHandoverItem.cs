@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
 
-        public int ClearanceRequestId { get; set; }
+        public int ExitClearanceId { get; set; }
 
         public string ItemDescription { get; set; }
 
@@ -12,6 +12,6 @@
 
         public int Quantity { get; set; }
 
-        public string Remarks { get; set; }
+        public string? Remarks { get; set; }
     }
 }

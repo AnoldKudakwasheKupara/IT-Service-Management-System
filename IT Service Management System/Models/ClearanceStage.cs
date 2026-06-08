@@ -8,6 +8,7 @@
         Development = 4,
         Supervisor = 5,
         HOD = 6,
-        HR = 7
+        HR = 7,
+        Completed = 8
     }
 }

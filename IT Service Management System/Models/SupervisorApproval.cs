@@ -4,14 +4,14 @@
     {
         public int Id { get; set; }
 
-        public int ClearanceRequestId { get; set; }
+        public int ExitClearanceId { get; set; }
 
-        public string SupervisorName { get; set; }
-
-        public string Signature { get; set; }
-
-        public DateTime ApprovalDate { get; set; }
+        public int SupervisorId { get; set; }
 
         public bool Approved { get; set; }
+
+        public string? Comments { get; set; }
+
+        public DateTime? ApprovedDate { get; set; }
     }
 }

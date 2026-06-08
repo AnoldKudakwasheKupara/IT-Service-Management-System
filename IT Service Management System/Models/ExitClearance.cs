@@ -12,5 +12,8 @@
         public ClearanceStatus Status { get; set; }
 
         public DateTime CreatedDate { get; set; } = DateTime.Now;
+
+        public ICollection<ClearanceWorkflow> Workflows { get; set; }
+            = new List<ClearanceWorkflow>();
     }
 }
