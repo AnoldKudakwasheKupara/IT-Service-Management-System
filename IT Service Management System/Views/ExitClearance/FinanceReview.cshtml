@@ -1,0 +1,56 @@
+﻿@model FinanceClearance
+
+<div class="card">
+    <div class="card-header">
+        <h4>Finance Clearance</h4>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="FinanceReview">
+
+            <input asp-for="ExitClearanceId" type="hidden" />
+
+            <div class="form-check mb-3">
+                <input asp-for="StaffAdvanceCleared"
+                       class="form-check-input" />
+
+                <label class="form-check-label">
+                    Staff Advance and Other Liabilities Cleared
+                </label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="ReceiptsHandedOver"
+                       class="form-check-input" />
+
+                <label class="form-check-label">
+                    Receipts Handed Over
+                </label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="FinalDuesProcessed"
+                       class="form-check-input" />
+
+                <label class="form-check-label">
+                    Final Dues Processed
+                </label>
+            </div>
+
+            <div class="mb-3">
+                <label>Comments</label>
+                <textarea asp-for="Comments"
+                          class="form-control">
+                </textarea>
+            </div>
+
+            <button type="submit"
+                    class="btn btn-success">
+                Approve & Forward
+            </button>
+
+        </form>
+
+    </div>
+</div>

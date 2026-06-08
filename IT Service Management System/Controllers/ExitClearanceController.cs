@@ -178,5 +178,102 @@ namespace IT_Service_Management_System.Controllers
 
             return View(clearance);
         }
+
+        [HttpGet]
+        public IActionResult FinanceQueue()
+        {
+            var clearances = _context.ExitClearances
+                .Include(x => x.Employee)
+                .Where(x => x.CurrentStage == ClearanceStage.Finance)
+                .ToList();
+
+            return View(clearances);
+        }
+
+        [HttpGet]
+        public IActionResult FinanceReview(int id)
+        {
+            var clearance = _context.ExitClearances
+                .Include(x => x.Employee)
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            var finance = _context.FinanceClearances
+                .FirstOrDefault(x => x.ExitClearanceId == id);
+
+            if (finance == null)
+            {
+                finance = new FinanceClearance
+                {
+                    ExitClearanceId = id
+                };
+            }
+
+            return View(finance);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult FinanceReview(FinanceClearance model)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == model.ExitClearanceId);
+
+            if (clearance == null)
+                return NotFound();
+
+            var finance = _context.FinanceClearances
+                .FirstOrDefault(x =>
+                    x.ExitClearanceId == model.ExitClearanceId);
+
+            if (finance == null)
+            {
+                finance = model;
+
+                _context.FinanceClearances.Add(finance);
+            }
+            else
+            {
+                finance.StaffAdvanceCleared = model.StaffAdvanceCleared;
+                finance.ReceiptsHandedOver = model.ReceiptsHandedOver;
+                finance.FinalDuesProcessed = model.FinalDuesProcessed;
+                finance.Comments = model.Comments;
+            }
+
+            finance.ClearedDate = DateTime.Now;
+
+            var currentWorkflow = _context.ClearanceWorkflows
+                .FirstOrDefault(x =>
+                    x.ExitClearanceId == clearance.Id &&
+                    x.Stage == ClearanceStage.Finance &&
+                    !x.Completed);
+
+            if (currentWorkflow != null)
+            {
+                currentWorkflow.Completed = true;
+                currentWorkflow.CompletedDate = DateTime.Now;
+            }
+
+            var systemsAdmin = _context.Users
+                .FirstOrDefault(x =>
+                    x.Role == UserRole.SystemsAdmin);
+
+            clearance.CurrentStage = ClearanceStage.SystemsAdmin;
+
+            _context.ClearanceWorkflows.Add(
+                new ClearanceWorkflow
+                {
+                    ExitClearanceId = clearance.Id,
+                    Stage = ClearanceStage.SystemsAdmin,
+                    AssignedToUserId = systemsAdmin.Id,
+                    AssignedDate = DateTime.Now
+                });
+
+            _context.SaveChanges();
+
+            return RedirectToAction(nameof(FinanceQueue));
+        }
     }
 }
