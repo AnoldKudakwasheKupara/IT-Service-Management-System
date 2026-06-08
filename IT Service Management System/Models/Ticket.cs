@@ -49,5 +49,15 @@ namespace IT_Service_Management_System.Models
             Medium,
             High
         }
+
+        public enum UserRole
+        {
+            Admin,
+            Finance,
+            SystemsAdmin,
+            Development,
+            HR,
+            Employee
+        }
     }
 }
