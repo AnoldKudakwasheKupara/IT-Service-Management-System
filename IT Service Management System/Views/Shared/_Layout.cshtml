@@ -497,7 +497,20 @@
                    asp-controller="SSLCertificates" asp-action="Index">
                     <i class="fas fa-shield-alt"></i> SSL Tracker
                 </a>
+
+                <div class="nav-group">HR Management</div>
+
+                <a class="nav-item @(currentController == "ExitClearance" ? "active" : "")"
+                   asp-controller="ExitClearance"
+                   asp-action="Index">
+
+                    <i class="fas fa-file-signature"></i>
+                    Exit Clearance
+
+                </a>
             </aside>
+
+
 
             <!-- MAIN AREA -->
             <div class="main-area">
