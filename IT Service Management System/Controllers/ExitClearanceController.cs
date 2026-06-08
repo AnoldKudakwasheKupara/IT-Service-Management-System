@@ -627,6 +627,120 @@ namespace IT_Service_Management_System.Controllers
 
             return RedirectToAction(nameof(SupervisorQueue));
         }
+        [HttpGet]
+        public IActionResult HodQueue()
+        {
+            var userId = GetCurrentUserId(); // replace with your implementation
+
+            var clearances = _context.ExitClearances
+                .Include(x => x.Employee)
+                .Where(x => x.CurrentStage == ClearanceStage.HOD)
+                .Join(
+                    _context.ClearanceWorkflows.Where(x =>
+                        !x.Completed &&
+                        x.AssignedToUserId == userId),
+                    c => c.Id,
+                    w => w.ExitClearanceId,
+                    (c, w) => c
+                )
+                .ToList();
+
+            return View(clearances);
+        }
+
+        [HttpGet]
+        public IActionResult HodReview(int id)
+        {
+            var clearance = _context.ExitClearances
+                .Include(x => x.Employee)
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            var model = _context.HodApprovals
+                .FirstOrDefault(x => x.ExitClearanceId == id);
+
+            if (model == null)
+            {
+                model = new HodApproval
+                {
+                    ExitClearanceId = id
+                };
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult HodReview(HodApproval model)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == model.ExitClearanceId);
+
+            if (clearance == null)
+                return NotFound();
+
+            var existing = _context.HodApprovals
+                .FirstOrDefault(x =>
+                    x.ExitClearanceId == model.ExitClearanceId);
+
+            if (existing == null)
+            {
+                existing = model;
+                _context.HodApprovals.Add(existing);
+            }
+            else
+            {
+                existing.Approved = model.Approved;
+                existing.Comments = model.Comments;
+            }
+
+            existing.ApprovedDate = DateTime.Now;
+
+            var workflow = _context.ClearanceWorkflows
+                .FirstOrDefault(x =>
+                    x.ExitClearanceId == clearance.Id &&
+                    x.Stage == ClearanceStage.HOD &&
+                    !x.Completed);
+
+            if (workflow != null)
+            {
+                workflow.Completed = true;
+                workflow.CompletedDate = DateTime.Now;
+            }
+
+            var hrUser = _context.Users
+                .FirstOrDefault(x => x.Role == UserRole.HR);
+
+            if (hrUser == null)
+            {
+                ModelState.AddModelError("",
+                    "No HR user configured.");
+
+                return View(model);
+            }
+
+            clearance.CurrentStage = ClearanceStage.HR;
+
+            _context.ClearanceWorkflows.Add(
+                new ClearanceWorkflow
+                {
+                    ExitClearanceId = clearance.Id,
+                    Stage = ClearanceStage.HR,
+                    AssignedToUserId = hrUser.Id,
+                    AssignedDate = DateTime.Now
+                });
+
+            _context.SaveChanges();
+
+            return RedirectToAction(nameof(HodQueue));
+        }
+
+
+
+
 
 
 

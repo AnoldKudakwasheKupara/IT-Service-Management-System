@@ -1,0 +1,42 @@
+﻿@model HodApproval
+
+<div class="card">
+    <div class="card-header">
+        <h4>Head of Department Approval</h4>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="HodReview" method="post">
+
+            <input asp-for="ExitClearanceId" type="hidden" />
+
+            <div class="form-check mb-3">
+
+                <input asp-for="Approved"
+                       class="form-check-input" />
+
+                <label class="form-check-label">
+                    Approve Employee Clearance
+                </label>
+
+            </div>
+
+            <div class="mb-3">
+
+                <label>Comments</label>
+
+                <textarea asp-for="Comments"
+                          class="form-control">
+                </textarea>
+
+            </div>
+
+            <button class="btn btn-success">
+                Approve & Forward To HR
+            </button>
+
+        </form>
+
+    </div>
+</div>
