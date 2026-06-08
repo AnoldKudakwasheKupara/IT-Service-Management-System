@@ -379,6 +379,184 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction(nameof(SystemsAdminQueue));
         }
 
+        [HttpGet]
+        public IActionResult DevelopmentQueue()
+        {
+            var clearances = _context.ExitClearances
+                .Include(x => x.Employee)
+                .Where(x => x.CurrentStage == ClearanceStage.Development)
+                .ToList();
+
+            return View(clearances);
+        }
+
+        [HttpGet]
+        public IActionResult DevelopmentReview(int id)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            var model = _context.DevelopmentClearances
+                .FirstOrDefault(x => x.ExitClearanceId == id);
+
+            if (model == null)
+            {
+                model = new DevelopmentClearance
+                {
+                    ExitClearanceId = id
+                };
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult DevelopmentReview(DevelopmentClearance model)
+        {
+            var clearance = _context.ExitClearances
+                .Include(x => x.Employee)
+                    .ThenInclude(x => x.Supervisor)
+                .Include(x => x.Employee)
+                    .ThenInclude(x => x.Department)
+                        .ThenInclude(x => x.Hod)
+                .FirstOrDefault(x => x.Id == model.ExitClearanceId);
+
+            if (clearance == null)
+                return NotFound();
+
+            var existing = _context.DevelopmentClearances
+                .FirstOrDefault(x =>
+                    x.ExitClearanceId == model.ExitClearanceId);
+
+            if (existing == null)
+            {
+                existing = model;
+
+                _context.DevelopmentClearances.Add(existing);
+            }
+            else
+            {
+                existing.BitbucketRemoved = model.BitbucketRemoved;
+                existing.ProjectManagementRemoved = model.ProjectManagementRemoved;
+                existing.ManageEngineRemoved = model.ManageEngineRemoved;
+                existing.Comments = model.Comments;
+            }
+
+            existing.ClearedDate = DateTime.Now;
+
+            // Complete current Development workflow
+            var workflow = _context.ClearanceWorkflows
+                .FirstOrDefault(x =>
+                    x.ExitClearanceId == clearance.Id &&
+                    x.Stage == ClearanceStage.Development &&
+                    !x.Completed);
+
+            if (workflow != null)
+            {
+                workflow.Completed = true;
+                workflow.CompletedDate = DateTime.Now;
+            }
+
+            // Check if employee has a supervisor
+            var supervisor = clearance.Employee.Supervisor;
+
+            if (supervisor != null)
+            {
+                // Route to Supervisor
+
+                clearance.CurrentStage = ClearanceStage.Supervisor;
+
+                _context.ClearanceWorkflows.Add(
+                    new ClearanceWorkflow
+                    {
+                        ExitClearanceId = clearance.Id,
+                        Stage = ClearanceStage.Supervisor,
+                        AssignedToUserId = supervisor.Id,
+                        AssignedDate = DateTime.Now
+                    });
+            }
+            else
+            {
+                // No Supervisor - route directly to HOD
+
+                var hod = clearance.Employee.Department?.Hod;
+
+                if (hod == null)
+                {
+                    ModelState.AddModelError("",
+                        "No Supervisor or HOD configured for this employee.");
+
+                    return View(model);
+                }
+
+                clearance.CurrentStage = ClearanceStage.HOD;
+
+                _context.ClearanceWorkflows.Add(
+                    new ClearanceWorkflow
+                    {
+                        ExitClearanceId = clearance.Id,
+                        Stage = ClearanceStage.HOD,
+                        AssignedToUserId = hod.Id,
+                        AssignedDate = DateTime.Now
+                    });
+            }
+
+            _context.SaveChanges();
+
+            return RedirectToAction(nameof(DevelopmentQueue));
+        }
+
+        [HttpGet]
+        public IActionResult SupervisorQueue()
+        {
+            var userId = GetCurrentUserId(); // Replace with your method
+
+            var clearances = _context.ExitClearances
+                .Include(x => x.Employee)
+                .Where(x => x.CurrentStage == ClearanceStage.Supervisor)
+                .Join(
+                    _context.ClearanceWorkflows.Where(w =>
+                        !w.Completed &&
+                        w.AssignedToUserId == userId),
+                    c => c.Id,
+                    w => w.ExitClearanceId,
+                    (c, w) => c
+                )
+                .ToList();
+
+            return View(clearances);
+        }
+
+        [HttpGet]
+        public IActionResult SupervisorReview(int id)
+        {
+            var clearance = _context.ExitClearances
+                .Include(x => x.Employee)
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            var model = _context.SupervisorApprovals
+                .FirstOrDefault(x => x.ExitClearanceId == id);
+
+            if (model == null)
+            {
+                model = new SupervisorApproval
+                {
+                    ExitClearanceId = id
+                };
+            }
+
+            return View(model);
+        }
+
+
+
 
     }
 }
