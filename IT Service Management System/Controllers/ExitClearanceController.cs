@@ -275,5 +275,110 @@ namespace IT_Service_Management_System.Controllers
 
             return RedirectToAction(nameof(FinanceQueue));
         }
+
+        [HttpGet]
+        public IActionResult SystemsAdminQueue()
+        {
+            var clearances = _context.ExitClearances
+                .Include(x => x.Employee)
+                .Where(x => x.CurrentStage == ClearanceStage.SystemsAdmin)
+                .ToList();
+
+            return View(clearances);
+        }
+
+        [HttpGet]
+        public IActionResult SystemsAdminReview(int id)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            var model = _context.SystemsAdminClearances
+                .FirstOrDefault(x => x.ExitClearanceId == id);
+
+            if (model == null)
+            {
+                model = new SystemsAdminClearance
+                {
+                    ExitClearanceId = id
+                };
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SystemsAdminReview(SystemsAdminClearance model)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == model.ExitClearanceId);
+
+            if (clearance == null)
+                return NotFound();
+
+            var existing = _context.SystemsAdminClearances
+                .FirstOrDefault(x =>
+                    x.ExitClearanceId == model.ExitClearanceId);
+
+            if (existing == null)
+            {
+                existing = model;
+
+                _context.SystemsAdminClearances.Add(existing);
+            }
+            else
+            {
+                existing.LaptopReturned = model.LaptopReturned;
+                existing.LaptopBagReturned = model.LaptopBagReturned;
+                existing.AccessoriesReturned = model.AccessoriesReturned;
+                existing.LockerReturned = model.LockerReturned;
+                existing.EndpointSecurityRemoved = model.EndpointSecurityRemoved;
+                existing.SophosCredentialsRemoved = model.SophosCredentialsRemoved;
+                existing.AccessRemoved = model.AccessRemoved;
+                existing.EmailDisabled = model.EmailDisabled;
+                existing.EmailRedirected = model.EmailRedirected;
+                existing.SocialMediaRemoved = model.SocialMediaRemoved;
+                existing.Comments = model.Comments;
+            }
+
+            existing.ClearedDate = DateTime.Now;
+
+            var workflow = _context.ClearanceWorkflows
+                .FirstOrDefault(x =>
+                    x.ExitClearanceId == clearance.Id &&
+                    x.Stage == ClearanceStage.SystemsAdmin &&
+                    !x.Completed);
+
+            if (workflow != null)
+            {
+                workflow.Completed = true;
+                workflow.CompletedDate = DateTime.Now;
+            }
+
+            var developer = _context.Users
+                .FirstOrDefault(x =>
+                    x.Role == UserRole.Employee);
+
+            clearance.CurrentStage = ClearanceStage.Development;
+
+            _context.ClearanceWorkflows.Add(
+                new ClearanceWorkflow
+                {
+                    ExitClearanceId = clearance.Id,
+                    Stage = ClearanceStage.Development,
+                    AssignedToUserId = developer.Id,
+                    AssignedDate = DateTime.Now
+                });
+
+            _context.SaveChanges();
+
+            return RedirectToAction(nameof(SystemsAdminQueue));
+        }
+
+
     }
 }
