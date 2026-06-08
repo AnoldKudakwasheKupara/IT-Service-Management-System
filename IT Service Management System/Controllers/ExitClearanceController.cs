@@ -167,18 +167,6 @@ namespace IT_Service_Management_System.Controllers
             return View("SubmissionSuccess");
         }
 
-        public IActionResult Details(int id)
-        {
-            var clearance = _context.ExitClearances
-                .Include(x => x.Employee)
-                .FirstOrDefault(x => x.Id == id);
-
-            if (clearance == null)
-                return NotFound();
-
-            return View(clearance);
-        }
-
         [HttpGet]
         public IActionResult FinanceQueue()
         {
@@ -837,7 +825,49 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction(nameof(HrQueue));
         }
 
+        [HttpGet]
+        public IActionResult Details(int id)
+        {
+            var clearance = _context.ExitClearances
+                .Include(x => x.Employee)
+                .FirstOrDefault(x => x.Id == id);
 
+            if (clearance == null)
+                return NotFound();
+
+            var vm = new ExitClearanceDetailsVM
+            {
+                ExitClearance = clearance,
+
+                EmployeeDetails = _context.ExitClearanceEmployeeDetails
+                    .FirstOrDefault(x => x.ExitClearanceId == id),
+
+                FinanceClearance = _context.FinanceClearances
+                    .FirstOrDefault(x => x.ExitClearanceId == id),
+
+                SystemsAdminClearance = _context.SystemsAdminClearances
+                    .FirstOrDefault(x => x.ExitClearanceId == id),
+
+                DevelopmentClearance = _context.DevelopmentClearances
+                    .FirstOrDefault(x => x.ExitClearanceId == id),
+
+                SupervisorApproval = _context.SupervisorApprovals
+                    .FirstOrDefault(x => x.ExitClearanceId == id),
+
+                HodApproval = _context.HodApprovals
+                    .FirstOrDefault(x => x.ExitClearanceId == id),
+
+                HrApproval = _context.HrApprovals
+                    .FirstOrDefault(x => x.ExitClearanceId == id),
+
+                WorkflowHistory = _context.ClearanceWorkflows
+                    .Where(x => x.ExitClearanceId == id)
+                    .OrderBy(x => x.AssignedDate)
+                    .ToList()
+            };
+
+            return View(vm);
+        }
 
 
 
