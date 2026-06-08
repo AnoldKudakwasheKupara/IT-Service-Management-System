@@ -1,0 +1,68 @@
+﻿@model HrApproval
+
+<div class="card">
+    <div class="card-header">
+        <h4>HR Final Review</h4>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="HrReview" method="post">
+
+            <input asp-for="ExitClearanceId" type="hidden" />
+
+            <div class="form-check">
+                <input asp-for="ResignationLetterReceived" class="form-check-input" />
+                <label class="form-check-label">Resignation Letter Received</label>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="StaffIdCardReturned" class="form-check-input" />
+                <label class="form-check-label">Staff ID Card Returned</label>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="MedicalAidCancelled" class="form-check-input" />
+                <label class="form-check-label">Medical Aid Cancelled</label>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="NSSACancelled" class="form-check-input" />
+                <label class="form-check-label">NSSA Cancelled</label>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="FuneralPolicyCancelled" class="form-check-input" />
+                <label class="form-check-label">Funeral Policy Cancelled</label>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="ExitInterviewCompleted" class="form-check-input" />
+                <label class="form-check-label">Exit Interview Completed</label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="HandoverReportSubmitted" class="form-check-input" />
+                <label class="form-check-label">Handover Report Submitted</label>
+            </div>
+
+            <div class="mb-3">
+                <label>Comments</label>
+                <textarea asp-for="Comments" class="form-control"></textarea>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="Approved" class="form-check-input" />
+                <label class="form-check-label">
+                    Final HR Approval
+                </label>
+            </div>
+
+            <button class="btn btn-success">
+                Complete Clearance
+            </button>
+
+        </form>
+
+    </div>
+</div>

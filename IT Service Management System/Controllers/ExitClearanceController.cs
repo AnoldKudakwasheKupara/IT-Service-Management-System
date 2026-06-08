@@ -738,6 +738,105 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction(nameof(HodQueue));
         }
 
+        [HttpGet]
+        public IActionResult HrQueue()
+        {
+            var userId = GetCurrentUserId(); // replace with your implementation
+
+            var clearances = _context.ExitClearances
+                .Include(x => x.Employee)
+                .Where(x => x.CurrentStage == ClearanceStage.HR)
+                .Join(
+                    _context.ClearanceWorkflows.Where(x =>
+                        !x.Completed &&
+                        x.AssignedToUserId == userId),
+                    c => c.Id,
+                    w => w.ExitClearanceId,
+                    (c, w) => c
+                )
+                .ToList();
+
+            return View(clearances);
+        }
+
+        [HttpGet]
+        public IActionResult HrReview(int id)
+        {
+            var clearance = _context.ExitClearances
+                .Include(x => x.Employee)
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            var model = _context.HrApprovals
+                .FirstOrDefault(x => x.ExitClearanceId == id);
+
+            if (model == null)
+            {
+                model = new HrApproval
+                {
+                    ExitClearanceId = id
+                };
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult HrReview(HrApproval model)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == model.ExitClearanceId);
+
+            if (clearance == null)
+                return NotFound();
+
+            var existing = _context.HrApprovals
+                .FirstOrDefault(x =>
+                    x.ExitClearanceId == model.ExitClearanceId);
+
+            if (existing == null)
+            {
+                existing = model;
+                _context.HrApprovals.Add(existing);
+            }
+            else
+            {
+                existing.ResignationLetterReceived = model.ResignationLetterReceived;
+                existing.StaffIdCardReturned = model.StaffIdCardReturned;
+                existing.MedicalAidCancelled = model.MedicalAidCancelled;
+                existing.NSSACancelled = model.NSSACancelled;
+                existing.FuneralPolicyCancelled = model.FuneralPolicyCancelled;
+                existing.ExitInterviewCompleted = model.ExitInterviewCompleted;
+                existing.HandoverReportSubmitted = model.HandoverReportSubmitted;
+                existing.Comments = model.Comments;
+                existing.Approved = model.Approved;
+            }
+
+            existing.ApprovedDate = DateTime.Now;
+
+            var workflow = _context.ClearanceWorkflows
+                .FirstOrDefault(x =>
+                    x.ExitClearanceId == clearance.Id &&
+                    x.Stage == ClearanceStage.HR &&
+                    !x.Completed);
+
+            if (workflow != null)
+            {
+                workflow.Completed = true;
+                workflow.CompletedDate = DateTime.Now;
+            }
+
+            clearance.CurrentStage = ClearanceStage.Completed;
+            clearance.Status = ClearanceStatus.Completed;
+
+            _context.SaveChanges();
+
+            return RedirectToAction(nameof(HrQueue));
+        }
+
 
 
 
