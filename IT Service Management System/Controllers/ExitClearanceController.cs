@@ -417,7 +417,6 @@ namespace IT_Service_Management_System.Controllers
 
             return View(model);
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult SystemsAdminReview(SystemsAdminClearance model)
@@ -434,22 +433,90 @@ namespace IT_Service_Management_System.Controllers
 
             if (existing == null)
             {
-                existing = model;
+                existing = new SystemsAdminClearance
+                {
+                    ExitClearanceId = model.ExitClearanceId,
+
+                    LaptopAsset = model.LaptopAsset,
+                    LaptopReceivedBy = model.LaptopReceivedBy,
+                    LaptopDate = model.LaptopDate,
+
+                    LaptopBagAsset = model.LaptopBagAsset,
+                    LaptopBagReceivedBy = model.LaptopBagReceivedBy,
+                    LaptopBagDate = model.LaptopBagDate,
+
+                    AccessoriesAsset = model.AccessoriesAsset,
+                    AccessoriesReceivedBy = model.AccessoriesReceivedBy,
+                    AccessoriesDate = model.AccessoriesDate,
+
+                    LockerAsset = model.LockerAsset,
+                    LockerReceivedBy = model.LockerReceivedBy,
+                    LockerDate = model.LockerDate,
+
+                    EndpointSecurityAsset = model.EndpointSecurityAsset,
+                    EndpointSecurityReceivedBy = model.EndpointSecurityReceivedBy,
+                    EndpointSecurityDate = model.EndpointSecurityDate,
+
+                    SophosAsset = model.SophosAsset,
+                    SophosReceivedBy = model.SophosReceivedBy,
+                    SophosDate = model.SophosDate,
+
+                    AccessRemovalAsset = model.AccessRemovalAsset,
+                    AccessRemovalReceivedBy = model.AccessRemovalReceivedBy,
+                    AccessRemovalDate = model.AccessRemovalDate,
+
+                    EmailAsset = model.EmailAsset,
+                    EmailReceivedBy = model.EmailReceivedBy,
+                    EmailDate = model.EmailDate,
+
+                    SocialMediaAsset = model.SocialMediaAsset,
+                    SocialMediaReceivedBy = model.SocialMediaReceivedBy,
+                    SocialMediaDate = model.SocialMediaDate,
+
+                    Comments = model.Comments,
+                    ClearedDate = DateTime.Now
+                };
 
                 _context.SystemsAdminClearances.Add(existing);
             }
             else
             {
-                existing.LaptopReturned = model.LaptopReturned;
-                existing.LaptopBagReturned = model.LaptopBagReturned;
-                existing.AccessoriesReturned = model.AccessoriesReturned;
-                existing.LockerReturned = model.LockerReturned;
-                existing.EndpointSecurityRemoved = model.EndpointSecurityRemoved;
-                existing.SophosCredentialsRemoved = model.SophosCredentialsRemoved;
-                existing.AccessRemoved = model.AccessRemoved;
-                existing.EmailDisabled = model.EmailDisabled;
-                existing.EmailRedirected = model.EmailRedirected;
-                existing.SocialMediaRemoved = model.SocialMediaRemoved;
+                existing.LaptopAsset = model.LaptopAsset;
+                existing.LaptopReceivedBy = model.LaptopReceivedBy;
+                existing.LaptopDate = model.LaptopDate;
+
+                existing.LaptopBagAsset = model.LaptopBagAsset;
+                existing.LaptopBagReceivedBy = model.LaptopBagReceivedBy;
+                existing.LaptopBagDate = model.LaptopBagDate;
+
+                existing.AccessoriesAsset = model.AccessoriesAsset;
+                existing.AccessoriesReceivedBy = model.AccessoriesReceivedBy;
+                existing.AccessoriesDate = model.AccessoriesDate;
+
+                existing.LockerAsset = model.LockerAsset;
+                existing.LockerReceivedBy = model.LockerReceivedBy;
+                existing.LockerDate = model.LockerDate;
+
+                existing.EndpointSecurityAsset = model.EndpointSecurityAsset;
+                existing.EndpointSecurityReceivedBy = model.EndpointSecurityReceivedBy;
+                existing.EndpointSecurityDate = model.EndpointSecurityDate;
+
+                existing.SophosAsset = model.SophosAsset;
+                existing.SophosReceivedBy = model.SophosReceivedBy;
+                existing.SophosDate = model.SophosDate;
+
+                existing.AccessRemovalAsset = model.AccessRemovalAsset;
+                existing.AccessRemovalReceivedBy = model.AccessRemovalReceivedBy;
+                existing.AccessRemovalDate = model.AccessRemovalDate;
+
+                existing.EmailAsset = model.EmailAsset;
+                existing.EmailReceivedBy = model.EmailReceivedBy;
+                existing.EmailDate = model.EmailDate;
+
+                existing.SocialMediaAsset = model.SocialMediaAsset;
+                existing.SocialMediaReceivedBy = model.SocialMediaReceivedBy;
+                existing.SocialMediaDate = model.SocialMediaDate;
+
                 existing.Comments = model.Comments;
             }
 
@@ -469,7 +536,15 @@ namespace IT_Service_Management_System.Controllers
 
             var developer = _context.Users
                 .FirstOrDefault(x =>
-                    x.Role == UserRole.Employee);
+                    x.Role == UserRole.Employee); // Change this later
+
+            if (developer == null)
+            {
+                ModelState.AddModelError("",
+                    "No Development user configured.");
+
+                return View(model);
+            }
 
             clearance.CurrentStage = ClearanceStage.Development;
 
