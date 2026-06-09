@@ -91,11 +91,22 @@ namespace IT_Service_Management_System.Controllers
             };
 
             _context.ExitClearances.Add(clearance);
+            _context.SaveChanges();
+
+            _context.ClearanceWorkflows.Add(
+                new ClearanceWorkflow
+                {
+                    ExitClearanceId = clearance.Id,
+                    Stage = ClearanceStage.Employee,
+                    AssignedToUserId = employee.Id,
+                    AssignedDate = DateTime.Now
+                });
 
             _context.SaveChanges();
 
-            return RedirectToAction(nameof(Details),
-                new { id = clearance.Id });
+            return RedirectToAction(
+                "Complete",
+                new { id = clearance.AccessToken });
         }
 
         [HttpGet]
