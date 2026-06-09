@@ -6,11 +6,17 @@
 
         public int ExitClearanceId { get; set; }
 
-        public bool BitbucketRemoved { get; set; }
+        public string? BitbucketAsset { get; set; }
+        public string? BitbucketReceivedBy { get; set; }
+        public DateTime? BitbucketDate { get; set; }
 
-        public bool ProjectManagementRemoved { get; set; }
+        public string? ProjectManagementAsset { get; set; }
+        public string? ProjectManagementReceivedBy { get; set; }
+        public DateTime? ProjectManagementDate { get; set; }
 
-        public bool ManageEngineRemoved { get; set; }
+        public string? ManageEngineAsset { get; set; }
+        public string? ManageEngineReceivedBy { get; set; }
+        public DateTime? ManageEngineDate { get; set; }
 
         public string? Comments { get; set; }
 

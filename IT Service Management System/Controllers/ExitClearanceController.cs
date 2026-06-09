@@ -617,21 +617,48 @@ namespace IT_Service_Management_System.Controllers
 
             if (existing == null)
             {
-                existing = model;
+                existing = new DevelopmentClearance
+                {
+                    ExitClearanceId = model.ExitClearanceId,
+
+                    BitbucketAsset = model.BitbucketAsset,
+                    BitbucketReceivedBy = model.BitbucketReceivedBy,
+                    BitbucketDate = model.BitbucketDate,
+
+                    ProjectManagementAsset = model.ProjectManagementAsset,
+                    ProjectManagementReceivedBy = model.ProjectManagementReceivedBy,
+                    ProjectManagementDate = model.ProjectManagementDate,
+
+                    ManageEngineAsset = model.ManageEngineAsset,
+                    ManageEngineReceivedBy = model.ManageEngineReceivedBy,
+                    ManageEngineDate = model.ManageEngineDate,
+
+                    Comments = model.Comments,
+                    ClearedDate = DateTime.Now
+                };
 
                 _context.DevelopmentClearances.Add(existing);
             }
             else
             {
-                existing.BitbucketRemoved = model.BitbucketRemoved;
-                existing.ProjectManagementRemoved = model.ProjectManagementRemoved;
-                existing.ManageEngineRemoved = model.ManageEngineRemoved;
+                existing.BitbucketAsset = model.BitbucketAsset;
+                existing.BitbucketReceivedBy = model.BitbucketReceivedBy;
+                existing.BitbucketDate = model.BitbucketDate;
+
+                existing.ProjectManagementAsset = model.ProjectManagementAsset;
+                existing.ProjectManagementReceivedBy = model.ProjectManagementReceivedBy;
+                existing.ProjectManagementDate = model.ProjectManagementDate;
+
+                existing.ManageEngineAsset = model.ManageEngineAsset;
+                existing.ManageEngineReceivedBy = model.ManageEngineReceivedBy;
+                existing.ManageEngineDate = model.ManageEngineDate;
+
                 existing.Comments = model.Comments;
             }
 
             existing.ClearedDate = DateTime.Now;
 
-            // Complete current Development workflow
+            // Complete Development workflow
             var workflow = _context.ClearanceWorkflows
                 .FirstOrDefault(x =>
                     x.ExitClearanceId == clearance.Id &&
@@ -644,13 +671,11 @@ namespace IT_Service_Management_System.Controllers
                 workflow.CompletedDate = DateTime.Now;
             }
 
-            // Check if employee has a supervisor
+            // Route to Supervisor if configured
             var supervisor = clearance.Employee.Supervisor;
 
             if (supervisor != null)
             {
-                // Route to Supervisor
-
                 clearance.CurrentStage = ClearanceStage.Supervisor;
 
                 _context.ClearanceWorkflows.Add(
@@ -664,7 +689,7 @@ namespace IT_Service_Management_System.Controllers
             }
             else
             {
-                // No Supervisor - route directly to HOD
+                // No supervisor, send directly to HOD
 
                 var hod = clearance.Employee.Department?.Hod;
 

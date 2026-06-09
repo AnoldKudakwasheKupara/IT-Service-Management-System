@@ -1,6 +1,8 @@
 ﻿@model DevelopmentClearance
 
 <div class="card">
+
+    ```
     <div class="card-header">
         <h4>Development Clearance</h4>
     </div>
@@ -11,46 +13,121 @@
 
             <input asp-for="ExitClearanceId" type="hidden" />
 
-            <div class="form-check mb-3">
-                <input asp-for="BitbucketRemoved"
-                       class="form-check-input" />
+            <table class="table table-bordered">
 
-                <label class="form-check-label">
-                    Bitbucket Credentials Removed
-                </label>
-            </div>
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:45%">
+                            Development (Systems Admin)
+                        </th>
 
-            <div class="form-check mb-3">
-                <input asp-for="ProjectManagementRemoved"
-                       class="form-check-input" />
+                        <th style="width:20%">
+                            Asset / Serial Number
+                        </th>
 
-                <label class="form-check-label">
-                    Project Management Credentials Removed
-                </label>
-            </div>
+                        <th style="width:20%">
+                            Received By (Sign)
+                        </th>
 
-            <div class="form-check mb-3">
-                <input asp-for="ManageEngineRemoved"
-                       class="form-check-input" />
+                        <th style="width:15%">
+                            Date
+                        </th>
+                    </tr>
+                </thead>
 
-                <label class="form-check-label">
-                    ManageEngine Credentials Removed
-                </label>
-            </div>
+                <tbody>
+
+                    <tr>
+                        <td>
+                            Delete Bitbucket administration credentials
+                        </td>
+
+                        <td>
+                            <input asp-for="BitbucketAsset"
+                                   class="form-control" />
+                        </td>
+
+                        <td>
+                            <input asp-for="BitbucketReceivedBy"
+                                   class="form-control" />
+                        </td>
+
+                        <td>
+                            <input asp-for="BitbucketDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            Delete Project Management Credentials
+                        </td>
+
+                        <td>
+                            <input asp-for="ProjectManagementAsset"
+                                   class="form-control" />
+                        </td>
+
+                        <td>
+                            <input asp-for="ProjectManagementReceivedBy"
+                                   class="form-control" />
+                        </td>
+
+                        <td>
+                            <input asp-for="ProjectManagementDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            Delete Manage Engine Credentials
+                        </td>
+
+                        <td>
+                            <input asp-for="ManageEngineAsset"
+                                   class="form-control" />
+                        </td>
+
+                        <td>
+                            <input asp-for="ManageEngineReceivedBy"
+                                   class="form-control" />
+                        </td>
+
+                        <td>
+                            <input asp-for="ManageEngineDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
 
             <div class="mb-3">
-                <label>Comments</label>
+
+                <label class="form-label">
+                    Comments
+                </label>
 
                 <textarea asp-for="Comments"
+                          rows="4"
                           class="form-control">
-                </textarea>
+            </textarea>
+
             </div>
 
-            <button class="btn btn-success">
+            <button type="submit"
+                    class="btn btn-success">
                 Approve & Forward
             </button>
 
         </form>
 
     </div>
+    ```
+
 </div>
