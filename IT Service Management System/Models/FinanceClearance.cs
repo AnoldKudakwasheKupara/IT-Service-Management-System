@@ -6,11 +6,17 @@
 
         public int ExitClearanceId { get; set; }
 
-        public bool StaffAdvanceCleared { get; set; }
+        public string? StaffAdvanceReference { get; set; }
+        public string? StaffAdvanceReceivedBy { get; set; }
+        public DateTime? StaffAdvanceDate { get; set; }
 
-        public bool ReceiptsHandedOver { get; set; }
+        public string? ReceiptsReference { get; set; }
+        public string? ReceiptsReceivedBy { get; set; }
+        public DateTime? ReceiptsDate { get; set; }
 
-        public bool FinalDuesProcessed { get; set; }
+        public string? FinalDuesReference { get; set; }
+        public string? FinalDuesReceivedBy { get; set; }
+        public DateTime? FinalDuesDate { get; set; }
 
         public string? Comments { get; set; }
 

@@ -5,44 +5,115 @@
         <h4>Finance Clearance</h4>
     </div>
 
+    ```
     <div class="card-body">
 
-        <form asp-action="FinanceReview">
+        <form asp-action="FinanceReview" method="post">
 
             <input asp-for="ExitClearanceId" type="hidden" />
 
-            <div class="form-check mb-3">
-                <input asp-for="StaffAdvanceCleared"
-                       class="form-check-input" />
+            <table class="table table-bordered align-middle">
 
-                <label class="form-check-label">
-                    Staff Advance and Other Liabilities Cleared
-                </label>
-            </div>
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:35%">
+                            Finance
+                        </th>
 
-            <div class="form-check mb-3">
-                <input asp-for="ReceiptsHandedOver"
-                       class="form-check-input" />
+                        <th style="width:25%">
+                            Asset / Serial Number
+                        </th>
 
-                <label class="form-check-label">
-                    Receipts Handed Over
-                </label>
-            </div>
+                        <th style="width:20%">
+                            Received By (Sign)
+                        </th>
 
-            <div class="form-check mb-3">
-                <input asp-for="FinalDuesProcessed"
-                       class="form-check-input" />
+                        <th style="width:20%">
+                            Date
+                        </th>
+                    </tr>
+                </thead>
 
-                <label class="form-check-label">
-                    Final Dues Processed
-                </label>
-            </div>
+                <tbody>
+
+                    <tr>
+                        <td>
+                            Staff Advance and Other Liabilities (if any)
+                        </td>
+
+                        <td>
+                            <input asp-for="StaffAdvanceReference"
+                                   class="form-control" />
+                        </td>
+
+                        <td>
+                            <input asp-for="StaffAdvanceReceivedBy"
+                                   class="form-control" />
+                        </td>
+
+                        <td>
+                            <input asp-for="StaffAdvanceDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            Receipts handed over to finance (if any)
+                        </td>
+
+                        <td>
+                            <input asp-for="ReceiptsReference"
+                                   class="form-control" />
+                        </td>
+
+                        <td>
+                            <input asp-for="ReceiptsReceivedBy"
+                                   class="form-control" />
+                        </td>
+
+                        <td>
+                            <input asp-for="ReceiptsDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            Final dues to be paid to the employee
+                        </td>
+
+                        <td>
+                            <input asp-for="FinalDuesReference"
+                                   class="form-control" />
+                        </td>
+
+                        <td>
+                            <input asp-for="FinalDuesReceivedBy"
+                                   class="form-control" />
+                        </td>
+
+                        <td>
+                            <input asp-for="FinalDuesDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
 
             <div class="mb-3">
-                <label>Comments</label>
+                <label class="form-label">
+                    Comments
+                </label>
+
                 <textarea asp-for="Comments"
-                          class="form-control">
-                </textarea>
+                          class="form-control"
+                          rows="4"></textarea>
             </div>
 
             <button type="submit"
@@ -53,4 +124,6 @@
         </form>
 
     </div>
+    ```
+
 </div>

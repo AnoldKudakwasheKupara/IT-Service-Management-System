@@ -37,35 +37,45 @@ namespace IT_Service_Management_System.Controllers
             if (clearance == null)
                 return NotFound();
 
-            return clearance.CurrentStage switch
+            switch (clearance.CurrentStage)
             {
-                ClearanceStage.Employee =>
-                    RedirectToAction("Details", new { id }),
+                case ClearanceStage.Finance:
+                    return RedirectToAction(
+                        nameof(FinanceReview),
+                        new { id });
 
-                ClearanceStage.Finance =>
-                    RedirectToAction("FinanceReview", new { id }),
+                case ClearanceStage.SystemsAdmin:
+                    return RedirectToAction(
+                        nameof(SystemsAdminReview),
+                        new { id });
 
-                ClearanceStage.SystemsAdmin =>
-                    RedirectToAction("SystemsAdminReview", new { id }),
+                case ClearanceStage.Development:
+                    return RedirectToAction(
+                        nameof(DevelopmentReview),
+                        new { id });
 
-                ClearanceStage.Development =>
-                    RedirectToAction("DevelopmentReview", new { id }),
+                case ClearanceStage.Supervisor:
+                    return RedirectToAction(
+                        nameof(SupervisorReview),
+                        new { id });
 
-                ClearanceStage.Supervisor =>
-                    RedirectToAction("SupervisorReview", new { id }),
+                case ClearanceStage.HOD:
+                    return RedirectToAction(
+                        nameof(HodReview),
+                        new { id });
 
-                ClearanceStage.HOD =>
-                    RedirectToAction("HodReview", new { id }),
+                case ClearanceStage.HR:
+                    return RedirectToAction(
+                        nameof(HrReview),
+                        new { id });
 
-                ClearanceStage.HR =>
-                    RedirectToAction("HrReview", new { id }),
-
-                ClearanceStage.Completed =>
-                    RedirectToAction("Details", new { id }),
-
-                _ => RedirectToAction("Details", new { id })
-            };
+                default:
+                    return RedirectToAction(
+                        nameof(Details),
+                        new { id });
+            }
         }
+
 
         [HttpGet]
         public IActionResult Send(int id)
