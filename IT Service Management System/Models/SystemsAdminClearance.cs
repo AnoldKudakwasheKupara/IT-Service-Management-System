@@ -6,25 +6,41 @@
 
         public int ExitClearanceId { get; set; }
 
-        public bool LaptopReturned { get; set; }
+        public string? LaptopAsset { get; set; }
+        public string? LaptopReceivedBy { get; set; }
+        public DateTime? LaptopDate { get; set; }
 
-        public bool LaptopBagReturned { get; set; }
+        public string? LaptopBagAsset { get; set; }
+        public string? LaptopBagReceivedBy { get; set; }
+        public DateTime? LaptopBagDate { get; set; }
 
-        public bool AccessoriesReturned { get; set; }
+        public string? AccessoriesAsset { get; set; }
+        public string? AccessoriesReceivedBy { get; set; }
+        public DateTime? AccessoriesDate { get; set; }
 
-        public bool LockerReturned { get; set; }
+        public string? LockerAsset { get; set; }
+        public string? LockerReceivedBy { get; set; }
+        public DateTime? LockerDate { get; set; }
 
-        public bool EndpointSecurityRemoved { get; set; }
+        public string? EndpointSecurityAsset { get; set; }
+        public string? EndpointSecurityReceivedBy { get; set; }
+        public DateTime? EndpointSecurityDate { get; set; }
 
-        public bool SophosCredentialsRemoved { get; set; }
+        public string? SophosAsset { get; set; }
+        public string? SophosReceivedBy { get; set; }
+        public DateTime? SophosDate { get; set; }
 
-        public bool AccessRemoved { get; set; }
+        public string? AccessRemovalAsset { get; set; }
+        public string? AccessRemovalReceivedBy { get; set; }
+        public DateTime? AccessRemovalDate { get; set; }
 
-        public bool EmailDisabled { get; set; }
+        public string? EmailAsset { get; set; }
+        public string? EmailReceivedBy { get; set; }
+        public DateTime? EmailDate { get; set; }
 
-        public bool EmailRedirected { get; set; }
-
-        public bool SocialMediaRemoved { get; set; }
+        public string? SocialMediaAsset { get; set; }
+        public string? SocialMediaReceivedBy { get; set; }
+        public DateTime? SocialMediaDate { get; set; }
 
         public string? Comments { get; set; }
 
