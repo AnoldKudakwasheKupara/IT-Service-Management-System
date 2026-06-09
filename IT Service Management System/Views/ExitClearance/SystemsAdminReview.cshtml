@@ -1,78 +1,210 @@
 ﻿@model SystemsAdminClearance
 
 <div class="card">
+
     <div class="card-header">
         <h4>Systems Administration Clearance</h4>
     </div>
 
     <div class="card-body">
 
-        <form asp-action="SystemsAdminReview" method="post">
+        <form asp-action="SystemsAdminReview">
 
             <input asp-for="ExitClearanceId" type="hidden" />
 
-            <div class="form-check mb-2">
-                <input asp-for="LaptopReturned" class="form-check-input" />
-                <label class="form-check-label">Laptop Returned</label>
-            </div>
+            <table class="table table-bordered">
 
-            <div class="form-check mb-2">
-                <input asp-for="LaptopBagReturned" class="form-check-input" />
-                <label class="form-check-label">Laptop Bag Returned</label>
-            </div>
+                <thead>
+                    <tr>
+                        <th>Systems Admin</th>
+                        <th>Asset / Serial Number</th>
+                        <th>Received By (Sign)</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
 
-            <div class="form-check mb-2">
-                <input asp-for="AccessoriesReturned" class="form-check-input" />
-                <label class="form-check-label">Accessories Returned</label>
-            </div>
+                <tbody>
 
-            <div class="form-check mb-2">
-                <input asp-for="LockerReturned" class="form-check-input" />
-                <label class="form-check-label">Laptop Locker Returned</label>
-            </div>
+                    <tr>
+                        <td>Laptop</td>
+                        <td>
+                            <input asp-for="LaptopAsset"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="LaptopReceivedBy"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="LaptopDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
 
-            <div class="form-check mb-2">
-                <input asp-for="EndpointSecurityRemoved" class="form-check-input" />
-                <label class="form-check-label">Endpoint Security Completed</label>
-            </div>
+                    <tr>
+                        <td>Laptop Bags</td>
+                        <td>
+                            <input asp-for="LaptopBagAsset"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="LaptopBagReceivedBy"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="LaptopBagDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
 
-            <div class="form-check mb-2">
-                <input asp-for="SophosCredentialsRemoved" class="form-check-input" />
-                <label class="form-check-label">Sophos Credentials Removed</label>
-            </div>
+                    <tr>
+                        <td>Accessories (if any)</td>
+                        <td>
+                            <input asp-for="AccessoriesAsset"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="AccessoriesReceivedBy"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="AccessoriesDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
 
-            <div class="form-check mb-2">
-                <input asp-for="AccessRemoved" class="form-check-input" />
-                <label class="form-check-label">System Access Removed</label>
-            </div>
+                    <tr>
+                        <td>Laptop Locker (if any)</td>
+                        <td>
+                            <input asp-for="LockerAsset"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="LockerReceivedBy"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="LockerDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
 
-            <div class="form-check mb-2">
-                <input asp-for="EmailDisabled" class="form-check-input" />
-                <label class="form-check-label">Email Account Disabled</label>
-            </div>
+                    <tr>
+                        <td>Endpoint Security</td>
+                        <td>
+                            <input asp-for="EndpointSecurityAsset"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="EndpointSecurityReceivedBy"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="EndpointSecurityDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
 
-            <div class="form-check mb-2">
-                <input asp-for="EmailRedirected" class="form-check-input" />
-                <label class="form-check-label">Email Redirected</label>
-            </div>
+                    <tr>
+                        <td>Login Credentials For Sophos</td>
+                        <td>
+                            <input asp-for="SophosAsset"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="SophosReceivedBy"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="SophosDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
 
-            <div class="form-check mb-3">
-                <input asp-for="SocialMediaRemoved" class="form-check-input" />
-                <label class="form-check-label">Removed From Social Media Groups</label>
-            </div>
+                    <tr>
+                        <td>
+                            Confirm deletion of employee from systems access and passwords
+                        </td>
+                        <td>
+                            <input asp-for="AccessRemovalAsset"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="AccessRemovalReceivedBy"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="AccessRemovalDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            Confirm deletion / suspension of email and redirection
+                        </td>
+                        <td>
+                            <input asp-for="EmailAsset"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="EmailReceivedBy"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="EmailDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            Confirm deletion from social media groups
+                        </td>
+                        <td>
+                            <input asp-for="SocialMediaAsset"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="SocialMediaReceivedBy"
+                                   class="form-control" />
+                        </td>
+                        <td>
+                            <input asp-for="SocialMediaDate"
+                                   type="date"
+                                   class="form-control" />
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
 
             <div class="mb-3">
+
                 <label>Comments</label>
+
                 <textarea asp-for="Comments"
-                          class="form-control">
-                </textarea>
+                          class="form-control"
+                          rows="4"></textarea>
+
             </div>
 
-            <button class="btn btn-success">
+            <button type="submit"
+                    class="btn btn-success">
                 Approve & Forward
             </button>
 
         </form>
 
     </div>
+
 </div>
