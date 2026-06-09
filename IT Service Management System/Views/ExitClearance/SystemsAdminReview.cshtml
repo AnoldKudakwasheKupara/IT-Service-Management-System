@@ -1,0 +1,78 @@
+﻿@model SystemsAdminClearance
+
+<div class="card">
+    <div class="card-header">
+        <h4>Systems Administration Clearance</h4>
+    </div>
+
+    <div class="card-body">
+
+        <form asp-action="SystemsAdminReview" method="post">
+
+            <input asp-for="ExitClearanceId" type="hidden" />
+
+            <div class="form-check mb-2">
+                <input asp-for="LaptopReturned" class="form-check-input" />
+                <label class="form-check-label">Laptop Returned</label>
+            </div>
+
+            <div class="form-check mb-2">
+                <input asp-for="LaptopBagReturned" class="form-check-input" />
+                <label class="form-check-label">Laptop Bag Returned</label>
+            </div>
+
+            <div class="form-check mb-2">
+                <input asp-for="AccessoriesReturned" class="form-check-input" />
+                <label class="form-check-label">Accessories Returned</label>
+            </div>
+
+            <div class="form-check mb-2">
+                <input asp-for="LockerReturned" class="form-check-input" />
+                <label class="form-check-label">Laptop Locker Returned</label>
+            </div>
+
+            <div class="form-check mb-2">
+                <input asp-for="EndpointSecurityRemoved" class="form-check-input" />
+                <label class="form-check-label">Endpoint Security Completed</label>
+            </div>
+
+            <div class="form-check mb-2">
+                <input asp-for="SophosCredentialsRemoved" class="form-check-input" />
+                <label class="form-check-label">Sophos Credentials Removed</label>
+            </div>
+
+            <div class="form-check mb-2">
+                <input asp-for="AccessRemoved" class="form-check-input" />
+                <label class="form-check-label">System Access Removed</label>
+            </div>
+
+            <div class="form-check mb-2">
+                <input asp-for="EmailDisabled" class="form-check-input" />
+                <label class="form-check-label">Email Account Disabled</label>
+            </div>
+
+            <div class="form-check mb-2">
+                <input asp-for="EmailRedirected" class="form-check-input" />
+                <label class="form-check-label">Email Redirected</label>
+            </div>
+
+            <div class="form-check mb-3">
+                <input asp-for="SocialMediaRemoved" class="form-check-input" />
+                <label class="form-check-label">Removed From Social Media Groups</label>
+            </div>
+
+            <div class="mb-3">
+                <label>Comments</label>
+                <textarea asp-for="Comments"
+                          class="form-control">
+                </textarea>
+            </div>
+
+            <button class="btn btn-success">
+                Approve & Forward
+            </button>
+
+        </form>
+
+    </div>
+</div>
