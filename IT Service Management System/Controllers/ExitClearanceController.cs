@@ -311,7 +311,25 @@ namespace IT_Service_Management_System.Controllers
 
             if (finance == null)
             {
-                finance = model;
+                finance = new FinanceClearance
+                {
+                    ExitClearanceId = model.ExitClearanceId,
+
+                    StaffAdvanceReference = model.StaffAdvanceReference,
+                    StaffAdvanceReceivedBy = model.StaffAdvanceReceivedBy,
+                    StaffAdvanceDate = model.StaffAdvanceDate,
+
+                    ReceiptsReference = model.ReceiptsReference,
+                    ReceiptsReceivedBy = model.ReceiptsReceivedBy,
+                    ReceiptsDate = model.ReceiptsDate,
+
+                    FinalDuesReference = model.FinalDuesReference,
+                    FinalDuesReceivedBy = model.FinalDuesReceivedBy,
+                    FinalDuesDate = model.FinalDuesDate,
+
+                    Comments = model.Comments,
+                    ClearedDate = DateTime.Now
+                };
 
                 _context.FinanceClearances.Add(finance);
             }
