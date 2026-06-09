@@ -25,9 +25,47 @@ namespace IT_Service_Management_System.Controllers
                 .OrderByDescending(x => x.CreatedDate)
                 .ToList();
 
+
             return View(clearances);
         }
 
+        public IActionResult Open(int id)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            return clearance.CurrentStage switch
+            {
+                ClearanceStage.Employee =>
+                    RedirectToAction("Details", new { id }),
+
+                ClearanceStage.Finance =>
+                    RedirectToAction("FinanceReview", new { id }),
+
+                ClearanceStage.SystemsAdmin =>
+                    RedirectToAction("SystemsAdminReview", new { id }),
+
+                ClearanceStage.Development =>
+                    RedirectToAction("DevelopmentReview", new { id }),
+
+                ClearanceStage.Supervisor =>
+                    RedirectToAction("SupervisorReview", new { id }),
+
+                ClearanceStage.HOD =>
+                    RedirectToAction("HodReview", new { id }),
+
+                ClearanceStage.HR =>
+                    RedirectToAction("HrReview", new { id }),
+
+                ClearanceStage.Completed =>
+                    RedirectToAction("Details", new { id }),
+
+                _ => RedirectToAction("Details", new { id })
+            };
+        }
 
         [HttpGet]
         public IActionResult Send(int id)
