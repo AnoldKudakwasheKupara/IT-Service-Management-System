@@ -1,76 +1,4 @@
-﻿@using IT_Service_Management_System.ViewModels
-@model ExitClearanceDetailsVM
-
-<div class="card mb-3">
-    <div class="card-header">
-        Employee Information
-    </div>
-
-    <div class="card-body">
-
-        <table class="table table-bordered">
-
-            <tr>
-                <th>Employee</th>
-                <td>
-                    @Model.ExitClearance.Employee.FirstName
-                    @Model.ExitClearance.Employee.LastName
-                </td>
-            </tr>
-
-            <tr>
-                <th>Current Stage</th>
-                <td>@Model.ExitClearance.CurrentStage</td>
-            </tr>
-
-            <tr>
-                <th>Status</th>
-                <td>@Model.ExitClearance.Status</td>
-            </tr>
-
-        </table>
-
-    </div>
-</div>
-@if (Model.EmployeeDetails != null)
-{
-    <div class="card mb-3">
-
-        <div class="card-header">
-            Employee Submission
-        </div>
-
-        <div class="card-body">
-
-            <table class="table">
-
-                <tr>
-                    <th>Department</th>
-                    <td>@Model.EmployeeDetails.Department</td>
-                </tr>
-
-                <tr>
-                    <th>Supervisor</th>
-                    <td>@Model.EmployeeDetails.Supervisor</td>
-                </tr>
-
-                <tr>
-                    <th>Position</th>
-                    <td>@Model.EmployeeDetails.PositionHeld</td>
-                </tr>
-
-                <tr>
-                    <th>Last Day</th>
-                    <td>@Model.EmployeeDetails.LastDayOfWork</td>
-                </tr>
-
-            </table>
-
-        </div>
-
-    </div>
-}
-@if (Model.FinanceClearance != null)
+﻿@if (Model.FinanceClearance != null)
 {
     <div class="card mb-3">
 
@@ -80,229 +8,91 @@
 
         <div class="card-body">
 
-            <ul>
+            <table class="table table-bordered">
 
-                <li>
-                    Staff Advances Cleared:
-                    @Model.FinanceClearance.StaffAdvanceCleared
-                </li>
-
-                <li>
-                    Receipts Handed Over:
-                    @Model.FinanceClearance.ReceiptsHandedOver
-                </li>
-
-                <li>
-                    Final Dues Processed:
-                    @Model.FinanceClearance.FinalDuesProcessed
-                </li>
-
-            </ul>
-
-            <strong>Comments:</strong>
-
-            <p>
-                @Model.FinanceClearance.Comments
-            </p>
-
-        </div>
-
-    </div>
-}
-@if (Model.SystemsAdminClearance != null)
-{
-    <div class="card mb-3">
-
-        <div class="card-header bg-primary text-white">
-            Systems Administration
-        </div>
-
-        <div class="card-body">
-
-            <ul>
-
-                <li>Laptop Returned: @Model.SystemsAdminClearance.LaptopReturned</li>
-
-                <li>Laptop Bag Returned: @Model.SystemsAdminClearance.LaptopBagReturned</li>
-
-                <li>Accessories Returned: @Model.SystemsAdminClearance.AccessoriesReturned</li>
-
-                <li>Email Disabled: @Model.SystemsAdminClearance.EmailDisabled</li>
-
-                <li>Access Removed: @Model.SystemsAdminClearance.AccessRemoved</li>
-
-            </ul>
-
-            <strong>Comments:</strong>
-
-            <p>
-                @Model.SystemsAdminClearance.Comments
-            </p>
-
-        </div>
-
-    </div>
-}
-@if (Model.DevelopmentClearance != null)
-{
-    <div class="card mb-3">
-
-        <div class="card-header bg-info text-white">
-            Development Clearance
-        </div>
-
-        <div class="card-body">
-
-            <ul>
-
-                <li>
-                    Bitbucket Removed:
-                    @Model.DevelopmentClearance.BitbucketRemoved
-                </li>
-
-                <li>
-                    Project Management Removed:
-                    @Model.DevelopmentClearance.ProjectManagementRemoved
-                </li>
-
-                <li>
-                    ManageEngine Removed:
-                    @Model.DevelopmentClearance.ManageEngineRemoved
-                </li>
-
-            </ul>
-
-            <p>
-                @Model.DevelopmentClearance.Comments
-            </p>
-
-        </div>
-
-    </div>
-}
-@if (Model.SupervisorApproval != null)
-{
-    <div class="card mb-3">
-
-        <div class="card-header">
-            Supervisor Approval
-        </div>
-
-        <div class="card-body">
-
-            <strong>Approved:</strong>
-            @Model.SupervisorApproval.Approved
-
-            <br />
-
-            <strong>Comments:</strong>
-
-            @Model.SupervisorApproval.Comments
-
-        </div>
-
-    </div>
-}
-@if (Model.HodApproval != null)
-{
-    <div class="card mb-3">
-
-        <div class="card-header">
-            HOD Approval
-        </div>
-
-        <div class="card-body">
-
-            <strong>Approved:</strong>
-            @Model.HodApproval.Approved
-
-            <br />
-
-            <strong>Comments:</strong>
-
-            @Model.HodApproval.Comments
-
-        </div>
-
-    </div>
-}
-@if (Model.HrApproval != null)
-{
-    <div class="card mb-3">
-
-        <div class="card-header bg-danger text-white">
-            HR Final Approval
-        </div>
-
-        <div class="card-body">
-
-            <strong>Approved:</strong>
-            @Model.HrApproval.Approved
-
-            <br />
-
-            <strong>Exit Interview:</strong>
-            @Model.HrApproval.ExitInterviewCompleted
-
-            <br />
-
-            <strong>Handover Report:</strong>
-            @Model.HrApproval.HandoverReportSubmitted
-
-            <br />
-
-            <strong>Comments:</strong>
-
-            @Model.HrApproval.Comments
-
-        </div>
-
-    </div>
-}
-<div class="card">
-
-    <div class="card-header">
-        Workflow History
-    </div>
-
-    <div class="card-body">
-
-        <table class="table">
-
-            <thead>
-
-                <tr>
-                    <th>Stage</th>
-                    <th>Assigned Date</th>
-                    <th>Completed Date</th>
-                    <th>Status</th>
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                @foreach (var item in Model.WorkflowHistory)
-                {
+                <thead>
                     <tr>
+                        <th>Finance Item</th>
+                        <th>Asset / Serial Number</th>
+                        <th>Received By</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
 
-                        <td>@item.Stage</td>
+                <tbody>
 
-                        <td>@item.AssignedDate</td>
-
-                        <td>@item.CompletedDate</td>
-
+                    <tr>
                         <td>
-                            @(item.Completed ? "Completed" : "Pending")
+                            Staff Advance and Other Liabilities (if any)
                         </td>
 
+                        <td>
+                            @Model.FinanceClearance.StaffAdvanceReference
+                        </td>
+
+                        <td>
+                            @Model.FinanceClearance.StaffAdvanceReceivedBy
+                        </td>
+
+                        <td>
+                            @Model.FinanceClearance.StaffAdvanceDate?.ToString("dd-MMM-yyyy")
+                        </td>
                     </tr>
-                }
 
-            </tbody>
+                    <tr>
+                        <td>
+                            Receipts Handed Over To Finance (if any)
+                        </td>
 
-        </table>
+                        <td>
+                            @Model.FinanceClearance.ReceiptsReference
+                        </td>
+
+                        <td>
+                            @Model.FinanceClearance.ReceiptsReceivedBy
+                        </td>
+
+                        <td>
+                            @Model.FinanceClearance.ReceiptsDate?.ToString("dd-MMM-yyyy")
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td>
+                            Final Dues To Be Paid To Employee
+                        </td>
+
+                        <td>
+                            @Model.FinanceClearance.FinalDuesReference
+                        </td>
+
+                        <td>
+                            @Model.FinanceClearance.FinalDuesReceivedBy
+                        </td>
+
+                        <td>
+                            @Model.FinanceClearance.FinalDuesDate?.ToString("dd-MMM-yyyy")
+                        </td>
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+            @if (!string.IsNullOrWhiteSpace(Model.FinanceClearance.Comments))
+            {
+                <div class="mt-3">
+
+                    <strong>Comments:</strong>
+
+                    <p class="mt-2">
+                        @Model.FinanceClearance.Comments
+                    </p>
+
+                </div>
+            }
+
+        </div>
 
     </div>
-
-</div>
+}

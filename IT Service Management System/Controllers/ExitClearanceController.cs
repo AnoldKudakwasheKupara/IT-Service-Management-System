@@ -317,9 +317,18 @@ namespace IT_Service_Management_System.Controllers
             }
             else
             {
-                finance.StaffAdvanceCleared = model.StaffAdvanceCleared;
-                finance.ReceiptsHandedOver = model.ReceiptsHandedOver;
-                finance.FinalDuesProcessed = model.FinalDuesProcessed;
+                finance.StaffAdvanceReference = model.StaffAdvanceReference;
+                finance.StaffAdvanceReceivedBy = model.StaffAdvanceReceivedBy;
+                finance.StaffAdvanceDate = model.StaffAdvanceDate;
+
+                finance.ReceiptsReference = model.ReceiptsReference;
+                finance.ReceiptsReceivedBy = model.ReceiptsReceivedBy;
+                finance.ReceiptsDate = model.ReceiptsDate;
+
+                finance.FinalDuesReference = model.FinalDuesReference;
+                finance.FinalDuesReceivedBy = model.FinalDuesReceivedBy;
+                finance.FinalDuesDate = model.FinalDuesDate;
+
                 finance.Comments = model.Comments;
             }
 
