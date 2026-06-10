@@ -6,11 +6,15 @@
 
         public int ExitClearanceId { get; set; }
 
-        public int HodId { get; set; }
+        public string? ConfirmedBy { get; set; }
 
-        public bool Approved { get; set; }
+        public string? HandoverSignature { get; set; }
+
+        public DateTime? HandoverDate { get; set; }
 
         public string? Comments { get; set; }
+
+        public int? ApprovedById { get; set; }
 
         public DateTime? ApprovedDate { get; set; }
     }

@@ -873,7 +873,8 @@ namespace IT_Service_Management_System.Controllers
             {
                 model = new HodApproval
                 {
-                    ExitClearanceId = id
+                    ExitClearanceId = id,
+                    HandoverDate = DateTime.Today
                 };
             }
 
@@ -896,16 +897,29 @@ namespace IT_Service_Management_System.Controllers
 
             if (existing == null)
             {
-                existing = model;
+                existing = new HodApproval
+                {
+                    ExitClearanceId = model.ExitClearanceId,
+
+                    ConfirmedBy = model.ConfirmedBy,
+                    HandoverSignature = model.HandoverSignature,
+                    HandoverDate = model.HandoverDate,
+                    Comments = model.Comments,
+
+                    ApprovedDate = DateTime.Now
+                };
+
                 _context.HodApprovals.Add(existing);
             }
             else
             {
-                existing.Approved = model.Approved;
+                existing.ConfirmedBy = model.ConfirmedBy;
+                existing.HandoverSignature = model.HandoverSignature;
+                existing.HandoverDate = model.HandoverDate;
                 existing.Comments = model.Comments;
-            }
 
-            existing.ApprovedDate = DateTime.Now;
+                existing.ApprovedDate = DateTime.Now;
+            }
 
             var workflow = _context.ClearanceWorkflows
                 .FirstOrDefault(x =>
@@ -920,7 +934,8 @@ namespace IT_Service_Management_System.Controllers
             }
 
             var hrUser = _context.Users
-                .FirstOrDefault(x => x.Role == UserRole.HR);
+                .FirstOrDefault(x =>
+                    x.Role == UserRole.HR);
 
             if (hrUser == null)
             {

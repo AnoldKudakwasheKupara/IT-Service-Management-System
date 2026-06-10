@@ -1,8 +1,9 @@
 ﻿@model HodApproval
 
 <div class="card">
+
     <div class="card-header">
-        <h4>Head of Department Approval</h4>
+        <h4>Head of Department Handover Confirmation</h4>
     </div>
 
     <div class="card-body">
@@ -11,32 +12,72 @@
 
             <input asp-for="ExitClearanceId" type="hidden" />
 
-            <div class="form-check mb-3">
+            <div class="mb-4">
 
-                <input asp-for="Approved"
-                       class="form-check-input" />
-
-                <label class="form-check-label">
-                    Approve Employee Clearance
+                <label class="form-label">
+                    I,
                 </label>
+
+                <input asp-for="ConfirmedBy"
+                       class="form-control" />
+
+                <small class="text-muted">
+                    confirm the handover of the above-listed items.
+                </small>
 
             </div>
 
-            <div class="mb-3">
+            <div class="row">
 
-                <label>Comments</label>
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Handover Signature
+                    </label>
+
+                    <input asp-for="HandoverSignature"
+                           class="form-control" />
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <label class="form-label">
+                        Date
+                    </label>
+
+                    <input asp-for="HandoverDate"
+                           type="date"
+                           class="form-control" />
+
+                </div>
+
+            </div>
+
+            <div class="mt-4">
+
+                <label class="form-label">
+                    Comments
+                </label>
 
                 <textarea asp-for="Comments"
+                          rows="4"
                           class="form-control">
                 </textarea>
 
             </div>
 
-            <button class="btn btn-success">
-                Approve & Forward To HR
-            </button>
+            <div class="mt-3">
+
+                <button type="submit"
+                        class="btn btn-success">
+                    Confirm & Forward To HR
+                </button>
+
+            </div>
 
         </form>
 
     </div>
+
 </div>
