@@ -964,7 +964,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpGet]
         public IActionResult HrQueue()
         {
-            var userId = GetCurrentUserId(); // replace with your implementation
+            var userId = GetCurrentUserId(); 
 
             var clearances = _context.ExitClearances
                 .Include(x => x.Employee)
@@ -1022,23 +1022,79 @@ namespace IT_Service_Management_System.Controllers
 
             if (existing == null)
             {
-                existing = model;
+                existing = new HrApproval
+                {
+                    ExitClearanceId = model.ExitClearanceId,
+
+                    ResignationLetterReceived = model.ResignationLetterReceived,
+                    ResignationLetterReceivedBy = model.ResignationLetterReceivedBy,
+                    ResignationLetterDate = model.ResignationLetterDate,
+
+                    StaffIdReturned = model.StaffIdReturned,
+                    StaffIdReceivedBy = model.StaffIdReceivedBy,
+                    StaffIdDate = model.StaffIdDate,
+
+                    MedicalAidCancelled = model.MedicalAidCancelled,
+                    MedicalAidReceivedBy = model.MedicalAidReceivedBy,
+                    MedicalAidDate = model.MedicalAidDate,
+
+                    NSSACancelled = model.NSSACancelled,
+                    NSSAReceivedBy = model.NSSAReceivedBy,
+                    NSSADate = model.NSSADate,
+
+                    FuneralPolicyCancelled = model.FuneralPolicyCancelled,
+                    FuneralPolicyReceivedBy = model.FuneralPolicyReceivedBy,
+                    FuneralPolicyDate = model.FuneralPolicyDate,
+
+                    ExitInterviewCompleted = model.ExitInterviewCompleted,
+                    ExitInterviewReceivedBy = model.ExitInterviewReceivedBy,
+                    ExitInterviewDate = model.ExitInterviewDate,
+
+                    HandoverReportSubmitted = model.HandoverReportSubmitted,
+                    HandoverReportReceivedBy = model.HandoverReportReceivedBy,
+                    HandoverReportDate = model.HandoverReportDate,
+
+                    Comments = model.Comments,
+
+                    ApprovedDate = DateTime.Now
+                };
+
                 _context.HrApprovals.Add(existing);
             }
             else
             {
                 existing.ResignationLetterReceived = model.ResignationLetterReceived;
-                existing.StaffIdCardReturned = model.StaffIdCardReturned;
-                existing.MedicalAidCancelled = model.MedicalAidCancelled;
-                existing.NSSACancelled = model.NSSACancelled;
-                existing.FuneralPolicyCancelled = model.FuneralPolicyCancelled;
-                existing.ExitInterviewCompleted = model.ExitInterviewCompleted;
-                existing.HandoverReportSubmitted = model.HandoverReportSubmitted;
-                existing.Comments = model.Comments;
-                existing.Approved = model.Approved;
-            }
+                existing.ResignationLetterReceivedBy = model.ResignationLetterReceivedBy;
+                existing.ResignationLetterDate = model.ResignationLetterDate;
 
-            existing.ApprovedDate = DateTime.Now;
+                existing.StaffIdReturned = model.StaffIdReturned;
+                existing.StaffIdReceivedBy = model.StaffIdReceivedBy;
+                existing.StaffIdDate = model.StaffIdDate;
+
+                existing.MedicalAidCancelled = model.MedicalAidCancelled;
+                existing.MedicalAidReceivedBy = model.MedicalAidReceivedBy;
+                existing.MedicalAidDate = model.MedicalAidDate;
+
+                existing.NSSACancelled = model.NSSACancelled;
+                existing.NSSAReceivedBy = model.NSSAReceivedBy;
+                existing.NSSADate = model.NSSADate;
+
+                existing.FuneralPolicyCancelled = model.FuneralPolicyCancelled;
+                existing.FuneralPolicyReceivedBy = model.FuneralPolicyReceivedBy;
+                existing.FuneralPolicyDate = model.FuneralPolicyDate;
+
+                existing.ExitInterviewCompleted = model.ExitInterviewCompleted;
+                existing.ExitInterviewReceivedBy = model.ExitInterviewReceivedBy;
+                existing.ExitInterviewDate = model.ExitInterviewDate;
+
+                existing.HandoverReportSubmitted = model.HandoverReportSubmitted;
+                existing.HandoverReportReceivedBy = model.HandoverReportReceivedBy;
+                existing.HandoverReportDate = model.HandoverReportDate;
+
+                existing.Comments = model.Comments;
+
+                existing.ApprovedDate = DateTime.Now;
+            }
 
             var workflow = _context.ClearanceWorkflows
                 .FirstOrDefault(x =>
@@ -1059,6 +1115,7 @@ namespace IT_Service_Management_System.Controllers
 
             return RedirectToAction(nameof(HrQueue));
         }
+
 
         [HttpGet]
         public IActionResult Details(int id)

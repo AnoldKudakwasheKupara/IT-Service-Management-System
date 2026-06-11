@@ -1,8 +1,9 @@
 ﻿@model HrApproval
 
 <div class="card">
+
     <div class="card-header">
-        <h4>HR Final Review</h4>
+        <h4>Human Resources Final Clearance</h4>
     </div>
 
     <div class="card-body">
@@ -11,58 +12,91 @@
 
             <input asp-for="ExitClearanceId" type="hidden" />
 
-            <div class="form-check">
-                <input asp-for="ResignationLetterReceived" class="form-check-input" />
-                <label class="form-check-label">Resignation Letter Received</label>
-            </div>
+            <table class="table table-bordered">
 
-            <div class="form-check">
-                <input asp-for="StaffIdCardReturned" class="form-check-input" />
-                <label class="form-check-label">Staff ID Card Returned</label>
-            </div>
+                <thead class="table-light">
 
-            <div class="form-check">
-                <input asp-for="MedicalAidCancelled" class="form-check-input" />
-                <label class="form-check-label">Medical Aid Cancelled</label>
-            </div>
+                    <tr>
+                        <th style="width:45%">Human Resources</th>
+                        <th style="width:15%">Tick If Done</th>
+                        <th style="width:25%">Received By (Sign)</th>
+                        <th style="width:15%">Date</th>
+                    </tr>
 
-            <div class="form-check">
-                <input asp-for="NSSACancelled" class="form-check-input" />
-                <label class="form-check-label">NSSA Cancelled</label>
-            </div>
+                </thead>
 
-            <div class="form-check">
-                <input asp-for="FuneralPolicyCancelled" class="form-check-input" />
-                <label class="form-check-label">Funeral Policy Cancelled</label>
-            </div>
+                <tbody>
 
-            <div class="form-check">
-                <input asp-for="ExitInterviewCompleted" class="form-check-input" />
-                <label class="form-check-label">Exit Interview Completed</label>
-            </div>
+                    <tr>
+                        <td>Acknowledge receiving resignation letter</td>
+                        <td><input asp-for="ResignationLetterReceived" /></td>
+                        <td><input asp-for="ResignationLetterReceivedBy" class="form-control" /></td>
+                        <td><input asp-for="ResignationLetterDate" type="date" class="form-control" /></td>
+                    </tr>
 
-            <div class="form-check mb-3">
-                <input asp-for="HandoverReportSubmitted" class="form-check-input" />
-                <label class="form-check-label">Handover Report Submitted</label>
-            </div>
+                    <tr>
+                        <td>Staff ID Card</td>
+                        <td><input asp-for="StaffIdReturned" /></td>
+                        <td><input asp-for="StaffIdReceivedBy" class="form-control" /></td>
+                        <td><input asp-for="StaffIdDate" type="date" class="form-control" /></td>
+                    </tr>
+
+                    <tr>
+                        <td>Cancellation of benefits - Medical Aid</td>
+                        <td><input asp-for="MedicalAidCancelled" /></td>
+                        <td><input asp-for="MedicalAidReceivedBy" class="form-control" /></td>
+                        <td><input asp-for="MedicalAidDate" type="date" class="form-control" /></td>
+                    </tr>
+
+                    <tr>
+                        <td>Cancellation of Pension - NSSA</td>
+                        <td><input asp-for="NSSACancelled" /></td>
+                        <td><input asp-for="NSSAReceivedBy" class="form-control" /></td>
+                        <td><input asp-for="NSSADate" type="date" class="form-control" /></td>
+                    </tr>
+
+                    <tr>
+                        <td>Cancellation of Funeral Policy</td>
+                        <td><input asp-for="FuneralPolicyCancelled" /></td>
+                        <td><input asp-for="FuneralPolicyReceivedBy" class="form-control" /></td>
+                        <td><input asp-for="FuneralPolicyDate" type="date" class="form-control" /></td>
+                    </tr>
+
+                    <tr>
+                        <td>Exit Interviews Done</td>
+                        <td><input asp-for="ExitInterviewCompleted" /></td>
+                        <td><input asp-for="ExitInterviewReceivedBy" class="form-control" /></td>
+                        <td><input asp-for="ExitInterviewDate" type="date" class="form-control" /></td>
+                    </tr>
+
+                    <tr>
+                        <td>Handover Report Submitted</td>
+                        <td><input asp-for="HandoverReportSubmitted" /></td>
+                        <td><input asp-for="HandoverReportReceivedBy" class="form-control" /></td>
+                        <td><input asp-for="HandoverReportDate" type="date" class="form-control" /></td>
+                    </tr>
+
+                </tbody>
+
+            </table>
 
             <div class="mb-3">
+
                 <label>Comments</label>
-                <textarea asp-for="Comments" class="form-control"></textarea>
+
+                <textarea asp-for="Comments"
+                          rows="4"
+                          class="form-control"></textarea>
+
             </div>
 
-            <div class="form-check mb-3">
-                <input asp-for="Approved" class="form-check-input" />
-                <label class="form-check-label">
-                    Final HR Approval
-                </label>
-            </div>
-
-            <button class="btn btn-success">
+            <button type="submit"
+                    class="btn btn-success">
                 Complete Clearance
             </button>
 
         </form>
 
     </div>
+
 </div>
