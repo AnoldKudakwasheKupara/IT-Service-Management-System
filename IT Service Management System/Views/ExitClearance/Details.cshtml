@@ -47,15 +47,10 @@
                     </span>
                 </div>
             </div>
-            <div class="profile-status">
-                <div class="status-indicator status-pending">
-                    <i class="fas fa-clock"></i>
-                    <span>Pending Clearance</span>
-                </div>
-            </div>
         </div>
 
         <div class="profile-details">
+            <!-- 3x3 Grid for Employee Details -->
             <div class="detail-group">
                 <div class="detail-item">
                     <i class="fas fa-calendar-alt"></i>
@@ -103,7 +98,9 @@
         </div>
     </div>
 
-    <!-- Clearance Sections -->
+
+
+    <!-- Clearance Sections - 2x2 Grid -->
     <div class="clearance-grid">
         <!-- Finance Clearance -->
         <div class="clearance-card finance">
@@ -139,6 +136,13 @@
                         <span><i class="fas fa-calendar"></i> @(Model.FinanceClearance?.FinalDuesDate?.ToString("dd MMM yyyy") ?? "—")</span>
                     </div>
                 </div>
+                @if (!string.IsNullOrWhiteSpace(Model.FinanceClearance?.Comments))
+                {
+                    <div class="comment-box">
+                        <i class="fas fa-comment-dots"></i>
+                        <p>@Model.FinanceClearance.Comments</p>
+                    </div>
+                }
             </div>
         </div>
 
@@ -152,48 +156,68 @@
                 <span class="section-badge">IT Assets</span>
             </div>
             <div class="clearance-body">
-                <div class="asset-grid">
-                    <div class="asset-item">
-                        <i class="fas fa-laptop"></i>
-                        <div>
-                            <span class="asset-label">Laptop</span>
-                            <span class="asset-value">@(Model.SystemsAdminClearance?.LaptopAsset ?? "—")</span>
-                        </div>
+                <div class="clearance-item">
+                    <div class="item-title">Laptop</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-hashtag"></i> @(Model.SystemsAdminClearance?.LaptopAsset ?? "—")</span>
+                        <span><i class="fas fa-user-check"></i> @(Model.SystemsAdminClearance?.LaptopReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.SystemsAdminClearance?.LaptopDate?.ToString("dd MMM yyyy") ?? "—")</span>
                     </div>
-                    <div class="asset-item">
-                        <i class="fas fa-briefcase"></i>
-                        <div>
-                            <span class="asset-label">Laptop Bags</span>
-                            <span class="asset-value">@(Model.SystemsAdminClearance?.LaptopBagAsset ?? "—")</span>
-                        </div>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">Laptop Bags</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-hashtag"></i> @(Model.SystemsAdminClearance?.LaptopBagAsset ?? "—")</span>
+                        <span><i class="fas fa-user-check"></i> @(Model.SystemsAdminClearance?.LaptopBagReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.SystemsAdminClearance?.LaptopBagDate?.ToString("dd MMM yyyy") ?? "—")</span>
                     </div>
-                    <div class="asset-item">
-                        <i class="fas fa-mouse"></i>
-                        <div>
-                            <span class="asset-label">Accessories</span>
-                            <span class="asset-value">@(Model.SystemsAdminClearance?.AccessoriesAsset ?? "—")</span>
-                        </div>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">Accessories</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-hashtag"></i> @(Model.SystemsAdminClearance?.AccessoriesAsset ?? "—")</span>
+                        <span><i class="fas fa-user-check"></i> @(Model.SystemsAdminClearance?.AccessoriesReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.SystemsAdminClearance?.AccessoriesDate?.ToString("dd MMM yyyy") ?? "—")</span>
                     </div>
-                    <div class="asset-item">
-                        <i class="fas fa-lock"></i>
-                        <div>
-                            <span class="asset-label">Laptop Locker</span>
-                            <span class="asset-value">@(Model.SystemsAdminClearance?.LockerAsset ?? "—")</span>
-                        </div>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">Laptop Locker</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-hashtag"></i> @(Model.SystemsAdminClearance?.LockerAsset ?? "—")</span>
+                        <span><i class="fas fa-user-check"></i> @(Model.SystemsAdminClearance?.LockerReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.SystemsAdminClearance?.LockerDate?.ToString("dd MMM yyyy") ?? "—")</span>
                     </div>
-                    <div class="asset-item">
-                        <i class="fas fa-shield-alt"></i>
-                        <div>
-                            <span class="asset-label">Endpoint Security</span>
-                            <span class="asset-value">@(Model.SystemsAdminClearance?.EndpointSecurityAsset ?? "—")</span>
-                        </div>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">Endpoint Security</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-hashtag"></i> @(Model.SystemsAdminClearance?.EndpointSecurityAsset ?? "—")</span>
+                        <span><i class="fas fa-user-check"></i> @(Model.SystemsAdminClearance?.EndpointSecurityReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.SystemsAdminClearance?.EndpointSecurityDate?.ToString("dd MMM yyyy") ?? "—")</span>
                     </div>
-                    <div class="asset-item">
-                        <i class="fas fa-key"></i>
-                        <div>
-                            <span class="asset-label">Sophos Credentials</span>
-                            <span class="asset-value">@(Model.SystemsAdminClearance?.SophosAsset ?? "—")</span>
-                        </div>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">System Access Removed</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-hashtag"></i> @(Model.SystemsAdminClearance?.AccessRemovalAsset ?? "—")</span>
+                        <span><i class="fas fa-user-check"></i> @(Model.SystemsAdminClearance?.AccessRemovalReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.SystemsAdminClearance?.AccessRemovalDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                    </div>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">Email Disabled / Redirected</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-hashtag"></i> @(Model.SystemsAdminClearance?.EmailAsset ?? "—")</span>
+                        <span><i class="fas fa-user-check"></i> @(Model.SystemsAdminClearance?.EmailReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.SystemsAdminClearance?.EmailDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                    </div>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">Removed From Social Media Groups</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-hashtag"></i> @(Model.SystemsAdminClearance?.SocialMediaAsset ?? "—")</span>
+                        <span><i class="fas fa-user-check"></i> @(Model.SystemsAdminClearance?.SocialMediaReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.SystemsAdminClearance?.SocialMediaDate?.ToString("dd MMM yyyy") ?? "—")</span>
                     </div>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(Model.SystemsAdminClearance?.Comments))
@@ -216,92 +240,83 @@
                 <span class="section-badge">HR Process</span>
             </div>
             <div class="clearance-body">
-                <div class="checklist">
-                    <div class="checklist-item completed">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Resignation Letter</span>
-                        @if (Model.HrApproval?.ResignationLetterReceived == true)
-                        {
-                            <span class="check-status">✓ Completed</span>
-                        }
-                        else
-                        {
-                            <span class="check-status pending">⏳ Pending</span>
-                        }
-                    </div>
-                    <div class="checklist-item completed">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Staff ID Card</span>
-                        @if (Model.HrApproval?.StaffIdReturned == true)
-                        {
-                            <span class="check-status">✓ Completed</span>
-                        }
-                        else
-                        {
-                            <span class="check-status pending">⏳ Pending</span>
-                        }
-                    </div>
-                    <div class="checklist-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Medical Aid Cancellation</span>
-                        @if (Model.HrApproval?.MedicalAidCancelled == true)
-                        {
-                            <span class="check-status">✓ Completed</span>
-                        }
-                        else
-                        {
-                            <span class="check-status pending">⏳ Pending</span>
-                        }
-                    </div>
-                    <div class="checklist-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>NSSA Cancellation</span>
-                        @if (Model.HrApproval?.NSSACancelled == true)
-                        {
-                            <span class="check-status">✓ Completed</span>
-                        }
-                        else
-                        {
-                            <span class="check-status pending">⏳ Pending</span>
-                        }
-                    </div>
-                    <div class="checklist-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Funeral Policy Cancellation</span>
-                        @if (Model.HrApproval?.FuneralPolicyCancelled == true)
-                        {
-                            <span class="check-status">✓ Completed</span>
-                        }
-                        else
-                        {
-                            <span class="check-status pending">⏳ Pending</span>
-                        }
-                    </div>
-                    <div class="checklist-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Exit Interview</span>
-                        @if (Model.HrApproval?.ExitInterviewCompleted == true)
-                        {
-                            <span class="check-status">✓ Completed</span>
-                        }
-                        else
-                        {
-                            <span class="check-status pending">⏳ Pending</span>
-                        }
-                    </div>
-                    <div class="checklist-item">
-                        <i class="fas fa-check-circle"></i>
-                        <span>Handover Report</span>
-                        @if (Model.HrApproval?.HandoverReportSubmitted == true)
-                        {
-                            <span class="check-status">✓ Completed</span>
-                        }
-                        else
-                        {
-                            <span class="check-status pending">⏳ Pending</span>
-                        }
+                <div class="clearance-item">
+                    <div class="item-title">Resignation Letter</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-user-check"></i> @(Model.HrApproval?.ResignationLetterReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.HrApproval?.ResignationLetterDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                        <span class="status-badge @(Model.HrApproval?.ResignationLetterReceived == true ? "status-completed" : "status-pending")">
+                            @(Model.HrApproval?.ResignationLetterReceived == true ? "Completed" : "Pending")
+                        </span>
                     </div>
                 </div>
+                <div class="clearance-item">
+                    <div class="item-title">Staff ID Card</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-user-check"></i> @(Model.HrApproval?.StaffIdReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.HrApproval?.StaffIdDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                        <span class="status-badge @(Model.HrApproval?.StaffIdReturned == true ? "status-completed" : "status-pending")">
+                            @(Model.HrApproval?.StaffIdReturned == true ? "Completed" : "Pending")
+                        </span>
+                    </div>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">Medical Aid Cancellation</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-user-check"></i> @(Model.HrApproval?.MedicalAidReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.HrApproval?.MedicalAidDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                        <span class="status-badge @(Model.HrApproval?.MedicalAidCancelled == true ? "status-completed" : "status-pending")">
+                            @(Model.HrApproval?.MedicalAidCancelled == true ? "Completed" : "Pending")
+                        </span>
+                    </div>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">NSSA Cancellation</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-user-check"></i> @(Model.HrApproval?.NSSAReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.HrApproval?.NSSADate?.ToString("dd MMM yyyy") ?? "—")</span>
+                        <span class="status-badge @(Model.HrApproval?.NSSACancelled == true ? "status-completed" : "status-pending")">
+                            @(Model.HrApproval?.NSSACancelled == true ? "Completed" : "Pending")
+                        </span>
+                    </div>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">Funeral Policy Cancellation</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-user-check"></i> @(Model.HrApproval?.FuneralPolicyReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.HrApproval?.FuneralPolicyDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                        <span class="status-badge @(Model.HrApproval?.FuneralPolicyCancelled == true ? "status-completed" : "status-pending")">
+                            @(Model.HrApproval?.FuneralPolicyCancelled == true ? "Completed" : "Pending")
+                        </span>
+                    </div>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">Exit Interview</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-user-check"></i> @(Model.HrApproval?.ExitInterviewReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.HrApproval?.ExitInterviewDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                        <span class="status-badge @(Model.HrApproval?.ExitInterviewCompleted == true ? "status-completed" : "status-pending")">
+                            @(Model.HrApproval?.ExitInterviewCompleted == true ? "Completed" : "Pending")
+                        </span>
+                    </div>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">Handover Report</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-user-check"></i> @(Model.HrApproval?.HandoverReportReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.HrApproval?.HandoverReportDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                        <span class="status-badge @(Model.HrApproval?.HandoverReportSubmitted == true ? "status-completed" : "status-pending")">
+                            @(Model.HrApproval?.HandoverReportSubmitted == true ? "Completed" : "Pending")
+                        </span>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.HrApproval?.Comments))
+                {
+                    <div class="comment-box">
+                        <i class="fas fa-comment-dots"></i>
+                        <p>@Model.HrApproval.Comments</p>
+                    </div>
+                }
             </div>
         </div>
 
@@ -315,21 +330,28 @@
                 <span class="section-badge">Dev Access</span>
             </div>
             <div class="clearance-body">
-                <div class="credential-list">
-                    <div class="credential-item">
-                        <i class="fab fa-bitbucket"></i>
-                        <span>Bitbucket Administration</span>
-                        <span class="credential-status">@(Model.DevelopmentClearance?.BitbucketAsset == "Cleared" ? "✓" : "—")</span>
+                <div class="clearance-item">
+                    <div class="item-title">Bitbucket Administration Credentials</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-hashtag"></i> @(Model.DevelopmentClearance?.BitbucketAsset ?? "—")</span>
+                        <span><i class="fas fa-user-check"></i> @(Model.DevelopmentClearance?.BitbucketReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.DevelopmentClearance?.BitbucketDate?.ToString("dd MMM yyyy") ?? "—")</span>
                     </div>
-                    <div class="credential-item">
-                        <i class="fas fa-tasks"></i>
-                        <span>Project Management</span>
-                        <span class="credential-status">@(Model.DevelopmentClearance?.ProjectManagementAsset == "Cleared" ? "✓" : "—")</span>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">Project Management Credentials</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-hashtag"></i> @(Model.DevelopmentClearance?.ProjectManagementAsset ?? "—")</span>
+                        <span><i class="fas fa-user-check"></i> @(Model.DevelopmentClearance?.ProjectManagementReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.DevelopmentClearance?.ProjectManagementDate?.ToString("dd MMM yyyy") ?? "—")</span>
                     </div>
-                    <div class="credential-item">
-                        <i class="fas fa-cog"></i>
-                        <span>Manage Engine</span>
-                        <span class="credential-status">@(Model.DevelopmentClearance?.ManageEngineAsset == "Cleared" ? "✓" : "—")</span>
+                </div>
+                <div class="clearance-item">
+                    <div class="item-title">Manage Engine Credentials</div>
+                    <div class="item-details">
+                        <span><i class="fas fa-hashtag"></i> @(Model.DevelopmentClearance?.ManageEngineAsset ?? "—")</span>
+                        <span><i class="fas fa-user-check"></i> @(Model.DevelopmentClearance?.ManageEngineReceivedBy ?? "—")</span>
+                        <span><i class="fas fa-calendar"></i> @(Model.DevelopmentClearance?.ManageEngineDate?.ToString("dd MMM yyyy") ?? "—")</span>
                     </div>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(Model.DevelopmentClearance?.Comments))
@@ -442,35 +464,35 @@
         color: #667eea;
     }
 
-    .hero-btn-edit:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-        color: #667eea;
-        text-decoration: none;
-    }
+        .hero-btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: #667eea;
+            text-decoration: none;
+        }
 
     .hero-btn-back {
         background: rgba(255, 255, 255, 0.2);
         color: white;
     }
 
-    .hero-btn-back:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: translateY(-2px);
-        color: white;
-        text-decoration: none;
-    }
+        .hero-btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
 
     .hero-btn-print {
         background: rgba(255, 255, 255, 0.2);
         color: white;
     }
 
-    .hero-btn-print:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: translateY(-2px);
-        color: white;
-    }
+        .hero-btn-print:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+        }
 
     /* Profile Card */
     .profile-card {
@@ -536,32 +558,14 @@
         color: white;
     }
 
-    .profile-status {
-        margin-left: auto;
-    }
-
-    .status-indicator {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem 1rem;
-        border-radius: 2rem;
-        font-size: 0.875rem;
-        font-weight: 600;
-    }
-
-    .status-pending {
-        background: #fff5e6;
-        color: var(--warning);
-    }
-
     .profile-details {
         padding: 1.5rem;
     }
 
+    /* 3x3 Grid for Employee Details */
     .detail-group {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
         gap: 1rem;
     }
 
@@ -572,42 +576,139 @@
         padding: 0.75rem;
         background: var(--gray-50);
         border-radius: 0.75rem;
+        transition: all 0.2s;
     }
 
-    .detail-item i {
-        width: 32px;
-        height: 32px;
+        .detail-item:hover {
+            background: var(--gray-100);
+            transform: translateY(-2px);
+        }
+
+        .detail-item i {
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
+
+        .detail-item div {
+            flex: 1;
+        }
+
+        .detail-item label {
+            display: block;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--gray-500);
+            margin-bottom: 0.125rem;
+        }
+
+        .detail-item span {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--gray-800);
+        }
+
+    /* Workflow Grid */
+    .workflow-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .workflow-card {
         background: white;
-        border-radius: 0.5rem;
+        border-radius: 1rem;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s;
+        border: 1px solid var(--gray-200);
+    }
+
+        .workflow-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .workflow-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 1rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--primary);
-        font-size: 0.875rem;
+        font-size: 1.5rem;
     }
 
-    .detail-item div {
+        .workflow-icon.supervisor {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white;
+        }
+
+        .workflow-icon.hod {
+            background: linear-gradient(135deg, #8e2de2, #4a00e0);
+            color: white;
+        }
+
+    .workflow-info {
         flex: 1;
     }
 
-    .detail-item label {
-        display: block;
-        font-size: 0.65rem;
-        text-transform: uppercase;
+        .workflow-info h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+    .workflow-status {
+        font-size: 0.7rem;
+        font-weight: 600;
+        display: inline-block;
+        padding: 0.125rem 0.5rem;
+        border-radius: 2rem;
+    }
+
+        .workflow-status.approved {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+        .workflow-status.pending {
+            background: #fff5e6;
+            color: var(--warning);
+        }
+
+    .workflow-date {
+        font-size: 0.7rem;
         color: var(--gray-500);
-        margin-bottom: 0.125rem;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
     }
 
-    .detail-item span {
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: var(--gray-800);
+    .workflow-comment {
+        font-size: 0.7rem;
+        color: var(--gray-600);
+        margin-top: 0.25rem;
+        padding-top: 0.25rem;
+        border-top: 1px solid var(--gray-200);
     }
 
-    /* Clearance Grid */
+    /* Clearance Grid - 2x2 layout */
     .clearance-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        grid-template-columns: repeat(2, 1fr);
         gap: 1.5rem;
     }
 
@@ -619,10 +720,10 @@
         transition: all 0.3s;
     }
 
-    .clearance-card:hover {
-        transform: translateY(-4px);
-        box-shadow: var(--shadow-lg);
-    }
+        .clearance-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
 
     .clearance-header {
         padding: 1rem 1.5rem;
@@ -687,9 +788,9 @@
         border-bottom: 1px solid var(--gray-100);
     }
 
-    .clearance-item:last-child {
-        border-bottom: none;
-    }
+        .clearance-item:last-child {
+            border-bottom: none;
+        }
 
     .item-title {
         font-weight: 600;
@@ -701,133 +802,36 @@
         display: flex;
         gap: 1rem;
         flex-wrap: wrap;
+        align-items: center;
     }
 
-    .item-details span {
+        .item-details span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            color: var(--gray-500);
+        }
+
+    /* Status Badge */
+    .status-badge {
         display: inline-flex;
         align-items: center;
-        gap: 0.25rem;
-        font-size: 0.75rem;
-        color: var(--gray-500);
-    }
-
-    /* Asset Grid */
-    .asset-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 0.75rem;
-    }
-
-    .asset-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem;
-        background: var(--gray-50);
-        border-radius: 0.5rem;
-    }
-
-    .asset-item i {
-        width: 32px;
-        height: 32px;
-        background: white;
-        border-radius: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--primary);
-    }
-
-    .asset-label {
-        display: block;
-        font-size: 0.7rem;
-        color: var(--gray-500);
-    }
-
-    .asset-value {
-        display: block;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--gray-800);
-    }
-
-    /* Checklist */
-    .checklist {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .checklist-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem;
-        background: var(--gray-50);
-        border-radius: 0.5rem;
-    }
-
-    .checklist-item i {
-        color: var(--gray-400);
-        font-size: 1rem;
-    }
-
-    .checklist-item.completed i {
-        color: var(--success);
-    }
-
-    .checklist-item span:first-of-type {
-        flex: 1;
-        font-size: 0.875rem;
-        color: var(--gray-700);
-    }
-
-    .check-status {
-        font-size: 0.7rem;
-        font-weight: 600;
         padding: 0.125rem 0.5rem;
         border-radius: 2rem;
-        background: #e6f5e9;
-        color: var(--success);
-    }
-
-    .check-status.pending {
-        background: #fff5e6;
-        color: var(--warning);
-    }
-
-    /* Credential List */
-    .credential-list {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .credential-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.5rem;
-        background: var(--gray-50);
-        border-radius: 0.5rem;
-    }
-
-    .credential-item i {
-        width: 32px;
-        color: var(--primary);
-        font-size: 1.25rem;
-    }
-
-    .credential-item span:first-of-type {
-        flex: 1;
-        font-size: 0.875rem;
-        color: var(--gray-700);
-    }
-
-    .credential-status {
+        font-size: 0.7rem;
         font-weight: 600;
-        color: var(--success);
     }
+
+        .status-badge.status-completed {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+        .status-badge.status-pending {
+            background: #fff5e6;
+            color: var(--warning);
+        }
 
     /* Comment Box */
     .comment-box {
@@ -839,17 +843,18 @@
         gap: 0.5rem;
     }
 
-    .comment-box i {
-        color: var(--primary);
-        font-size: 1rem;
-    }
+        .comment-box i {
+            color: var(--primary);
+            font-size: 1rem;
+        }
 
-    .comment-box p {
-        margin: 0;
-        font-size: 0.875rem;
-        color: var(--gray-600);
-        line-height: 1.4;
-    }
+        .comment-box p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            line-height: 1.4;
+        }
+
 </style>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">

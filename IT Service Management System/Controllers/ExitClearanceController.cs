@@ -1161,7 +1161,126 @@ namespace IT_Service_Management_System.Controllers
             return View(vm);
         }
 
+        [HttpGet]
+        public IActionResult Edit(int id)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == id);
 
+            if (clearance == null)
+                return NotFound();
+
+            var vm = new CreateExitClearanceVM
+            {
+                EmployeeId = clearance.EmployeeId,
+
+                Employees = _context.Users
+                    .Where(x => x.IsActive)
+                    .Select(x => new SelectListItem
+                    {
+                        Value = x.Id.ToString(),
+                        Text = x.FirstName + " " + x.LastName
+                    })
+                    .ToList()
+            };
+
+            ViewBag.ClearanceId = clearance.Id;
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(int id, CreateExitClearanceVM vm)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            clearance.EmployeeId = vm.EmployeeId;
+
+            _context.SaveChanges();
+
+            TempData["Success"] =
+                "Exit Clearance updated successfully.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public IActionResult Delete(int id)
+        {
+            var clearance = _context.ExitClearances
+                .Include(x => x.Employee)
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            return View(clearance);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteConfirmed(int id)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            _context.ExitClearanceEmployeeDetails
+                .RemoveRange(
+                    _context.ExitClearanceEmployeeDetails
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.FinanceClearances
+                .RemoveRange(
+                    _context.FinanceClearances
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.SystemsAdminClearances
+                .RemoveRange(
+                    _context.SystemsAdminClearances
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.DevelopmentClearances
+                .RemoveRange(
+                    _context.DevelopmentClearances
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.SupervisorApprovals
+                .RemoveRange(
+                    _context.SupervisorApprovals
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.HodApprovals
+                .RemoveRange(
+                    _context.HodApprovals
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.HrApprovals
+                .RemoveRange(
+                    _context.HrApprovals
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.ClearanceWorkflows
+                .RemoveRange(
+                    _context.ClearanceWorkflows
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.ExitClearances.Remove(clearance);
+
+            _context.SaveChanges();
+
+            TempData["Success"] =
+                "Exit Clearance deleted successfully.";
+
+            return RedirectToAction(nameof(Index));
+        }
 
 
 
