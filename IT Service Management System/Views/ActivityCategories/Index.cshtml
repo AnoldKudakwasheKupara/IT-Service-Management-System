@@ -21,7 +21,7 @@
         </div>
     </div>
 
-    <!-- Statistics Cards -->
+    <!-- Statistics Cards - Fixed 3-column layout -->
     <div class="stats-cards mb-4">
         <div class="stat-card">
             <div class="stat-icon total">
@@ -46,7 +46,7 @@
                 <i class="fas fa-chart-line"></i>
             </div>
             <div class="stat-info">
-                <h3>@(Model.Any() ? (Model.Sum(c => c.Activities?.Count ?? 0) / Model.Count()).ToString("F1") : "0")</h3>
+                <h3>@(Model.Any() ? ((double)Model.Sum(c => c.Activities?.Count ?? 0) / Model.Count()).ToString("F1") : "0")</h3>
                 <p>Avg per Category</p>
             </div>
         </div>
@@ -71,15 +71,15 @@
                 <table class="categories-table">
                     <thead>
                         <tr>
-                            <th><i class="fas fa-tag me-1"></i> Name</th>
-                            <th><i class="fas fa-tasks me-1"></i> Activities</th>
-                            <th><i class="fas fa-cog me-1"></i> Actions</th>
+                            <th style="width: 40%"><i class="fas fa-tag me-1"></i> Name</th>
+                            <th style="width: 30%"><i class="fas fa-tasks me-1"></i> Activities</th>
+                            <th style="width: 30%"><i class="fas fa-cog me-1"></i> Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var item in Model)
+                        @foreach (var item in Model.OrderBy(c => c.Name))
                         {
-                            <tr>
+                           
                                 <td class="category-name-cell">
                                     <div class="category-info">
                                         <div class="category-icon">
@@ -89,13 +89,13 @@
                                             <strong>@item.Name</strong>
                                         </div>
                                     </div>
-                                </td>
+                                 </td>
                                 <td class="activities-cell">
                                     <div class="activities-info">
                                         <i class="fas fa-tasks"></i>
-                                        <span>@(item.Activities?.Count ?? 0) activities</span>
+                                        <span>@(item.Activities?.Count ?? 0) activity(s)</span>
                                     </div>
-                                </td>
+                                 </td>
                                 <td class="action-buttons">
                                     <a asp-action="Details" asp-route-id="@item.Id" class="action-btn btn-view" title="View Details">
                                         <i class="fas fa-eye"></i>
@@ -106,8 +106,8 @@
                                     <a asp-action="Delete" asp-route-id="@item.Id" class="action-btn btn-delete" title="Delete Category" onclick="return confirm('Are you sure you want to delete this category? Activities using this category will be affected.');">
                                         <i class="fas fa-trash-alt"></i>
                                     </a>
-                                </td>
-                            </tr>
+                                 </td>
+                            
                         }
                     </tbody>
                 </table>
@@ -153,8 +153,9 @@
     }
 
     .page-container {
-        max-width: 1000px;
-        margin: 0 auto;
+        width: 100%;
+        max-width: none;
+        margin: 0;
         padding: 0 1rem;
     }
 
@@ -184,17 +185,17 @@
         box-shadow: var(--shadow-sm);
     }
 
-        .btn-create-category:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-            color: white;
-            text-decoration: none;
-        }
+    .btn-create-category:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        color: white;
+        text-decoration: none;
+    }
 
-    /* Statistics Cards */
+    /* Statistics Cards - Fixed 3-column layout */
     .stats-cards {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        grid-template-columns: repeat(3, 1fr);
         gap: 1.5rem;
         margin-bottom: 2rem;
     }
@@ -211,10 +212,10 @@
         border: 1px solid var(--gray-200);
     }
 
-        .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
 
     .stat-icon {
         width: 48px;
@@ -227,20 +228,20 @@
         flex-shrink: 0;
     }
 
-        .stat-icon.total {
-            background: linear-gradient(135deg, var(--info), #2563eb);
-            color: white;
-        }
+    .stat-icon.total {
+        background: linear-gradient(135deg, var(--info), #2563eb);
+        color: white;
+    }
 
-        .stat-icon.activities {
-            background: linear-gradient(135deg, var(--success), #059669);
-            color: white;
-        }
+    .stat-icon.activities {
+        background: linear-gradient(135deg, var(--success), #059669);
+        color: white;
+    }
 
-        .stat-icon.avg {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
-        }
+    .stat-icon.avg {
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+    }
 
     .stat-info h3 {
         font-size: 1.5rem;
@@ -289,35 +290,35 @@
         border-collapse: collapse;
     }
 
-        .categories-table thead {
-            background: var(--gray-50);
-            border-bottom: 2px solid var(--gray-200);
-        }
+    .categories-table thead {
+        background: var(--gray-50);
+        border-bottom: 2px solid var(--gray-200);
+    }
 
-        .categories-table th {
-            padding: 1rem 1.5rem;
-            text-align: left;
-            font-weight: 600;
-            color: var(--gray-600);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+    .categories-table th {
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--gray-600);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
 
-        .categories-table td {
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--gray-200);
-            vertical-align: middle;
-            font-size: 0.875rem;
-        }
+    .categories-table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        vertical-align: middle;
+        font-size: 0.875rem;
+    }
 
-        .categories-table tbody tr {
-            transition: background-color 0.2s;
-        }
+    .categories-table tbody tr {
+        transition: background-color 0.2s;
+    }
 
-            .categories-table tbody tr:hover {
-                background-color: var(--gray-50);
-            }
+    .categories-table tbody tr:hover {
+        background-color: var(--gray-50);
+    }
 
     /* Category Name Cell */
     .category-name-cell {
@@ -350,7 +351,7 @@
 
     /* Activities Cell */
     .activities-cell {
-        min-width: 120px;
+        min-width: 150px;
     }
 
     .activities-info {
@@ -360,14 +361,15 @@
         color: var(--gray-600);
     }
 
-        .activities-info i {
-            color: var(--primary);
-        }
+    .activities-info i {
+        color: var(--primary);
+    }
 
     /* Action Buttons */
     .action-buttons {
         display: flex;
         gap: 0.5rem;
+        flex-wrap: wrap;
     }
 
     .action-btn {
@@ -387,33 +389,33 @@
         color: var(--info);
     }
 
-        .btn-view:hover {
-            background: var(--info);
-            color: white;
-            transform: translateY(-2px);
-        }
+    .btn-view:hover {
+        background: var(--info);
+        color: white;
+        transform: translateY(-2px);
+    }
 
     .btn-edit {
         background: var(--gray-100);
         color: var(--warning);
     }
 
-        .btn-edit:hover {
-            background: var(--warning);
-            color: white;
-            transform: translateY(-2px);
-        }
+    .btn-edit:hover {
+        background: var(--warning);
+        color: white;
+        transform: translateY(-2px);
+    }
 
     .btn-delete {
         background: var(--gray-100);
         color: var(--danger);
     }
 
-        .btn-delete:hover {
-            background: var(--danger);
-            color: white;
-            transform: translateY(-2px);
-        }
+    .btn-delete:hover {
+        background: var(--danger);
+        color: white;
+        transform: translateY(-2px);
+    }
 
     /* Empty State */
     .empty-state {
@@ -422,21 +424,21 @@
         color: var(--gray-500);
     }
 
-        .empty-state i {
-            font-size: 4rem;
-            color: var(--gray-300);
-            margin-bottom: 1rem;
-        }
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--gray-300);
+        margin-bottom: 1rem;
+    }
 
-        .empty-state h3 {
-            font-size: 1.25rem;
-            margin-bottom: 0.5rem;
-            color: var(--gray-600);
-        }
+    .empty-state h3 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+        color: var(--gray-600);
+    }
 
-        .empty-state p {
-            margin-bottom: 1.5rem;
-        }
+    .empty-state p {
+        margin-bottom: 1.5rem;
+    }
 
     .btn-create-category-sm {
         background: linear-gradient(100deg, var(--primary-dark), var(--primary));
@@ -451,11 +453,11 @@
         transition: all 0.2s;
     }
 
-        .btn-create-category-sm:hover {
-            transform: translateY(-2px);
-            color: white;
-            text-decoration: none;
-        }
+    .btn-create-category-sm:hover {
+        transform: translateY(-2px);
+        color: white;
+        text-decoration: none;
+    }
 
 </style>
 
