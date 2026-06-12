@@ -3,6 +3,7 @@ using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static IT_Service_Management_System.Models.Ticket;
 
 namespace IT_Service_Management_System.Controllers
 {
@@ -168,6 +169,16 @@ namespace IT_Service_Management_System.Controllers
             bool hasSpecial = password.Any(ch => !char.IsLetterOrDigit(ch));
 
             return hasUpper && hasLower && hasSpecial;
+        }
+
+        protected UserRole? GetCurrentUserRole()
+        {
+            var role = HttpContext.Session.GetString("UserRole");
+
+            if (Enum.TryParse<UserRole>(role, out var userRole))
+                return userRole;
+
+            return null;
         }
     }
 }
