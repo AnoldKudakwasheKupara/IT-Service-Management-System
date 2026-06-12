@@ -1,344 +1,685 @@
 ﻿@model IT_Service_Management_System.Models.ExitInterview
 
 @{
-    ViewData["Title"] = "Exit Interview Details";
+    ViewData["Title"] = "Exit Interview Details - Axis IT Helpdesk";
 }
 
-<div class="container">
-
-    ```
-    <div class="d-flex justify-content-between mb-4">
-        <h2>Exit Interview Details</h2>
-
-        <div>
-            <a asp-action="Edit"
-               asp-route-id="@Model.Id"
-               class="btn btn-warning">
-                Edit
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
             </a>
-
-            <a asp-action="Index"
-               class="btn btn-secondary">
-                Back
-            </a>
-        </div>
-    </div>
-
-    <!-- Employee Information -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            Employee Information
-        </div>
-
-        <div class="card-body">
-
-            <div class="row">
-
-                <div class="col-md-4">
-                    <strong>Employee Name</strong><br />
-                    @Model.EmployeeName
-                </div>
-
-                <div class="col-md-4">
-                    <strong>Position</strong><br />
-                    @Model.Position
-                </div>
-
-                <div class="col-md-4">
-                    <strong>Client</strong><br />
-                    @Model.Client
-                </div>
-
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-comments me-2" style="color: var(--info);"></i>
+                    Exit Interview Details
+                </h1>
+                <p class="text-muted mt-2">View complete exit interview information</p>
             </div>
+        </div>
+    </div>
 
-            <hr />
-
-            <div class="row">
-
-                <div class="col-md-4">
-                    <strong>Date Of Resignation</strong><br />
-                    @Model.DateOfResignation?.ToString("dd-MMM-yyyy")
-                </div>
-
-                <div class="col-md-4">
-                    <strong>Last Working Day</strong><br />
-                    @Model.LastWorkingDay?.ToString("dd-MMM-yyyy")
-                </div>
-
-                <div class="col-md-4">
-                    <strong>Interview Date</strong><br />
-                    @Model.InterviewDate?.ToString("dd-MMM-yyyy")
-                </div>
-
+    <!-- Employee Information Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-user-circle me-2"></i>
+                <span>Employee Information</span>
             </div>
-
-            <hr />
-
-            <strong>Interview Conducted By</strong><br />
-            @Model.InterviewConductedBy
-
-        </div>
-    </div>
-
-    <!-- Primary Reason -->
-    <div class="card mb-4">
-        <div class="card-header">
-            Primary Reason For Departure
-        </div>
-
-        <div class="card-body">
-            @Model.PrimaryReasonForDeparture
-        </div>
-    </div>
-
-    <!-- Overall Views -->
-    <div class="card mb-4">
-        <div class="card-header">
-            Overall Views
-        </div>
-
-        <div class="card-body">
-
-            <table class="table table-bordered">
-
-                <tr>
-                    <th>Career Growth Opportunities</th>
-                    <td>@Model.CareerGrowthOpportunities</td>
-                </tr>
-
-                <tr>
-                    <th>Compensation & Benefits</th>
-                    <td>@Model.CompensationAndBenefits</td>
-                </tr>
-
-                <tr>
-                    <th>Work-Life Balance</th>
-                    <td>@Model.WorkLifeBalanceRating</td>
-                </tr>
-
-                <tr>
-                    <th>Management / Leadership Style</th>
-                    <td>@Model.ManagementLeadershipStyle</td>
-                </tr>
-
-                <tr>
-                    <th>Company Culture / Work Environment</th>
-                    <td>@Model.CompanyCultureWorkEnvironment</td>
-                </tr>
-
-                <tr>
-                    <th>Job Responsibilities</th>
-                    <td>@Model.JobResponsibilities</td>
-                </tr>
-
-                <tr>
-                    <th>Relationship With Manager</th>
-                    <td>@Model.RelationshipWithManagerRating</td>
-                </tr>
-
-                <tr>
-                    <th>Other Rating</th>
-                    <td>@Model.OtherRating</td>
-                </tr>
-
-            </table>
-
-            <strong>Other Description</strong>
-
-            <p>@Model.OtherReasonDescription</p>
-
-        </div>
-    </div>
-
-    <!-- Job Satisfaction -->
-    <div class="card mb-4">
-        <div class="card-header">
-            Job Satisfaction & Role Clarity
-        </div>
-
-        <div class="card-body">
-
-            <p>
-                <strong>Role Met Expectations:</strong>
-                @(Model.RoleMetExpectations == true ? "Yes" : "No")
-            </p>
-
-            <p>
-                <strong>Responsibilities Clearly Defined:</strong>
-                @(Model.ResponsibilitiesClearlyDefined == true ? "Yes" : "No")
-            </p>
-
-            <p>
-                <strong>Adequate Training & Resources:</strong>
-                @(Model.AdequateTrainingAndResources == true ? "Yes" : "No")
-            </p>
-
-            <strong>Comments</strong>
-
-            <p>@Model.JobSatisfactionComments</p>
-
-        </div>
-    </div>
-
-    <!-- Management -->
-    <div class="card mb-4">
-        <div class="card-header">
-            Management & Team Dynamics
-        </div>
-
-        <div class="card-body">
-
-            <strong>Relationship With Manager</strong>
-
-            <p>@Model.RelationshipWithManagerDescription</p>
-
-            <p>
-                <strong>Supported By Team & Leadership:</strong>
-                @(Model.SupportedByTeamAndLeadership == true ? "Yes" : "No")
-            </p>
-
-            <strong>Suggestions</strong>
-
-            <p>@Model.CommunicationCollaborationSuggestions</p>
-
-        </div>
-    </div>
-
-    <!-- Compensation -->
-    <div class="card mb-4">
-        <div class="card-header">
-            Compensation & Benefits
-        </div>
-
-        <div class="card-body">
-
-            <p>
-                <strong>Satisfied With Salary & Benefits:</strong>
-                @(Model.SatisfiedWithSalaryAndBenefits == true ? "Yes" : "No")
-            </p>
-
-            <strong>Market Competitiveness</strong>
-
-            <p>@Model.CompensationMarketCompetitiveness</p>
-
-        </div>
-    </div>
-
-    <!-- Culture -->
-    <div class="card mb-4">
-        <div class="card-header">
-            Work Environment & Culture
-        </div>
-
-        <div class="card-body">
-
-            <p>
-                <strong>Felt Valued & Recognized:</strong>
-                @(Model.FeltValuedAndRecognized == true ? "Yes" : "No")
-            </p>
-
-            <strong>Most Liked About Company</strong>
-
-            <p>@Model.MostLikedAboutCompany</p>
-
-            <strong>Culture Improvement Suggestions</strong>
-
-            <p>@Model.CultureImprovementSuggestions</p>
-
-        </div>
-    </div>
-
-    <!-- Suggestions -->
-    <div class="card mb-4">
-        <div class="card-header">
-            Suggestions For Improvement
-        </div>
-
-        <div class="card-body">
-
-            <strong>Employee Retention Recommendations</strong>
-
-            <p>@Model.EmployeeRetentionRecommendations</p>
-
-            <strong>Resignation Prevention Suggestions</strong>
-
-            <p>@Model.ResignationPreventionSuggestions</p>
-
-        </div>
-    </div>
-
-    <!-- Future Engagement -->
-    <div class="card mb-4">
-        <div class="card-header">
-            Future Engagement
-        </div>
-
-        <div class="card-body">
-
-            <p>
-                <strong>Would Return To Company:</strong>
-                @(Model.WouldReturnToCompany == true ? "Yes" : "No")
-            </p>
-
-            <p>
-                <strong>Would Recommend Company:</strong>
-                @(Model.WouldRecommendCompany == true ? "Yes" : "No")
-            </p>
-
-        </div>
-    </div>
-
-    <!-- Work Life Balance -->
-    <div class="card mb-4">
-        <div class="card-header">
-            Work-Life Balance
-        </div>
-
-        <div class="card-body">
-            @Model.WorkLifeBalanceComments
-        </div>
-    </div>
-
-    <!-- Additional Comments -->
-    <div class="card mb-4">
-        <div class="card-header">
-            Additional Comments
-        </div>
-
-        <div class="card-body">
-            @Model.AdditionalComments
-        </div>
-    </div>
-
-    <!-- Sign Off -->
-    <div class="card mb-4">
-        <div class="card-header">
-            Sign Off
-        </div>
-
-        <div class="card-body">
-
-            <div class="row">
-
-                <div class="col-md-4">
-                    <strong>Employee</strong><br />
-                    @Model.EmployeeSignature
-                </div>
-
-                <div class="col-md-4">
-                    <strong>HR Representative</strong><br />
-                    @Model.HRRepresentativeSignature
-                </div>
-
-                <div class="col-md-4">
-                    <strong>Date</strong><br />
-                    @Model.SignOffDate?.ToString("dd-MMM-yyyy")
-                </div>
-
+            <div class="interview-id-badge">
+                <i class="fas fa-hashtag"></i>
+                ID: @Model.Id
             </div>
-
+        </div>
+        <div class="card-body-custom">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Employee Name</span>
+                    <span class="info-value">@Model.EmployeeName</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Position</span>
+                    <span class="info-value">@Model.Position</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Client</span>
+                    <span class="info-value">@Model.Client</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date of Resignation</span>
+                    <span class="info-value">@(Model.DateOfResignation?.ToString("dd MMM yyyy") ?? "—")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Last Working Day</span>
+                    <span class="info-value">@(Model.LastWorkingDay?.ToString("dd MMM yyyy") ?? "—")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Interview Date</span>
+                    <span class="info-value">@(Model.InterviewDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Interview Conducted By</span>
+                    <span class="info-value">@Model.InterviewConductedBy</span>
+                </div>
+            </div>
         </div>
     </div>
-    ```
 
+    <!-- Primary Reason Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <i class="fas fa-question-circle me-2"></i>
+            <span>Primary Reason for Departure</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="content-box">
+                @(string.IsNullOrEmpty(Model.PrimaryReasonForDeparture) ? "No information provided" : Model.PrimaryReasonForDeparture)
+            </div>
+        </div>
+    </div>
+
+    <!-- Overall Views Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <i class="fas fa-chart-line me-2"></i>
+            <span>Overall Views</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="ratings-grid">
+                <div class="rating-item">
+                    <span class="rating-label">Career Growth Opportunities</span>
+                    <span class="rating-value rating-@((int)Model.CareerGrowthOpportunities)">
+                        @GetRatingText(Model.CareerGrowthOpportunities)
+                    </span>
+                </div>
+                <div class="rating-item">
+                    <span class="rating-label">Compensation & Benefits</span>
+                    <span class="rating-value rating-@((int)Model.CompensationAndBenefits)">
+                        @GetRatingText(Model.CompensationAndBenefits)
+                    </span>
+                </div>
+                <div class="rating-item">
+                    <span class="rating-label">Work-Life Balance</span>
+                    <span class="rating-value rating-@((int)Model.WorkLifeBalanceRating)">
+                        @GetRatingText(Model.WorkLifeBalanceRating)
+                    </span>
+                </div>
+                <div class="rating-item">
+                    <span class="rating-label">Management / Leadership Style</span>
+                    <span class="rating-value rating-@((int)Model.ManagementLeadershipStyle)">
+                        @GetRatingText(Model.ManagementLeadershipStyle)
+                    </span>
+                </div>
+                <div class="rating-item">
+                    <span class="rating-label">Company Culture / Work Environment</span>
+                    <span class="rating-value rating-@((int)Model.CompanyCultureWorkEnvironment)">
+                        @GetRatingText(Model.CompanyCultureWorkEnvironment)
+                    </span>
+                </div>
+                <div class="rating-item">
+                    <span class="rating-label">Job Responsibilities</span>
+                    <span class="rating-value rating-@((int)Model.JobResponsibilities)">
+                        @GetRatingText(Model.JobResponsibilities)
+                    </span>
+                </div>
+                <div class="rating-item">
+                    <span class="rating-label">Relationship With Manager</span>
+                    <span class="rating-value rating-@((int)Model.RelationshipWithManagerRating)">
+                        @GetRatingText(Model.RelationshipWithManagerRating)
+                    </span>
+                </div>
+                <div class="rating-item">
+                    <span class="rating-label">Other Rating</span>
+                    <span class="rating-value rating-@((int)(Model.OtherRating ?? Rating.MetExpectations))">
+                        @GetRatingText(Model.OtherRating ?? Rating.MetExpectations)
+                    </span>
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.OtherReasonDescription))
+            {
+                <div class="content-box mt-3">
+                    <strong>Other Description:</strong>
+                    <p class="mt-1">@Model.OtherReasonDescription</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Job Satisfaction Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <i class="fas fa-smile me-2"></i>
+            <span>Job Satisfaction & Role Clarity</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="info-grid-2col">
+                <div class="info-item">
+                    <span class="info-label">Role Met Expectations</span>
+                    <span class="info-value @(Model.RoleMetExpectations == true ? "status-yes" : "status-no")">
+                        <i class="fas @(Model.RoleMetExpectations == true ? "fa-check-circle" : "fa-times-circle")"></i>
+                        @(Model.RoleMetExpectations == true ? "Yes" : "No")
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Responsibilities Clearly Defined</span>
+                    <span class="info-value @(Model.ResponsibilitiesClearlyDefined == true ? "status-yes" : "status-no")">
+                        <i class="fas @(Model.ResponsibilitiesClearlyDefined == true ? "fa-check-circle" : "fa-times-circle")"></i>
+                        @(Model.ResponsibilitiesClearlyDefined == true ? "Yes" : "No")
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Adequate Training & Resources</span>
+                    <span class="info-value @(Model.AdequateTrainingAndResources == true ? "status-yes" : "status-no")">
+                        <i class="fas @(Model.AdequateTrainingAndResources == true ? "fa-check-circle" : "fa-times-circle")"></i>
+                        @(Model.AdequateTrainingAndResources == true ? "Yes" : "No")
+                    </span>
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.JobSatisfactionComments))
+            {
+                <div class="content-box mt-3">
+                    <strong>Comments:</strong>
+                    <p class="mt-1">@Model.JobSatisfactionComments</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Management & Team Dynamics Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <i class="fas fa-users me-2"></i>
+            <span>Management & Team Dynamics</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="content-box mb-3">
+                <strong>Relationship With Manager:</strong>
+                <p class="mt-1">@(string.IsNullOrEmpty(Model.RelationshipWithManagerDescription) ? "No information provided" : Model.RelationshipWithManagerDescription)</p>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Supported By Team & Leadership</span>
+                <span class="info-value @(Model.SupportedByTeamAndLeadership == true ? "status-yes" : "status-no")">
+                    <i class="fas @(Model.SupportedByTeamAndLeadership == true ? "fa-check-circle" : "fa-times-circle")"></i>
+                    @(Model.SupportedByTeamAndLeadership == true ? "Yes" : "No")
+                </span>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.CommunicationCollaborationSuggestions))
+            {
+                <div class="content-box mt-3">
+                    <strong>Suggestions:</strong>
+                    <p class="mt-1">@Model.CommunicationCollaborationSuggestions</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Compensation & Benefits Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <i class="fas fa-dollar-sign me-2"></i>
+            <span>Compensation & Benefits</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="info-item mb-3">
+                <span class="info-label">Satisfied With Salary & Benefits</span>
+                <span class="info-value @(Model.SatisfiedWithSalaryAndBenefits == true ? "status-yes" : "status-no")">
+                    <i class="fas @(Model.SatisfiedWithSalaryAndBenefits == true ? "fa-check-circle" : "fa-times-circle")"></i>
+                    @(Model.SatisfiedWithSalaryAndBenefits == true ? "Yes" : "No")
+                </span>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.CompensationMarketCompetitiveness))
+            {
+                <div class="content-box">
+                    <strong>Market Competitiveness:</strong>
+                    <p class="mt-1">@Model.CompensationMarketCompetitiveness</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Work Environment & Culture Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <i class="fas fa-building me-2"></i>
+            <span>Work Environment & Culture</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="info-item mb-3">
+                <span class="info-label">Felt Valued & Recognized</span>
+                <span class="info-value @(Model.FeltValuedAndRecognized == true ? "status-yes" : "status-no")">
+                    <i class="fas @(Model.FeltValuedAndRecognized == true ? "fa-check-circle" : "fa-times-circle")"></i>
+                    @(Model.FeltValuedAndRecognized == true ? "Yes" : "No")
+                </span>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.MostLikedAboutCompany))
+            {
+                <div class="content-box mb-3">
+                    <strong>Most Liked About Company:</strong>
+                    <p class="mt-1">@Model.MostLikedAboutCompany</p>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Model.CultureImprovementSuggestions))
+            {
+                <div class="content-box">
+                    <strong>Culture Improvement Suggestions:</strong>
+                    <p class="mt-1">@Model.CultureImprovementSuggestions</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Suggestions Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <i class="fas fa-lightbulb me-2"></i>
+            <span>Suggestions for Improvement</span>
+        </div>
+        <div class="card-body-custom">
+            @if (!string.IsNullOrEmpty(Model.EmployeeRetentionRecommendations))
+            {
+                <div class="content-box mb-3">
+                    <strong>Employee Retention Recommendations:</strong>
+                    <p class="mt-1">@Model.EmployeeRetentionRecommendations</p>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Model.ResignationPreventionSuggestions))
+            {
+                <div class="content-box">
+                    <strong>Resignation Prevention Suggestions:</strong>
+                    <p class="mt-1">@Model.ResignationPreventionSuggestions</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Future Engagement Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <i class="fas fa-handshake me-2"></i>
+            <span>Future Engagement</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="info-grid-2col">
+                <div class="info-item">
+                    <span class="info-label">Would Return To Company</span>
+                    <span class="info-value @(Model.WouldReturnToCompany == true ? "status-yes" : "status-no")">
+                        <i class="fas @(Model.WouldReturnToCompany == true ? "fa-check-circle" : "fa-times-circle")"></i>
+                        @(Model.WouldReturnToCompany == true ? "Yes" : "No")
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Would Recommend Company</span>
+                    <span class="info-value @(Model.WouldRecommendCompany == true ? "status-yes" : "status-no")">
+                        <i class="fas @(Model.WouldRecommendCompany == true ? "fa-check-circle" : "fa-times-circle")"></i>
+                        @(Model.WouldRecommendCompany == true ? "Yes" : "No")
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Work-Life Balance Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <i class="fas fa-balance-scale me-2"></i>
+            <span>Work-Life Balance</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="content-box">
+                @(string.IsNullOrEmpty(Model.WorkLifeBalanceComments) ? "No information provided" : Model.WorkLifeBalanceComments)
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Comments Card -->
+    @if (!string.IsNullOrEmpty(Model.AdditionalComments))
+    {
+        <div class="details-card">
+            <div class="card-header-custom">
+                <i class="fas fa-comment-dots me-2"></i>
+                <span>Additional Comments</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="content-box">
+                    @Model.AdditionalComments
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Sign Off Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <i class="fas fa-signature me-2"></i>
+            <span>Sign Off</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Employee</span>
+                    <span class="info-value">@(string.IsNullOrEmpty(Model.EmployeeSignature) ? "—" : Model.EmployeeSignature)</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">HR Representative</span>
+                    <span class="info-value">@(string.IsNullOrEmpty(Model.HRRepresentativeSignature) ? "—" : Model.HRRepresentativeSignature)</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date</span>
+                    <span class="info-value">@(Model.SignOffDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons-container">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-edit">
+            <i class="fas fa-pencil-alt"></i>
+            Edit Interview
+        </a>
+        <a asp-action="Index" class="btn-back-to-list">
+            <i class="fas fa-arrow-left"></i>
+            Back to List
+        </a>
+        <button type="button" class="btn-print" onclick="window.print()">
+            <i class="fas fa-print"></i>
+            Print Details
+        </button>
+    </div>
 </div>
+
+<style>
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+        }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Details Cards */
+    .details-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .interview-id-badge {
+        margin-left: auto;
+        background: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* Info Grids */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .info-grid-2col {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+    }
+
+    .info-value {
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        font-weight: 500;
+    }
+
+    /* Ratings Grid */
+    .ratings-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .rating-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .rating-label {
+        font-size: 0.75rem;
+        color: var(--gray-600);
+    }
+
+    .rating-value {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.125rem 0.5rem;
+        border-radius: 2rem;
+    }
+
+        .rating-value.rating-1 {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+        .rating-value.rating-2 {
+            background: #fff5e6;
+            color: var(--warning);
+        }
+
+        .rating-value.rating-3 {
+            background: #fee;
+            color: var(--danger);
+        }
+
+    /* Content Box */
+    .content-box {
+        background: var(--gray-50);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--gray-200);
+        line-height: 1.5;
+        color: var(--gray-700);
+    }
+
+        .content-box p {
+            margin: 0;
+        }
+
+    /* Status Indicators */
+    .status-yes {
+        color: var(--success);
+    }
+
+    .status-no {
+        color: var(--danger);
+    }
+
+    /* Action Buttons */
+    .action-buttons-container {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-edit {
+        background: linear-gradient(100deg, var(--warning), #e6a017);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-back-to-list {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-back-to-list:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+    .btn-print {
+        background: white;
+        color: var(--info);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--info);
+        font-size: 0.875rem;
+        cursor: pointer;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-print:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+</style>
+
+@functions {
+    string GetRatingText(Rating rating)
+    {
+        return rating switch
+        {
+            Rating.MetExpectations => "Met Expectations",
+            Rating.NeedsImprovement => "Needs Improvement",
+            Rating.DidNotMeetExpectations => "Did Not Meet Expectations",
+            _ => "Not rated"
+        };
+    }
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">

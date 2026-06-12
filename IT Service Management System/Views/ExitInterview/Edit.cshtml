@@ -1,398 +1,861 @@
 ﻿@model IT_Service_Management_System.Models.ExitInterview
 
 @{
-    ViewData["Title"] = "Exit Interview";
+    ViewData["Title"] = "Edit Exit Interview - Axis IT Helpdesk";
 }
 
-<div class="container">
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-edit me-2" style="color: var(--warning);"></i>
+                    Edit Exit Interview Questionnaire
+                </h1>
+                <p class="text-muted mt-2">Update employee exit interview details</p>
+            </div>
+        </div>
+    </div>
 
-    <h2 class="mb-4">Edit Exit Interview Questionnaire</h2>
-
-    <form asp-action="Edit" method="post">
-
+    <form asp-action="Edit" method="post" id="exitInterviewForm">
+        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-        <!-- Employee Information -->
-        <div class="card mb-4">
-            <div class="card-header">
-                Employee Information
+        <!-- Employee Information Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-user-circle"></i>
+                <h3>Employee Information</h3>
             </div>
+            <div class="section-body">
+                <div class="form-row-grid">
+                    <div class="form-group-modern">
+                        <label asp-for="EmployeeName" class="form-label">
+                            <i class="fas fa-user"></i> Employee Name
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-user input-icon"></i>
+                            <input asp-for="EmployeeName" class="form-control-modern" placeholder="Enter employee name" />
+                        </div>
+                        <span asp-validation-for="EmployeeName" class="validation-message text-danger"></span>
+                    </div>
 
-            <div class="card-body row">
+                    <div class="form-group-modern">
+                        <label asp-for="Position" class="form-label">
+                            <i class="fas fa-briefcase"></i> Position
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-briefcase input-icon"></i>
+                            <input asp-for="Position" class="form-control-modern" placeholder="Enter position" />
+                        </div>
+                        <span asp-validation-for="Position" class="validation-message text-danger"></span>
+                    </div>
 
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Employee Name</label>
-                    <input asp-for="EmployeeName" class="form-control" />
+                    <div class="form-group-modern">
+                        <label asp-for="Client" class="form-label">
+                            <i class="fas fa-building"></i> Client
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-building input-icon"></i>
+                            <input asp-for="Client" class="form-control-modern" placeholder="Enter client name" />
+                        </div>
+                        <span asp-validation-for="Client" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="DateOfResignation" class="form-label">
+                            <i class="fas fa-calendar-alt"></i> Date of Resignation
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-calendar-alt input-icon"></i>
+                            <input asp-for="DateOfResignation" type="date" class="form-control-modern" />
+                        </div>
+                        <span asp-validation-for="DateOfResignation" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="LastWorkingDay" class="form-label">
+                            <i class="fas fa-calendar-check"></i> Last Working Day
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-calendar-check input-icon"></i>
+                            <input asp-for="LastWorkingDay" type="date" class="form-control-modern" />
+                        </div>
+                        <span asp-validation-for="LastWorkingDay" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="InterviewConductedBy" class="form-label">
+                            <i class="fas fa-user-tie"></i> Interview Conducted By
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-user-tie input-icon"></i>
+                            <input asp-for="InterviewConductedBy" class="form-control-modern" placeholder="Enter interviewer name" />
+                        </div>
+                        <span asp-validation-for="InterviewConductedBy" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="InterviewDate" class="form-label">
+                            <i class="fas fa-calendar-week"></i> Date of Interview
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-calendar-week input-icon"></i>
+                            <input asp-for="InterviewDate" type="date" class="form-control-modern" />
+                        </div>
+                        <span asp-validation-for="InterviewDate" class="validation-message text-danger"></span>
+                    </div>
                 </div>
-
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Position</label>
-                    <input asp-for="Position" class="form-control" />
-                </div>
-
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Client</label>
-                    <input asp-for="Client" class="form-control" />
-                </div>
-
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Date of Resignation</label>
-                    <input asp-for="DateOfResignation" type="date" class="form-control" />
-                </div>
-
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Last Working Day</label>
-                    <input asp-for="LastWorkingDay" type="date" class="form-control" />
-                </div>
-
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Interview Conducted By</label>
-                    <input asp-for="InterviewConductedBy" class="form-control" />
-                </div>
-
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Date of Interview</label>
-                    <input asp-for="InterviewDate" type="date" class="form-control" />
-                </div>
-
             </div>
         </div>
 
-        <!-- Primary Reason -->
-        <h4>What is the primary reason for your departure?</h4>
-
-        <div class="mb-4">
-            <label>Answer:</label>
-            <textarea asp-for="PrimaryReasonForDeparture"
-                      class="form-control"
-                      rows="4"></textarea>
-        </div>
-
-        <!-- Section 1 -->
-        <h4>1. Overall Views</h4>
-
-        <p>
-            We value your feedback to help us improve.
-            Could you provide your overall views related to your resignation?
-            Answer all and tick appropriate.
-        </p>
-
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Area</th>
-                    <th>Met Expectations</th>
-                    <th>Needs Improvement</th>
-                    <th>Did Not Meet Expectations</th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                <tr>
-                    <td>Career Growth Opportunities</td>
-                    <td><input type="radio" asp-for="CareerGrowthOpportunities" value="1" /></td>
-                    <td><input type="radio" asp-for="CareerGrowthOpportunities" value="2" /></td>
-                    <td><input type="radio" asp-for="CareerGrowthOpportunities" value="3" /></td>
-                </tr>
-
-                <tr>
-                    <td>Compensation and Benefits</td>
-                    <td><input type="radio" asp-for="CompensationAndBenefits" value="1" /></td>
-                    <td><input type="radio" asp-for="CompensationAndBenefits" value="2" /></td>
-                    <td><input type="radio" asp-for="CompensationAndBenefits" value="3" /></td>
-                </tr>
-
-                <tr>
-                    <td>Work-Life Balance</td>
-                    <td><input type="radio" asp-for="WorkLifeBalanceRating" value="1" /></td>
-                    <td><input type="radio" asp-for="WorkLifeBalanceRating" value="2" /></td>
-                    <td><input type="radio" asp-for="WorkLifeBalanceRating" value="3" /></td>
-                </tr>
-
-                <tr>
-                    <td>Management / Leadership Style</td>
-                    <td><input type="radio" asp-for="ManagementLeadershipStyle" value="1" /></td>
-                    <td><input type="radio" asp-for="ManagementLeadershipStyle" value="2" /></td>
-                    <td><input type="radio" asp-for="ManagementLeadershipStyle" value="3" /></td>
-                </tr>
-
-                <tr>
-                    <td>Company Culture / Work Environment</td>
-                    <td><input type="radio" asp-for="CompanyCultureWorkEnvironment" value="1" /></td>
-                    <td><input type="radio" asp-for="CompanyCultureWorkEnvironment" value="2" /></td>
-                    <td><input type="radio" asp-for="CompanyCultureWorkEnvironment" value="3" /></td>
-                </tr>
-
-                <tr>
-                    <td>Job Responsibilities</td>
-                    <td><input type="radio" asp-for="JobResponsibilities" value="1" /></td>
-                    <td><input type="radio" asp-for="JobResponsibilities" value="2" /></td>
-                    <td><input type="radio" asp-for="JobResponsibilities" value="3" /></td>
-                </tr>
-
-                <tr>
-                    <td>Relationship with Your Manager</td>
-                    <td><input type="radio" asp-for="RelationshipWithManagerRating" value="1" /></td>
-                    <td><input type="radio" asp-for="RelationshipWithManagerRating" value="2" /></td>
-                    <td><input type="radio" asp-for="RelationshipWithManagerRating" value="3" /></td>
-                </tr>
-
-            </tbody>
-        </table>
-
-        <div class="mb-4">
-            <label>Other (Please Specify)</label>
-            <textarea asp-for="OtherReasonDescription"
-                      class="form-control"
-                      rows="3"></textarea>
-        </div>
-
-        <!-- Section 2 -->
-        <h4>2. Job Satisfaction & Role Clarity</h4>
-
-        <div class="mb-3">
-            <label>Did your role meet your expectations?</label><br />
-
-            <input type="radio" asp-for="RoleMetExpectations" value="true" /> Yes
-
-            <input type="radio"
-                   asp-for="RoleMetExpectations"
-                   value="false"
-                   class="ms-3" /> No
-        </div>
-
-        <div class="mb-3">
-            <label>Were your responsibilities clearly defined?</label><br />
-
-            <input type="radio" asp-for="ResponsibilitiesClearlyDefined" value="true" /> Yes
-
-            <input type="radio"
-                   asp-for="ResponsibilitiesClearlyDefined"
-                   value="false"
-                   class="ms-3" /> No
-        </div>
-
-        <div class="mb-3">
-            <label>
-                Did you receive adequate training and resources
-                to perform your job effectively?
-            </label><br />
-
-            <input type="radio" asp-for="AdequateTrainingAndResources" value="true" /> Yes
-
-            <input type="radio"
-                   asp-for="AdequateTrainingAndResources"
-                   value="false"
-                   class="ms-3" /> No
-        </div>
-
-        <div class="mb-4">
-            <label>Additional Comments</label>
-
-            <textarea asp-for="JobSatisfactionComments"
-                      class="form-control"
-                      rows="4"></textarea>
-        </div>
-
-        <!-- Section 3 -->
-        <h4>3. Feedback on Management & Team Dynamics</h4>
-
-        <div class="mb-3">
-            <label>How would you describe your relationship with your manager?</label>
-
-            <textarea asp-for="RelationshipWithManagerDescription"
-                      class="form-control"
-                      rows="4"></textarea>
-        </div>
-
-        <div class="mb-3">
-            <label>Did you feel supported by your team and leadership?</label><br />
-
-            <input type="radio" asp-for="SupportedByTeamAndLeadership" value="true" /> Yes
-
-            <input type="radio"
-                   asp-for="SupportedByTeamAndLeadership"
-                   value="false"
-                   class="ms-3" /> No
-        </div>
-
-        <div class="mb-4">
-            <label>Suggestions</label>
-
-            <textarea asp-for="CommunicationCollaborationSuggestions"
-                      class="form-control"
-                      rows="4"></textarea>
-        </div>
-
-        <!-- Section 4 -->
-        <h4>4. Compensation & Benefits</h4>
-
-        <div class="mb-3">
-            <label>Were you satisfied with your salary and benefits package?</label><br />
-
-            <input type="radio" asp-for="SatisfiedWithSalaryAndBenefits" value="true" /> Yes
-
-            <input type="radio"
-                   asp-for="SatisfiedWithSalaryAndBenefits"
-                   value="false"
-                   class="ms-3" /> No
-        </div>
-
-        <div class="mb-4">
-            <label>
-                How competitive do you believe our compensation is compared to the market?
-            </label>
-
-            <textarea asp-for="CompensationMarketCompetitiveness"
-                      class="form-control"
-                      rows="4"></textarea>
-        </div>
-
-        <!-- Section 5 -->
-        <h4>5. Work Environment & Culture</h4>
-
-        <div class="mb-3">
-            <label>
-                Did you feel valued and recognized for your contributions?
-            </label><br />
-
-            <input type="radio" asp-for="FeltValuedAndRecognized" value="true" /> Yes
-
-            <input type="radio"
-                   asp-for="FeltValuedAndRecognized"
-                   value="false"
-                   class="ms-3" /> No
-        </div>
-
-        <div class="mb-3">
-            <label>What did you like most about working here?</label>
-
-            <textarea asp-for="MostLikedAboutCompany"
-                      class="form-control"
-                      rows="4"></textarea>
-        </div>
-
-        <div class="mb-4">
-            <label>What could be improved about the company culture?</label>
-
-            <textarea asp-for="CultureImprovementSuggestions"
-                      class="form-control"
-                      rows="4"></textarea>
-        </div>
-
-        <!-- Section 6 -->
-        <h4>6. Suggestions for Improvement</h4>
-
-        <div class="mb-3">
-            <label>
-                What changes would you recommend to enhance employee retention?
-            </label>
-
-            <textarea asp-for="EmployeeRetentionRecommendations"
-                      class="form-control"
-                      rows="4"></textarea>
-        </div>
-
-        <div class="mb-4">
-            <label>
-                Is there anything the company could have done to prevent your resignation?
-            </label>
-
-            <textarea asp-for="ResignationPreventionSuggestions"
-                      class="form-control"
-                      rows="4"></textarea>
-        </div>
-
-        <!-- Section 7 -->
-        <h4>7. Future Engagement</h4>
-
-        <div class="mb-3">
-            <label>
-                Would you consider returning to the company in the future?
-            </label><br />
-
-            <input type="radio" asp-for="WouldReturnToCompany" value="true" /> Yes
-
-            <input type="radio"
-                   asp-for="WouldReturnToCompany"
-                   value="false"
-                   class="ms-3" /> No
-        </div>
-
-        <div class="mb-4">
-            <label>
-                Would you recommend this company to other professionals in your network?
-            </label><br />
-
-            <input type="radio" asp-for="WouldRecommendCompany" value="true" /> Yes
-
-            <input type="radio"
-                   asp-for="WouldRecommendCompany"
-                   value="false"
-                   class="ms-3" /> No
-        </div>
-
-        <!-- Section 8 -->
-        <h4>8. How was your work-life balance during your tenure?</h4>
-
-        <div class="mb-4">
-            <textarea asp-for="WorkLifeBalanceComments"
-                      class="form-control"
-                      rows="4"></textarea>
-        </div>
-
-        <!-- Section 9 -->
-        <h4>9. Additional Comments</h4>
-
-        <div class="mb-4">
-            <textarea asp-for="AdditionalComments"
-                      class="form-control"
-                      rows="5"></textarea>
-        </div>
-
-        <!-- Sign Off -->
-        <h4>Sign Off</h4>
-
-        <div class="row">
-
-            <div class="col-md-4 mb-3">
-                <label>Employee</label>
-                <input asp-for="EmployeeSignature" class="form-control" />
+        <!-- Primary Reason for Departure -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-question-circle"></i>
+                <h3>Primary Reason for Departure</h3>
             </div>
-
-            <div class="col-md-4 mb-3">
-                <label>HR</label>
-                <input asp-for="HRRepresentativeSignature" class="form-control" />
+            <div class="section-body">
+                <div class="form-group-modern">
+                    <label asp-for="PrimaryReasonForDeparture" class="form-label">Answer:</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-comment textarea-icon"></i>
+                        <textarea asp-for="PrimaryReasonForDeparture" class="form-control-textarea" rows="4" placeholder="Please provide the primary reason for departure..."></textarea>
+                    </div>
+                    <span asp-validation-for="PrimaryReasonForDeparture" class="validation-message text-danger"></span>
+                </div>
             </div>
-
-            <div class="col-md-4 mb-3">
-                <label>Date</label>
-                <input asp-for="SignOffDate"
-                       type="date"
-                       class="form-control" />
-            </div>
-
         </div>
 
-        <div class="mt-4 mb-5">
+        <!-- Section 1: Overall Views -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-chart-line"></i>
+                <h3>1. Overall Views</h3>
+            </div>
+            <div class="section-body">
+                <p class="section-description">We value your feedback to help us improve. Could you provide your overall views related to your resignation? Answer all and tick appropriate.</p>
 
+                <div class="table-responsive">
+                    <table class="ratings-table">
+                        <thead>
+                            <tr>
+                                <th>Area</th>
+                                <th>Met Expectations</th>
+                                <th>Needs Improvement</th>
+                                <th>Did Not Meet Expectations</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="area-cell">Career Growth Opportunities</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CareerGrowthOpportunities" value="1" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CareerGrowthOpportunities" value="2" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CareerGrowthOpportunities" value="3" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td class="area-cell">Compensation and Benefits</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CompensationAndBenefits" value="1" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CompensationAndBenefits" value="2" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CompensationAndBenefits" value="3" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td class="area-cell">Work-Life Balance</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WorkLifeBalanceRating" value="1" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WorkLifeBalanceRating" value="2" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WorkLifeBalanceRating" value="3" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td class="area-cell">Management / Leadership Style</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ManagementLeadershipStyle" value="1" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ManagementLeadershipStyle" value="2" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ManagementLeadershipStyle" value="3" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td class="area-cell">Company Culture / Work Environment</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CompanyCultureWorkEnvironment" value="1" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CompanyCultureWorkEnvironment" value="2" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CompanyCultureWorkEnvironment" value="3" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td class="area-cell">Job Responsibilities</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="JobResponsibilities" value="1" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="JobResponsibilities" value="2" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="JobResponsibilities" value="3" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td class="area-cell">Relationship with Your Manager</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="RelationshipWithManagerRating" value="1" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="RelationshipWithManagerRating" value="2" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="RelationshipWithManagerRating" value="3" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-            <button type="submit" class="btn btn-primary">
+                <div class="form-group-modern mt-3">
+                    <label asp-for="OtherReasonDescription" class="form-label">Other (Please Specify)</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-pen textarea-icon"></i>
+                        <textarea asp-for="OtherReasonDescription" class="form-control-textarea" rows="3" placeholder="Please specify any other reasons..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Job Satisfaction & Role Clarity -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-smile"></i>
+                <h3>2. Job Satisfaction & Role Clarity</h3>
+            </div>
+            <div class="section-body">
+                <div class="radio-group">
+                    <label class="radio-question">Did your role meet your expectations?</label>
+                    <div class="radio-options">
+                        <label class="radio-label-inline"><input type="radio" asp-for="RoleMetExpectations" value="true" /><span>Yes</span></label>
+                        <label class="radio-label-inline"><input type="radio" asp-for="RoleMetExpectations" value="false" /><span>No</span></label>
+                    </div>
+                </div>
+
+                <div class="radio-group">
+                    <label class="radio-question">Were your responsibilities clearly defined?</label>
+                    <div class="radio-options">
+                        <label class="radio-label-inline"><input type="radio" asp-for="ResponsibilitiesClearlyDefined" value="true" /><span>Yes</span></label>
+                        <label class="radio-label-inline"><input type="radio" asp-for="ResponsibilitiesClearlyDefined" value="false" /><span>No</span></label>
+                    </div>
+                </div>
+
+                <div class="radio-group">
+                    <label class="radio-question">Did you receive adequate training and resources to perform your job effectively?</label>
+                    <div class="radio-options">
+                        <label class="radio-label-inline"><input type="radio" asp-for="AdequateTrainingAndResources" value="true" /><span>Yes</span></label>
+                        <label class="radio-label-inline"><input type="radio" asp-for="AdequateTrainingAndResources" value="false" /><span>No</span></label>
+                    </div>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="JobSatisfactionComments" class="form-label">Additional Comments</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-comment textarea-icon"></i>
+                        <textarea asp-for="JobSatisfactionComments" class="form-control-textarea" rows="4" placeholder="Any additional comments about job satisfaction..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Feedback on Management & Team Dynamics -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-users"></i>
+                <h3>3. Feedback on Management & Team Dynamics</h3>
+            </div>
+            <div class="section-body">
+                <div class="form-group-modern">
+                    <label asp-for="RelationshipWithManagerDescription" class="form-label">How would you describe your relationship with your manager?</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-user-tie textarea-icon"></i>
+                        <textarea asp-for="RelationshipWithManagerDescription" class="form-control-textarea" rows="4" placeholder="Describe your relationship with your manager..."></textarea>
+                    </div>
+                </div>
+
+                <div class="radio-group">
+                    <label class="radio-question">Did you feel supported by your team and leadership?</label>
+                    <div class="radio-options">
+                        <label class="radio-label-inline"><input type="radio" asp-for="SupportedByTeamAndLeadership" value="true" /><span>Yes</span></label>
+                        <label class="radio-label-inline"><input type="radio" asp-for="SupportedByTeamAndLeadership" value="false" /><span>No</span></label>
+                    </div>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="CommunicationCollaborationSuggestions" class="form-label">Suggestions</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-lightbulb textarea-icon"></i>
+                        <textarea asp-for="CommunicationCollaborationSuggestions" class="form-control-textarea" rows="4" placeholder="Suggestions for improvement..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Compensation & Benefits -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-dollar-sign"></i>
+                <h3>4. Compensation & Benefits</h3>
+            </div>
+            <div class="section-body">
+                <div class="radio-group">
+                    <label class="radio-question">Were you satisfied with your salary and benefits package?</label>
+                    <div class="radio-options">
+                        <label class="radio-label-inline"><input type="radio" asp-for="SatisfiedWithSalaryAndBenefits" value="true" /><span>Yes</span></label>
+                        <label class="radio-label-inline"><input type="radio" asp-for="SatisfiedWithSalaryAndBenefits" value="false" /><span>No</span></label>
+                    </div>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="CompensationMarketCompetitiveness" class="form-label">How competitive do you believe our compensation is compared to the market?</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-chart-line textarea-icon"></i>
+                        <textarea asp-for="CompensationMarketCompetitiveness" class="form-control-textarea" rows="4" placeholder="Your feedback on compensation competitiveness..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 5: Work Environment & Culture -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-building"></i>
+                <h3>5. Work Environment & Culture</h3>
+            </div>
+            <div class="section-body">
+                <div class="radio-group">
+                    <label class="radio-question">Did you feel valued and recognized for your contributions?</label>
+                    <div class="radio-options">
+                        <label class="radio-label-inline"><input type="radio" asp-for="FeltValuedAndRecognized" value="true" /><span>Yes</span></label>
+                        <label class="radio-label-inline"><input type="radio" asp-for="FeltValuedAndRecognized" value="false" /><span>No</span></label>
+                    </div>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="MostLikedAboutCompany" class="form-label">What did you like most about working here?</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-heart textarea-icon"></i>
+                        <textarea asp-for="MostLikedAboutCompany" class="form-control-textarea" rows="4" placeholder="What did you like most?..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="CultureImprovementSuggestions" class="form-label">What could be improved about the company culture?</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-lightbulb textarea-icon"></i>
+                        <textarea asp-for="CultureImprovementSuggestions" class="form-control-textarea" rows="4" placeholder="Suggestions for culture improvement..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 6: Suggestions for Improvement -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-chart-line"></i>
+                <h3>6. Suggestions for Improvement</h3>
+            </div>
+            <div class="section-body">
+                <div class="form-group-modern">
+                    <label asp-for="EmployeeRetentionRecommendations" class="form-label">What changes would you recommend to enhance employee retention?</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-users textarea-icon"></i>
+                        <textarea asp-for="EmployeeRetentionRecommendations" class="form-control-textarea" rows="4" placeholder="Retention recommendations..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="ResignationPreventionSuggestions" class="form-label">Is there anything the company could have done to prevent your resignation?</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-question-circle textarea-icon"></i>
+                        <textarea asp-for="ResignationPreventionSuggestions" class="form-control-textarea" rows="4" placeholder="What could have prevented your resignation?..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 7: Future Engagement -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-handshake"></i>
+                <h3>7. Future Engagement</h3>
+            </div>
+            <div class="section-body">
+                <div class="radio-group">
+                    <label class="radio-question">Would you consider returning to the company in the future?</label>
+                    <div class="radio-options">
+                        <label class="radio-label-inline"><input type="radio" asp-for="WouldReturnToCompany" value="true" /><span>Yes</span></label>
+                        <label class="radio-label-inline"><input type="radio" asp-for="WouldReturnToCompany" value="false" /><span>No</span></label>
+                    </div>
+                </div>
+
+                <div class="radio-group">
+                    <label class="radio-question">Would you recommend this company to other professionals in your network?</label>
+                    <div class="radio-options">
+                        <label class="radio-label-inline"><input type="radio" asp-for="WouldRecommendCompany" value="true" /><span>Yes</span></label>
+                        <label class="radio-label-inline"><input type="radio" asp-for="WouldRecommendCompany" value="false" /><span>No</span></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 8: Work-Life Balance -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-balance-scale"></i>
+                <h3>8. Work-Life Balance</h3>
+            </div>
+            <div class="section-body">
+                <div class="form-group-modern">
+                    <label asp-for="WorkLifeBalanceComments" class="form-label">How was your work-life balance during your tenure?</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-clock textarea-icon"></i>
+                        <textarea asp-for="WorkLifeBalanceComments" class="form-control-textarea" rows="4" placeholder="Describe your work-life balance experience..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 9: Additional Comments -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-comment-dots"></i>
+                <h3>9. Additional Comments</h3>
+            </div>
+            <div class="section-body">
+                <div class="form-group-modern">
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-pen textarea-icon"></i>
+                        <textarea asp-for="AdditionalComments" class="form-control-textarea" rows="5" placeholder="Any additional comments or feedback..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sign Off Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-signature"></i>
+                <h3>Sign Off</h3>
+            </div>
+            <div class="section-body">
+                <div class="form-row-grid">
+                    <div class="form-group-modern">
+                        <label asp-for="EmployeeSignature" class="form-label">
+                            <i class="fas fa-user"></i> Employee
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-signature input-icon"></i>
+                            <input asp-for="EmployeeSignature" class="form-control-modern" placeholder="Employee signature" />
+                        </div>
+                        <span asp-validation-for="EmployeeSignature" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="HRRepresentativeSignature" class="form-label">
+                            <i class="fas fa-user-tie"></i> HR
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-signature input-icon"></i>
+                            <input asp-for="HRRepresentativeSignature" class="form-control-modern" placeholder="HR representative signature" />
+                        </div>
+                        <span asp-validation-for="HRRepresentativeSignature" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="SignOffDate" class="form-label">
+                            <i class="fas fa-calendar-alt"></i> Date
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-calendar-alt input-icon"></i>
+                            <input asp-for="SignOffDate" type="date" class="form-control-modern" />
+                        </div>
+                        <span asp-validation-for="SignOffDate" class="validation-message text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <button type="submit" class="btn-update" id="submitBtn">
+                <i class="fas fa-save"></i>
                 Update Exit Interview
             </button>
-
-            <a asp-action="Index" class="btn btn-secondary">
+            <a asp-action="Index" class="btn-cancel">
+                <i class="fas fa-times"></i>
                 Cancel
             </a>
-
         </div>
-
     </form>
-
 </div>
+
+<style>
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+        }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Form Sections */
+    .form-section {
+        background: white;
+        border-radius: 1rem;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .section-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+        .section-header i {
+            font-size: 1.25rem;
+            color: var(--primary);
+        }
+
+        .section-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+    .section-body {
+        padding: 1.5rem;
+    }
+
+    .section-description {
+        color: var(--gray-600);
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+    }
+
+    /* Form Row Grid */
+    .form-row-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* Form Groups */
+    .form-group-modern {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .form-label i {
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
+
+    .required {
+        color: var(--danger);
+        font-size: 1rem;
+    }
+
+    .input-icon-wrapper {
+        position: relative;
+    }
+
+        .input-icon-wrapper i.input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+        .form-control-modern:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    /* Textarea Styling */
+    .textarea-wrapper {
+        position: relative;
+    }
+
+    .textarea-icon {
+        position: absolute;
+        left: 1rem;
+        top: 1rem;
+        color: var(--gray-400);
+        font-size: 0.875rem;
+        pointer-events: none;
+    }
+
+    .form-control-textarea {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        resize: vertical;
+    }
+
+        .form-control-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    /* Ratings Table */
+    .ratings-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1rem;
+    }
+
+        .ratings-table th {
+            background: var(--gray-50);
+            padding: 0.75rem;
+            text-align: center;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            border: 1px solid var(--gray-200);
+        }
+
+        .ratings-table td {
+            padding: 0.75rem;
+            border: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+    .area-cell {
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .radio-cell {
+        text-align: center;
+    }
+
+    .radio-label {
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+        margin: 0;
+    }
+
+        .radio-label input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+    .radio-custom {
+        position: relative;
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        background-color: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+
+    .radio-label input:checked ~ .radio-custom {
+        border-color: var(--primary);
+    }
+
+    .radio-custom:after {
+        content: "";
+        position: absolute;
+        display: none;
+        top: 3px;
+        left: 3px;
+        width: 8px;
+        height: 8px;
+        background-color: var(--primary);
+        border-radius: 50%;
+    }
+
+    .radio-label input:checked ~ .radio-custom:after {
+        display: block;
+    }
+
+    /* Radio Groups */
+    .radio-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .radio-question {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+    }
+
+    .radio-options {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .radio-label-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+        .radio-label-inline input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .radio-label-inline span {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+    /* Validation Summary */
+    .validation-summary {
+        background: #fee;
+        border-left: 3px solid var(--danger);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1.5rem;
+        color: var(--danger);
+        font-size: 0.875rem;
+    }
+
+    .validation-message {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .btn-update {
+        background: linear-gradient(100deg, var(--warning), #e6a017);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-update:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('exitInterviewForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            });
+        }
+    });
+</script>
 
 @section Scripts {
     @{
