@@ -20,13 +20,13 @@ namespace IT_Service_Management_System.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var userRole = GetCurrentUserRole();
+            var role = GetCurrentUserRole();
 
-            if (userRole != UserRole.Admin &&
-                userRole != UserRole.SystemsAdmin &&
-                userRole != UserRole.HR)
+            if (role == UserRole.Finance ||
+                role == UserRole.Development ||
+                role == UserRole.Employee)
             {
-                return RedirectToAction("Index", "Home");
+                return RedirectToAction(nameof(Pending));
             }
 
             var clearances = _context.ExitClearances
@@ -50,6 +50,7 @@ namespace IT_Service_Management_System.Controllers
 
 
         [HttpGet]
+        [HttpGet]
         public IActionResult Pending()
         {
             var userId = GetCurrentUserId();
@@ -68,7 +69,9 @@ namespace IT_Service_Management_System.Controllers
 
                     clearances = _context.ExitClearances
                         .Include(x => x.Employee)
-                        .Where(x => x.CurrentStage == ClearanceStage.Finance)
+                        .Where(x =>
+                            x.CurrentStage == ClearanceStage.Finance &&
+                            x.Status != ClearanceStatus.Completed)
                         .ToList();
 
                     break;
@@ -77,7 +80,9 @@ namespace IT_Service_Management_System.Controllers
 
                     clearances = _context.ExitClearances
                         .Include(x => x.Employee)
-                        .Where(x => x.CurrentStage == ClearanceStage.SystemsAdmin)
+                        .Where(x =>
+                            x.CurrentStage == ClearanceStage.SystemsAdmin &&
+                            x.Status != ClearanceStatus.Completed)
                         .ToList();
 
                     break;
@@ -86,7 +91,9 @@ namespace IT_Service_Management_System.Controllers
 
                     clearances = _context.ExitClearances
                         .Include(x => x.Employee)
-                        .Where(x => x.CurrentStage == ClearanceStage.Development)
+                        .Where(x =>
+                            x.CurrentStage == ClearanceStage.Development &&
+                            x.Status != ClearanceStatus.Completed)
                         .ToList();
 
                     break;
@@ -95,7 +102,20 @@ namespace IT_Service_Management_System.Controllers
 
                     clearances = _context.ExitClearances
                         .Include(x => x.Employee)
-                        .Where(x => x.CurrentStage == ClearanceStage.HR)
+                        .Where(x =>
+                            x.CurrentStage == ClearanceStage.HR &&
+                            x.Status != ClearanceStatus.Completed)
+                        .ToList();
+
+                    break;
+
+                case UserRole.Employee:
+
+                    clearances = _context.ExitClearances
+                        .Include(x => x.Employee)
+                        .Where(x =>
+                            x.CurrentStage == ClearanceStage.Employee &&
+                            x.Status != ClearanceStatus.Completed)
                         .ToList();
 
                     break;
