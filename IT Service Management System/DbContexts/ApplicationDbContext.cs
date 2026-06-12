@@ -37,6 +37,7 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<SupervisorApproval> SupervisorApprovals { get; set; }
         public DbSet<HodApproval> HodApprovals { get; set; }
         public DbSet<HrApproval> HrApprovals { get; set; }
+        public DbSet<ExitInterview> ExitInterviews { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
