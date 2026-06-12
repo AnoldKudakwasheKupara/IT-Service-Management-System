@@ -1,0 +1,100 @@
+﻿@model IEnumerable<IT_Service_Management_System.Models.ExitInterview>
+
+@{
+    ViewData["Title"] = "Exit Interviews";
+}
+
+<div class="container-fluid">
+
+    ```
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Exit Interviews</h2>
+
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Exit Interview
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-body">
+
+            <table class="table table-bordered table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Employee Name</th>
+                        <th>Position</th>
+                        <th>Client</th>
+                        <th>Resignation Date</th>
+                        <th>Interview Date</th>
+                        <th width="220">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model.Any())
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.EmployeeName</td>
+                                <td>@item.Position</td>
+                                <td>@item.Client</td>
+
+                                <td>
+                                    @(item.DateOfResignation?.ToString("dd-MMM-yyyy"))
+                                </td>
+
+                                <td>
+                                    @(item.InterviewDate?.ToString("dd-MMM-yyyy"))
+                                </td>
+
+                                <td>
+
+                                    <a asp-action="Details"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-info btn-sm">
+                                        Details
+                                    </a>
+
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-warning btn-sm">
+                                        Edit
+                                    </a>
+
+                                    <a asp-action="Delete"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-danger btn-sm">
+                                        Delete
+                                    </a>
+
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center">
+                                No Exit Interviews Found
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+    </div>
+    ```
+
+</div>
