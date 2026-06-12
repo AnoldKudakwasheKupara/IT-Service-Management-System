@@ -1,210 +1,709 @@
 ﻿@model SystemsAdminClearance
 
-<div class="card">
+@{
+    ViewData["Title"] = "Systems Administration Clearance - Axis IT Helpdesk";
+}
 
-    <div class="card-header">
-        <h4>Systems Administration Clearance</h4>
-    </div>
-
-    <div class="card-body">
-
-        <form asp-action="SystemsAdminReview">
-
-            <input asp-for="ExitClearanceId" type="hidden" />
-
-            <table class="table table-bordered">
-
-                <thead>
-                    <tr>
-                        <th>Systems Admin</th>
-                        <th>Asset / Serial Number</th>
-                        <th>Received By (Sign)</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    <tr>
-                        <td>Laptop</td>
-                        <td>
-                            <input asp-for="LaptopAsset"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="LaptopReceivedBy"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="LaptopDate"
-                                   type="date"
-                                   class="form-control" />
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>Laptop Bags</td>
-                        <td>
-                            <input asp-for="LaptopBagAsset"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="LaptopBagReceivedBy"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="LaptopBagDate"
-                                   type="date"
-                                   class="form-control" />
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>Accessories (if any)</td>
-                        <td>
-                            <input asp-for="AccessoriesAsset"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="AccessoriesReceivedBy"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="AccessoriesDate"
-                                   type="date"
-                                   class="form-control" />
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>Laptop Locker (if any)</td>
-                        <td>
-                            <input asp-for="LockerAsset"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="LockerReceivedBy"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="LockerDate"
-                                   type="date"
-                                   class="form-control" />
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>Endpoint Security</td>
-                        <td>
-                            <input asp-for="EndpointSecurityAsset"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="EndpointSecurityReceivedBy"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="EndpointSecurityDate"
-                                   type="date"
-                                   class="form-control" />
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>Login Credentials For Sophos</td>
-                        <td>
-                            <input asp-for="SophosAsset"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="SophosReceivedBy"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="SophosDate"
-                                   type="date"
-                                   class="form-control" />
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>
-                            Confirm deletion of employee from systems access and passwords
-                        </td>
-                        <td>
-                            <input asp-for="AccessRemovalAsset"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="AccessRemovalReceivedBy"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="AccessRemovalDate"
-                                   type="date"
-                                   class="form-control" />
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>
-                            Confirm deletion / suspension of email and redirection
-                        </td>
-                        <td>
-                            <input asp-for="EmailAsset"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="EmailReceivedBy"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="EmailDate"
-                                   type="date"
-                                   class="form-control" />
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>
-                            Confirm deletion from social media groups
-                        </td>
-                        <td>
-                            <input asp-for="SocialMediaAsset"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="SocialMediaReceivedBy"
-                                   class="form-control" />
-                        </td>
-                        <td>
-                            <input asp-for="SocialMediaDate"
-                                   type="date"
-                                   class="form-control" />
-                        </td>
-                    </tr>
-
-                </tbody>
-
-            </table>
-
-            <div class="mb-3">
-
-                <label>Comments</label>
-
-                <textarea asp-for="Comments"
-                          class="form-control"
-                          rows="4"></textarea>
-
+<div class="page-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-server"></i>
             </div>
-
-            <button type="submit"
-                    class="btn btn-success">
-                Approve & Forward
-            </button>
-
-        </form>
-
+            <div>
+                <h1 class="hero-title">Systems Administration Clearance</h1>
+                <p class="hero-subtitle">Review and process IT assets and system access clearance</p>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <a asp-action="PendingSystemsAdmin" class="hero-btn hero-btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Pending
+            </a>
+        </div>
     </div>
 
+    <!-- Clearance Form Card -->
+    <div class="clearance-form-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-server me-2"></i>
+                <span>Systems Administration Clearance</span>
+            </div>
+            <div class="form-steps">
+                <span class="step active">1</span>
+                <span class="step-line"></span>
+                <span class="step">2</span>
+                <span class="step-line"></span>
+                <span class="step">3</span>
+            </div>
+        </div>
+
+        <div class="card-body-custom">
+            <form asp-action="SystemsAdminReview" method="post" id="systemsAdminForm">
+                @Html.AntiForgeryToken()
+                <input asp-for="ExitClearanceId" type="hidden" />
+
+                <div class="table-responsive">
+                    <table class="clearance-table">
+                        <thead>
+                            <tr>
+                                <th>Systems Admin</th>
+                                <th>Asset / Serial Number</th>
+                                <th>Received By (Sign)</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="item-cell">
+                                    <div class="item-title">
+                                        <i class="fas fa-laptop"></i>
+                                        Laptop
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-hashtag input-icon"></i>
+                                        <input asp-for="LaptopAsset" class="form-control-modern" placeholder="Asset / Serial #" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-signature input-icon"></i>
+                                        <input asp-for="LaptopReceivedBy" class="form-control-modern" placeholder="Received by" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar-alt input-icon"></i>
+                                        <input asp-for="LaptopDate" type="date" class="form-control-modern" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="item-cell">
+                                    <div class="item-title">
+                                        <i class="fas fa-briefcase"></i>
+                                        Laptop Bags
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-hashtag input-icon"></i>
+                                        <input asp-for="LaptopBagAsset" class="form-control-modern" placeholder="Asset / Serial #" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-signature input-icon"></i>
+                                        <input asp-for="LaptopBagReceivedBy" class="form-control-modern" placeholder="Received by" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar-alt input-icon"></i>
+                                        <input asp-for="LaptopBagDate" type="date" class="form-control-modern" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="item-cell">
+                                    <div class="item-title">
+                                        <i class="fas fa-mouse"></i>
+                                        Accessories (if any)
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-hashtag input-icon"></i>
+                                        <input asp-for="AccessoriesAsset" class="form-control-modern" placeholder="Asset / Serial #" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-signature input-icon"></i>
+                                        <input asp-for="AccessoriesReceivedBy" class="form-control-modern" placeholder="Received by" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar-alt input-icon"></i>
+                                        <input asp-for="AccessoriesDate" type="date" class="form-control-modern" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="item-cell">
+                                    <div class="item-title">
+                                        <i class="fas fa-lock"></i>
+                                        Laptop Locker (if any)
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-hashtag input-icon"></i>
+                                        <input asp-for="LockerAsset" class="form-control-modern" placeholder="Asset / Serial #" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-signature input-icon"></i>
+                                        <input asp-for="LockerReceivedBy" class="form-control-modern" placeholder="Received by" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar-alt input-icon"></i>
+                                        <input asp-for="LockerDate" type="date" class="form-control-modern" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="item-cell">
+                                    <div class="item-title">
+                                        <i class="fas fa-shield-alt"></i>
+                                        Endpoint Security
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-hashtag input-icon"></i>
+                                        <input asp-for="EndpointSecurityAsset" class="form-control-modern" placeholder="Asset / Serial #" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-signature input-icon"></i>
+                                        <input asp-for="EndpointSecurityReceivedBy" class="form-control-modern" placeholder="Received by" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar-alt input-icon"></i>
+                                        <input asp-for="EndpointSecurityDate" type="date" class="form-control-modern" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="item-cell">
+                                    <div class="item-title">
+                                        <i class="fas fa-key"></i>
+                                        Login Credentials For Sophos
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-hashtag input-icon"></i>
+                                        <input asp-for="SophosAsset" class="form-control-modern" placeholder="Asset / Serial #" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-signature input-icon"></i>
+                                        <input asp-for="SophosReceivedBy" class="form-control-modern" placeholder="Received by" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar-alt input-icon"></i>
+                                        <input asp-for="SophosDate" type="date" class="form-control-modern" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="item-cell">
+                                    <div class="item-title">
+                                        <i class="fas fa-user-slash"></i>
+                                        Confirm deletion of employee from systems access and passwords
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-hashtag input-icon"></i>
+                                        <input asp-for="AccessRemovalAsset" class="form-control-modern" placeholder="Asset / Serial #" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-signature input-icon"></i>
+                                        <input asp-for="AccessRemovalReceivedBy" class="form-control-modern" placeholder="Received by" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar-alt input-icon"></i>
+                                        <input asp-for="AccessRemovalDate" type="date" class="form-control-modern" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="item-cell">
+                                    <div class="item-title">
+                                        <i class="fas fa-envelope"></i>
+                                        Confirm deletion / suspension of email and redirection
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-hashtag input-icon"></i>
+                                        <input asp-for="EmailAsset" class="form-control-modern" placeholder="Asset / Serial #" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-signature input-icon"></i>
+                                        <input asp-for="EmailReceivedBy" class="form-control-modern" placeholder="Received by" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar-alt input-icon"></i>
+                                        <input asp-for="EmailDate" type="date" class="form-control-modern" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="item-cell">
+                                    <div class="item-title">
+                                        <i class="fas fa-users-slash"></i>
+                                        Confirm deletion from social media groups
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-hashtag input-icon"></i>
+                                        <input asp-for="SocialMediaAsset" class="form-control-modern" placeholder="Asset / Serial #" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-signature input-icon"></i>
+                                        <input asp-for="SocialMediaReceivedBy" class="form-control-modern" placeholder="Received by" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar-alt input-icon"></i>
+                                        <input asp-for="SocialMediaDate" type="date" class="form-control-modern" />
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Comments Section -->
+                <div class="comments-section">
+                    <div class="comments-header">
+                        <i class="fas fa-comment-dots"></i>
+                        <span>Comments</span>
+                    </div>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-pen textarea-icon"></i>
+                        <textarea asp-for="Comments" class="form-control-textarea" rows="4" placeholder="Enter any additional comments or notes..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-approve" id="submitBtn">
+                        <i class="fas fa-check-circle"></i>
+                        Approve & Forward
+                    </button>
+                    <a asp-action="PendingSystemsAdmin" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+
+<style>
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, #1e4c6b, #2c7da0);
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .hero-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+
+    .hero-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .hero-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+        font-size: 0.875rem;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+    }
+
+    .hero-btn-back {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+        .hero-btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* Clearance Form Card */
+    .clearance-form-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .form-steps {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step {
+        width: 30px;
+        height: 30px;
+        background: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+    }
+
+        .step.active {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+    .step-line {
+        width: 40px;
+        height: 2px;
+        background: var(--gray-300);
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* Table Styles */
+    .clearance-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1.5rem;
+    }
+
+        .clearance-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .clearance-table th {
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .clearance-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .clearance-table tbody tr:hover td {
+            background-color: var(--gray-50);
+        }
+
+    .item-cell {
+        min-width: 220px;
+    }
+
+    .item-title {
+        font-weight: 600;
+        color: var(--gray-800);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .item-title i {
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+    /* Input Icons */
+    .input-icon-wrapper {
+        position: relative;
+    }
+
+        .input-icon-wrapper i.input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 0.6rem 0.75rem 0.6rem 2rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+        .form-control-modern:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    input[type="date"].form-control-modern {
+        padding-right: 0.75rem;
+    }
+
+    /* Comments Section */
+    .comments-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .comments-header {
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .comments-header i {
+            color: var(--primary);
+        }
+
+    .textarea-wrapper {
+        position: relative;
+    }
+
+    .textarea-icon {
+        position: absolute;
+        left: 1rem;
+        top: 1rem;
+        color: var(--gray-400);
+        font-size: 0.875rem;
+        pointer-events: none;
+    }
+
+    .form-control-textarea {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        resize: vertical;
+    }
+
+        .form-control-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1rem;
+    }
+
+    .btn-approve {
+        background: linear-gradient(100deg, var(--success), #1f8a5c);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-approve:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add data-label attributes for responsive table
+        const tableHeaders = document.querySelectorAll('.clearance-table thead th');
+        const tableRows = document.querySelectorAll('.clearance-table tbody tr');
+
+        tableRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                if (tableHeaders[index]) {
+                    const headerText = tableHeaders[index].innerText.trim();
+                    cell.setAttribute('data-label', headerText);
+                }
+            });
+        });
+
+        const form = document.getElementById('systemsAdminForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            });
+        }
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
