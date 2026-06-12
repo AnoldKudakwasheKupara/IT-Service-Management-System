@@ -1,0 +1,344 @@
+﻿@model IT_Service_Management_System.Models.ExitInterview
+
+@{
+    ViewData["Title"] = "Exit Interview Details";
+}
+
+<div class="container">
+
+    ```
+    <div class="d-flex justify-content-between mb-4">
+        <h2>Exit Interview Details</h2>
+
+        <div>
+            <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn btn-warning">
+                Edit
+            </a>
+
+            <a asp-action="Index"
+               class="btn btn-secondary">
+                Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Employee Information -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            Employee Information
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-4">
+                    <strong>Employee Name</strong><br />
+                    @Model.EmployeeName
+                </div>
+
+                <div class="col-md-4">
+                    <strong>Position</strong><br />
+                    @Model.Position
+                </div>
+
+                <div class="col-md-4">
+                    <strong>Client</strong><br />
+                    @Model.Client
+                </div>
+
+            </div>
+
+            <hr />
+
+            <div class="row">
+
+                <div class="col-md-4">
+                    <strong>Date Of Resignation</strong><br />
+                    @Model.DateOfResignation?.ToString("dd-MMM-yyyy")
+                </div>
+
+                <div class="col-md-4">
+                    <strong>Last Working Day</strong><br />
+                    @Model.LastWorkingDay?.ToString("dd-MMM-yyyy")
+                </div>
+
+                <div class="col-md-4">
+                    <strong>Interview Date</strong><br />
+                    @Model.InterviewDate?.ToString("dd-MMM-yyyy")
+                </div>
+
+            </div>
+
+            <hr />
+
+            <strong>Interview Conducted By</strong><br />
+            @Model.InterviewConductedBy
+
+        </div>
+    </div>
+
+    <!-- Primary Reason -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Primary Reason For Departure
+        </div>
+
+        <div class="card-body">
+            @Model.PrimaryReasonForDeparture
+        </div>
+    </div>
+
+    <!-- Overall Views -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Overall Views
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-bordered">
+
+                <tr>
+                    <th>Career Growth Opportunities</th>
+                    <td>@Model.CareerGrowthOpportunities</td>
+                </tr>
+
+                <tr>
+                    <th>Compensation & Benefits</th>
+                    <td>@Model.CompensationAndBenefits</td>
+                </tr>
+
+                <tr>
+                    <th>Work-Life Balance</th>
+                    <td>@Model.WorkLifeBalanceRating</td>
+                </tr>
+
+                <tr>
+                    <th>Management / Leadership Style</th>
+                    <td>@Model.ManagementLeadershipStyle</td>
+                </tr>
+
+                <tr>
+                    <th>Company Culture / Work Environment</th>
+                    <td>@Model.CompanyCultureWorkEnvironment</td>
+                </tr>
+
+                <tr>
+                    <th>Job Responsibilities</th>
+                    <td>@Model.JobResponsibilities</td>
+                </tr>
+
+                <tr>
+                    <th>Relationship With Manager</th>
+                    <td>@Model.RelationshipWithManagerRating</td>
+                </tr>
+
+                <tr>
+                    <th>Other Rating</th>
+                    <td>@Model.OtherRating</td>
+                </tr>
+
+            </table>
+
+            <strong>Other Description</strong>
+
+            <p>@Model.OtherReasonDescription</p>
+
+        </div>
+    </div>
+
+    <!-- Job Satisfaction -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Job Satisfaction & Role Clarity
+        </div>
+
+        <div class="card-body">
+
+            <p>
+                <strong>Role Met Expectations:</strong>
+                @(Model.RoleMetExpectations == true ? "Yes" : "No")
+            </p>
+
+            <p>
+                <strong>Responsibilities Clearly Defined:</strong>
+                @(Model.ResponsibilitiesClearlyDefined == true ? "Yes" : "No")
+            </p>
+
+            <p>
+                <strong>Adequate Training & Resources:</strong>
+                @(Model.AdequateTrainingAndResources == true ? "Yes" : "No")
+            </p>
+
+            <strong>Comments</strong>
+
+            <p>@Model.JobSatisfactionComments</p>
+
+        </div>
+    </div>
+
+    <!-- Management -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Management & Team Dynamics
+        </div>
+
+        <div class="card-body">
+
+            <strong>Relationship With Manager</strong>
+
+            <p>@Model.RelationshipWithManagerDescription</p>
+
+            <p>
+                <strong>Supported By Team & Leadership:</strong>
+                @(Model.SupportedByTeamAndLeadership == true ? "Yes" : "No")
+            </p>
+
+            <strong>Suggestions</strong>
+
+            <p>@Model.CommunicationCollaborationSuggestions</p>
+
+        </div>
+    </div>
+
+    <!-- Compensation -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Compensation & Benefits
+        </div>
+
+        <div class="card-body">
+
+            <p>
+                <strong>Satisfied With Salary & Benefits:</strong>
+                @(Model.SatisfiedWithSalaryAndBenefits == true ? "Yes" : "No")
+            </p>
+
+            <strong>Market Competitiveness</strong>
+
+            <p>@Model.CompensationMarketCompetitiveness</p>
+
+        </div>
+    </div>
+
+    <!-- Culture -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Work Environment & Culture
+        </div>
+
+        <div class="card-body">
+
+            <p>
+                <strong>Felt Valued & Recognized:</strong>
+                @(Model.FeltValuedAndRecognized == true ? "Yes" : "No")
+            </p>
+
+            <strong>Most Liked About Company</strong>
+
+            <p>@Model.MostLikedAboutCompany</p>
+
+            <strong>Culture Improvement Suggestions</strong>
+
+            <p>@Model.CultureImprovementSuggestions</p>
+
+        </div>
+    </div>
+
+    <!-- Suggestions -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Suggestions For Improvement
+        </div>
+
+        <div class="card-body">
+
+            <strong>Employee Retention Recommendations</strong>
+
+            <p>@Model.EmployeeRetentionRecommendations</p>
+
+            <strong>Resignation Prevention Suggestions</strong>
+
+            <p>@Model.ResignationPreventionSuggestions</p>
+
+        </div>
+    </div>
+
+    <!-- Future Engagement -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Future Engagement
+        </div>
+
+        <div class="card-body">
+
+            <p>
+                <strong>Would Return To Company:</strong>
+                @(Model.WouldReturnToCompany == true ? "Yes" : "No")
+            </p>
+
+            <p>
+                <strong>Would Recommend Company:</strong>
+                @(Model.WouldRecommendCompany == true ? "Yes" : "No")
+            </p>
+
+        </div>
+    </div>
+
+    <!-- Work Life Balance -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Work-Life Balance
+        </div>
+
+        <div class="card-body">
+            @Model.WorkLifeBalanceComments
+        </div>
+    </div>
+
+    <!-- Additional Comments -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Additional Comments
+        </div>
+
+        <div class="card-body">
+            @Model.AdditionalComments
+        </div>
+    </div>
+
+    <!-- Sign Off -->
+    <div class="card mb-4">
+        <div class="card-header">
+            Sign Off
+        </div>
+
+        <div class="card-body">
+
+            <div class="row">
+
+                <div class="col-md-4">
+                    <strong>Employee</strong><br />
+                    @Model.EmployeeSignature
+                </div>
+
+                <div class="col-md-4">
+                    <strong>HR Representative</strong><br />
+                    @Model.HRRepresentativeSignature
+                </div>
+
+                <div class="col-md-4">
+                    <strong>Date</strong><br />
+                    @Model.SignOffDate?.ToString("dd-MMM-yyyy")
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    ```
+
+</div>
