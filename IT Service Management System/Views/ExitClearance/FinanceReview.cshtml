@@ -1,129 +1,552 @@
 ﻿@model FinanceClearance
 
-<div class="card">
-    <div class="card-header">
-        <h4>Finance Clearance</h4>
-    </div>
+@{
+    ViewData["Title"] = "Finance Clearance Review - Axis IT Helpdesk";
+}
 
-    ```
-    <div class="card-body">
-
-        <form asp-action="FinanceReview" method="post">
-
-            <input asp-for="ExitClearanceId" type="hidden" />
-
-            <table class="table table-bordered align-middle">
-
-                <thead class="table-light">
-                    <tr>
-                        <th style="width:35%">
-                            Finance
-                        </th>
-
-                        <th style="width:25%">
-                            Asset / Serial Number
-                        </th>
-
-                        <th style="width:20%">
-                            Received By (Sign)
-                        </th>
-
-                        <th style="width:20%">
-                            Date
-                        </th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    <tr>
-                        <td>
-                            Staff Advance and Other Liabilities (if any)
-                        </td>
-
-                        <td>
-                            <input asp-for="StaffAdvanceReference"
-                                   class="form-control" />
-                        </td>
-
-                        <td>
-                            <input asp-for="StaffAdvanceReceivedBy"
-                                   class="form-control" />
-                        </td>
-
-                        <td>
-                            <input asp-for="StaffAdvanceDate"
-                                   type="date"
-                                   class="form-control" />
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>
-                            Receipts handed over to finance (if any)
-                        </td>
-
-                        <td>
-                            <input asp-for="ReceiptsReference"
-                                   class="form-control" />
-                        </td>
-
-                        <td>
-                            <input asp-for="ReceiptsReceivedBy"
-                                   class="form-control" />
-                        </td>
-
-                        <td>
-                            <input asp-for="ReceiptsDate"
-                                   type="date"
-                                   class="form-control" />
-                        </td>
-                    </tr>
-
-                    <tr>
-                        <td>
-                            Final dues to be paid to the employee
-                        </td>
-
-                        <td>
-                            <input asp-for="FinalDuesReference"
-                                   class="form-control" />
-                        </td>
-
-                        <td>
-                            <input asp-for="FinalDuesReceivedBy"
-                                   class="form-control" />
-                        </td>
-
-                        <td>
-                            <input asp-for="FinalDuesDate"
-                                   type="date"
-                                   class="form-control" />
-                        </td>
-                    </tr>
-
-                </tbody>
-
-            </table>
-
-            <div class="mb-3">
-                <label class="form-label">
-                    Comments
-                </label>
-
-                <textarea asp-for="Comments"
-                          class="form-control"
-                          rows="4"></textarea>
+<div class="page-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-chart-line"></i>
             </div>
-
-            <button type="submit"
-                    class="btn btn-success">
-                Approve & Forward
-            </button>
-
-        </form>
-
+            <div>
+                <h1 class="hero-title">Finance Clearance Review</h1>
+                <p class="hero-subtitle">Review and process employee finance clearance</p>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <a asp-action="PendingFinance" class="hero-btn hero-btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Pending
+            </a>
+        </div>
     </div>
-    ```
 
+    <!-- Clearance Form Card -->
+    <div class="clearance-form-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-chart-line me-2"></i>
+                <span>Finance Clearance</span>
+            </div>
+            <div class="form-steps">
+                <span class="step active">1</span>
+                <span class="step-line"></span>
+                <span class="step">2</span>
+                <span class="step-line"></span>
+                <span class="step">3</span>
+            </div>
+        </div>
+
+        <div class="card-body-custom">
+            <form asp-action="FinanceReview" method="post" id="financeForm">
+                @Html.AntiForgeryToken()
+                <input asp-for="ExitClearanceId" type="hidden" />
+
+                <div class="table-responsive">
+                    <table class="clearance-table">
+                        <thead>
+                            <tr>
+                                <th>Finance Item</th>
+                                <th>Asset / Serial Number</th>
+                                <th>Received By (Sign)</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="item-cell">
+                                    <div class="item-title">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                        Staff Advance and Other Liabilities (if any)
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-hashtag input-icon"></i>
+                                        <input asp-for="StaffAdvanceReference" class="form-control-modern" placeholder="Reference / Serial #" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-user-check input-icon"></i>
+                                        <input asp-for="StaffAdvanceReceivedBy" class="form-control-modern" placeholder="Received by" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar-alt input-icon"></i>
+                                        <input asp-for="StaffAdvanceDate" type="date" class="form-control-modern" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="item-cell">
+                                    <div class="item-title">
+                                        <i class="fas fa-receipt"></i>
+                                        Receipts handed over to finance (if any)
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-hashtag input-icon"></i>
+                                        <input asp-for="ReceiptsReference" class="form-control-modern" placeholder="Reference / Serial #" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-user-check input-icon"></i>
+                                        <input asp-for="ReceiptsReceivedBy" class="form-control-modern" placeholder="Received by" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar-alt input-icon"></i>
+                                        <input asp-for="ReceiptsDate" type="date" class="form-control-modern" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="item-cell">
+                                    <div class="item-title">
+                                        <i class="fas fa-coins"></i>
+                                        Final dues to be paid to the employee
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-hashtag input-icon"></i>
+                                        <input asp-for="FinalDuesReference" class="form-control-modern" placeholder="Reference / Serial #" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-user-check input-icon"></i>
+                                        <input asp-for="FinalDuesReceivedBy" class="form-control-modern" placeholder="Received by" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar-alt input-icon"></i>
+                                        <input asp-for="FinalDuesDate" type="date" class="form-control-modern" />
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Comments Section -->
+                <div class="comments-section">
+                    <div class="comments-header">
+                        <i class="fas fa-comment-dots"></i>
+                        <span>Additional Comments</span>
+                    </div>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-pen textarea-icon"></i>
+                        <textarea asp-for="Comments" class="form-control-textarea" rows="4" placeholder="Enter any additional comments or notes..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-approve" id="submitBtn">
+                        <i class="fas fa-check-circle"></i>
+                        Approve & Forward
+                    </button>
+                    <a asp-action="PendingFinance" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+
+<style>
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, #11998e, #38ef7d);
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .hero-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+
+    .hero-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .hero-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+    }
+
+    .hero-btn-back {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+        .hero-btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* Clearance Form Card */
+    .clearance-form-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .form-steps {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step {
+        width: 30px;
+        height: 30px;
+        background: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+    }
+
+        .step.active {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+    .step-line {
+        width: 40px;
+        height: 2px;
+        background: var(--gray-300);
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* Table Styles */
+    .clearance-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1.5rem;
+    }
+
+        .clearance-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .clearance-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .clearance-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .clearance-table tbody tr:hover td {
+            background-color: var(--gray-50);
+        }
+
+    .item-cell {
+        min-width: 200px;
+    }
+
+    .item-title {
+        font-weight: 600;
+        color: var(--gray-800);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .item-title i {
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+    /* Input Icons */
+    .input-icon-wrapper {
+        position: relative;
+    }
+
+        .input-icon-wrapper i.input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 0.6rem 0.75rem 0.6rem 2rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+        .form-control-modern:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    input[type="date"].form-control-modern {
+        padding-right: 0.75rem;
+    }
+
+    /* Comments Section */
+    .comments-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .comments-header {
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .comments-header i {
+            color: var(--primary);
+        }
+
+    .textarea-wrapper {
+        position: relative;
+    }
+
+    .textarea-icon {
+        position: absolute;
+        left: 1rem;
+        top: 1rem;
+        color: var(--gray-400);
+        font-size: 0.875rem;
+        pointer-events: none;
+    }
+
+    .form-control-textarea {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        resize: vertical;
+    }
+
+        .form-control-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1rem;
+    }
+
+    .btn-approve {
+        background: linear-gradient(100deg, var(--success), #1f8a5c);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-approve:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+
+
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add data-label attributes for responsive table
+        const tableHeaders = document.querySelectorAll('.clearance-table thead th');
+        const tableRows = document.querySelectorAll('.clearance-table tbody tr');
+
+        tableRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                if (tableHeaders[index]) {
+                    const headerText = tableHeaders[index].innerText.trim();
+                    cell.setAttribute('data-label', headerText);
+                }
+            });
+        });
+
+        // Form validation
+        const form = document.getElementById('financeForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            });
+        }
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
