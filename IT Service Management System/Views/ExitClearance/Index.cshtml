@@ -20,7 +20,7 @@
             <a asp-action="Pending" class="hero-btn hero-btn-warning">
                 <i class="fas fa-clock"></i> Pending Clearances
             </a>
-            @if (User.IsInRole("SystemsAdmin"))
+            @if (User.IsInRole("SystemsAdmin") || User.IsInRole("Admin"))
             {
                 <a asp-action="Create" class="hero-btn hero-btn-primary">
                     <i class="fas fa-plus"></i> Create Clearance

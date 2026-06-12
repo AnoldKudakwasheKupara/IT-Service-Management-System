@@ -1,36 +1,450 @@
 ﻿@using IT_Service_Management_System.ViewModels
 @model CreateExitClearanceVM
 
-<div class="card shadow-sm">
-    <div class="card-header">
-        <h4>Create Exit Clearance</h4>
+@{
+    ViewData["Title"] = "Create Exit Clearance - Axis IT Helpdesk";
+}
+
+<div class="page-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+            <div>
+                <h1 class="hero-title">Create Exit Clearance</h1>
+                <p class="hero-subtitle">Initiate a new employee exit clearance process</p>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <a asp-action="Index" class="hero-btn hero-btn-back">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
     </div>
 
-    <div class="card-body">
-
-        <form asp-action="Create" method="post">
-
-            <div class="mb-3">
-                <label class="form-label">
-                    Employee
-                </label>
-
-                <select asp-for="EmployeeId"
-                        asp-items="Model.Employees"
-                        class="form-select">
-
-                    <option value="">
-                        Select Employee
-                    </option>
-
-                </select>
+    <!-- Create Clearance Card -->
+    <div class="create-clearance-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-user-plus me-2"></i>
+                <span>Clearance Details</span>
             </div>
+            <div class="form-steps">
+                <span class="step active">1</span>
+                <span class="step-line"></span>
+                <span class="step">2</span>
+                <span class="step-line"></span>
+                <span class="step">3</span>
+            </div>
+        </div>
 
-            <button class="btn btn-primary">
-                Create Clearance
-            </button>
+        <div class="card-body-custom">
+            <form asp-action="Create" method="post" id="createClearanceForm">
+                @Html.AntiForgeryToken()
 
-        </form>
+                <div class="form-group-modern">
+                    <label asp-for="EmployeeId" class="form-label">
+                        <i class="fas fa-user"></i>
+                        Select Employee
+                        <span class="required">*</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <i class="fas fa-chevron-down select-icon"></i>
+                        <select asp-for="EmployeeId" class="form-control-modern">
+                            <option value="">-- Select Employee --</option>
+                            @foreach (var employee in Model.Employees)
+                            {
+                                <option value="@employee.Value">@employee.Text</option>
+                            }
+                        </select>
+                    </div>
+                    <span asp-validation-for="EmployeeId" class="validation-message text-danger"></span>
+                    <div class="form-hint">
+                        <i class="fas fa-info-circle"></i> Select the employee who is exiting the organization
+                    </div>
+                </div>
 
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-create" id="submitBtn">
+                        <i class="fas fa-plus-circle"></i>
+                        Create Clearance
+                    </button>
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+
+<style>
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .hero-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+
+    .hero-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .hero-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+    }
+
+    .hero-btn-back {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+        .hero-btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* Create Clearance Card */
+    .create-clearance-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .form-steps {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step {
+        width: 30px;
+        height: 30px;
+        background: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+    }
+
+        .step.active {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+    .step-line {
+        width: 40px;
+        height: 2px;
+        background: var(--gray-300);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Form Groups */
+    .form-group-modern {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .form-label i {
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
+
+    .required {
+        color: var(--danger);
+        font-size: 1rem;
+    }
+
+    /* Select Styling */
+    .select-wrapper {
+        position: relative;
+    }
+
+        .select-wrapper select {
+            appearance: none;
+            width: 100%;
+            padding: 0.75rem 2.5rem 0.75rem 1rem;
+            font-size: 0.875rem;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 0.75rem;
+            cursor: pointer;
+            background: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+            .select-wrapper select:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+            }
+
+    .select-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        pointer-events: none;
+        font-size: 0.75rem;
+    }
+
+    /* Validation Messages */
+    .validation-message {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Form Hints */
+    .form-hint {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .form-hint i {
+            font-size: 0.7rem;
+        }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1rem;
+    }
+
+    .btn-create {
+        background: linear-gradient(100deg, var(--success), #1f8a5c);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-create:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('createClearanceForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const employeeId = document.querySelector('[name="EmployeeId"]').value;
+
+                if (!employeeId) {
+                    e.preventDefault();
+                    showValidationError('Please select an employee');
+                    document.querySelector('[name="EmployeeId"]').focus();
+                    return false;
+                }
+
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Clearance...';
+
+                return true;
+            });
+        }
+
+        function showValidationError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert-toast error';
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                background: #fee;
+                border-left: 4px solid var(--danger);
+                border-radius: 0.75rem;
+                padding: 1rem 1.25rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                color: var(--danger);
+                font-weight: 500;
+                z-index: 1050;
+                animation: slideIn 0.3s ease;
+                box-shadow: var(--shadow-lg);
+            `;
+            errorDiv.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+                <button type="button" style="margin-left: auto; background: none; border: none; cursor: pointer; color: inherit;" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            document.body.appendChild(errorDiv);
+
+            setTimeout(() => {
+                errorDiv.style.opacity = '0';
+                setTimeout(() => errorDiv.remove(), 300);
+            }, 5000);
+        }
+    });
+</script>
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
