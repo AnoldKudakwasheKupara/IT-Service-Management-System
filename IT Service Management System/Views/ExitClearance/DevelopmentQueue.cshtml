@@ -1,49 +1,557 @@
 ﻿@model List<ExitClearance>
 
-<div class="card">
-    <div class="card-header">
-        <h4>Pending Development Clearances</h4>
+@{
+    ViewData["Title"] = "Pending Development Clearances - Axis IT Helpdesk";
+}
+
+<div class="page-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-code"></i>
+            </div>
+            <div>
+                <h1 class="hero-title">Pending Development Clearances</h1>
+                <p class="hero-subtitle">Review and process development access clearance requests</p>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <a asp-action="Index" class="hero-btn hero-btn-back">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <button type="button" class="hero-btn hero-btn-print" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+        </div>
     </div>
 
-    <div class="card-body">
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon pending">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count()</h3>
+                <p>Pending Clearances</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon development">
+                <i class="fas fa-code"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count(m => m.CurrentStage == ClearanceStage.Development)</h3>
+                <p>In Development Stage</p>
+            </div>
+        </div>
+    </div>
 
-        <table class="table">
+    <!-- Clearance Table Card -->
+    <div class="clearance-table-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Development Clearance Requests</span>
+            </div>
+            <div class="request-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count()</span> requests pending
+            </div>
+        </div>
 
-            <thead>
-                <tr>
-                    <th>Employee</th>
-                    <th>Current Stage</th>
-                    <th></th>
-                </tr>
-            </thead>
-
-            <tbody>
-
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>
-                            @item.Employee.FirstName
-                            @item.Employee.LastName
-                        </td>
-
-                        <td>
-                            @item.CurrentStage
-                        </td>
-
-                        <td>
-                            <a asp-action="DevelopmentReview"
-                               asp-route-id="@item.Id"
-                               class="btn btn-primary btn-sm">
-                                Review
-                            </a>
-                        </td>
-                    </tr>
-                }
-
-            </tbody>
-
-        </table>
-
+        <div class="table-responsive">
+            @if (Model != null && Model.Any())
+            {
+                <table class="clearance-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user me-1"></i> Employee</th>
+                            <th><i class="fas fa-building me-1"></i> Department</th>
+                            <th><i class="fas fa-chart-line me-1"></i> Current Stage</th>
+                            <th><i class="fas fa-calendar me-1"></i> Request Date</th>
+                            <th><i class="fas fa-clock me-1"></i> Pending Days</th>
+                            <th><i class="fas fa-cog me-1"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                           <tr>
+                                <td class="department-cell">
+                                    <span class="department-badge">
+                                        <i class="fas fa-building"></i> @(item.Employee?.Department?.Name ?? "N/A")
+                                    </span>
+                                 </td>
+                                <td class="stage-cell">
+                                    <span class="stage-badge development">
+                                        <i class="fas fa-code"></i> @item.CurrentStage
+                                    </span>
+                                 </td>
+                                <td class="date-cell">
+                                    <i class="far fa-calendar-alt"></i>
+                                    @(item.CreatedDate.ToString("dd MMM yyyy"))
+                                 </td>
+                                <td class="action-cell">
+                                    <a asp-action="DevelopmentReview" asp-route-id="@item.Id" class="action-btn btn-review">
+                                        <i class="fas fa-check-circle"></i> Review
+                                    </a>
+                                 </td>
+                             </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>No Pending Clearances</h3>
+                    <p>All development clearances have been processed</p>
+                    <a asp-action="Index" class="btn-back-dashboard">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            }
+        </div>
     </div>
 </div>
+
+<style>
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .hero-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+
+    .hero-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .hero-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+    }
+
+    .hero-btn-back {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .hero-btn-back:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+        color: white;
+        text-decoration: none;
+    }
+
+    .hero-btn-print {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    .hero-btn-print:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+        color: white;
+    }
+
+    /* Statistics Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .stat-icon.pending {
+        background: linear-gradient(135deg, var(--warning), #e6a017);
+        color: white;
+    }
+
+    .stat-icon.development {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+        color: white;
+    }
+
+    .stat-icon.urgent {
+        background: linear-gradient(135deg, var(--danger), #c53030);
+        color: white;
+    }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* Clearance Table Card */
+    .clearance-table-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .request-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* Table Styles */
+    .clearance-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .clearance-table thead {
+        background: var(--gray-50);
+        border-bottom: 2px solid var(--gray-200);
+    }
+
+    .clearance-table th {
+        padding: 1rem 1.5rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--gray-600);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .clearance-table td {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        vertical-align: middle;
+        font-size: 0.875rem;
+    }
+
+    .clearance-table tbody tr {
+        transition: background-color 0.2s;
+    }
+
+    .clearance-table tbody tr:hover {
+        background-color: var(--gray-50);
+    }
+
+    .clearance-table tr.urgent-row {
+        background-color: rgba(229, 62, 62, 0.05);
+    }
+
+    /* Employee Cell */
+    .employee-cell {
+        min-width: 200px;
+    }
+
+    .employee-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .employee-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+    }
+
+    .employee-details {
+        flex: 1;
+    }
+
+    .employee-details strong {
+        display: block;
+        color: var(--gray-800);
+        font-size: 0.875rem;
+        margin-bottom: 0.125rem;
+    }
+
+    .employee-email {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+    }
+
+    /* Department Cell */
+    .department-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+    /* Stage Badge */
+    .stage-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .stage-badge.development {
+        background: #ffe6e6;
+        color: #f5576c;
+    }
+
+    /* Date Cell */
+    .date-cell {
+        color: var(--gray-500);
+        white-space: nowrap;
+    }
+
+    /* Pending Days Cell */
+    .pending-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .pending-badge.urgent {
+        background: #fee;
+        color: var(--danger);
+    }
+
+    .pending-badge.normal {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+    /* Action Cell */
+    .action-cell {
+        white-space: nowrap;
+    }
+
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(100deg, #f093fb, #f5576c);
+        color: white;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        color: white;
+        text-decoration: none;
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: var(--success);
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+        color: var(--gray-600);
+    }
+
+    .empty-state p {
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-back-dashboard {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    .btn-back-dashboard:hover {
+        transform: translateY(-2px);
+        color: white;
+        text-decoration: none;
+    }
+
+    
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add data-label attributes for responsive table
+        const tableHeaders = document.querySelectorAll('.clearance-table th');
+        const tableRows = document.querySelectorAll('.clearance-table tbody tr');
+        
+        tableRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                if (tableHeaders[index]) {
+                    const headerText = tableHeaders[index].innerText.replace(/[^\w\s]/g, '').trim();
+                    cell.setAttribute('data-label', headerText);
+                }
+            });
+        });
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
