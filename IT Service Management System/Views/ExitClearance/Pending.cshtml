@@ -17,7 +17,8 @@
             </div>
         </div>
         <div class="hero-actions">
-            <a asp-action="Dashboard" class="hero-btn hero-btn-back">
+            <!-- Back to Dashboard now points to ExitClearance/Index -->
+            <a asp-action="Index" class="hero-btn hero-btn-back">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
             <button type="button" class="hero-btn hero-btn-print" onclick="window.print()">
@@ -37,7 +38,6 @@
                 <p>Total Pending</p>
             </div>
         </div>
-
     </div>
 
     <!-- Clearance Table Card -->
@@ -70,106 +70,104 @@
                     <tbody>
                         @foreach (var item in Model)
                         {
-                            <tr>
-
                             
-                            <td class="employee-cell">
-                                <div class="employee-info">
-                                    <div class="employee-avatar">
-                                        @((item.Employee?.FirstName?.Substring(0, 1) ?? "E") + (item.Employee?.LastName?.Substring(0, 1) ?? "M"))
-                                    </div>
-                                    <div class="employee-details">
-                                        <strong>@item.Employee?.FirstName @item.Employee?.LastName</strong>
-                                        <span class="employee-email">@item.Employee?.Email</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="status-cell">
-                                <span class="status-badge @(item.Status.ToString().ToLower())">
-                                    @if (item.Status.ToString() == "Pending")
-                                    {
-                                        <i class="fas fa-clock"></i>
-                                    }
-                                    else if (item.Status.ToString() == "Approved")
-                                    {
-                                        <i class="fas fa-check-circle"></i>
-                                    }
-                                    else
-                                    {
-                                        <i class="fas fa-circle"></i>
-                                    }
-                                    @item.Status
-                                </span>
-                            </td>
-                            <td class="stage-cell">
-                                @{
-                                    var stageName = item.CurrentStage.ToString();
-                                }
-                                <span class="stage-badge @stageName.ToLower()">
-                                    @if (stageName == "Employee")
-                                    {
-                                        <i class="fas fa-user"></i>
-                                    }
-                                    else if (stageName == "Finance")
-                                    {
-                                        <i class="fas fa-chart-line"></i>
-                                    }
-                                    else if (stageName == "SystemsAdmin")
-                                    {
-                                        <i class="fas fa-server"></i>
-                                    }
-                                    else if (stageName == "Development")
-                                    {
-                                        <i class="fas fa-code"></i>
-                                    }
-                                    else if (stageName == "Supervisor")
-                                    {
-                                        <i class="fas fa-user-check"></i>
-                                    }
-                                    else if (stageName == "HOD")
-                                    {
-                                        <i class="fas fa-user-tie"></i>
-                                    }
-                                    else if (stageName == "HR")
-                                    {
-                                        <i class="fas fa-users"></i>
-                                    }
-                                    else if (stageName == "Completed")
-                                    {
-                                        <i class="fas fa-flag-checkered"></i>
-                                    }
-                                    @item.CurrentStage
-                                </span>
-                            </td>
-                            <td class="date-cell">
-                                <i class="far fa-calendar-alt"></i>
-                                @(item.CreatedDate.ToString("dd MMM yyyy"))
-                                </td>
-                           
 
-                            <td class="action-cell">
-                                <a asp-action="Open" asp-route-id="@item.Id" class="action-btn btn-open">
-                                    <i class="fas fa-folder-open"></i> Open
-                                </a>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        }
+                            <tr>
+                                <td class="employee-cell">
+                                    <div class="employee-info">
+                                        <div class="employee-avatar">
+                                            @((item.Employee?.FirstName?.Substring(0, 1) ?? "E") + (item.Employee?.LastName?.Substring(0, 1) ?? "M"))
+                                        </div>
+                                        <div class="employee-details">
+                                            <strong>@item.Employee?.FirstName @item.Employee?.LastName</strong>
+                                            <span class="employee-email">@item.Employee?.Email</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="status-cell">
+                                    <span class="status-badge @(item.Status.ToString().ToLower())">
+                                        @if (item.Status.ToString() == "Pending")
+                                        {
+                                            <i class="fas fa-clock"></i>
+                                        }
+                                        else if (item.Status.ToString() == "Approved")
+                                        {
+                                            <i class="fas fa-check-circle"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-circle"></i>
+                                        }
+                                        @item.Status
+                                    </span>
+                                </td>
+                                <td class="stage-cell">
+                                    @{
+                                        var stageName = item.CurrentStage.ToString();
+                                    }
+                                    <span class="stage-badge @stageName.ToLower()">
+                                        @if (stageName == "Employee")
+                                        {
+                                            <i class="fas fa-user"></i>
+                                        }
+                                        else if (stageName == "Finance")
+                                        {
+                                            <i class="fas fa-chart-line"></i>
+                                        }
+                                        else if (stageName == "SystemsAdmin")
+                                        {
+                                            <i class="fas fa-server"></i>
+                                        }
+                                        else if (stageName == "Development")
+                                        {
+                                            <i class="fas fa-code"></i>
+                                        }
+                                        else if (stageName == "Supervisor")
+                                        {
+                                            <i class="fas fa-user-check"></i>
+                                        }
+                                        else if (stageName == "HOD")
+                                        {
+                                            <i class="fas fa-user-tie"></i>
+                                        }
+                                        else if (stageName == "HR")
+                                        {
+                                            <i class="fas fa-users"></i>
+                                        }
+                                        else if (stageName == "Completed")
+                                        {
+                                            <i class="fas fa-flag-checkered"></i>
+                                        }
+                                        @item.CurrentStage
+                                    </span>
+                                </td>
+                                <td class="date-cell">
+                                    <i class="far fa-calendar-alt"></i>
+                                    @(item.CreatedDate.ToString("dd MMM yyyy"))
+                                </td>
+                                <td class="action-cell">
+                                    <a asp-action="Open" asp-route-id="@item.Id" class="action-btn btn-open">
+                                        <i class="fas fa-folder-open"></i> Open
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
             else
-        {
-            <div class="empty-state">
-                <i class="fas fa-check-circle"></i>
-                <h3>No Pending Clearances</h3>
-                <p>All clearance requests have been processed</p>
-                <a asp-action="Dashboard" class="btn-back-dashboard">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
-                </a>
-            </div>
-        }
+            {
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>No Pending Clearances</h3>
+                    <p>All clearance requests have been processed</p>
+                    <a asp-action="Index" class="btn-back-dashboard">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            }
+        </div>
     </div>
-</div>
 </div>
 
 <style>
@@ -411,10 +409,6 @@
                 background-color: var(--gray-50);
             }
 
-        .clearance-table tr.urgent-row {
-            background-color: rgba(229, 62, 62, 0.05);
-        }
-
     /* Employee Cell */
     .employee-cell {
         min-width: 200px;
@@ -625,6 +619,7 @@
             text-decoration: none;
         }
 
+   
 </style>
 
 <script>

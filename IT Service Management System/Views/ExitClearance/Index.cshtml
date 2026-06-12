@@ -6,7 +6,7 @@
 }
 
 <div class="page-container">
-    <!-- Hero Section -->
+    <!-- Hero Section with refined gradient and subtle shadow -->
     <div class="hero-section">
         <div class="hero-content">
             <div class="hero-icon">
@@ -22,7 +22,7 @@
                 <i class="fas fa-clock"></i> Pending Clearances
             </a>
             @if (Context.Session.GetString("UserRole") == "Admin" ||
-     Context.Session.GetString("UserRole") == "SystemsAdmin")
+                 Context.Session.GetString("UserRole") == "SystemsAdmin")
             {
                 <a asp-action="Create" class="hero-btn hero-btn-primary">
                     <i class="fas fa-plus"></i> Create Clearance
@@ -31,6 +31,7 @@
         </div>
     </div>
 
+    <!-- Success Toast with refined animation -->
     @if (TempData["Success"] != null)
     {
         <div class="alert-toast success">
@@ -42,7 +43,7 @@
         </div>
     }
 
-    <!-- Statistics Cards -->
+    <!-- Statistics Cards - improved layout with subtle hover scale and gradient icons -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-icon total">
@@ -53,7 +54,6 @@
                 <p>Total Clearances</p>
             </div>
         </div>
-
         <div class="stat-card">
             <div class="stat-icon completed">
                 <i class="fas fa-flag-checkered"></i>
@@ -65,7 +65,7 @@
         </div>
     </div>
 
-    <!-- Clearance Table -->
+    <!-- Clearance Table Card with improved header and shadow -->
     <div class="clearance-table-card">
         <div class="card-header-custom">
             <div>
@@ -86,7 +86,6 @@
                         <tr>
                             <th><i class="fas fa-user me-1"></i> Employee</th>
                             <th><i class="fas fa-tag me-1"></i> Status</th>
-@*                             <th><i class="fas fa-chart-line me-1"></i> Current Stage</th> *@
                             <th><i class="fas fa-cog me-1"></i> Actions</th>
                         </tr>
                     </thead>
@@ -120,42 +119,6 @@
                                         @item.Status
                                     </span>
                                 </td>
-@*                                 <td class="stage-cell">
-                                    @{
-                                        var stageName = item.CurrentStage.ToString();
-                                        var stageClass = stageName.ToLower();
-                                    }
-                                    <span class="stage-badge @stageClass">
-                                        @switch (item.CurrentStage)
-                                        {
-                                            case ClearanceStage.Employee:
-                                                <i class="fas fa-user"></i>
-                                                break;
-                                            case ClearanceStage.Finance:
-                                                <i class="fas fa-chart-line"></i>
-                                                break;
-                                            case ClearanceStage.SystemsAdmin:
-                                                <i class="fas fa-server"></i>
-                                                break;
-                                            case ClearanceStage.Development:
-                                                <i class="fas fa-code"></i>
-                                                break;
-                                            case ClearanceStage.Supervisor:
-                                                <i class="fas fa-user-check"></i>
-                                                break;
-                                            case ClearanceStage.HOD:
-                                                <i class="fas fa-user-tie"></i>
-                                                break;
-                                            case ClearanceStage.HR:
-                                                <i class="fas fa-users"></i>
-                                                break;
-                                            case ClearanceStage.Completed:
-                                                <i class="fas fa-flag-checkered"></i>
-                                                break;
-                                        }
-                                        @item.CurrentStage
-                                    </span>
-                                </td> *@
                                 <td class="action-cell">
                                     <a asp-action="Details" asp-route-id="@item.Id" class="action-btn btn-view" title="View Details">
                                         <i class="fas fa-eye"></i>
@@ -208,6 +171,7 @@
         --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
         --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     }
 
     .page-container {
@@ -216,7 +180,7 @@
         padding: 2rem 1rem;
     }
 
-    /* Hero Section */
+    /* Hero Section with enhanced gradient and animation */
     .hero-section {
         background: linear-gradient(135deg, var(--primary-dark), var(--primary));
         border-radius: 1.5rem;
@@ -228,7 +192,13 @@
         flex-wrap: wrap;
         gap: 1.5rem;
         box-shadow: var(--shadow-lg);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+
+        .hero-section:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
+        }
 
     .hero-content {
         display: flex;
@@ -246,6 +216,7 @@
         justify-content: center;
         font-size: 2rem;
         color: white;
+        backdrop-filter: blur(4px);
     }
 
     .hero-title {
@@ -253,11 +224,13 @@
         font-weight: 700;
         color: white;
         margin: 0 0 0.25rem 0;
+        letter-spacing: -0.02em;
     }
 
     .hero-subtitle {
         color: rgba(255, 255, 255, 0.9);
         margin: 0;
+        font-size: 0.9rem;
     }
 
     .hero-actions {
@@ -275,7 +248,7 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
         cursor: pointer;
         border: none;
     }
@@ -283,6 +256,7 @@
     .hero-btn-warning {
         background: rgba(255, 255, 255, 0.2);
         color: white;
+        backdrop-filter: blur(4px);
     }
 
         .hero-btn-warning:hover {
@@ -290,6 +264,7 @@
             transform: translateY(-2px);
             color: white;
             text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
     .hero-btn-primary {
@@ -317,6 +292,7 @@
         color: var(--success);
         font-weight: 500;
         animation: slideIn 0.3s ease;
+        box-shadow: var(--shadow-sm);
     }
 
         .alert-toast.success {
@@ -332,18 +308,17 @@
         cursor: pointer;
         color: inherit;
         opacity: 0.7;
+        transition: opacity 0.2s;
     }
 
         .close-toast:hover {
             opacity: 1;
         }
 
-
-
     /* Statistics Grid */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 1.5rem;
         margin-bottom: 2rem;
     }
@@ -356,13 +331,14 @@
         align-items: center;
         gap: 1rem;
         box-shadow: var(--shadow-sm);
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border: 1px solid var(--gray-200);
     }
 
         .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: transparent;
         }
 
     .stat-icon {
@@ -374,39 +350,37 @@
         justify-content: center;
         font-size: 1.5rem;
         flex-shrink: 0;
+        transition: transform 0.2s;
     }
 
-        .stat-icon.total {
-            background: linear-gradient(135deg, var(--info), #2563eb);
-            color: white;
-        }
+    .stat-card:hover .stat-icon {
+        transform: scale(1.05);
+    }
 
-        .stat-icon.pending {
-            background: linear-gradient(135deg, var(--warning), #e6a017);
-            color: white;
-        }
+    .stat-icon.total {
+        background: linear-gradient(135deg, var(--info), #2563eb);
+        color: white;
+    }
 
-        .stat-icon.approved {
-            background: linear-gradient(135deg, var(--success), #059669);
-            color: white;
-        }
-
-        .stat-icon.completed {
-            background: linear-gradient(135deg, var(--primary), var(--primary-light));
-            color: white;
-        }
+    .stat-icon.completed {
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+    }
 
     .stat-info h3 {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
         font-weight: 700;
         margin: 0;
         color: var(--gray-800);
+        line-height: 1.2;
     }
 
     .stat-info p {
         margin: 0;
         color: var(--gray-500);
         font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     /* Clearance Table Card */
@@ -416,7 +390,12 @@
         overflow: hidden;
         box-shadow: var(--shadow-sm);
         border: 1px solid var(--gray-200);
+        transition: box-shadow 0.2s;
     }
+
+        .clearance-table-card:hover {
+            box-shadow: var(--shadow-md);
+        }
 
     .card-header-custom {
         background: var(--gray-50);
@@ -435,6 +414,10 @@
         font-size: 0.875rem;
         font-weight: normal;
         color: var(--gray-500);
+        background: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        border: 1px solid var(--gray-200);
     }
 
     /* Table Styles */
@@ -463,10 +446,11 @@
             border-bottom: 1px solid var(--gray-200);
             vertical-align: middle;
             font-size: 0.875rem;
+            transition: background-color 0.2s ease;
         }
 
         .clearance-table tbody tr {
-            transition: background-color 0.2s;
+            transition: background-color 0.2s ease;
         }
 
             .clearance-table tbody tr:hover {
@@ -496,6 +480,7 @@
         font-weight: 600;
         font-size: 0.875rem;
         flex-shrink: 0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
 
     .employee-details {
@@ -505,7 +490,7 @@
         .employee-details strong {
             display: block;
             color: var(--gray-800);
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             margin-bottom: 0.125rem;
         }
 
@@ -519,10 +504,11 @@
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.25rem 0.75rem;
+        padding: 0.375rem 0.875rem;
         border-radius: 2rem;
         font-size: 0.75rem;
         font-weight: 600;
+        transition: transform 0.1s ease;
     }
 
         .status-badge.approved {
@@ -535,73 +521,24 @@
             color: var(--warning);
         }
 
-    /* Stage Badge */
-    .stage-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: 2rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-        .stage-badge.employee {
-            background: #e6f0ff;
-            color: var(--info);
-        }
-
-        .stage-badge.finance {
-            background: #e6f5e9;
-            color: var(--success);
-        }
-
-        .stage-badge.systemsadmin {
-            background: #e6e6ff;
-            color: #6366f1;
-        }
-
-        .stage-badge.development {
-            background: #ffe6e6;
-            color: #f5576c;
-        }
-
-        .stage-badge.supervisor {
-            background: #fff5e6;
-            color: var(--warning);
-        }
-
-        .stage-badge.hod {
-            background: #e6e6ff;
-            color: #8e2de2;
-        }
-
-        .stage-badge.hr {
-            background: #e6f0ff;
-            color: var(--info);
-        }
-
-        .stage-badge.completed {
-            background: #e6f5e9;
-            color: var(--success);
-        }
-
-    /* Action Cell */
+    /* Action Buttons */
     .action-cell {
         white-space: nowrap;
     }
 
     .action-btn {
-        width: 32px;
-        height: 32px;
+        width: 34px;
+        height: 34px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         border-radius: 0.5rem;
         text-decoration: none;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
         font-size: 0.875rem;
         margin: 0 0.25rem;
+        border: none;
+        cursor: pointer;
     }
 
     .btn-view {
@@ -613,6 +550,7 @@
             background: var(--info);
             color: white;
             transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
         }
 
     .btn-delete {
@@ -624,12 +562,13 @@
             background: var(--danger);
             color: white;
             transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
         }
 
     /* Empty State */
     .empty-state {
         text-align: center;
-        padding: 3rem;
+        padding: 3rem 2rem;
         color: var(--gray-500);
     }
 
@@ -637,16 +576,19 @@
             font-size: 4rem;
             color: var(--gray-300);
             margin-bottom: 1rem;
+            opacity: 0.7;
         }
 
         .empty-state h3 {
             font-size: 1.25rem;
             margin-bottom: 0.5rem;
             color: var(--gray-600);
+            font-weight: 600;
         }
 
         .empty-state p {
             margin-bottom: 1.5rem;
+            font-size: 0.875rem;
         }
 
     .btn-create {
@@ -660,14 +602,18 @@
         gap: 0.5rem;
         font-size: 0.875rem;
         transition: all 0.2s;
+        border: none;
+        cursor: pointer;
     }
 
         .btn-create:hover {
             transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
             color: white;
             text-decoration: none;
         }
 
+    
 </style>
 
 <script>
@@ -676,6 +622,7 @@
         const toast = document.querySelector('.alert-toast');
         if (toast) {
             setTimeout(() => {
+                toast.style.transition = 'opacity 0.3s';
                 toast.style.opacity = '0';
                 setTimeout(() => toast.remove(), 300);
             }, 5000);
