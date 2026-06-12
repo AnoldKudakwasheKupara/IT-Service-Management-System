@@ -1,4 +1,5 @@
-﻿@model List<ExitClearance>
+﻿@using static IT_Service_Management_System.Models.Ticket
+@model List<ExitClearance>
 
 @{
     ViewData["Title"] = "Exit Clearances - Axis IT Helpdesk";
@@ -20,7 +21,8 @@
             <a asp-action="Pending" class="hero-btn hero-btn-warning">
                 <i class="fas fa-clock"></i> Pending Clearances
             </a>
-            @if (User.IsInRole("SystemsAdmin") || User.IsInRole("Admin"))
+            @if (Context.Session.GetString("UserRole") == "Admin" ||
+     Context.Session.GetString("UserRole") == "SystemsAdmin")
             {
                 <a asp-action="Create" class="hero-btn hero-btn-primary">
                     <i class="fas fa-plus"></i> Create Clearance
