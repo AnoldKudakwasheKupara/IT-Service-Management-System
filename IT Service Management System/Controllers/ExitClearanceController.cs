@@ -20,11 +20,19 @@ namespace IT_Service_Management_System.Controllers
         [HttpGet]
         public IActionResult Index()
         {
+            var userRole = GetCurrentUserRole();
+
+            if (userRole != UserRole.Admin &&
+                userRole != UserRole.SystemsAdmin &&
+                userRole != UserRole.HR)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
             var clearances = _context.ExitClearances
                 .Include(x => x.Employee)
-                .OrderByDescending(x => x.CreatedDate)
+                .OrderByDescending(x => x.Id)
                 .ToList();
-
 
             return View(clearances);
         }
@@ -39,6 +47,70 @@ namespace IT_Service_Management_System.Controllers
                 .Select(x => x.Role)
                 .FirstOrDefault();
         }
+
+
+        [HttpGet]
+        public IActionResult Pending()
+        {
+            var userId = GetCurrentUserId();
+
+            var user = _context.Users
+                .FirstOrDefault(x => x.Id == userId);
+
+            if (user == null)
+                return Unauthorized();
+
+            List<ExitClearance> clearances = new();
+
+            switch (user.Role)
+            {
+                case UserRole.Finance:
+
+                    clearances = _context.ExitClearances
+                        .Include(x => x.Employee)
+                        .Where(x => x.CurrentStage == ClearanceStage.Finance)
+                        .ToList();
+
+                    break;
+
+                case UserRole.SystemsAdmin:
+
+                    clearances = _context.ExitClearances
+                        .Include(x => x.Employee)
+                        .Where(x => x.CurrentStage == ClearanceStage.SystemsAdmin)
+                        .ToList();
+
+                    break;
+
+                case UserRole.Development:
+
+                    clearances = _context.ExitClearances
+                        .Include(x => x.Employee)
+                        .Where(x => x.CurrentStage == ClearanceStage.Development)
+                        .ToList();
+
+                    break;
+
+                case UserRole.HR:
+
+                    clearances = _context.ExitClearances
+                        .Include(x => x.Employee)
+                        .Where(x => x.CurrentStage == ClearanceStage.HR)
+                        .ToList();
+
+                    break;
+
+                default:
+
+                    clearances = new List<ExitClearance>();
+
+                    break;
+            }
+
+            return View(clearances);
+        }
+
+
         public IActionResult Open(int id)
         {
             var clearance = _context.ExitClearances
