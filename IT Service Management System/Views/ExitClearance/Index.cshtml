@@ -1,113 +1,698 @@
 ﻿@model List<ExitClearance>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-
-    <h3>Exit Clearances</h3>
-
-    <div>
-
-        <a asp-action="Pending"
-           class="btn btn-warning me-2">
-            <i class="fas fa-clock"></i>
-            Pending Clearances
-        </a>
-
-        @if (User.IsInRole("SystemsAdmin"))
-        {
-            <a asp-action="Create"
-               class="btn btn-primary">
-                <i class="fas fa-plus"></i>
-                Create Clearance
-            </a>
-        }
-
-    </div>
-
-</div>
-
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">
-        @TempData["Success"]
-    </div>
+@{
+    ViewData["Title"] = "Exit Clearances - Axis IT Helpdesk";
 }
 
-<div class="card">
-
-    <div class="card-body">
-
-        <table class="table table-striped table-bordered">
-
-            <thead class="table-dark">
-
-                <tr>
-                    <th>Employee</th>
-                    <th>Status</th>
-                    <th>Current Stage</th>
-                    <th width="220">Actions</th>
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                @if (Model.Any())
-                {
-                    @foreach (var item in Model)
-                    {
-                        <tr>
-
-                            <td>
-                                @item.Employee.FirstName
-                                @item.Employee.LastName
-                            </td>
-
-                            <td>
-                                @item.Status
-                            </td>
-
-                            <td>
-                                @item.CurrentStage
-                            </td>
-
-                            <td>
-
-                                <a asp-action="Details"
-                                   asp-route-id="@item.Id"
-                                   class="btn btn-info btn-sm">
-                                    <i class="fas fa-eye"></i>
-                                    View
-                                </a>
-
-                                <a asp-action="Delete"
-                                   asp-route-id="@item.Id"
-                                   class="btn btn-danger btn-sm">
-                                    <i class="fas fa-trash"></i>
-                                    Delete
-                                </a>
-
-                            </td>
-
-                        </tr>
-                    }
-                }
-                else
-                {
-                    <tr>
-
-                        <td colspan="4" class="text-center text-muted">
-
-                            No exit clearances found.
-
-                        </td>
-
-                    </tr>
-                }
-
-            </tbody>
-
-        </table>
-
+<div class="page-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <div>
+                <h1 class="hero-title">Exit Clearances</h1>
+                <p class="hero-subtitle">Manage employee exit clearance processes</p>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <a asp-action="Pending" class="hero-btn hero-btn-warning">
+                <i class="fas fa-clock"></i> Pending Clearances
+            </a>
+            @if (User.IsInRole("SystemsAdmin"))
+            {
+                <a asp-action="Create" class="hero-btn hero-btn-primary">
+                    <i class="fas fa-plus"></i> Create Clearance
+                </a>
+            }
+        </div>
     </div>
 
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-toast success">
+            <i class="fas fa-check-circle"></i>
+            <span>@TempData["Success"]</span>
+            <button type="button" class="close-toast" onclick="this.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    }
+
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon total">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count</h3>
+                <p>Total Clearances</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon completed">
+                <i class="fas fa-flag-checkered"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count(c => c.CurrentStage == ClearanceStage.Completed)</h3>
+                <p>Completed</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clearance Table -->
+    <div class="clearance-table-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Clearance Records</span>
+            </div>
+            <div class="record-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count</span> records found
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            @if (Model.Any())
+            {
+                <table class="clearance-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user me-1"></i> Employee</th>
+                            <th><i class="fas fa-tag me-1"></i> Status</th>
+@*                             <th><i class="fas fa-chart-line me-1"></i> Current Stage</th> *@
+                            <th><i class="fas fa-cog me-1"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var statusClass = item.Status == ClearanceStatus.Completed ? "approved" : "pending";
+
+                            <tr>
+                                <td class="employee-cell">
+                                    <div class="employee-info">
+                                        <div class="employee-avatar">
+                                            @((item.Employee?.FirstName?.Substring(0, 1) ?? "E") + (item.Employee?.LastName?.Substring(0, 1) ?? "M"))
+                                        </div>
+                                        <div class="employee-details">
+                                            <strong>@item.Employee?.FirstName @item.Employee?.LastName</strong>
+                                            <span class="employee-id">ID: @item.EmployeeId</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="status-cell">
+                                    <span class="status-badge @statusClass">
+                                        @if (item.Status == ClearanceStatus.Completed)
+                                        {
+                                            <i class="fas fa-check-circle"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-clock"></i>
+                                        }
+                                        @item.Status
+                                    </span>
+                                </td>
+@*                                 <td class="stage-cell">
+                                    @{
+                                        var stageName = item.CurrentStage.ToString();
+                                        var stageClass = stageName.ToLower();
+                                    }
+                                    <span class="stage-badge @stageClass">
+                                        @switch (item.CurrentStage)
+                                        {
+                                            case ClearanceStage.Employee:
+                                                <i class="fas fa-user"></i>
+                                                break;
+                                            case ClearanceStage.Finance:
+                                                <i class="fas fa-chart-line"></i>
+                                                break;
+                                            case ClearanceStage.SystemsAdmin:
+                                                <i class="fas fa-server"></i>
+                                                break;
+                                            case ClearanceStage.Development:
+                                                <i class="fas fa-code"></i>
+                                                break;
+                                            case ClearanceStage.Supervisor:
+                                                <i class="fas fa-user-check"></i>
+                                                break;
+                                            case ClearanceStage.HOD:
+                                                <i class="fas fa-user-tie"></i>
+                                                break;
+                                            case ClearanceStage.HR:
+                                                <i class="fas fa-users"></i>
+                                                break;
+                                            case ClearanceStage.Completed:
+                                                <i class="fas fa-flag-checkered"></i>
+                                                break;
+                                        }
+                                        @item.CurrentStage
+                                    </span>
+                                </td> *@
+                                <td class="action-cell">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="action-btn btn-view" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="action-btn btn-delete" title="Delete Clearance" onclick="return confirm('Are you sure you want to delete this clearance record?');">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <h3>No exit clearances found</h3>
+                    <p>Get started by creating a new clearance</p>
+                    @if (User.IsInRole("SystemsAdmin"))
+                    {
+                        <a asp-action="Create" class="btn-create">
+                            <i class="fas fa-plus-circle"></i> Create Clearance
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
 </div>
+
+<style>
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .hero-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+
+    .hero-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .hero-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+    }
+
+    .hero-btn-warning {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+        .hero-btn-warning:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    .hero-btn-primary {
+        background: white;
+        color: var(--primary);
+    }
+
+        .hero-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+    /* Alert Toast */
+    .alert-toast {
+        background: #e6f5e9;
+        border-left: 4px solid var(--success);
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--success);
+        font-weight: 500;
+        animation: slideIn 0.3s ease;
+    }
+
+        .alert-toast.success {
+            background: #e6f5e9;
+            border-left-color: var(--success);
+            color: #1f6e4a;
+        }
+
+    .close-toast {
+        margin-left: auto;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.7;
+    }
+
+        .close-toast:hover {
+            opacity: 1;
+        }
+
+
+
+    /* Statistics Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+        .stat-icon.total {
+            background: linear-gradient(135deg, var(--info), #2563eb);
+            color: white;
+        }
+
+        .stat-icon.pending {
+            background: linear-gradient(135deg, var(--warning), #e6a017);
+            color: white;
+        }
+
+        .stat-icon.approved {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .stat-icon.completed {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+        }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* Clearance Table Card */
+    .clearance-table-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .record-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* Table Styles */
+    .clearance-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .clearance-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .clearance-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .clearance-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+
+        .clearance-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .clearance-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+    /* Employee Cell */
+    .employee-cell {
+        min-width: 200px;
+    }
+
+    .employee-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .employee-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+    }
+
+    .employee-details {
+        flex: 1;
+    }
+
+        .employee-details strong {
+            display: block;
+            color: var(--gray-800);
+            font-size: 0.875rem;
+            margin-bottom: 0.125rem;
+        }
+
+    .employee-id {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+    }
+
+    /* Status Badge */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+        .status-badge.approved {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+        .status-badge.pending {
+            background: #fff5e6;
+            color: var(--warning);
+        }
+
+    /* Stage Badge */
+    .stage-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+        .stage-badge.employee {
+            background: #e6f0ff;
+            color: var(--info);
+        }
+
+        .stage-badge.finance {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+        .stage-badge.systemsadmin {
+            background: #e6e6ff;
+            color: #6366f1;
+        }
+
+        .stage-badge.development {
+            background: #ffe6e6;
+            color: #f5576c;
+        }
+
+        .stage-badge.supervisor {
+            background: #fff5e6;
+            color: var(--warning);
+        }
+
+        .stage-badge.hod {
+            background: #e6e6ff;
+            color: #8e2de2;
+        }
+
+        .stage-badge.hr {
+            background: #e6f0ff;
+            color: var(--info);
+        }
+
+        .stage-badge.completed {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+    /* Action Cell */
+    .action-cell {
+        white-space: nowrap;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        margin: 0 0.25rem;
+    }
+
+    .btn-view {
+        background: var(--gray-100);
+        color: var(--info);
+    }
+
+        .btn-view:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-delete {
+        background: var(--gray-100);
+        color: var(--danger);
+    }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    .btn-create {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-create:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-hide toast after 5 seconds
+        const toast = document.querySelector('.alert-toast');
+        if (toast) {
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        // Add data-label attributes for responsive table
+        const tableHeaders = document.querySelectorAll('.clearance-table th');
+        const tableRows = document.querySelectorAll('.clearance-table tbody tr');
+
+        tableRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                if (tableHeaders[index]) {
+                    const headerText = tableHeaders[index].innerText.replace(/[^\w\s]/g, '').trim();
+                    cell.setAttribute('data-label', headerText);
+                }
+            });
+        });
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
