@@ -29,6 +29,16 @@ namespace IT_Service_Management_System.Controllers
             return View(clearances);
         }
 
+
+        private UserRole GetCurrentUserRole()
+        {
+            var userId = GetCurrentUserId();
+
+            return _context.Users
+                .Where(x => x.Id == userId)
+                .Select(x => x.Role)
+                .FirstOrDefault();
+        }
         public IActionResult Open(int id)
         {
             var clearance = _context.ExitClearances
