@@ -506,8 +506,16 @@
 
                     <i class="fas fa-file-signature"></i>
                     Exit Clearance
-
                 </a>
+
+                <a class="nav-item @(currentController == "ExitInterview" ? "active" : "")"
+                   asp-controller="ExitInterview"
+                   asp-action="Index">
+                    <i class="fas fa-clipboard-list"></i>
+                    Exit Interview
+                </a>
+
+
             </aside>
 
 
