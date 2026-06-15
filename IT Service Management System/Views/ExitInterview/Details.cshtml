@@ -12,25 +12,32 @@
             </a>
             <div>
                 <h1 class="page-title">
-                    <i class="fas fa-comments me-2" style="color: var(--info);"></i>
-                    Exit Interview Details
+                    <i class="fas fa-file-alt me-2" style="color: var(--info);"></i>
+                    Exit Interview Questionnaire
                 </h1>
-                <p class="text-muted mt-2">View complete exit interview information</p>
+                <p class="text-muted mt-2">View complete exit interview responses</p>
             </div>
         </div>
     </div>
 
-    <!-- Employee Information Card -->
+    <!-- Action Buttons -->
+    <div class="action-buttons-top mb-4">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-edit-top">
+            <i class="fas fa-pencil-alt"></i> Edit
+        </a>
+        <a asp-action="Index" class="btn-back-top">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+        <button type="button" class="btn-print-top" onclick="window.print()">
+            <i class="fas fa-print"></i> Print
+        </button>
+    </div>
+
+    <!-- Employee Information Section -->
     <div class="details-card">
         <div class="card-header-custom">
-            <div>
-                <i class="fas fa-user-circle me-2"></i>
-                <span>Employee Information</span>
-            </div>
-            <div class="interview-id-badge">
-                <i class="fas fa-hashtag"></i>
-                ID: @Model.Id
-            </div>
+            <i class="fas fa-user-circle me-2"></i>
+            <span>Employee Information</span>
         </div>
         <div class="card-body-custom">
             <div class="info-grid">
@@ -55,18 +62,18 @@
                     <span class="info-value">@(Model.LastWorkingDay?.ToString("dd MMM yyyy") ?? "—")</span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">Interview Date</span>
-                    <span class="info-value">@(Model.InterviewDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                    <span class="info-label">Interview Conducted By</span>
+                    <span class="info-value">@(string.IsNullOrEmpty(Model.InterviewConductedBy) ? "—" : Model.InterviewConductedBy)</span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">Interview Conducted By</span>
-                    <span class="info-value">@Model.InterviewConductedBy</span>
+                    <span class="info-label">Date of Interview</span>
+                    <span class="info-value">@(Model.InterviewDate?.ToString("dd MMM yyyy") ?? "—")</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Primary Reason Card -->
+    <!-- Primary Reason for Departure -->
     <div class="details-card">
         <div class="card-header-custom">
             <i class="fas fa-question-circle me-2"></i>
@@ -79,13 +86,15 @@
         </div>
     </div>
 
-    <!-- Overall Views Card -->
+    <!-- Section 1: Overall Views -->
     <div class="details-card">
         <div class="card-header-custom">
             <i class="fas fa-chart-line me-2"></i>
-            <span>Overall Views</span>
+            <span>1. Overall Views</span>
         </div>
         <div class="card-body-custom">
+            <p class="section-description">We value your feedback to help us improve. Below are the responses to the overall views section.</p>
+
             <div class="ratings-grid">
                 <div class="rating-item">
                     <span class="rating-label">Career Growth Opportunities</span>
@@ -94,7 +103,7 @@
                     </span>
                 </div>
                 <div class="rating-item">
-                    <span class="rating-label">Compensation & Benefits</span>
+                    <span class="rating-label">Compensation and Benefits</span>
                     <span class="rating-value rating-@((int)Model.CompensationAndBenefits)">
                         @GetRatingText(Model.CompensationAndBenefits)
                     </span>
@@ -124,33 +133,34 @@
                     </span>
                 </div>
                 <div class="rating-item">
-                    <span class="rating-label">Relationship With Manager</span>
+                    <span class="rating-label">Relationship with Your Manager</span>
                     <span class="rating-value rating-@((int)Model.RelationshipWithManagerRating)">
                         @GetRatingText(Model.RelationshipWithManagerRating)
                     </span>
                 </div>
                 <div class="rating-item">
-                    <span class="rating-label">Other Rating</span>
+                    <span class="rating-label">Other</span>
                     <span class="rating-value rating-@((int)(Model.OtherRating ?? Rating.MetExpectations))">
                         @GetRatingText(Model.OtherRating ?? Rating.MetExpectations)
                     </span>
                 </div>
             </div>
+
             @if (!string.IsNullOrEmpty(Model.OtherReasonDescription))
             {
                 <div class="content-box mt-3">
-                    <strong>Other Description:</strong>
+                    <strong>Other (Please Specify):</strong>
                     <p class="mt-1">@Model.OtherReasonDescription</p>
                 </div>
             }
         </div>
     </div>
 
-    <!-- Job Satisfaction Card -->
+    <!-- Section 2: Job Satisfaction & Role Clarity -->
     <div class="details-card">
         <div class="card-header-custom">
             <i class="fas fa-smile me-2"></i>
-            <span>Job Satisfaction & Role Clarity</span>
+            <span>2. Job Satisfaction & Role Clarity</span>
         </div>
         <div class="card-body-custom">
             <div class="info-grid-2col">
@@ -179,26 +189,29 @@
             @if (!string.IsNullOrEmpty(Model.JobSatisfactionComments))
             {
                 <div class="content-box mt-3">
-                    <strong>Comments:</strong>
+                    <strong>Additional Comments:</strong>
                     <p class="mt-1">@Model.JobSatisfactionComments</p>
                 </div>
             }
         </div>
     </div>
 
-    <!-- Management & Team Dynamics Card -->
+    <!-- Section 3: Feedback on Management & Team Dynamics -->
     <div class="details-card">
         <div class="card-header-custom">
             <i class="fas fa-users me-2"></i>
-            <span>Management & Team Dynamics</span>
+            <span>3. Feedback on Management & Team Dynamics</span>
         </div>
         <div class="card-body-custom">
-            <div class="content-box mb-3">
-                <strong>Relationship With Manager:</strong>
-                <p class="mt-1">@(string.IsNullOrEmpty(Model.RelationshipWithManagerDescription) ? "No information provided" : Model.RelationshipWithManagerDescription)</p>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Supported By Team & Leadership</span>
+            @if (!string.IsNullOrEmpty(Model.RelationshipWithManagerDescription))
+            {
+                <div class="content-box mb-3">
+                    <strong>How would you describe your relationship with your manager?</strong>
+                    <p class="mt-1">@Model.RelationshipWithManagerDescription</p>
+                </div>
+            }
+            <div class="info-item mb-3">
+                <span class="info-label">Supported by Team & Leadership</span>
                 <span class="info-value @(Model.SupportedByTeamAndLeadership == true ? "status-yes" : "status-no")">
                     <i class="fas @(Model.SupportedByTeamAndLeadership == true ? "fa-check-circle" : "fa-times-circle")"></i>
                     @(Model.SupportedByTeamAndLeadership == true ? "Yes" : "No")
@@ -206,23 +219,23 @@
             </div>
             @if (!string.IsNullOrEmpty(Model.CommunicationCollaborationSuggestions))
             {
-                <div class="content-box mt-3">
-                    <strong>Suggestions:</strong>
+                <div class="content-box">
+                    <strong>Suggestions for improving communication or collaboration:</strong>
                     <p class="mt-1">@Model.CommunicationCollaborationSuggestions</p>
                 </div>
             }
         </div>
     </div>
 
-    <!-- Compensation & Benefits Card -->
+    <!-- Section 4: Compensation & Benefits -->
     <div class="details-card">
         <div class="card-header-custom">
             <i class="fas fa-dollar-sign me-2"></i>
-            <span>Compensation & Benefits</span>
+            <span>4. Compensation & Benefits</span>
         </div>
         <div class="card-body-custom">
             <div class="info-item mb-3">
-                <span class="info-label">Satisfied With Salary & Benefits</span>
+                <span class="info-label">Satisfied with Salary & Benefits</span>
                 <span class="info-value @(Model.SatisfiedWithSalaryAndBenefits == true ? "status-yes" : "status-no")">
                     <i class="fas @(Model.SatisfiedWithSalaryAndBenefits == true ? "fa-check-circle" : "fa-times-circle")"></i>
                     @(Model.SatisfiedWithSalaryAndBenefits == true ? "Yes" : "No")
@@ -231,18 +244,18 @@
             @if (!string.IsNullOrEmpty(Model.CompensationMarketCompetitiveness))
             {
                 <div class="content-box">
-                    <strong>Market Competitiveness:</strong>
+                    <strong>How competitive do you believe our compensation is compared to the market?</strong>
                     <p class="mt-1">@Model.CompensationMarketCompetitiveness</p>
                 </div>
             }
         </div>
     </div>
 
-    <!-- Work Environment & Culture Card -->
+    <!-- Section 5: Work Environment & Culture -->
     <div class="details-card">
         <div class="card-header-custom">
             <i class="fas fa-building me-2"></i>
-            <span>Work Environment & Culture</span>
+            <span>5. Work Environment & Culture</span>
         </div>
         <div class="card-body-custom">
             <div class="info-item mb-3">
@@ -255,54 +268,54 @@
             @if (!string.IsNullOrEmpty(Model.MostLikedAboutCompany))
             {
                 <div class="content-box mb-3">
-                    <strong>Most Liked About Company:</strong>
+                    <strong>What did you like most about working here?</strong>
                     <p class="mt-1">@Model.MostLikedAboutCompany</p>
                 </div>
             }
             @if (!string.IsNullOrEmpty(Model.CultureImprovementSuggestions))
             {
                 <div class="content-box">
-                    <strong>Culture Improvement Suggestions:</strong>
+                    <strong>What could be improved about the company culture?</strong>
                     <p class="mt-1">@Model.CultureImprovementSuggestions</p>
                 </div>
             }
         </div>
     </div>
 
-    <!-- Suggestions Card -->
+    <!-- Section 6: Suggestions for Improvement -->
     <div class="details-card">
         <div class="card-header-custom">
             <i class="fas fa-lightbulb me-2"></i>
-            <span>Suggestions for Improvement</span>
+            <span>6. Suggestions for Improvement</span>
         </div>
         <div class="card-body-custom">
             @if (!string.IsNullOrEmpty(Model.EmployeeRetentionRecommendations))
             {
                 <div class="content-box mb-3">
-                    <strong>Employee Retention Recommendations:</strong>
+                    <strong>What changes would you recommend to enhance employee retention?</strong>
                     <p class="mt-1">@Model.EmployeeRetentionRecommendations</p>
                 </div>
             }
             @if (!string.IsNullOrEmpty(Model.ResignationPreventionSuggestions))
             {
                 <div class="content-box">
-                    <strong>Resignation Prevention Suggestions:</strong>
+                    <strong>Is there anything the company could have done to prevent your resignation?</strong>
                     <p class="mt-1">@Model.ResignationPreventionSuggestions</p>
                 </div>
             }
         </div>
     </div>
 
-    <!-- Future Engagement Card -->
+    <!-- Section 7: Future Engagement -->
     <div class="details-card">
         <div class="card-header-custom">
             <i class="fas fa-handshake me-2"></i>
-            <span>Future Engagement</span>
+            <span>7. Future Engagement</span>
         </div>
         <div class="card-body-custom">
             <div class="info-grid-2col">
                 <div class="info-item">
-                    <span class="info-label">Would Return To Company</span>
+                    <span class="info-label">Would Return to Company</span>
                     <span class="info-value @(Model.WouldReturnToCompany == true ? "status-yes" : "status-no")">
                         <i class="fas @(Model.WouldReturnToCompany == true ? "fa-check-circle" : "fa-times-circle")"></i>
                         @(Model.WouldReturnToCompany == true ? "Yes" : "No")
@@ -319,11 +332,11 @@
         </div>
     </div>
 
-    <!-- Work-Life Balance Card -->
+    <!-- Section 8: Work-Life Balance -->
     <div class="details-card">
         <div class="card-header-custom">
             <i class="fas fa-balance-scale me-2"></i>
-            <span>Work-Life Balance</span>
+            <span>8. Work-Life Balance</span>
         </div>
         <div class="card-body-custom">
             <div class="content-box">
@@ -332,13 +345,13 @@
         </div>
     </div>
 
-    <!-- Additional Comments Card -->
+    <!-- Section 9: Additional Comments -->
     @if (!string.IsNullOrEmpty(Model.AdditionalComments))
     {
         <div class="details-card">
             <div class="card-header-custom">
                 <i class="fas fa-comment-dots me-2"></i>
-                <span>Additional Comments</span>
+                <span>9. Additional Comments</span>
             </div>
             <div class="card-body-custom">
                 <div class="content-box">
@@ -348,7 +361,7 @@
         </div>
     }
 
-    <!-- Sign Off Card -->
+    <!-- Sign Off Section -->
     <div class="details-card">
         <div class="card-header-custom">
             <i class="fas fa-signature me-2"></i>
@@ -370,22 +383,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="action-buttons-container">
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-edit">
-            <i class="fas fa-pencil-alt"></i>
-            Edit Interview
-        </a>
-        <a asp-action="Index" class="btn-back-to-list">
-            <i class="fas fa-arrow-left"></i>
-            Back to List
-        </a>
-        <button type="button" class="btn-print" onclick="window.print()">
-            <i class="fas fa-print"></i>
-            Print Details
-        </button>
     </div>
 </div>
 
@@ -413,13 +410,14 @@
     }
 
     .page-container {
-        max-width: 1000px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0 1rem;
     }
 
     .page-header {
-        margin-bottom: 2rem;
+        margin-bottom: 1rem;
     }
 
     .btn-back {
@@ -449,6 +447,78 @@
         margin: 0;
     }
 
+    /* Top Action Buttons */
+    .action-buttons-top {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+
+    .btn-edit-top {
+        background: linear-gradient(100deg, var(--warning), #e6a017);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+    }
+
+        .btn-edit-top:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-back-top {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+    }
+
+        .btn-back-top:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+    .btn-print-top {
+        background: white;
+        color: var(--info);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--info);
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+        .btn-print-top:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+        }
+
     /* Details Cards */
     .details-card {
         background: white;
@@ -470,18 +540,14 @@
         gap: 0.5rem;
     }
 
-    .interview-id-badge {
-        margin-left: auto;
-        background: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 2rem;
-        font-size: 0.7rem;
-        color: var(--gray-500);
-        border: 1px solid var(--gray-200);
-    }
-
     .card-body-custom {
         padding: 1.5rem;
+    }
+
+    .section-description {
+        color: var(--gray-600);
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
     }
 
     /* Info Grids */
@@ -587,85 +653,6 @@
         color: var(--danger);
     }
 
-    /* Action Buttons */
-    .action-buttons-container {
-        display: flex;
-        gap: 1rem;
-        margin-top: 1rem;
-        flex-wrap: wrap;
-    }
-
-    .btn-edit {
-        background: linear-gradient(100deg, var(--warning), #e6a017);
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.75rem;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-        border: none;
-        cursor: pointer;
-        font-size: 0.875rem;
-        flex: 1;
-        justify-content: center;
-    }
-
-        .btn-edit:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-            color: white;
-            text-decoration: none;
-        }
-
-    .btn-back-to-list {
-        background: white;
-        color: var(--gray-600);
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.75rem;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-        border: 1px solid var(--gray-300);
-        font-size: 0.875rem;
-        flex: 1;
-        justify-content: center;
-    }
-
-        .btn-back-to-list:hover {
-            background: var(--gray-50);
-            color: var(--gray-700);
-            text-decoration: none;
-        }
-
-    .btn-print {
-        background: white;
-        color: var(--info);
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.75rem;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-        border: 1px solid var(--info);
-        font-size: 0.875rem;
-        cursor: pointer;
-        flex: 1;
-        justify-content: center;
-    }
-
-        .btn-print:hover {
-            background: var(--info);
-            color: white;
-            transform: translateY(-2px);
-        }
 
 </style>
 
