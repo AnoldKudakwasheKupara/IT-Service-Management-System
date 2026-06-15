@@ -1,0 +1,315 @@
+﻿@model IT_Service_Management_System.Models.EngagementStayInterview
+
+@{
+    ViewData["Title"] = "Stay Interview Details";
+}
+
+<div class="container">
+
+    ```
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <h2>Engagement Stay Interview</h2>
+
+        <div>
+            <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn btn-warning">
+                Edit
+            </a>
+
+            <a asp-action="Index"
+               class="btn btn-secondary">
+                Back
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Employee Information -->
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Employee Information
+        </div>
+
+        <div class="card-body row">
+
+            <div class="col-md-6 mb-3">
+                <label class="fw-bold">Name and Surname</label>
+                <div class="form-control bg-light">
+                    @Model.NameAndSurname
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="fw-bold">Job Title</label>
+                <div class="form-control bg-light">
+                    @Model.JobTitle
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="fw-bold">Department</label>
+                <div class="form-control bg-light">
+                    @Model.Department
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="fw-bold">Date Joined Axis</label>
+                <div class="form-control bg-light">
+                    @Model.DateJoinedAxis?.ToString("dd-MMM-yyyy")
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="fw-bold">Manager Name</label>
+                <div class="form-control bg-light">
+                    @Model.ManagerName
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="fw-bold">Start Date For Current Position</label>
+                <div class="form-control bg-light">
+                    @Model.CurrentPositionStartDate?.ToString("dd-MMM-yyyy")
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label class="fw-bold">Date Of Discussion</label>
+                <div class="form-control bg-light">
+                    @Model.DiscussionDate?.ToString("dd-MMM-yyyy")
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="alert alert-info">
+        The purpose of the conversation is to gain insight into what motivates or frustrates the employee,
+        understand what they value in Axis Solutions, and identify ways to improve support, development,
+        engagement, and retention.
+    </div>
+
+    <!-- Question 1 -->
+
+    <h4>1. Tell me a bit about some of your current priorities from a work perspective and how you are doing overall?</h4>
+
+    <div class="form-control bg-light mb-4"
+         style="min-height:120px; white-space:pre-wrap;">
+        @Model.CurrentPrioritiesAndOverallWellbeing
+    </div>
+
+    <!-- Question 2 -->
+
+    <h4>2. What parts of your work keep you motivated and engaged?</h4>
+
+    <div class="form-control bg-light mb-4"
+         style="min-height:120px; white-space:pre-wrap;">
+        @Model.MotivationAndEngagementFactors
+    </div>
+
+    <!-- Question 3 -->
+
+    <h4>3. What parts of your work or work environment reduces your energy, demotivates you or places obstacles to your ability to perform at your best?</h4>
+
+    <div class="form-control bg-light mb-4"
+         style="min-height:120px; white-space:pre-wrap;">
+        @Model.DemotivatingFactors
+    </div>
+
+    <!-- Question 4 -->
+
+    <h4>4. Do you feel that your skills are being fully utilized in your current role?</h4>
+
+    <div class="form-control bg-light mb-4"
+         style="min-height:120px; white-space:pre-wrap;">
+        @Model.SkillsUtilizationFeedback
+    </div>
+
+    <!-- Question 5 -->
+
+    <h4>5. Similarly, what in your view exists in the Company that?</h4>
+
+    <label class="fw-bold">Attracts people to stay:</label>
+
+    <div class="form-control bg-light mb-3"
+         style="min-height:100px; white-space:pre-wrap;">
+        @Model.ReasonsPeopleStay
+    </div>
+
+    <label class="fw-bold">Results in them wanting to leave:</label>
+
+    <div class="form-control bg-light mb-4"
+         style="min-height:100px; white-space:pre-wrap;">
+        @Model.ReasonsPeopleLeave
+    </div>
+
+    <!-- Question 6 -->
+
+    <h4>6. What aspects would you change about working for Axis Solutions?</h4>
+
+    <div class="form-control bg-light mb-4"
+         style="min-height:120px; white-space:pre-wrap;">
+        @Model.ChangesToWorkingAtAxis
+    </div>
+
+    <!-- Question 7 -->
+
+    <h4>7. What is your next career milestone or personal development milestone?</h4>
+
+    <div class="form-control bg-light mb-4"
+         style="min-height:120px; white-space:pre-wrap;">
+        @Model.NextCareerMilestone
+    </div>
+
+    <!-- Question 8 -->
+
+    <h4>8. Do you feel that you have sufficient support and/or opportunities to achieve your personal and/or career milestones at Axis Solutions?</h4>
+
+    <div class="mb-2">
+        <strong>Support Status:</strong>
+        @(Model.FeelsSupported == true ? "I do feel supported" : "I don't feel sufficiently supported")
+    </div>
+
+    <div class="mb-4">
+        <strong>Development Plan:</strong>
+        @(Model.HasDevelopmentPlan == true ? "Yes" : "No")
+    </div>
+
+    <!-- Question 9 -->
+
+    <h4>9. What ideas would you love to see implemented in Axis Solutions in order for it to improve as an employer or make you stay employed and engaged with Axis Solutions?</h4>
+
+    <div class="form-control bg-light mb-4"
+         style="min-height:150px; white-space:pre-wrap;">
+        @Model.ImprovementIdeas
+    </div>
+
+    <!-- Overall Status -->
+
+    <h4>Overall, I am:</h4>
+
+    <div class="form-control bg-light mb-4">
+        @Model.OverallStatus
+    </div>
+
+    <!-- Rating Matrix -->
+
+    <h4>Current Rating Assessment</h4>
+
+    <table class="table table-bordered">
+
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Rating</th>
+                <th>Comment</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            <tr>
+                <td>My Wellbeing at Axis Solutions</td>
+                <td>@Model.WellbeingRating</td>
+                <td>@Model.WellbeingComment</td>
+            </tr>
+
+            <tr>
+                <td>Job Satisfaction Levels</td>
+                <td>@Model.JobSatisfactionRating</td>
+                <td>@Model.JobSatisfactionComment</td>
+            </tr>
+
+            <tr>
+                <td>Career Opportunities</td>
+                <td>@Model.CareerOpportunitiesRating</td>
+                <td>@Model.CareerOpportunitiesComment</td>
+            </tr>
+
+            <tr>
+                <td>Quality of Leadership</td>
+                <td>@Model.LeadershipQualityRating</td>
+                <td>@Model.LeadershipQualityComment</td>
+            </tr>
+
+            <tr>
+                <td>Relationship with my Manager</td>
+                <td>@Model.ManagerRelationshipRating</td>
+                <td>@Model.ManagerRelationshipComment</td>
+            </tr>
+
+            <tr>
+                <td>Relationship with Peers / Team</td>
+                <td>@Model.TeamRelationshipRating</td>
+                <td>@Model.TeamRelationshipComment</td>
+            </tr>
+
+            <tr>
+                <td>BSC System</td>
+                <td>@Model.BSCSystemRating</td>
+                <td>@Model.BSCSystemComment</td>
+            </tr>
+
+            <tr>
+                <td>Reward for Performance</td>
+                <td>@Model.RewardForPerformanceRating</td>
+                <td>@Model.RewardForPerformanceComment</td>
+            </tr>
+
+            <tr>
+                <td>Communication Channels</td>
+                <td>@Model.CommunicationChannelsRating</td>
+                <td>@Model.CommunicationChannelsComment</td>
+            </tr>
+
+            <tr>
+                <td>Opportunities to Develop</td>
+                <td>@Model.DevelopmentOpportunitiesRating</td>
+                <td>@Model.DevelopmentOpportunitiesComment</td>
+            </tr>
+
+            <tr>
+                <td>Pay and Benefits</td>
+                <td>@Model.PayAndBenefitsRating</td>
+                <td>@Model.PayAndBenefitsComment</td>
+            </tr>
+
+            <tr>
+                <td>Working Conditions</td>
+                <td>@Model.WorkingConditionsRating</td>
+                <td>@Model.WorkingConditionsComment</td>
+            </tr>
+
+            <tr>
+                <td>The Organization in General</td>
+                <td>@Model.OrganizationGeneralRating</td>
+                <td>@Model.OrganizationGeneralComment</td>
+            </tr>
+
+            <tr>
+                <td>Other</td>
+                <td>@Model.OtherRating</td>
+                <td>@Model.OtherComment</td>
+            </tr>
+
+        </tbody>
+
+    </table>
+
+    <!-- Interviewer Comments -->
+
+    <h4>Interviewer Overall Comments From Discussion</h4>
+
+    <div class="form-control bg-light mb-5"
+         style="min-height:150px; white-space:pre-wrap;">
+        @Model.InterviewerOverallComments
+    </div>
+    ```
+
+</div>

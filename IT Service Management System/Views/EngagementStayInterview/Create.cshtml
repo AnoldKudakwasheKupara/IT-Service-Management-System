@@ -1,0 +1,442 @@
+﻿@model IT_Service_Management_System.Models.EngagementStayInterview
+
+@{
+    ViewData["Title"] = "Create Engagement Stay Interview";
+}
+
+<div class="container">
+
+    ```
+    <h2 class="mb-4">Engagement Stay Interview</h2>
+
+    <form asp-action="Create" method="post">
+
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <!-- Employee Information -->
+
+        <div class="card mb-4">
+
+            <div class="card-header">
+                Employee Information
+            </div>
+
+            <div class="card-body row">
+
+                <div class="col-md-6 mb-3">
+                    <label>Name and Surname</label>
+                    <input asp-for="NameAndSurname" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Job Title</label>
+                    <input asp-for="JobTitle" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Department / Section</label>
+                    <input asp-for="Department" class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Date Joined Axis</label>
+                    <input asp-for="DateJoinedAxis"
+                           type="date"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Manager Name</label>
+                    <input asp-for="ManagerName"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Start Date For Current Position</label>
+                    <input asp-for="CurrentPositionStartDate"
+                           type="date"
+                           class="form-control" />
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label>Date of Discussion</label>
+                    <input asp-for="DiscussionDate"
+                           type="date"
+                           class="form-control" />
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="alert alert-info">
+
+            The purpose of the conversation is to gain insight into what motivates
+            or frustrates you as an employee, understand what you value in Axis
+            Solutions and discover how we can improve support, development,
+            engagement and retention.
+
+        </div>
+
+        <!-- Question 1 -->
+
+        <h4>
+            1. Tell me a bit about some of your current priorities from a work
+            perspective and how you are doing overall?
+        </h4>
+
+        <textarea asp-for="CurrentPrioritiesAndOverallWellbeing"
+                  class="form-control mb-4"
+                  rows="5"></textarea>
+
+        <!-- Question 2 -->
+
+        <h4>
+            2. What parts of your work keep you motivated and engaged?
+        </h4>
+
+        <textarea asp-for="MotivationAndEngagementFactors"
+                  class="form-control mb-4"
+                  rows="5"></textarea>
+
+        <!-- Question 3 -->
+
+        <h4>
+            3. What parts of your work or work environment reduces your energy,
+            demotivates you or places obstacles to your ability to perform at
+            your best?
+        </h4>
+
+        <textarea asp-for="DemotivatingFactors"
+                  class="form-control mb-4"
+                  rows="5"></textarea>
+
+        <!-- Question 4 -->
+
+        <h4>
+            4. Do you feel that your skills are being fully utilized in your
+            current role?
+        </h4>
+
+        <textarea asp-for="SkillsUtilizationFeedback"
+                  class="form-control mb-4"
+                  rows="5"></textarea>
+
+        <!-- Question 5 -->
+
+        <h4>
+            5. Similarly, what in your view exists in the Company that?
+        </h4>
+
+        <label class="fw-bold">
+            Attracts people to stay:
+        </label>
+
+        <textarea asp-for="ReasonsPeopleStay"
+                  class="form-control mb-3"
+                  rows="4"></textarea>
+
+        <label class="fw-bold">
+            Results in them wanting to leave:
+        </label>
+
+        <textarea asp-for="ReasonsPeopleLeave"
+                  class="form-control mb-4"
+                  rows="4"></textarea>
+
+        <!-- Question 6 -->
+
+        <h4>
+            6. What aspects would you change about working for Axis Solutions?
+        </h4>
+
+        <textarea asp-for="ChangesToWorkingAtAxis"
+                  class="form-control mb-4"
+                  rows="5"></textarea>
+
+        <!-- Question 7 -->
+
+        <h4>
+            7. What is your next career milestone or personal development milestone?
+        </h4>
+
+        <textarea asp-for="NextCareerMilestone"
+                  class="form-control mb-4"
+                  rows="5"></textarea>
+
+        <!-- Question 8 -->
+
+        <h4>
+            8. Do you feel that you have sufficient support and/or opportunities
+            to achieve your personal and/or career milestones at Axis Solutions?
+        </h4>
+
+        <div class="mb-3">
+
+            <label class="fw-bold">
+                Support Status
+            </label>
+
+            <div>
+
+                <input type="radio"
+                       asp-for="FeelsSupported"
+                       value="true" />
+                I do feel supported
+
+                <br />
+
+                <input type="radio"
+                       asp-for="FeelsSupported"
+                       value="false" />
+                I don't feel sufficiently supported
+
+            </div>
+
+        </div>
+
+        <div class="mb-4">
+
+            <label class="fw-bold">
+                I have a Development Plan
+            </label>
+
+            <div>
+
+                <input type="radio"
+                       asp-for="HasDevelopmentPlan"
+                       value="true" />
+                Yes
+
+                <input type="radio"
+                       asp-for="HasDevelopmentPlan"
+                       value="false"
+                       class="ms-3" />
+                No
+
+            </div>
+
+        </div>
+
+        <!-- Question 9 -->
+
+        <h4>
+            9. What ideas would you love to see implemented in Axis Solutions
+            in order for it to improve as an employer or make you stay employed
+            and engaged with Axis Solutions?
+        </h4>
+
+        <textarea asp-for="ImprovementIdeas"
+                  class="form-control mb-4"
+                  rows="6"></textarea>
+
+        <!-- Overall Status -->
+
+        <h4>
+            Overall, I am:
+        </h4>
+
+        <div class="mb-4">
+
+            <div>
+                <input type="radio"
+                       asp-for="OverallStatus"
+                       value="1" />
+                Considering opportunities outside Axis
+            </div>
+
+            <div>
+                <input type="radio"
+                       asp-for="OverallStatus"
+                       value="2" />
+                Dissatisfied with working at Axis Solutions
+            </div>
+
+            <div>
+                <input type="radio"
+                       asp-for="OverallStatus"
+                       value="3" />
+                Satisfied with working for Axis Solutions
+            </div>
+
+            <div>
+                <input type="radio"
+                       asp-for="OverallStatus"
+                       value="4" />
+                Highly motivated and engaged
+            </div>
+
+        </div>
+
+        <!-- Rating Matrix -->
+
+        <h4>
+            Currently how would you rate the following:
+        </h4>
+
+        <table class="table table-bordered">
+
+            <thead>
+
+                <tr>
+                    <th>Aspect</th>
+                    <th>Not Meeting Expectations</th>
+                    <th>Needs Improvement</th>
+                    <th>Meeting My Expectations</th>
+                    <th>Comment</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td>My Wellbeing at Axis Solutions</td>
+                    <td><input type="radio" asp-for="WellbeingRating" value="1" /></td>
+                    <td><input type="radio" asp-for="WellbeingRating" value="2" /></td>
+                    <td><input type="radio" asp-for="WellbeingRating" value="3" /></td>
+                    <td><input asp-for="WellbeingComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>Job Satisfaction Levels</td>
+                    <td><input type="radio" asp-for="JobSatisfactionRating" value="1" /></td>
+                    <td><input type="radio" asp-for="JobSatisfactionRating" value="2" /></td>
+                    <td><input type="radio" asp-for="JobSatisfactionRating" value="3" /></td>
+                    <td><input asp-for="JobSatisfactionComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>Career Opportunities</td>
+                    <td><input type="radio" asp-for="CareerOpportunitiesRating" value="1" /></td>
+                    <td><input type="radio" asp-for="CareerOpportunitiesRating" value="2" /></td>
+                    <td><input type="radio" asp-for="CareerOpportunitiesRating" value="3" /></td>
+                    <td><input asp-for="CareerOpportunitiesComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>Quality of Leadership</td>
+                    <td><input type="radio" asp-for="LeadershipQualityRating" value="1" /></td>
+                    <td><input type="radio" asp-for="LeadershipQualityRating" value="2" /></td>
+                    <td><input type="radio" asp-for="LeadershipQualityRating" value="3" /></td>
+                    <td><input asp-for="LeadershipQualityComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>Relationship with my Manager</td>
+                    <td><input type="radio" asp-for="ManagerRelationshipRating" value="1" /></td>
+                    <td><input type="radio" asp-for="ManagerRelationshipRating" value="2" /></td>
+                    <td><input type="radio" asp-for="ManagerRelationshipRating" value="3" /></td>
+                    <td><input asp-for="ManagerRelationshipComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>Relationship with Peers / Team</td>
+                    <td><input type="radio" asp-for="TeamRelationshipRating" value="1" /></td>
+                    <td><input type="radio" asp-for="TeamRelationshipRating" value="2" /></td>
+                    <td><input type="radio" asp-for="TeamRelationshipRating" value="3" /></td>
+                    <td><input asp-for="TeamRelationshipComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>BSC System</td>
+                    <td><input type="radio" asp-for="BSCSystemRating" value="1" /></td>
+                    <td><input type="radio" asp-for="BSCSystemRating" value="2" /></td>
+                    <td><input type="radio" asp-for="BSCSystemRating" value="3" /></td>
+                    <td><input asp-for="BSCSystemComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>Reward for Performance</td>
+                    <td><input type="radio" asp-for="RewardForPerformanceRating" value="1" /></td>
+                    <td><input type="radio" asp-for="RewardForPerformanceRating" value="2" /></td>
+                    <td><input type="radio" asp-for="RewardForPerformanceRating" value="3" /></td>
+                    <td><input asp-for="RewardForPerformanceComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>Communication Channels</td>
+                    <td><input type="radio" asp-for="CommunicationChannelsRating" value="1" /></td>
+                    <td><input type="radio" asp-for="CommunicationChannelsRating" value="2" /></td>
+                    <td><input type="radio" asp-for="CommunicationChannelsRating" value="3" /></td>
+                    <td><input asp-for="CommunicationChannelsComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>Opportunities to Develop</td>
+                    <td><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="1" /></td>
+                    <td><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="2" /></td>
+                    <td><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="3" /></td>
+                    <td><input asp-for="DevelopmentOpportunitiesComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>Pay and Benefits</td>
+                    <td><input type="radio" asp-for="PayAndBenefitsRating" value="1" /></td>
+                    <td><input type="radio" asp-for="PayAndBenefitsRating" value="2" /></td>
+                    <td><input type="radio" asp-for="PayAndBenefitsRating" value="3" /></td>
+                    <td><input asp-for="PayAndBenefitsComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>Working Conditions</td>
+                    <td><input type="radio" asp-for="WorkingConditionsRating" value="1" /></td>
+                    <td><input type="radio" asp-for="WorkingConditionsRating" value="2" /></td>
+                    <td><input type="radio" asp-for="WorkingConditionsRating" value="3" /></td>
+                    <td><input asp-for="WorkingConditionsComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>The Organization in General</td>
+                    <td><input type="radio" asp-for="OrganizationGeneralRating" value="1" /></td>
+                    <td><input type="radio" asp-for="OrganizationGeneralRating" value="2" /></td>
+                    <td><input type="radio" asp-for="OrganizationGeneralRating" value="3" /></td>
+                    <td><input asp-for="OrganizationGeneralComment" class="form-control" /></td>
+                </tr>
+
+                <tr>
+                    <td>Other</td>
+                    <td><input type="radio" asp-for="OtherRating" value="1" /></td>
+                    <td><input type="radio" asp-for="OtherRating" value="2" /></td>
+                    <td><input type="radio" asp-for="OtherRating" value="3" /></td>
+                    <td><input asp-for="OtherComment" class="form-control" /></td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+        <!-- Interviewer Comments -->
+
+        <h4>
+            Interviewer Overall Comments from Discussion
+        </h4>
+
+        <textarea asp-for="InterviewerOverallComments"
+                  class="form-control mb-4"
+                  rows="6"></textarea>
+
+        <div class="mt-4 mb-5">
+
+            <button type="submit"
+                    class="btn btn-success">
+                Save Stay Interview
+            </button>
+
+            <a asp-action="Index"
+               class="btn btn-secondary">
+                Cancel
+            </a>
+
+        </div>
+
+    </form>
+    ```
+
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

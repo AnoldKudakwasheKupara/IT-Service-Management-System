@@ -1,0 +1,181 @@
+﻿@model IEnumerable<IT_Service_Management_System.Models.EngagementStayInterview>
+
+@{
+    ViewData["Title"] = "Engagement Stay Interviews";
+}
+
+<div class="container-fluid">
+
+    ```
+    <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <h2>
+            Engagement Stay Interviews
+        </h2>
+
+        <a asp-action="Create"
+           class="btn btn-primary">
+            <i class="fas fa-plus"></i>
+            New Stay Interview
+        </a>
+
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+
+            @TempData["Success"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert">
+            </button>
+
+        </div>
+    }
+
+    <div class="card">
+
+        <div class="card-body">
+
+            <table class="table table-bordered table-striped table-hover">
+
+                <thead class="table-dark">
+
+                    <tr>
+
+                        <th>Name & Surname</th>
+
+                        <th>Job Title</th>
+
+                        <th>Department</th>
+
+                        <th>Manager</th>
+
+                        <th>Discussion Date</th>
+
+                        <th>Overall Status</th>
+
+                        <th width="250">
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @if (Model.Any())
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    @item.NameAndSurname
+                                </td>
+
+                                <td>
+                                    @item.JobTitle
+                                </td>
+
+                                <td>
+                                    @item.Department
+                                </td>
+
+                                <td>
+                                    @item.ManagerName
+                                </td>
+
+                                <td>
+                                    @item.DiscussionDate?.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+
+                                    @switch (item.OverallStatus)
+                                    {
+                                        case IT_Service_Management_System.Models.EngagementStatus.ConsideringOpportunitiesOutsideAxis:
+                                            <span class="badge bg-warning text-dark">
+                                                Considering Opportunities
+                                            </span>
+                                            break;
+
+                                        case IT_Service_Management_System.Models.EngagementStatus.DissatisfiedWithWorkingAtAxis:
+                                            <span class="badge bg-danger">
+                                                Dissatisfied
+                                            </span>
+                                            break;
+
+                                        case IT_Service_Management_System.Models.EngagementStatus.SatisfiedWithWorkingAtAxis:
+                                            <span class="badge bg-success">
+                                                Satisfied
+                                            </span>
+                                            break;
+
+                                        case IT_Service_Management_System.Models.EngagementStatus.HighlyMotivatedAndEngaged:
+                                            <span class="badge bg-primary">
+                                                Highly Engaged
+                                            </span>
+                                            break;
+
+                                        default:
+                                            <span class="badge bg-secondary">
+                                                Not Set
+                                            </span>
+                                            break;
+                                    }
+
+                                </td>
+
+                                <td>
+
+                                    <a asp-action="Details"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-info btn-sm">
+                                        Details
+                                    </a>
+
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-warning btn-sm">
+                                        Edit
+                                    </a>
+
+                                    <a asp-action="Delete"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-danger btn-sm">
+                                        Delete
+                                    </a>
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+
+                            <td colspan="7"
+                                class="text-center">
+
+                                No Stay Interviews Found
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+    ```
+
+</div>
