@@ -38,6 +38,7 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<HodApproval> HodApprovals { get; set; }
         public DbSet<HrApproval> HrApprovals { get; set; }
         public DbSet<ExitInterview> ExitInterviews { get; set; }
+        public DbSet<EngagementStayInterview> EngagementStayInterviews { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
