@@ -1,440 +1,834 @@
 ﻿@model IT_Service_Management_System.Models.EngagementStayInterview
 
 @{
-    ViewData["Title"] = "Create Engagement Stay Interview";
+    ViewData["Title"] = "Edit Engagement Stay Interview - Axis IT Helpdesk";
 }
 
-<div class="container">
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-edit me-2" style="color: var(--warning);"></i>
+                    Edit Engagement Stay Interview
+                </h1>
+                <p class="text-muted mt-2">Update employee engagement interview details</p>
+            </div>
+        </div>
+    </div>
 
-    ```
-    <h2 class="mb-4">Edit Engagement Stay Interview</h2>
-
-    <form asp-action="Edit" method="post">
+    <form asp-action="Edit" method="post" id="stayInterviewForm">
+        @Html.AntiForgeryToken()
         <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-        <!-- Employee Information -->
-
-        <div class="card mb-4">
-
-            <div class="card-header">
-                Employee Information
+        <!-- Employee Information Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-user-circle"></i>
+                <h3>Employee Information</h3>
             </div>
+            <div class="section-body">
+                <div class="form-row-grid">
+                    <div class="form-group-modern">
+                        <label asp-for="NameAndSurname" class="form-label">
+                            <i class="fas fa-user"></i> Name and Surname
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-user input-icon"></i>
+                            <input asp-for="NameAndSurname" class="form-control-modern" placeholder="Enter employee name" />
+                        </div>
+                        <span asp-validation-for="NameAndSurname" class="validation-message text-danger"></span>
+                    </div>
 
-            <div class="card-body row">
+                    <div class="form-group-modern">
+                        <label asp-for="JobTitle" class="form-label">
+                            <i class="fas fa-briefcase"></i> Job Title
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-briefcase input-icon"></i>
+                            <input asp-for="JobTitle" class="form-control-modern" placeholder="Enter job title" />
+                        </div>
+                        <span asp-validation-for="JobTitle" class="validation-message text-danger"></span>
+                    </div>
 
-                <div class="col-md-6 mb-3">
-                    <label>Name and Surname</label>
-                    <input asp-for="NameAndSurname" class="form-control" />
+                    <div class="form-group-modern">
+                        <label asp-for="Department" class="form-label">
+                            <i class="fas fa-building"></i> Department / Section
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-building input-icon"></i>
+                            <input asp-for="Department" class="form-control-modern" placeholder="Enter department" />
+                        </div>
+                        <span asp-validation-for="Department" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="DateJoinedAxis" class="form-label">
+                            <i class="fas fa-calendar-alt"></i> Date Joined Axis
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-calendar-alt input-icon"></i>
+                            <input asp-for="DateJoinedAxis" type="date" class="form-control-modern" />
+                        </div>
+                        <span asp-validation-for="DateJoinedAxis" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="ManagerName" class="form-label">
+                            <i class="fas fa-user-tie"></i> Manager Name
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-user-tie input-icon"></i>
+                            <input asp-for="ManagerName" class="form-control-modern" placeholder="Enter manager name" />
+                        </div>
+                        <span asp-validation-for="ManagerName" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="CurrentPositionStartDate" class="form-label">
+                            <i class="fas fa-calendar-check"></i> Start Date For Current Position
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-calendar-check input-icon"></i>
+                            <input asp-for="CurrentPositionStartDate" type="date" class="form-control-modern" />
+                        </div>
+                        <span asp-validation-for="CurrentPositionStartDate" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="DiscussionDate" class="form-label">
+                            <i class="fas fa-calendar-week"></i> Date of Discussion
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-calendar-week input-icon"></i>
+                            <input asp-for="DiscussionDate" type="date" class="form-control-modern" />
+                        </div>
+                        <span asp-validation-for="DiscussionDate" class="validation-message text-danger"></span>
+                    </div>
                 </div>
-
-                <div class="col-md-6 mb-3">
-                    <label>Job Title</label>
-                    <input asp-for="JobTitle" class="form-control" />
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label>Department / Section</label>
-                    <input asp-for="Department" class="form-control" />
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label>Date Joined Axis</label>
-                    <input asp-for="DateJoinedAxis"
-                           type="date"
-                           class="form-control" />
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label>Manager Name</label>
-                    <input asp-for="ManagerName"
-                           class="form-control" />
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label>Start Date For Current Position</label>
-                    <input asp-for="CurrentPositionStartDate"
-                           type="date"
-                           class="form-control" />
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label>Date of Discussion</label>
-                    <input asp-for="DiscussionDate"
-                           type="date"
-                           class="form-control" />
-                </div>
-
             </div>
-
         </div>
 
-        <div class="alert alert-info">
-
-            The purpose of the conversation is to gain insight into what motivates
-            or frustrates you as an employee, understand what you value in Axis
-            Solutions and discover how we can improve support, development,
-            engagement and retention.
-
+        <!-- Purpose Alert -->
+        <div class="info-alert">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <strong>Purpose of this conversation:</strong> To gain insight into what motivates or frustrates you as an employee, understand what you value in Axis Solutions and discover how we can improve support, development, engagement and retention.
+            </div>
         </div>
 
         <!-- Question 1 -->
-
-        <h4>
-            1. Tell me a bit about some of your current priorities from a work
-            perspective and how you are doing overall?
-        </h4>
-
-        <textarea asp-for="CurrentPrioritiesAndOverallWellbeing"
-                  class="form-control mb-4"
-                  rows="5"></textarea>
-
-        <!-- Question 2 -->
-
-        <h4>
-            2. What parts of your work keep you motivated and engaged?
-        </h4>
-
-        <textarea asp-for="MotivationAndEngagementFactors"
-                  class="form-control mb-4"
-                  rows="5"></textarea>
-
-        <!-- Question 3 -->
-
-        <h4>
-            3. What parts of your work or work environment reduces your energy,
-            demotivates you or places obstacles to your ability to perform at
-            your best?
-        </h4>
-
-        <textarea asp-for="DemotivatingFactors"
-                  class="form-control mb-4"
-                  rows="5"></textarea>
-
-        <!-- Question 4 -->
-
-        <h4>
-            4. Do you feel that your skills are being fully utilized in your
-            current role?
-        </h4>
-
-        <textarea asp-for="SkillsUtilizationFeedback"
-                  class="form-control mb-4"
-                  rows="5"></textarea>
-
-        <!-- Question 5 -->
-
-        <h4>
-            5. Similarly, what in your view exists in the Company that?
-        </h4>
-
-        <label class="fw-bold">
-            Attracts people to stay:
-        </label>
-
-        <textarea asp-for="ReasonsPeopleStay"
-                  class="form-control mb-3"
-                  rows="4"></textarea>
-
-        <label class="fw-bold">
-            Results in them wanting to leave:
-        </label>
-
-        <textarea asp-for="ReasonsPeopleLeave"
-                  class="form-control mb-4"
-                  rows="4"></textarea>
-
-        <!-- Question 6 -->
-
-        <h4>
-            6. What aspects would you change about working for Axis Solutions?
-        </h4>
-
-        <textarea asp-for="ChangesToWorkingAtAxis"
-                  class="form-control mb-4"
-                  rows="5"></textarea>
-
-        <!-- Question 7 -->
-
-        <h4>
-            7. What is your next career milestone or personal development milestone?
-        </h4>
-
-        <textarea asp-for="NextCareerMilestone"
-                  class="form-control mb-4"
-                  rows="5"></textarea>
-
-        <!-- Question 8 -->
-
-        <h4>
-            8. Do you feel that you have sufficient support and/or opportunities
-            to achieve your personal and/or career milestones at Axis Solutions?
-        </h4>
-
-        <div class="mb-3">
-
-            <label class="fw-bold">
-                Support Status
-            </label>
-
-            <div>
-
-                <input type="radio"
-                       asp-for="FeelsSupported"
-                       value="true" />
-                I do feel supported
-
-                <br />
-
-                <input type="radio"
-                       asp-for="FeelsSupported"
-                       value="false" />
-                I don't feel sufficiently supported
-
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-question-circle"></i>
+                <h3>1. Tell me a bit about some of your current priorities from a work perspective and how you are doing overall?</h3>
             </div>
-
+            <div class="section-body">
+                <div class="textarea-wrapper">
+                    <i class="fas fa-comment textarea-icon"></i>
+                    <textarea asp-for="CurrentPrioritiesAndOverallWellbeing" class="form-control-textarea" rows="5" placeholder="Describe your current priorities and overall wellbeing..."></textarea>
+                </div>
+                <span asp-validation-for="CurrentPrioritiesAndOverallWellbeing" class="validation-message text-danger"></span>
+            </div>
         </div>
 
-        <div class="mb-4">
-
-            <label class="fw-bold">
-                I have a Development Plan
-            </label>
-
-            <div>
-
-                <input type="radio"
-                       asp-for="HasDevelopmentPlan"
-                       value="true" />
-                Yes
-
-                <input type="radio"
-                       asp-for="HasDevelopmentPlan"
-                       value="false"
-                       class="ms-3" />
-                No
-
+        <!-- Question 2 -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-rocket"></i>
+                <h3>2. What parts of your work keep you motivated and engaged?</h3>
             </div>
+            <div class="section-body">
+                <div class="textarea-wrapper">
+                    <i class="fas fa-comment textarea-icon"></i>
+                    <textarea asp-for="MotivationAndEngagementFactors" class="form-control-textarea" rows="5" placeholder="What keeps you motivated and engaged?..."></textarea>
+                </div>
+                <span asp-validation-for="MotivationAndEngagementFactors" class="validation-message text-danger"></span>
+            </div>
+        </div>
 
+        <!-- Question 3 -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-frown"></i>
+                <h3>3. What parts of your work or work environment reduces your energy, demotivates you or places obstacles to your ability to perform at your best?</h3>
+            </div>
+            <div class="section-body">
+                <div class="textarea-wrapper">
+                    <i class="fas fa-comment textarea-icon"></i>
+                    <textarea asp-for="DemotivatingFactors" class="form-control-textarea" rows="5" placeholder="What demotivates you or creates obstacles?..."></textarea>
+                </div>
+                <span asp-validation-for="DemotivatingFactors" class="validation-message text-danger"></span>
+            </div>
+        </div>
+
+        <!-- Question 4 -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-chart-line"></i>
+                <h3>4. Do you feel that your skills are being fully utilized in your current role?</h3>
+            </div>
+            <div class="section-body">
+                <div class="textarea-wrapper">
+                    <i class="fas fa-comment textarea-icon"></i>
+                    <textarea asp-for="SkillsUtilizationFeedback" class="form-control-textarea" rows="5" placeholder="Are your skills being fully utilized?..."></textarea>
+                </div>
+                <span asp-validation-for="SkillsUtilizationFeedback" class="validation-message text-danger"></span>
+            </div>
+        </div>
+
+        <!-- Question 5 -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-balance-scale"></i>
+                <h3>5. Similarly, what in your view exists in the Company that?</h3>
+            </div>
+            <div class="section-body">
+                <div class="form-group-modern mb-3">
+                    <label class="form-label">Attracts people to stay:</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-heart textarea-icon"></i>
+                        <textarea asp-for="ReasonsPeopleStay" class="form-control-textarea" rows="4" placeholder="What attracts people to stay?..."></textarea>
+                    </div>
+                </div>
+                <div class="form-group-modern">
+                    <label class="form-label">Results in them wanting to leave:</label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-door-open textarea-icon"></i>
+                        <textarea asp-for="ReasonsPeopleLeave" class="form-control-textarea" rows="4" placeholder="What makes people want to leave?..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 6 -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-lightbulb"></i>
+                <h3>6. What aspects would you change about working for Axis Solutions?</h3>
+            </div>
+            <div class="section-body">
+                <div class="textarea-wrapper">
+                    <i class="fas fa-comment textarea-icon"></i>
+                    <textarea asp-for="ChangesToWorkingAtAxis" class="form-control-textarea" rows="5" placeholder="What would you change?..."></textarea>
+                </div>
+                <span asp-validation-for="ChangesToWorkingAtAxis" class="validation-message text-danger"></span>
+            </div>
+        </div>
+
+        <!-- Question 7 -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-flag-checkered"></i>
+                <h3>7. What is your next career milestone or personal development milestone?</h3>
+            </div>
+            <div class="section-body">
+                <div class="textarea-wrapper">
+                    <i class="fas fa-comment textarea-icon"></i>
+                    <textarea asp-for="NextCareerMilestone" class="form-control-textarea" rows="5" placeholder="What is your next career milestone?..."></textarea>
+                </div>
+                <span asp-validation-for="NextCareerMilestone" class="validation-message text-danger"></span>
+            </div>
+        </div>
+
+        <!-- Question 8 -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-handshake"></i>
+                <h3>8. Do you feel that you have sufficient support and/or opportunities to achieve your personal and/or career milestones at Axis Solutions?</h3>
+            </div>
+            <div class="section-body">
+                <div class="radio-group">
+                    <label class="radio-question">Support Status</label>
+                    <div class="radio-options">
+                        <label class="radio-label-inline"><input type="radio" asp-for="FeelsSupported" value="true" /><span>I do feel supported</span></label>
+                        <label class="radio-label-inline"><input type="radio" asp-for="FeelsSupported" value="false" /><span>I don't feel sufficiently supported</span></label>
+                    </div>
+                </div>
+                <div class="radio-group">
+                    <label class="radio-question">I have a Development Plan</label>
+                    <div class="radio-options">
+                        <label class="radio-label-inline"><input type="radio" asp-for="HasDevelopmentPlan" value="true" /><span>Yes</span></label>
+                        <label class="radio-label-inline"><input type="radio" asp-for="HasDevelopmentPlan" value="false" /><span>No</span></label>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Question 9 -->
-
-        <h4>
-            9. What ideas would you love to see implemented in Axis Solutions
-            in order for it to improve as an employer or make you stay employed
-            and engaged with Axis Solutions?
-        </h4>
-
-        <textarea asp-for="ImprovementIdeas"
-                  class="form-control mb-4"
-                  rows="6"></textarea>
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-lightbulb"></i>
+                <h3>9. What ideas would you love to see implemented in Axis Solutions in order for it to improve as an employer or make you stay employed and engaged with Axis Solutions?</h3>
+            </div>
+            <div class="section-body">
+                <div class="textarea-wrapper">
+                    <i class="fas fa-comment textarea-icon"></i>
+                    <textarea asp-for="ImprovementIdeas" class="form-control-textarea" rows="6" placeholder="Your improvement ideas..."></textarea>
+                </div>
+                <span asp-validation-for="ImprovementIdeas" class="validation-message text-danger"></span>
+            </div>
+        </div>
 
         <!-- Overall Status -->
-
-        <h4>
-            Overall, I am:
-        </h4>
-
-        <div class="mb-4">
-
-            <div>
-                <input type="radio"
-                       asp-for="OverallStatus"
-                       value="1" />
-                Considering opportunities outside Axis
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-chart-line"></i>
+                <h3>Overall, I am:</h3>
             </div>
-
-            <div>
-                <input type="radio"
-                       asp-for="OverallStatus"
-                       value="2" />
-                Dissatisfied with working at Axis Solutions
+            <div class="section-body">
+                <div class="radio-group-vertical">
+                    <label class="radio-label-vertical">
+                        <input type="radio" asp-for="OverallStatus" value="1" />
+                        <span>Considering opportunities outside Axis</span>
+                    </label>
+                    <label class="radio-label-vertical">
+                        <input type="radio" asp-for="OverallStatus" value="2" />
+                        <span>Dissatisfied with working at Axis Solutions</span>
+                    </label>
+                    <label class="radio-label-vertical">
+                        <input type="radio" asp-for="OverallStatus" value="3" />
+                        <span>Satisfied with working for Axis Solutions</span>
+                    </label>
+                    <label class="radio-label-vertical">
+                        <input type="radio" asp-for="OverallStatus" value="4" />
+                        <span>Highly motivated and engaged</span>
+                    </label>
+                </div>
+                <span asp-validation-for="OverallStatus" class="validation-message text-danger"></span>
             </div>
-
-            <div>
-                <input type="radio"
-                       asp-for="OverallStatus"
-                       value="3" />
-                Satisfied with working for Axis Solutions
-            </div>
-
-            <div>
-                <input type="radio"
-                       asp-for="OverallStatus"
-                       value="4" />
-                Highly motivated and engaged
-            </div>
-
         </div>
 
         <!-- Rating Matrix -->
-
-        <h4>
-            Currently how would you rate the following:
-        </h4>
-
-        <table class="table table-bordered">
-
-            <thead>
-
-                <tr>
-                    <th>Aspect</th>
-                    <th>Not Meeting Expectations</th>
-                    <th>Needs Improvement</th>
-                    <th>Meeting My Expectations</th>
-                    <th>Comment</th>
-                </tr>
-
-            </thead>
-
-            <tbody>
-
-                <tr>
-                    <td>My Wellbeing at Axis Solutions</td>
-                    <td><input type="radio" asp-for="WellbeingRating" value="1" /></td>
-                    <td><input type="radio" asp-for="WellbeingRating" value="2" /></td>
-                    <td><input type="radio" asp-for="WellbeingRating" value="3" /></td>
-                    <td><input asp-for="WellbeingComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>Job Satisfaction Levels</td>
-                    <td><input type="radio" asp-for="JobSatisfactionRating" value="1" /></td>
-                    <td><input type="radio" asp-for="JobSatisfactionRating" value="2" /></td>
-                    <td><input type="radio" asp-for="JobSatisfactionRating" value="3" /></td>
-                    <td><input asp-for="JobSatisfactionComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>Career Opportunities</td>
-                    <td><input type="radio" asp-for="CareerOpportunitiesRating" value="1" /></td>
-                    <td><input type="radio" asp-for="CareerOpportunitiesRating" value="2" /></td>
-                    <td><input type="radio" asp-for="CareerOpportunitiesRating" value="3" /></td>
-                    <td><input asp-for="CareerOpportunitiesComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>Quality of Leadership</td>
-                    <td><input type="radio" asp-for="LeadershipQualityRating" value="1" /></td>
-                    <td><input type="radio" asp-for="LeadershipQualityRating" value="2" /></td>
-                    <td><input type="radio" asp-for="LeadershipQualityRating" value="3" /></td>
-                    <td><input asp-for="LeadershipQualityComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>Relationship with my Manager</td>
-                    <td><input type="radio" asp-for="ManagerRelationshipRating" value="1" /></td>
-                    <td><input type="radio" asp-for="ManagerRelationshipRating" value="2" /></td>
-                    <td><input type="radio" asp-for="ManagerRelationshipRating" value="3" /></td>
-                    <td><input asp-for="ManagerRelationshipComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>Relationship with Peers / Team</td>
-                    <td><input type="radio" asp-for="TeamRelationshipRating" value="1" /></td>
-                    <td><input type="radio" asp-for="TeamRelationshipRating" value="2" /></td>
-                    <td><input type="radio" asp-for="TeamRelationshipRating" value="3" /></td>
-                    <td><input asp-for="TeamRelationshipComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>BSC System</td>
-                    <td><input type="radio" asp-for="BSCSystemRating" value="1" /></td>
-                    <td><input type="radio" asp-for="BSCSystemRating" value="2" /></td>
-                    <td><input type="radio" asp-for="BSCSystemRating" value="3" /></td>
-                    <td><input asp-for="BSCSystemComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>Reward for Performance</td>
-                    <td><input type="radio" asp-for="RewardForPerformanceRating" value="1" /></td>
-                    <td><input type="radio" asp-for="RewardForPerformanceRating" value="2" /></td>
-                    <td><input type="radio" asp-for="RewardForPerformanceRating" value="3" /></td>
-                    <td><input asp-for="RewardForPerformanceComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>Communication Channels</td>
-                    <td><input type="radio" asp-for="CommunicationChannelsRating" value="1" /></td>
-                    <td><input type="radio" asp-for="CommunicationChannelsRating" value="2" /></td>
-                    <td><input type="radio" asp-for="CommunicationChannelsRating" value="3" /></td>
-                    <td><input asp-for="CommunicationChannelsComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>Opportunities to Develop</td>
-                    <td><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="1" /></td>
-                    <td><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="2" /></td>
-                    <td><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="3" /></td>
-                    <td><input asp-for="DevelopmentOpportunitiesComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>Pay and Benefits</td>
-                    <td><input type="radio" asp-for="PayAndBenefitsRating" value="1" /></td>
-                    <td><input type="radio" asp-for="PayAndBenefitsRating" value="2" /></td>
-                    <td><input type="radio" asp-for="PayAndBenefitsRating" value="3" /></td>
-                    <td><input asp-for="PayAndBenefitsComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>Working Conditions</td>
-                    <td><input type="radio" asp-for="WorkingConditionsRating" value="1" /></td>
-                    <td><input type="radio" asp-for="WorkingConditionsRating" value="2" /></td>
-                    <td><input type="radio" asp-for="WorkingConditionsRating" value="3" /></td>
-                    <td><input asp-for="WorkingConditionsComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>The Organization in General</td>
-                    <td><input type="radio" asp-for="OrganizationGeneralRating" value="1" /></td>
-                    <td><input type="radio" asp-for="OrganizationGeneralRating" value="2" /></td>
-                    <td><input type="radio" asp-for="OrganizationGeneralRating" value="3" /></td>
-                    <td><input asp-for="OrganizationGeneralComment" class="form-control" /></td>
-                </tr>
-
-                <tr>
-                    <td>Other</td>
-                    <td><input type="radio" asp-for="OtherRating" value="1" /></td>
-                    <td><input type="radio" asp-for="OtherRating" value="2" /></td>
-                    <td><input type="radio" asp-for="OtherRating" value="3" /></td>
-                    <td><input asp-for="OtherComment" class="form-control" /></td>
-                </tr>
-
-            </tbody>
-
-        </table>
-
-        <!-- Interviewer Comments -->
-
-        <h4>
-            Interviewer Overall Comments from Discussion
-        </h4>
-
-        <textarea asp-for="InterviewerOverallComments"
-                  class="form-control mb-4"
-                  rows="6"></textarea>
-
-        <div class="mt-4 mb-5">
-
-            <button type="submit"
-                    class="btn btn-success">
-                Update Stay Interview
-            </button>
-
-            <a asp-action="Index"
-               class="btn btn-secondary">
-                Cancel
-            </a>
-
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-table"></i>
+                <h3>Currently how would you rate the following:</h3>
+            </div>
+            <div class="section-body">
+                <div class="table-responsive">
+                    <table class="ratings-matrix-table">
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th>Not Meeting Expectations (1)</th>
+                                <th>Needs Improvement (2)</th>
+                                <th>Meeting My Expectations (3)</th>
+                                <th>Comment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td class="aspect-cell">My Wellbeing at Axis Solutions<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WellbeingRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WellbeingRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WellbeingRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="WellbeingComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <tr><td class="aspect-cell">Job Satisfaction Levels<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="JobSatisfactionRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="JobSatisfactionRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="JobSatisfactionRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="JobSatisfactionComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <tr><td class="aspect-cell">Career Opportunities<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CareerOpportunitiesRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CareerOpportunitiesRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CareerOpportunitiesRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="CareerOpportunitiesComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <td><td class="aspect-cell">Quality of Leadership<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="LeadershipQualityRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="LeadershipQualityRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="LeadershipQualityRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="LeadershipQualityComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <tr><td class="aspect-cell">Relationship with my Manager<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ManagerRelationshipRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ManagerRelationshipRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ManagerRelationshipRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="ManagerRelationshipComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <tr><td class="aspect-cell">Relationship with Peers / Team<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="TeamRelationshipRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="TeamRelationshipRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="TeamRelationshipRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="TeamRelationshipComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <tr><td class="aspect-cell">BSC System<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="BSCSystemRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="BSCSystemRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="BSCSystemRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="BSCSystemComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <tr><td class="aspect-cell">Reward for Performance<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="RewardForPerformanceRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="RewardForPerformanceRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="RewardForPerformanceRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="RewardForPerformanceComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <tr><td class="aspect-cell">Communication Channels<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CommunicationChannelsRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CommunicationChannelsRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CommunicationChannelsRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="CommunicationChannelsComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <tr><td class="aspect-cell">Opportunities to Develop<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="DevelopmentOpportunitiesComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <tr><td class="aspect-cell">Pay and Benefits<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="PayAndBenefitsRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="PayAndBenefitsRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="PayAndBenefitsRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="PayAndBenefitsComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <tr><td class="aspect-cell">Working Conditions<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WorkingConditionsRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WorkingConditionsRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WorkingConditionsRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="WorkingConditionsComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <td><td class="aspect-cell">The Organization in General<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OrganizationGeneralRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OrganizationGeneralRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OrganizationGeneralRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="OrganizationGeneralComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                            <tr><td class="aspect-cell">Other<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OtherRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OtherRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OtherRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="OtherComment" class="form-control-modern-sm" placeholder="Comment" /></td>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
-    </form>
-    ```
+        <!-- Interviewer Comments -->
+        <div class="form-section">
+            <div class="section-header">
+                <i class="fas fa-clipboard-list"></i>
+                <h3>Interviewer Overall Comments from Discussion</h3>
+            </div>
+            <div class="section-body">
+                <div class="textarea-wrapper">
+                    <i class="fas fa-comment textarea-icon"></i>
+                    <textarea asp-for="InterviewerOverallComments" class="form-control-textarea" rows="6" placeholder="Enter interviewer's overall comments..."></textarea>
+                </div>
+                <span asp-validation-for="InterviewerOverallComments" class="validation-message text-danger"></span>
+            </div>
+        </div>
 
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <button type="submit" class="btn-update" id="submitBtn">
+                <i class="fas fa-save"></i>
+                Update Stay Interview
+            </button>
+            <a asp-action="Index" class="btn-cancel">
+                <i class="fas fa-times"></i>
+                Cancel
+            </a>
+        </div>
+    </form>
 </div>
+
+<style>
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+    .btn-back:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+        transform: translateX(-2px);
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Form Sections */
+    .form-section {
+        background: white;
+        border-radius: 1rem;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .section-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .section-header i {
+        font-size: 1.25rem;
+        color: var(--primary);
+    }
+
+    .section-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .section-body {
+        padding: 1.5rem;
+    }
+
+    /* Form Row Grid */
+    .form-row-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* Form Groups */
+    .form-group-modern {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-label i {
+        color: var(--primary);
+        font-size: 0.875rem;
+    }
+
+    .required {
+        color: var(--danger);
+        font-size: 1rem;
+    }
+
+    .input-icon-wrapper {
+        position: relative;
+    }
+
+    .input-icon-wrapper i.input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-400);
+        font-size: 0.875rem;
+        pointer-events: none;
+    }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+    .form-control-modern:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+    }
+
+    .form-control-modern-sm {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+    .form-control-modern-sm:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+    }
+
+    /* Textarea Styling */
+    .textarea-wrapper {
+        position: relative;
+    }
+
+    .textarea-icon {
+        position: absolute;
+        left: 1rem;
+        top: 1rem;
+        color: var(--gray-400);
+        font-size: 0.875rem;
+        pointer-events: none;
+    }
+
+    .form-control-textarea {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        resize: vertical;
+    }
+
+    .form-control-textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+    }
+
+    /* Info Alert */
+    .info-alert {
+        background: #e6f7ff;
+        border-left: 3px solid var(--info);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .info-alert i {
+        color: var(--info);
+        font-size: 1.25rem;
+    }
+
+    .info-alert div {
+        flex: 1;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        line-height: 1.4;
+    }
+
+    /* Radio Groups */
+    .radio-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .radio-question {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+    }
+
+    .radio-options {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .radio-label-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+    .radio-label-inline input {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+
+    .radio-label-inline span {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+
+    .radio-group-vertical {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .radio-label-vertical {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+    .radio-label-vertical input {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+
+    .radio-label-vertical span {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+    }
+
+    /* Ratings Matrix Table */
+    .ratings-matrix-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.75rem;
+    }
+
+    .ratings-matrix-table th {
+        background: var(--gray-50);
+        padding: 0.75rem;
+        text-align: center;
+        font-weight: 600;
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    .ratings-matrix-table td {
+        padding: 0.5rem;
+        border: 1px solid var(--gray-200);
+        vertical-align: middle;
+    }
+
+    .aspect-cell {
+        font-weight: 600;
+        color: var(--gray-700);
+    }
+
+    .radio-cell {
+        text-align: center;
+    }
+
+    .radio-label {
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .radio-label input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .radio-custom {
+        position: relative;
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        background-color: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+
+    .radio-label input:checked ~ .radio-custom {
+        border-color: var(--primary);
+    }
+
+    .radio-custom:after {
+        content: "";
+        position: absolute;
+        display: none;
+        top: 3px;
+        left: 3px;
+        width: 6px;
+        height: 6px;
+        background-color: var(--primary);
+        border-radius: 50%;
+    }
+
+    .radio-label input:checked ~ .radio-custom:after {
+        display: block;
+    }
+
+    /* Validation Summary */
+    .validation-summary {
+        background: #fee;
+        border-left: 3px solid var(--danger);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1.5rem;
+        color: var(--danger);
+        font-size: 0.875rem;
+    }
+
+    .validation-message {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .btn-update {
+        background: linear-gradient(100deg, var(--warning), #e6a017);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-update:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-cancel:hover {
+        background: var(--gray-50);
+        color: var(--gray-700);
+        text-decoration: none;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('stayInterviewForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            });
+        }
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
 @section Scripts {
     @{
