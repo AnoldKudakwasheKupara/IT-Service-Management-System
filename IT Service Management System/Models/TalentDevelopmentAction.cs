@@ -1,4 +1,6 @@
-﻿namespace IT_Service_Management_System.Models
+﻿using IT_Service_Management_System.Enums;
+
+namespace IT_Service_Management_System.Models
 {
     public class TalentDevelopmentAction
     {
