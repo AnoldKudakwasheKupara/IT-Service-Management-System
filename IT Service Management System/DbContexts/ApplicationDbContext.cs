@@ -39,6 +39,9 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<HrApproval> HrApprovals { get; set; }
         public DbSet<ExitInterview> ExitInterviews { get; set; }
         public DbSet<EngagementStayInterview> EngagementStayInterviews { get; set; }
+        public DbSet<TalentIdentification> TalentIdentifications { get; set; }
+        public DbSet<TalentDirectReportAssessment> TalentDirectReportAssessments { get; set; }
+        public DbSet<TalentDevelopmentAction> TalentDevelopmentActions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
