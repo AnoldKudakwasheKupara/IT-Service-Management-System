@@ -1,5 +1,882 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model TalentIdentification
+@using IT_Service_Management_System.Enums
+
 @{
+    ViewData["Title"] = "Delete Talent Identification - Axis IT Helpdesk";
 }
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-trash-alt me-2" style="color: var(--danger);"></i>
+                    Delete Talent Identification
+                </h1>
+                <p class="text-muted mt-2">This action cannot be undone</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="delete-warning-card">
+        <div class="warning-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h3 class="warning-title">Are you absolutely sure?</h3>
+        <p class="warning-message">This action will permanently delete this talent identification record from the system.</p>
+    </div>
+
+    <div class="talent-details-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-user-tie me-2"></i>
+                <span>Talent Record to Delete</span>
+            </div>
+            <div class="talent-id-badge">
+                <i class="fas fa-hashtag"></i>
+                ID: @Model.Id
+            </div>
+        </div>
+
+        <div class="card-body-custom">
+            <!-- Employee Summary -->
+            <div class="talent-summary">
+                <div class="talent-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <div class="talent-summary-info">
+                    <h2 class="talent-name">@Model.EmployeeName</h2>
+                    <div class="talent-meta">
+                        <span class="meta-badge">
+                            <i class="fas fa-building"></i>
+                            @Model.Department
+                        </span>
+                        <span class="meta-badge">
+                            <i class="fas fa-briefcase"></i>
+                            @Model.JobTitle
+                        </span>
+                        <span class="meta-badge">
+                            <i class="fas fa-globe"></i>
+                            @Model.Country
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Talent Details -->
+            <div class="talent-details">
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-calendar-alt"></i>
+                        Hire Date
+                    </div>
+                    <div class="detail-value">
+                        @(Model.HireDate?.ToString("dd MMM yyyy") ?? "—")
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-route"></i>
+                        Mobility Preference
+                    </div>
+                    <div class="detail-value">
+                        @GetMobilityDisplay(Model.Mobility)
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Risk of Leaving
+                    </div>
+                    <div class="detail-value">
+                        <span class="risk-badge @(Model.RiskOfLeaving == RiskLevel.High ? "high" : Model.RiskOfLeaving == RiskLevel.Medium ? "medium" : "low")">
+                            @GetRiskLevelDisplay(Model.RiskOfLeaving)
+                        </span>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-rocket"></i>
+                        Readiness
+                    </div>
+                    <div class="detail-value">
+                        @GetReadinessDisplay(Model.Readiness)
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-label">
+                        <i class="fas fa-flag"></i>
+                        Career Aspirations
+                    </div>
+                    <div class="detail-value aspiration-value">
+                        @(string.IsNullOrEmpty(Model.CareerAspirations) ? "No information provided" : Model.CareerAspirations)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Associated Data -->
+            <div class="associated-data">
+                <h4 class="associated-title">
+                    <i class="fas fa-link"></i>
+                    Associated Data
+                </h4>
+                <div class="associated-grid">
+                    <div class="associated-item">
+                        <span class="associated-label">Direct Reports</span>
+                        <span class="associated-count">@(Model.DirectReports?.Count ?? 0)</span>
+                    </div>
+                    <div class="associated-item">
+                        <span class="associated-label">Development Actions</span>
+                        <span class="associated-count">@(Model.DevelopmentActions?.Count ?? 0)</span>
+                    </div>
+                    <div class="associated-item">
+                        <span class="associated-label">Performance Records</span>
+                        <span class="associated-count">4 Years</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Warning Details -->
+            <div class="warning-details">
+                <div class="warning-detail-item">
+                    <i class="fas fa-database"></i>
+                    <div>
+                        <strong>Data Loss Warning</strong>
+                        <span>This talent identification record will be permanently deleted from the system.</span>
+                    </div>
+                </div>
+                <div class="warning-detail-item">
+                    <i class="fas fa-clock"></i>
+                    <div>
+                        <strong>Irreversible Action</strong>
+                        <span>This action cannot be undone. You will not be able to recover this talent record.</span>
+                    </div>
+                </div>
+                <div class="warning-detail-item">
+                    <i class="fas fa-chart-line"></i>
+                    <div>
+                        <strong>Assessment Impact</strong>
+                        <span>All associated talent assessment data will be permanently removed.</span>
+                    </div>
+                </div>
+                @if ((Model.DirectReports != null && Model.DirectReports.Any()) || (Model.DevelopmentActions != null && Model.DevelopmentActions.Any()))
+                {
+                    <div class="warning-detail-item">
+                        <i class="fas fa-users"></i>
+                        <div>
+                            <strong>Associated Records</strong>
+                            <span>This record has @(Model.DirectReports?.Count ?? 0) direct report(s) and @(Model.DevelopmentActions?.Count ?? 0) development action(s) that will also be deleted.</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Confirmation Form -->
+            <form asp-action="Delete" method="post" id="deleteForm" class="delete-form">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+
+                <div class="confirmation-checkbox">
+                    <input type="checkbox" id="confirmDelete" required>
+                    <label for="confirmDelete">
+                        I understand that this action is permanent and cannot be undone
+                    </label>
+                </div>
+
+                <div class="action-buttons-container">
+                    <button type="submit" class="btn-delete" id="deleteButton" disabled>
+                        <i class="fas fa-trash-alt"></i>
+                        Permanently Delete Record
+                    </button>
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --danger-dark: #c53030;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+        }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Warning Card */
+    .delete-warning-card {
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+        border: 1px solid #fed7d7;
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .warning-icon {
+        width: 80px;
+        height: 80px;
+        background: var(--danger);
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+        .warning-icon i {
+            font-size: 3rem;
+            color: white;
+        }
+
+    .warning-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--danger-dark);
+        margin: 0 0 0.5rem 0;
+    }
+
+    .warning-message {
+        color: var(--gray-600);
+        margin: 0;
+    }
+
+    /* Talent Details Card */
+    .talent-details-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .talent-id-badge {
+        background: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Talent Summary */
+    .talent-summary {
+        display: flex;
+        gap: 1.5rem;
+        padding-bottom: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .talent-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--gray-400), var(--gray-500));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .talent-summary-info {
+        flex: 1;
+    }
+
+    .talent-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0 0 0.5rem 0;
+    }
+
+    .talent-meta {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .meta-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+    /* Talent Details */
+    .talent-details {
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .detail-row {
+        display: flex;
+        padding: 0.75rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+    .detail-label {
+        width: 160px;
+        font-weight: 600;
+        color: var(--gray-600);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .detail-value {
+        flex: 1;
+        color: var(--gray-700);
+        font-size: 0.875rem;
+    }
+
+    .aspiration-value {
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+
+    /* Risk Badge */
+    .risk-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+        .risk-badge.high {
+            background: #fee;
+            color: var(--danger);
+        }
+
+        .risk-badge.medium {
+            background: #fff5e6;
+            color: var(--warning);
+        }
+
+        .risk-badge.low {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+    /* Associated Data */
+    .associated-data {
+        margin-bottom: 1.5rem;
+    }
+
+    .associated-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin: 0 0 0.75rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .associated-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+    }
+
+    .associated-item {
+        background: var(--gray-50);
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .associated-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .associated-count {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--gray-800);
+    }
+
+    /* Warning Details */
+    .warning-details {
+        background: #fff5f5;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        border-left: 3px solid var(--danger);
+    }
+
+    .warning-detail-item {
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+
+        .warning-detail-item i {
+            font-size: 1rem;
+            color: var(--danger);
+            margin-top: 0.125rem;
+        }
+
+        .warning-detail-item div {
+            flex: 1;
+        }
+
+        .warning-detail-item strong {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+            margin-bottom: 0.25rem;
+        }
+
+        .warning-detail-item span {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            line-height: 1.4;
+        }
+
+    /* Confirmation Checkbox */
+    .confirmation-checkbox {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        border-left: 3px solid var(--danger);
+    }
+
+        .confirmation-checkbox input[type="checkbox"] {
+            margin-right: 0.75rem;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        .confirmation-checkbox label {
+            color: var(--gray-700);
+            font-size: 0.875rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+    /* Action Buttons */
+    .action-buttons-container {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-delete {
+        background: linear-gradient(100deg, var(--danger-dark), var(--danger));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-delete:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            filter: brightness(1.05);
+        }
+
+        .btn-delete:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+    /* Animations */
+    @@keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @@keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+
+    @@keyframes shake {
+        0%, 100% {
+            transform: translateX(0);
+        }
+
+        25% {
+            transform: translateX(-5px);
+        }
+
+        75% {
+            transform: translateX(5px);
+        }
+    }
+
+    .btn-delete:active:not(:disabled) {
+        transform: scale(0.98);
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .card-body-custom {
+            padding: 1.5rem;
+        }
+
+        .talent-summary {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .talent-icon {
+            margin: 0 auto;
+        }
+
+        .talent-meta {
+            justify-content: center;
+        }
+
+        .detail-row {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .detail-label {
+            width: auto;
+        }
+
+        .associated-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons-container {
+            flex-direction: column;
+        }
+
+        .btn-delete, .btn-cancel {
+            width: 100%;
+        }
+    }
+
+    @@media print {
+        .hero-section, .btn-back, .action-buttons-container, .btn-print, .page-header a:not(.page-title) {
+            display: none;
+        }
+
+        .talent-details-card {
+            box-shadow: none;
+            border: 1px solid var(--gray-200);
+        }
+
+        .card-header-custom {
+            background: var(--gray-100);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+
+@functions {
+    string GetMobilityDisplay(MobilityType? mobility)
+    {
+        if (!mobility.HasValue) return "Not specified";
+
+        return mobility.Value switch
+        {
+            MobilityType.LocalZimbabwe => "Local Zimbabwe",
+            MobilityType.Regional => "Regional",
+            _ => "Not specified"
+        };
+    }
+
+    string GetRiskLevelDisplay(RiskLevel? risk)
+    {
+        if (!risk.HasValue) return "Not specified";
+
+        return risk.Value switch
+        {
+            RiskLevel.Low => "Low",
+            RiskLevel.Medium => "Medium",
+            RiskLevel.High => "High",
+            _ => "Not specified"
+        };
+    }
+
+    string GetReadinessDisplay(ReadinessLevel? readiness)
+    {
+        if (!readiness.HasValue) return "Not specified";
+
+        return readiness.Value switch
+        {
+            ReadinessLevel.ReadyNow => "Ready Now",
+            ReadinessLevel.ShortTerm => "Short Term",
+            ReadinessLevel.MidTerm => "Mid Term",
+            ReadinessLevel.LongTerm => "Long Term",
+            _ => "Not specified"
+        };
+    }
+}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmCheckbox = document.getElementById('confirmDelete');
+        const deleteButton = document.getElementById('deleteButton');
+        const deleteForm = document.getElementById('deleteForm');
+
+        // Enable/disable delete button based on checkbox
+        if (confirmCheckbox && deleteButton) {
+            confirmCheckbox.addEventListener('change', function() {
+                deleteButton.disabled = !this.checked;
+            });
+        }
+
+        // Form submission with additional confirmation
+        if (deleteForm) {
+            deleteForm.addEventListener('submit', function(e) {
+                if (!confirmCheckbox.checked) {
+                    e.preventDefault();
+                    showWarningToast('Please confirm that you understand this action is permanent');
+                    confirmCheckbox.focus();
+                    return false;
+                }
+
+                // Final confirmation dialog with employee details
+                const employeeName = '@(Model.EmployeeName)';
+                const directReports = @(Model.DirectReports?.Count ?? 0);
+                const developmentActions = @(Model.DevelopmentActions?.Count ?? 0);
+
+                let additionalInfo = '';
+                if (directReports > 0 || developmentActions > 0) {
+                    additionalInfo = '\n\nThis will also delete:\n';
+                    if (directReports > 0) {
+                        additionalInfo += `• ${directReports} direct report(s)\n`;
+                    }
+                    if (developmentActions > 0) {
+                        additionalInfo += `• ${developmentActions} development action(s)\n`;
+                    }
+                }
+
+                const confirmed = confirm(
+                    '⚠️ WARNING: This action is permanent and cannot be undone.\n\n' +
+                    `Are you absolutely sure you want to delete the talent record for ${employeeName}?\n\n` +
+                    'This will permanently delete:\n' +
+                    '• All talent identification information\n' +
+                    '• Performance assessment records\n' +
+                    '• Leadership capability data\n' +
+                    '• Career development information' +
+                    additionalInfo +
+                    '\n\nThis action cannot be reversed.'
+                );
+
+                if (!confirmed) {
+                    e.preventDefault();
+                    return false;
+                }
+
+                // Disable button to prevent double submission
+                deleteButton.disabled = true;
+                deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting Record...';
+            });
+        }
+
+        // Helper function to show toast notifications
+        function showWarningToast(message) {
+            const existingToast = document.querySelector('.warning-toast');
+            if (existingToast) existingToast.remove();
+
+            const toast = document.createElement('div');
+            toast.className = 'warning-toast';
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 2rem;
+                right: 2rem;
+                background: var(--danger);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.75rem;
+                box-shadow: var(--shadow-lg);
+                z-index: 1050;
+                animation: slideIn 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-size: 0.875rem;
+            `;
+            toast.innerHTML = `
+                <i class="fas fa-exclamation-circle"></i>
+                <span>${message}</span>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Add hover effect to delete button when checkbox is checked
+        if (confirmCheckbox && deleteButton) {
+            confirmCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    deleteButton.style.animation = 'shake 0.5s ease';
+                    setTimeout(() => {
+                        deleteButton.style.animation = '';
+                    }, 500);
+                }
+            });
+        }
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
