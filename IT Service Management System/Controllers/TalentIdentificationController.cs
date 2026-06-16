@@ -45,7 +45,13 @@ namespace IT_Service_Management_System.Controllers
         // GET: TalentIdentification/Create
         public IActionResult Create()
         {
-            return View();
+            var model = new TalentIdentification();
+
+            model.DirectReports.Add(new TalentDirectReportAssessment());
+
+            model.DevelopmentActions.Add(new TalentDevelopmentAction());
+
+            return View(model);
         }
 
         // POST: TalentIdentification/Create

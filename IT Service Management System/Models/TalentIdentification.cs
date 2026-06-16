@@ -6,6 +6,13 @@ namespace IT_Service_Management_System.Models
     {
         public int Id { get; set; }
 
+        public TalentIdentification()
+        {
+            DirectReports = new List<TalentDirectReportAssessment>();
+            DevelopmentActions = new List<TalentDevelopmentAction>();
+        }
+
+
         // Employee Information
 
         public string EmployeeName { get; set; }
@@ -106,8 +113,8 @@ namespace IT_Service_Management_System.Models
 
         public bool IsDeleted { get; set; }
 
-        public ICollection<TalentDirectReportAssessment> DirectReports { get; set; }
+        public List<TalentDirectReportAssessment> DirectReports { get; set; } = new();
 
-        public ICollection<TalentDevelopmentAction> DevelopmentActions { get; set; }
+        public List<TalentDevelopmentAction> DevelopmentActions { get; set; } = new();
     }
 }

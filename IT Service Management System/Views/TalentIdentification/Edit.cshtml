@@ -1,0 +1,1465 @@
+﻿@model TalentIdentification
+@using IT_Service_Management_System.Enums
+
+@{
+    ViewData["Title"] = "Edit Talent Identification - Axis IT Helpdesk";
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-edit me-2" style="color: var(--warning);"></i>
+                    Edit Talent Identification
+                </h1>
+                <p class="text-muted mt-2">Update talent identification and assessment details</p>
+            </div>
+        </div>
+    </div>
+
+    <form asp-action="Edit" method="post" id="talentForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+        <!-- Employee Information Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="header-icon-wrapper">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                <h3>Employee Information</h3>
+                <span class="section-badge">Personal Details</span>
+            </div>
+            <div class="section-body">
+                <div class="form-row-grid">
+                    <div class="form-group-modern">
+                        <label asp-for="EmployeeName" class="form-label">
+                            <i class="fas fa-user"></i> Employee Name
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-user input-icon"></i>
+                            <input asp-for="EmployeeName" class="form-control-modern" placeholder="Enter employee name" />
+                        </div>
+                        <span asp-validation-for="EmployeeName" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="Department" class="form-label">
+                            <i class="fas fa-building"></i> Department
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-building input-icon"></i>
+                            <input asp-for="Department" class="form-control-modern" placeholder="Enter department" />
+                        </div>
+                        <span asp-validation-for="Department" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="JobTitle" class="form-label">
+                            <i class="fas fa-briefcase"></i> Job Title
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-briefcase input-icon"></i>
+                            <input asp-for="JobTitle" class="form-control-modern" placeholder="Enter job title" />
+                        </div>
+                        <span asp-validation-for="JobTitle" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="Country" class="form-label">
+                            <i class="fas fa-globe"></i> Country
+                            <span class="required">*</span>
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-globe input-icon"></i>
+                            <input asp-for="Country" class="form-control-modern" placeholder="Enter country" />
+                        </div>
+                        <span asp-validation-for="Country" class="validation-message text-danger"></span>
+                    </div>
+
+                    <div class="form-group-modern">
+                        <label asp-for="HireDate" class="form-label">
+                            <i class="fas fa-calendar-alt"></i> Hire Date
+                        </label>
+                        <div class="input-icon-wrapper">
+                            <i class="fas fa-calendar-alt input-icon"></i>
+                            <input asp-for="HireDate" type="date" class="form-control-modern" />
+                        </div>
+                        <span asp-validation-for="HireDate" class="validation-message text-danger"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Track Record Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="header-icon-wrapper" style="background: linear-gradient(135deg, var(--success), #059669);">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Performance Track Record</h3>
+                <span class="section-badge">KPIs & Projects</span>
+            </div>
+            <div class="section-body">
+                <div class="form-group-modern mb-3">
+                    <label class="form-label">What KPI achievement scores has this person achieved over the past 24 to 36 months?</label>
+                </div>
+                <div class="form-row-grid-4">
+                    <div class="form-group-modern">
+                        <label class="form-label">2023</label>
+                        <div class="textarea-wrapper-sm">
+                            <i class="fas fa-calendar-alt textarea-icon"></i>
+                            <textarea asp-for="KPI2023" class="form-control-textarea-sm" rows="4" placeholder="Enter KPI achievements for 2023..."></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label">2024</label>
+                        <div class="textarea-wrapper-sm">
+                            <i class="fas fa-calendar-alt textarea-icon"></i>
+                            <textarea asp-for="KPI2024" class="form-control-textarea-sm" rows="4" placeholder="Enter KPI achievements for 2024..."></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label">2025</label>
+                        <div class="textarea-wrapper-sm">
+                            <i class="fas fa-calendar-alt textarea-icon"></i>
+                            <textarea asp-for="KPI2025" class="form-control-textarea-sm" rows="4" placeholder="Enter KPI achievements for 2025..."></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group-modern">
+                        <label class="form-label">Current Year - 2026</label>
+                        <div class="textarea-wrapper-sm">
+                            <i class="fas fa-calendar-alt textarea-icon"></i>
+                            <textarea asp-for="KPI2026" class="form-control-textarea-sm" rows="4" placeholder="Enter KPI achievements for 2026..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group-modern mt-3">
+                    <label asp-for="KeyProjectsLed" class="form-label">
+                        <i class="fas fa-project-diagram"></i> What key projects has the employee led that have brought value to and positively impacted the organization / department?
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-tasks textarea-icon"></i>
+                        <textarea asp-for="KeyProjectsLed" class="form-control-textarea" rows="5" placeholder="Enter key projects led..."></textarea>
+                    </div>
+                    <span asp-validation-for="KeyProjectsLed" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="DeliverySetbacks" class="form-label">
+                        <i class="fas fa-exclamation-triangle"></i> What set-backs in delivery has this person encountered over the past 24 to 36 months?
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-exclamation-triangle textarea-icon"></i>
+                        <textarea asp-for="DeliverySetbacks" class="form-control-textarea" rows="5" placeholder="Enter delivery setbacks..."></textarea>
+                    </div>
+                    <span asp-validation-for="DeliverySetbacks" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="LongTermBusinessInitiatives" class="form-label">
+                        <i class="fas fa-lightbulb"></i> What ideas/projects has this person independently initiated that focus on the long-term success of the business?
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-lightbulb textarea-icon"></i>
+                        <textarea asp-for="LongTermBusinessInitiatives" class="form-control-textarea" rows="5" placeholder="Enter long-term business initiatives..."></textarea>
+                    </div>
+                    <span asp-validation-for="LongTermBusinessInitiatives" class="validation-message text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Core Leadership Capability Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="header-icon-wrapper" style="background: linear-gradient(135deg, var(--info), #2563eb);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>Core Leadership Capability</h3>
+                <span class="section-badge">Management</span>
+            </div>
+            <div class="section-body">
+                <div class="info-alert">
+                    <i class="fas fa-info-circle"></i>
+                    <div>Only complete this section if the employee is in a supervisory or management role.</div>
+                </div>
+
+                <div class="form-group-modern mb-3">
+                    <label class="form-label">How are the person's key direct reports performing?</label>
+                    <p class="text-muted small">Rate using: CEE, EE, ME, PME or DNME</p>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="dynamic-table" id="directReportsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 25%;">Employee Name</th>
+                                <th style="width: 20%;">Performance Rating</th>
+                                <th>Comments</th>
+                                <th style="width: 120px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.DirectReports.Count; i++)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="input-icon-wrapper-sm">
+                                            <i class="fas fa-user input-icon-sm"></i>
+                                            <input asp-for="DirectReports[i].EmployeeName" class="form-control-modern-sm" placeholder="Name" />
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <select asp-for="DirectReports[i].PerformanceRating" class="form-control-modern-sm">
+                                            <option value="">Select</option>
+                                            <option value="1">CEE</option>
+                                            <option value="2">EE</option>
+                                            <option value="3">ME</option>
+                                            <option value="4">PME</option>
+                                            <option value="5">DNME</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <div class="input-icon-wrapper-sm">
+                                            <i class="fas fa-comment input-icon-sm"></i>
+                                            <input asp-for="DirectReports[i].Comments" class="form-control-modern-sm" placeholder="Comments" />
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn-remove-sm remove-direct-report">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <button type="button" id="addDirectReport" class="btn-add-row">
+                    <i class="fas fa-plus-circle"></i> Add Direct Report
+                </button>
+            </div>
+        </div>
+
+        <!-- Leadership Assessment Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="header-icon-wrapper" style="background: linear-gradient(135deg, var(--info), #2563eb);">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                <h3>Leadership Assessment</h3>
+                <span class="section-badge">Evaluation</span>
+            </div>
+            <div class="section-body">
+                <div class="form-group-modern">
+                    <label asp-for="LeadershipOverallComments" class="form-label">
+                        <i class="fas fa-comment"></i> Overall Comments
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-comment textarea-icon"></i>
+                        <textarea asp-for="LeadershipOverallComments" class="form-control-textarea" rows="5" placeholder="Enter overall leadership comments..."></textarea>
+                    </div>
+                    <span asp-validation-for="LeadershipOverallComments" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="TeamCapabilityDevelopment" class="form-label">
+                        <i class="fas fa-users-cog"></i> What has the person done in the past 24 months to develop the capability of his/her team?
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-users-cog textarea-icon"></i>
+                        <textarea asp-for="TeamCapabilityDevelopment" class="form-control-textarea" rows="5" placeholder="Enter team development activities..."></textarea>
+                    </div>
+                    <span asp-validation-for="TeamCapabilityDevelopment" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="StructuredOneOnOnes" class="form-label">
+                        <i class="fas fa-handshake"></i> How many structured one-on-one meetings has the person had with his/her direct reports this year?
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-handshake textarea-icon"></i>
+                        <textarea asp-for="StructuredOneOnOnes" class="form-control-textarea" rows="3" placeholder="Enter number of one-on-one meetings..."></textarea>
+                    </div>
+                    <span asp-validation-for="StructuredOneOnOnes" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="TerminatedPoorPerformers" class="form-label">
+                        <i class="fas fa-user-slash"></i> Has this person exercised the termination of poor and incapable performers?
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-user-slash textarea-icon"></i>
+                        <textarea asp-for="TerminatedPoorPerformers" class="form-control-textarea" rows="3" placeholder="Enter details of terminations..."></textarea>
+                    </div>
+                    <span asp-validation-for="TerminatedPoorPerformers" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="LeadershipDevelopmentAreas" class="form-label">
+                        <i class="fas fa-chart-line"></i> What leadership development areas do they have?
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-chart-line textarea-icon"></i>
+                        <textarea asp-for="LeadershipDevelopmentAreas" class="form-control-textarea" rows="4" placeholder="Enter leadership development areas..."></textarea>
+                    </div>
+                    <span asp-validation-for="LeadershipDevelopmentAreas" class="validation-message text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Living The Axis Values Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="header-icon-wrapper" style="background: linear-gradient(135deg, var(--success), #059669);">
+                    <i class="fas fa-heart"></i>
+                </div>
+                <h3>Living The Axis Values</h3>
+                <span class="section-badge">Values</span>
+            </div>
+            <div class="section-body">
+                <div class="form-group-modern">
+                    <label asp-for="ChallengesApplyingAxisValues" class="form-label">
+                        <i class="fas fa-question-circle"></i> Has this person experienced personal challenges in applying the Axis Values? If yes, give examples.
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-question-circle textarea-icon"></i>
+                        <textarea asp-for="ChallengesApplyingAxisValues" class="form-control-textarea" rows="5" placeholder="Enter challenges and examples..."></textarea>
+                    </div>
+                    <span asp-validation-for="ChallengesApplyingAxisValues" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="SelfDevelopmentActions" class="form-label">
+                        <i class="fas fa-user-graduate"></i> Has this person implemented actions to develop themselves?
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-user-graduate textarea-icon"></i>
+                        <textarea asp-for="SelfDevelopmentActions" class="form-control-textarea" rows="5" placeholder="Enter self-development actions..."></textarea>
+                    </div>
+                    <span asp-validation-for="SelfDevelopmentActions" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="SelfInitiatedLeadershipDevelopment" class="form-label">
+                        <i class="fas fa-rocket"></i> Any evidence of self-initiated leadership development?
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-rocket textarea-icon"></i>
+                        <textarea asp-for="SelfInitiatedLeadershipDevelopment" class="form-control-textarea" rows="5" placeholder="Enter self-initiated leadership development..."></textarea>
+                    </div>
+                    <span asp-validation-for="SelfInitiatedLeadershipDevelopment" class="validation-message text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Potential Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="header-icon-wrapper" style="background: linear-gradient(135deg, var(--warning), #e6a017);">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+                <h3>Potential To Take On Higher Or Increased Complexity</h3>
+                <span class="section-badge">Assessment</span>
+            </div>
+            <div class="section-body">
+                <div class="table-responsive">
+                    <table class="assessment-table">
+                        <thead>
+                            <tr>
+                                <th>Assessment Area</th>
+                                <th style="width: 120px;">Yes</th>
+                                <th style="width: 120px;">No</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="category-row">
+                                <td colspan="3"><strong>Thinking</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Does this person cut through complex and ambiguous data to quickly see what is essential?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ThinkingComplexity" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ThinkingComplexity" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td>Does he/she use intuition and judgment?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ThinkingJudgement" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ThinkingJudgement" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td>Does he/she handle scale and manage complexity?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ThinkingScale" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ThinkingScale" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+
+                            <tr class="category-row">
+                                <td colspan="3"><strong>Wisdom / Judgment</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Does this person size up situations fast and use sound judgment?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WisdomFastJudgement" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WisdomFastJudgement" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td>Does he/she know when and where to act?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WisdomWhenToAct" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WisdomWhenToAct" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td>Can this person combine short-term focus with long-term impact?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WisdomLongTermImpact" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WisdomLongTermImpact" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+
+                            <tr class="category-row">
+                                <td colspan="3"><strong>Courage</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Does this person have the ability to take risks?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CourageRiskTaking" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CourageRiskTaking" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td>Does he/she stand up for convictions with authenticity?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CourageConvictions" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CourageConvictions" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+
+                            <tr class="category-row">
+                                <td colspan="3"><strong>Self Awareness</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Is the person conscious of strengths and improvement areas?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="SelfAwareness" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="SelfAwareness" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+
+                            <tr class="category-row">
+                                <td colspan="3"><strong>Receptive To Feedback</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Is the person open to feedback?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OpenToFeedback" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OpenToFeedback" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                            <tr>
+                                <td>Is he/she constantly willing to improve?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WillingToImprove" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WillingToImprove" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+
+                            <tr class="category-row">
+                                <td colspan="3"><strong>Learning Agility</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Does this person adapt effectively and learn quickly?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="LearningAgility" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="LearningAgility" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+
+                            <tr class="category-row">
+                                <td colspan="3"><strong>Resilience</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Does this person maintain performance under pressure and uncertainty?</td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="Resilience" value="true" /><span class="radio-custom"></span></label></td>
+                                <td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="Resilience" value="false" /><span class="radio-custom"></span></label></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Career Development Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="header-icon-wrapper">
+                    <i class="fas fa-route"></i>
+                </div>
+                <h3>Career Development</h3>
+                <span class="section-badge">Growth</span>
+            </div>
+            <div class="section-body">
+                <div class="form-group-modern">
+                    <label asp-for="CareerAspirations" class="form-label">
+                        <i class="fas fa-flag"></i> What are the employee's career aspirations?
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-flag textarea-icon"></i>
+                        <textarea asp-for="CareerAspirations" class="form-control-textarea" rows="5" placeholder="Enter career aspirations..."></textarea>
+                    </div>
+                    <span asp-validation-for="CareerAspirations" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label class="form-label">Mobility Preference</label>
+                    <div class="radio-group-vertical">
+                        <label class="radio-label-vertical"><input type="radio" asp-for="Mobility" value="1" /><span>Local Zimbabwe</span></label>
+                        <label class="radio-label-vertical"><input type="radio" asp-for="Mobility" value="2" /><span>Regional</span></label>
+                    </div>
+                    <span asp-validation-for="Mobility" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label class="form-label">Risk Of Leaving</label>
+                    <div class="radio-group-vertical">
+                        <label class="radio-label-vertical"><input type="radio" asp-for="RiskOfLeaving" value="1" /><span>Low</span></label>
+                        <label class="radio-label-vertical"><input type="radio" asp-for="RiskOfLeaving" value="2" /><span>Medium</span></label>
+                        <label class="radio-label-vertical"><input type="radio" asp-for="RiskOfLeaving" value="3" /><span>High</span></label>
+                    </div>
+                    <span asp-validation-for="RiskOfLeaving" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label class="form-label">Can this employee occupy a higher grade role?</label>
+                    <div class="radio-options">
+                        <label class="radio-label-inline"><input type="radio" asp-for="CanOccupyHigherGrade" value="true" /><span>Yes</span></label>
+                        <label class="radio-label-inline"><input type="radio" asp-for="CanOccupyHigherGrade" value="false" /><span>No</span></label>
+                    </div>
+                    <span asp-validation-for="CanOccupyHigherGrade" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="NineBoxAssessment" class="form-label">
+                        <i class="fas fa-th"></i> Nine Box Assessment
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-th textarea-icon"></i>
+                        <textarea asp-for="NineBoxAssessment" class="form-control-textarea" rows="4" placeholder="Enter nine box assessment..."></textarea>
+                    </div>
+                    <span asp-validation-for="NineBoxAssessment" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="NextCareerMilestone" class="form-label">
+                        <i class="fas fa-rocket"></i> Next Career Milestone / Position
+                    </label>
+                    <div class="textarea-wrapper">
+                        <i class="fas fa-rocket textarea-icon"></i>
+                        <textarea asp-for="NextCareerMilestone" class="form-control-textarea" rows="4" placeholder="Enter next career milestone..."></textarea>
+                    </div>
+                    <span asp-validation-for="NextCareerMilestone" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label class="form-label">Readiness</label>
+                    <div class="radio-group-vertical">
+                        <label class="radio-label-vertical"><input type="radio" asp-for="Readiness" value="1" /><span>Ready Now</span></label>
+                        <label class="radio-label-vertical"><input type="radio" asp-for="Readiness" value="2" /><span>Short Term</span></label>
+                        <label class="radio-label-vertical"><input type="radio" asp-for="Readiness" value="3" /><span>Mid Term</span></label>
+                        <label class="radio-label-vertical"><input type="radio" asp-for="Readiness" value="4" /><span>Long Term</span></label>
+                    </div>
+                    <span asp-validation-for="Readiness" class="validation-message text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Development Actions Section -->
+        <div class="form-section">
+            <div class="section-header">
+                <div class="header-icon-wrapper" style="background: linear-gradient(135deg, var(--success), #059669);">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <h3>Development Actions</h3>
+                <span class="section-badge">Plan</span>
+            </div>
+            <div class="section-body">
+                <div class="table-responsive">
+                    <table class="dynamic-table" id="developmentActionsTable">
+                        <thead>
+                            <tr>
+                                <th>Development Action</th>
+                                <th>Objective</th>
+                                <th style="width: 180px;">Timeline</th>
+                                <th style="width: 180px;">Status</th>
+                                <th style="width: 120px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.DevelopmentActions.Count; i++)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="input-icon-wrapper-sm">
+                                            <i class="fas fa-tasks input-icon-sm"></i>
+                                            <input asp-for="DevelopmentActions[i].DevelopmentAction" class="form-control-modern-sm" placeholder="Action" />
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-icon-wrapper-sm">
+                                            <i class="fas fa-bullseye input-icon-sm"></i>
+                                            <input asp-for="DevelopmentActions[i].Objective" class="form-control-modern-sm" placeholder="Objective" />
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="input-icon-wrapper-sm">
+                                            <i class="fas fa-calendar input-icon-sm"></i>
+                                            <input asp-for="DevelopmentActions[i].Timeline" class="form-control-modern-sm" placeholder="Timeline" />
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <select asp-for="DevelopmentActions[i].Status" class="form-control-modern-sm">
+                                            <option value="">Select</option>
+                                            <option value="1">Completed</option>
+                                            <option value="2">Delayed</option>
+                                            <option value="3">In Progress</option>
+                                            <option value="4">Not Started</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn-remove-sm remove-development-action">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <button type="button" id="addDevelopmentAction" class="btn-add-row success">
+                    <i class="fas fa-plus-circle"></i> Add Development Action
+                </button>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <button type="submit" class="btn-update" id="submitBtn">
+                <i class="fas fa-save"></i>
+                Update Talent Assessment
+            </button>
+            <a asp-action="Index" class="btn-cancel">
+                <i class="fas fa-times"></i>
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Templates -->
+<script type="text/template" id="directReportTemplate">
+    <tr>
+        <td>
+            <div class="input-icon-wrapper-sm">
+                <i class="fas fa-user input-icon-sm"></i>
+                <input name="DirectReports[INDEX].EmployeeName" class="form-control-modern-sm" placeholder="Name" />
+            </div>
+        </td>
+        <td>
+            <select name="DirectReports[INDEX].PerformanceRating" class="form-control-modern-sm">
+                <option value="">Select</option>
+                <option value="1">CEE</option>
+                <option value="2">EE</option>
+                <option value="3">ME</option>
+                <option value="4">PME</option>
+                <option value="5">DNME</option>
+            </select>
+        </td>
+        <td>
+            <div class="input-icon-wrapper-sm">
+                <i class="fas fa-comment input-icon-sm"></i>
+                <input name="DirectReports[INDEX].Comments" class="form-control-modern-sm" placeholder="Comments" />
+            </div>
+        </td>
+        <td>
+            <button type="button" class="btn-remove-sm remove-direct-report">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    </tr>
+</script>
+
+<script type="text/template" id="developmentActionTemplate">
+    <tr>
+        <td>
+            <div class="input-icon-wrapper-sm">
+                <i class="fas fa-tasks input-icon-sm"></i>
+                <input name="DevelopmentActions[INDEX].DevelopmentAction" class="form-control-modern-sm" placeholder="Action" />
+            </div>
+        </td>
+        <td>
+            <div class="input-icon-wrapper-sm">
+                <i class="fas fa-bullseye input-icon-sm"></i>
+                <input name="DevelopmentActions[INDEX].Objective" class="form-control-modern-sm" placeholder="Objective" />
+            </div>
+        </td>
+        <td>
+            <div class="input-icon-wrapper-sm">
+                <i class="fas fa-calendar input-icon-sm"></i>
+                <input name="DevelopmentActions[INDEX].Timeline" class="form-control-modern-sm" placeholder="Timeline" />
+            </div>
+        </td>
+        <td>
+            <select name="DevelopmentActions[INDEX].Status" class="form-control-modern-sm">
+                <option value="">Select</option>
+                <option value="1">Completed</option>
+                <option value="2">Delayed</option>
+                <option value="3">In Progress</option>
+                <option value="4">Not Started</option>
+            </select>
+        </td>
+        <td>
+            <button type="button" class="btn-remove-sm remove-development-action">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    </tr>
+</script>
+
+<style>
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+        }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Form Sections */
+    .form-section {
+        background: white;
+        border-radius: 1rem;
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        transition: box-shadow 0.2s;
+    }
+
+        .form-section:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+    .section-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .header-icon-wrapper {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+    }
+
+    .section-header h3 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        flex: 1;
+    }
+
+    .section-badge {
+        font-size: 0.6rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        background: var(--gray-200);
+        color: var(--gray-600);
+        border-radius: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .section-body {
+        padding: 1.5rem;
+    }
+
+    /* Form Row Grid */
+    .form-row-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .form-row-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
+
+    /* Form Groups */
+    .form-group-modern {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .form-label i {
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
+
+    .required {
+        color: var(--danger);
+        font-size: 1rem;
+    }
+
+    .input-icon-wrapper {
+        position: relative;
+    }
+
+        .input-icon-wrapper i.input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 0.625rem 0.75rem 0.625rem 2rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+        .form-control-modern:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    /* Small Form Controls */
+    .input-icon-wrapper-sm {
+        position: relative;
+    }
+
+        .input-icon-wrapper-sm i.input-icon-sm {
+            position: absolute;
+            left: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.7rem;
+            pointer-events: none;
+        }
+
+    .form-control-modern-sm {
+        width: 100%;
+        padding: 0.4rem 0.5rem 0.4rem 1.75rem;
+        font-size: 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.375rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+        .form-control-modern-sm:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    /* Textareas */
+    .textarea-wrapper {
+        position: relative;
+    }
+
+        .textarea-wrapper i.textarea-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 0.75rem;
+            color: var(--gray-400);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+
+    .form-control-textarea {
+        width: 100%;
+        padding: 0.625rem 0.75rem 0.625rem 2rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        resize: vertical;
+    }
+
+        .form-control-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    .textarea-wrapper-sm {
+        position: relative;
+    }
+
+        .textarea-wrapper-sm i.textarea-icon {
+            position: absolute;
+            left: 0.5rem;
+            top: 0.5rem;
+            color: var(--gray-400);
+            font-size: 0.7rem;
+            pointer-events: none;
+        }
+
+    .form-control-textarea-sm {
+        width: 100%;
+        padding: 0.4rem 0.5rem 0.4rem 1.75rem;
+        font-size: 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.375rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        resize: vertical;
+    }
+
+        .form-control-textarea-sm:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    /* Info Alert */
+    .info-alert {
+        background: #e6f7ff;
+        border-left: 4px solid var(--info);
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 0.75rem;
+    }
+
+        .info-alert i {
+            color: var(--info);
+            font-size: 1rem;
+            margin-top: 0.125rem;
+        }
+
+        .info-alert div {
+            flex: 1;
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            line-height: 1.4;
+        }
+
+    /* Validation */
+    .validation-summary {
+        background: #fee;
+        border-left: 3px solid var(--danger);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1.5rem;
+        color: var(--danger);
+        font-size: 0.875rem;
+    }
+
+    .validation-message {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Tables */
+    .dynamic-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1rem;
+    }
+
+        .dynamic-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .dynamic-table th {
+            padding: 0.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .dynamic-table td {
+            padding: 0.35rem;
+            border: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+    /* Assessment Table */
+    .assessment-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .assessment-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .assessment-table th {
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .assessment-table td {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--gray-200);
+            vertical-align: middle;
+            font-size: 0.8rem;
+        }
+
+        .assessment-table .category-row {
+            background: var(--gray-50);
+        }
+
+            .assessment-table .category-row td {
+                padding: 0.5rem 0.75rem;
+                font-weight: 600;
+            }
+
+    .radio-cell {
+        text-align: center;
+    }
+
+    .radio-label {
+        display: inline-flex;
+        align-items: center;
+        cursor: pointer;
+        margin: 0;
+    }
+
+        .radio-label input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+    .radio-custom {
+        position: relative;
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        background-color: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+
+    .radio-label input:checked ~ .radio-custom {
+        border-color: var(--primary);
+    }
+
+    .radio-custom:after {
+        content: "";
+        position: absolute;
+        display: none;
+        top: 3px;
+        left: 3px;
+        width: 6px;
+        height: 6px;
+        background-color: var(--primary);
+        border-radius: 50%;
+    }
+
+    .radio-label input:checked ~ .radio-custom:after {
+        display: block;
+    }
+
+    /* Radio Groups */
+    .radio-group-vertical {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+    }
+
+    .radio-label-vertical {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+        transition: background-color 0.2s;
+    }
+
+        .radio-label-vertical:hover {
+            background-color: var(--gray-50);
+        }
+
+        .radio-label-vertical input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .radio-label-vertical span {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+    .radio-options {
+        display: flex;
+        gap: 1.5rem;
+        padding: 0.5rem 0;
+    }
+
+    .radio-label-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+        .radio-label-inline input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .radio-label-inline span {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+    /* Buttons */
+    .btn-add-row {
+        padding: 0.5rem 1rem;
+        background: white;
+        border: 1px solid var(--gray-300);
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: var(--primary);
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-add-row:hover {
+            background: var(--gray-50);
+            border-color: var(--primary);
+        }
+
+        .btn-add-row.success {
+            color: var(--success);
+        }
+
+            .btn-add-row.success:hover {
+                border-color: var(--success);
+                background: #e6f5e9;
+            }
+
+    .btn-remove-sm {
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--gray-200);
+        border-radius: 0.375rem;
+        background: white;
+        color: var(--danger);
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+        .btn-remove-sm:hover {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .btn-update {
+        background: linear-gradient(100deg, var(--warning), #e6a017);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-update:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+    /* Responsive */
+    @@media (max-width: 1024px) {
+        .form-row-grid-4 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .form-row-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-row-grid-4 {
+            grid-template-columns: 1fr;
+        }
+
+        .section-body {
+            padding: 1rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .dynamic-table {
+            font-size: 0.75rem;
+        }
+
+            .dynamic-table th,
+            .dynamic-table td {
+                padding: 0.25rem;
+            }
+
+        .radio-options {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .assessment-table {
+            font-size: 0.75rem;
+        }
+
+            .assessment-table td {
+                padding: 0.35rem;
+            }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add Direct Report
+        document.getElementById('addDirectReport').addEventListener('click', function() {
+            let table = document.querySelector('#directReportsTable tbody');
+            let index = table.querySelectorAll('tr').length;
+            let template = document.getElementById('directReportTemplate').innerHTML.replace(/INDEX/g, index);
+            table.insertAdjacentHTML('beforeend', template);
+        });
+
+        // Remove Direct Report
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-direct-report')) {
+                let row = e.target.closest('tr');
+                if (document.querySelectorAll('#directReportsTable tbody tr').length > 1) {
+                    row.remove();
+                } else {
+                    showAlert('At least one direct report is required.', 'warning');
+                }
+            }
+        });
+
+        // Add Development Action
+        document.getElementById('addDevelopmentAction').addEventListener('click', function() {
+            let table = document.querySelector('#developmentActionsTable tbody');
+            let index = table.querySelectorAll('tr').length;
+            let template = document.getElementById('developmentActionTemplate').innerHTML.replace(/INDEX/g, index);
+            table.insertAdjacentHTML('beforeend', template);
+        });
+
+        // Remove Development Action
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-development-action')) {
+                e.target.closest('tr').remove();
+            }
+        });
+
+        // Form Submit
+        const form = document.getElementById('talentForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+            });
+        }
+
+        // Helper function for alerts
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert-toast ${type}`;
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                padding: 1rem 1.25rem;
+                border-radius: 0.75rem;
+                background: ${type === 'warning' ? '#fff5e6' : '#fee'};
+                border-left: 4px solid ${type === 'warning' ? 'var(--warning)' : 'var(--danger)'};
+                color: ${type === 'warning' ? 'var(--warning)' : 'var(--danger)'};
+                font-weight: 500;
+                z-index: 1050;
+                animation: slideIn 0.3s ease;
+                box-shadow: var(--shadow-lg);
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            `;
+            alertDiv.innerHTML = `
+                <i class="fas ${type === 'warning' ? 'fa-exclamation-triangle' : 'fa-exclamation-circle'}"></i>
+                <span>${message}</span>
+                <button type="button" style="margin-left: auto; background: none; border: none; cursor: pointer; color: inherit;" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                setTimeout(() => alertDiv.remove(), 300);
+            }, 4000);
+        }
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
