@@ -1,315 +1,936 @@
 ﻿@model IT_Service_Management_System.Models.EngagementStayInterview
 
 @{
-    ViewData["Title"] = "Stay Interview Details";
+    ViewData["Title"] = "Stay Interview Details - Axis IT Helpdesk";
 }
 
-<div class="container">
+<div class="page-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <div>
+                <h1 class="hero-title">Engagement Stay Interview</h1>
+                <p class="hero-subtitle">Complete employee engagement and satisfaction details</p>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="hero-btn hero-btn-edit">
+                <i class="fas fa-pencil-alt"></i> Edit
+            </a>
+            <a asp-action="Index" class="hero-btn hero-btn-back">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <button type="button" class="hero-btn hero-btn-print" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+        </div>
+    </div>
 
-    ```
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Employee Information Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <div class="header-icon-wrapper">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <span>Employee Information</span>
+            <span class="section-badge">Personal Details</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Name and Surname</span>
+                    <span class="info-value">@Model.NameAndSurname</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Job Title</span>
+                    <span class="info-value">@Model.JobTitle</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Department</span>
+                    <span class="info-value">@Model.Department</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date Joined Axis</span>
+                    <span class="info-value">@(Model.DateJoinedAxis?.ToString("dd MMM yyyy") ?? "—")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Manager Name</span>
+                    <span class="info-value">@Model.ManagerName</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Start Date For Current Position</span>
+                    <span class="info-value">@(Model.CurrentPositionStartDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Date of Discussion</span>
+                    <span class="info-value">@(Model.DiscussionDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <h2>Engagement Stay Interview</h2>
-
+    <!-- Purpose Alert -->
+    <div class="purpose-alert">
+        <i class="fas fa-info-circle"></i>
         <div>
-            <a asp-action="Edit"
-               asp-route-id="@Model.Id"
-               class="btn btn-warning">
-                Edit
-            </a>
+            <strong>Purpose:</strong> To gain insight into what motivates or frustrates the employee, understand what they value in Axis Solutions, and identify ways to improve support, development, engagement, and retention.
+        </div>
+    </div>
 
-            <a asp-action="Index"
-               class="btn btn-secondary">
-                Back
-            </a>
+    <!-- Questions Section -->
+    <div class="questions-container">
+        <!-- Question 1 -->
+        <div class="question-card">
+            <div class="question-header">
+                <div class="question-number">1</div>
+                <h3 class="question-title">Tell me a bit about some of your current priorities from a work perspective and how you are doing overall?</h3>
+            </div>
+            <div class="question-body">
+                <div class="answer-content">
+                    @(string.IsNullOrEmpty(Model.CurrentPrioritiesAndOverallWellbeing) ? "No response provided" : Model.CurrentPrioritiesAndOverallWellbeing)
+                </div>
+            </div>
         </div>
 
-    </div>
-
-    <!-- Employee Information -->
-
-    <div class="card mb-4">
-
-        <div class="card-header">
-            Employee Information
+        <!-- Question 2 -->
+        <div class="question-card">
+            <div class="question-header">
+                <div class="question-number">2</div>
+                <h3 class="question-title">What parts of your work keep you motivated and engaged?</h3>
+            </div>
+            <div class="question-body">
+                <div class="answer-content">
+                    @(string.IsNullOrEmpty(Model.MotivationAndEngagementFactors) ? "No response provided" : Model.MotivationAndEngagementFactors)
+                </div>
+            </div>
         </div>
 
-        <div class="card-body row">
-
-            <div class="col-md-6 mb-3">
-                <label class="fw-bold">Name and Surname</label>
-                <div class="form-control bg-light">
-                    @Model.NameAndSurname
+        <!-- Question 3 -->
+        <div class="question-card">
+            <div class="question-header">
+                <div class="question-number">3</div>
+                <h3 class="question-title">What parts of your work or work environment reduces your energy, demotivates you or places obstacles to your ability to perform at your best?</h3>
+            </div>
+            <div class="question-body">
+                <div class="answer-content">
+                    @(string.IsNullOrEmpty(Model.DemotivatingFactors) ? "No response provided" : Model.DemotivatingFactors)
                 </div>
             </div>
-
-            <div class="col-md-6 mb-3">
-                <label class="fw-bold">Job Title</label>
-                <div class="form-control bg-light">
-                    @Model.JobTitle
-                </div>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label class="fw-bold">Department</label>
-                <div class="form-control bg-light">
-                    @Model.Department
-                </div>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label class="fw-bold">Date Joined Axis</label>
-                <div class="form-control bg-light">
-                    @Model.DateJoinedAxis?.ToString("dd-MMM-yyyy")
-                </div>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label class="fw-bold">Manager Name</label>
-                <div class="form-control bg-light">
-                    @Model.ManagerName
-                </div>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label class="fw-bold">Start Date For Current Position</label>
-                <div class="form-control bg-light">
-                    @Model.CurrentPositionStartDate?.ToString("dd-MMM-yyyy")
-                </div>
-            </div>
-
-            <div class="col-md-6 mb-3">
-                <label class="fw-bold">Date Of Discussion</label>
-                <div class="form-control bg-light">
-                    @Model.DiscussionDate?.ToString("dd-MMM-yyyy")
-                </div>
-            </div>
-
         </div>
 
+        <!-- Question 4 -->
+        <div class="question-card">
+            <div class="question-header">
+                <div class="question-number">4</div>
+                <h3 class="question-title">Do you feel that your skills are being fully utilized in your current role?</h3>
+            </div>
+            <div class="question-body">
+                <div class="answer-content">
+                    @(string.IsNullOrEmpty(Model.SkillsUtilizationFeedback) ? "No response provided" : Model.SkillsUtilizationFeedback)
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 5 -->
+        <div class="question-card">
+            <div class="question-header">
+                <div class="question-number">5</div>
+                <h3 class="question-title">Similarly, what in your view exists in the Company that?</h3>
+            </div>
+            <div class="question-body">
+                <div class="sub-answer">
+                    <div class="sub-label">
+                        <i class="fas fa-heart"></i> Attracts people to stay:
+                    </div>
+                    <div class="answer-content">
+                        @(string.IsNullOrEmpty(Model.ReasonsPeopleStay) ? "No response provided" : Model.ReasonsPeopleStay)
+                    </div>
+                </div>
+                <div class="sub-answer">
+                    <div class="sub-label">
+                        <i class="fas fa-door-open"></i> Results in them wanting to leave:
+                    </div>
+                    <div class="answer-content">
+                        @(string.IsNullOrEmpty(Model.ReasonsPeopleLeave) ? "No response provided" : Model.ReasonsPeopleLeave)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 6 -->
+        <div class="question-card">
+            <div class="question-header">
+                <div class="question-number">6</div>
+                <h3 class="question-title">What aspects would you change about working for Axis Solutions?</h3>
+            </div>
+            <div class="question-body">
+                <div class="answer-content">
+                    @(string.IsNullOrEmpty(Model.ChangesToWorkingAtAxis) ? "No response provided" : Model.ChangesToWorkingAtAxis)
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 7 -->
+        <div class="question-card">
+            <div class="question-header">
+                <div class="question-number">7</div>
+                <h3 class="question-title">What is your next career milestone or personal development milestone?</h3>
+            </div>
+            <div class="question-body">
+                <div class="answer-content">
+                    @(string.IsNullOrEmpty(Model.NextCareerMilestone) ? "No response provided" : Model.NextCareerMilestone)
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 8 -->
+        <div class="question-card">
+            <div class="question-header">
+                <div class="question-number">8</div>
+                <h3 class="question-title">Do you feel that you have sufficient support and/or opportunities to achieve your personal and/or career milestones at Axis Solutions?</h3>
+            </div>
+            <div class="question-body">
+                <div class="status-grid">
+                    <div class="status-item">
+                        <span class="status-label">Support Status</span>
+                        <span class="status-value @(Model.FeelsSupported == true ? "status-yes" : "status-no")">
+                            <i class="fas @(Model.FeelsSupported == true ? "fa-check-circle" : "fa-times-circle")"></i>
+                            @(Model.FeelsSupported == true ? "I do feel supported" : "I don't feel sufficiently supported")
+                        </span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Development Plan</span>
+                        <span class="status-value @(Model.HasDevelopmentPlan == true ? "status-yes" : "status-no")">
+                            <i class="fas @(Model.HasDevelopmentPlan == true ? "fa-check-circle" : "fa-times-circle")"></i>
+                            @(Model.HasDevelopmentPlan == true ? "Yes" : "No")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Question 9 -->
+        <div class="question-card">
+            <div class="question-header">
+                <div class="question-number">9</div>
+                <h3 class="question-title">What ideas would you love to see implemented in Axis Solutions in order for it to improve as an employer or make you stay employed and engaged with Axis Solutions?</h3>
+            </div>
+            <div class="question-body">
+                <div class="answer-content">
+                    @(string.IsNullOrEmpty(Model.ImprovementIdeas) ? "No response provided" : Model.ImprovementIdeas)
+                </div>
+            </div>
+        </div>
+
+        <!-- Overall Status -->
+        <div class="question-card status-card">
+            <div class="question-header">
+                <div class="question-number status">★</div>
+                <h3 class="question-title">Overall Status</h3>
+            </div>
+            <div class="question-body">
+                <div class="overall-status">
+                    @{
+                        var statusClass = Model.OverallStatus switch
+                        {
+                            EngagementStatus.HighlyMotivatedAndEngaged => "status-engaged",
+                            EngagementStatus.SatisfiedWithWorkingAtAxis => "status-satisfied",
+                            EngagementStatus.ConsideringOpportunitiesOutsideAxis => "status-considering",
+                            EngagementStatus.DissatisfiedWithWorkingAtAxis => "status-dissatisfied",
+                            _ => "status-unknown"
+                        };
+                    }
+                    <span class="overall-badge @statusClass">
+                        @Model.OverallStatus switch
+                        {
+                        EngagementStatus.HighlyMotivatedAndEngaged => "Highly Motivated and Engaged",
+                        EngagementStatus.SatisfiedWithWorkingAtAxis => "Satisfied with working for Axis Solutions",
+                        EngagementStatus.ConsideringOpportunitiesOutsideAxis => "Considering opportunities outside Axis",
+                        EngagementStatus.DissatisfiedWithWorkingAtAxis => "Dissatisfied with working at Axis Solutions",
+                        _ => "Not Set"
+                        }
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rating Matrix -->
+        <div class="question-card matrix-card">
+            <div class="question-header">
+                <div class="header-icon-wrapper">
+                    <i class="fas fa-table"></i>
+                </div>
+                <h3 class="question-title">Current Rating Assessment</h3>
+                <span class="section-badge">Ratings</span>
+            </div>
+            <div class="question-body">
+                <div class="table-responsive">
+                    <table class="ratings-table">
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th>Rating</th>
+                                <th>Comment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="aspect-cell">My Wellbeing at Axis Solutions</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.WellbeingRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.WellbeingComment) ? "—" : Model.WellbeingComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">Job Satisfaction Levels</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.JobSatisfactionRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.JobSatisfactionComment) ? "—" : Model.JobSatisfactionComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">Career Opportunities</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.CareerOpportunitiesRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.CareerOpportunitiesComment) ? "—" : Model.CareerOpportunitiesComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">Quality of Leadership</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.LeadershipQualityRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.LeadershipQualityComment) ? "—" : Model.LeadershipQualityComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">Relationship with my Manager</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.ManagerRelationshipRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.ManagerRelationshipComment) ? "—" : Model.ManagerRelationshipComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">Relationship with Peers / Team</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.TeamRelationshipRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.TeamRelationshipComment) ? "—" : Model.TeamRelationshipComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">BSC System</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.BSCSystemRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.BSCSystemComment) ? "—" : Model.BSCSystemComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">Reward for Performance</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.RewardForPerformanceRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.RewardForPerformanceComment) ? "—" : Model.RewardForPerformanceComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">Communication Channels</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.CommunicationChannelsRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.CommunicationChannelsComment) ? "—" : Model.CommunicationChannelsComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">Opportunities to Develop</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.DevelopmentOpportunitiesRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.DevelopmentOpportunitiesComment) ? "—" : Model.DevelopmentOpportunitiesComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">Pay and Benefits</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.PayAndBenefitsRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.PayAndBenefitsComment) ? "—" : Model.PayAndBenefitsComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">Working Conditions</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.WorkingConditionsRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.WorkingConditionsComment) ? "—" : Model.WorkingConditionsComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">The Organization in General</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.OrganizationGeneralRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.OrganizationGeneralComment) ? "—" : Model.OrganizationGeneralComment)</td>
+                            </tr>
+                            <tr>
+                                <td class="aspect-cell">Other</td>
+                                <td class="rating-cell">@GetRatingDisplay(Model.OtherRating)</td>
+                                <td class="comment-cell">@(string.IsNullOrEmpty(Model.OtherComment) ? "—" : Model.OtherComment)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interviewer Comments -->
+        <div class="question-card">
+            <div class="question-header">
+                <div class="header-icon-wrapper">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <h3 class="question-title">Interviewer Overall Comments from Discussion</h3>
+            </div>
+            <div class="question-body">
+                <div class="answer-content">
+                    @(string.IsNullOrEmpty(Model.InterviewerOverallComments) ? "No comments provided" : Model.InterviewerOverallComments)
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="alert alert-info">
-        The purpose of the conversation is to gain insight into what motivates or frustrates the employee,
-        understand what they value in Axis Solutions, and identify ways to improve support, development,
-        engagement, and retention.
-    </div>
-
-    <!-- Question 1 -->
-
-    <h4>1. Tell me a bit about some of your current priorities from a work perspective and how you are doing overall?</h4>
-
-    <div class="form-control bg-light mb-4"
-         style="min-height:120px; white-space:pre-wrap;">
-        @Model.CurrentPrioritiesAndOverallWellbeing
-    </div>
-
-    <!-- Question 2 -->
-
-    <h4>2. What parts of your work keep you motivated and engaged?</h4>
-
-    <div class="form-control bg-light mb-4"
-         style="min-height:120px; white-space:pre-wrap;">
-        @Model.MotivationAndEngagementFactors
-    </div>
-
-    <!-- Question 3 -->
-
-    <h4>3. What parts of your work or work environment reduces your energy, demotivates you or places obstacles to your ability to perform at your best?</h4>
-
-    <div class="form-control bg-light mb-4"
-         style="min-height:120px; white-space:pre-wrap;">
-        @Model.DemotivatingFactors
-    </div>
-
-    <!-- Question 4 -->
-
-    <h4>4. Do you feel that your skills are being fully utilized in your current role?</h4>
-
-    <div class="form-control bg-light mb-4"
-         style="min-height:120px; white-space:pre-wrap;">
-        @Model.SkillsUtilizationFeedback
-    </div>
-
-    <!-- Question 5 -->
-
-    <h4>5. Similarly, what in your view exists in the Company that?</h4>
-
-    <label class="fw-bold">Attracts people to stay:</label>
-
-    <div class="form-control bg-light mb-3"
-         style="min-height:100px; white-space:pre-wrap;">
-        @Model.ReasonsPeopleStay
-    </div>
-
-    <label class="fw-bold">Results in them wanting to leave:</label>
-
-    <div class="form-control bg-light mb-4"
-         style="min-height:100px; white-space:pre-wrap;">
-        @Model.ReasonsPeopleLeave
-    </div>
-
-    <!-- Question 6 -->
-
-    <h4>6. What aspects would you change about working for Axis Solutions?</h4>
-
-    <div class="form-control bg-light mb-4"
-         style="min-height:120px; white-space:pre-wrap;">
-        @Model.ChangesToWorkingAtAxis
-    </div>
-
-    <!-- Question 7 -->
-
-    <h4>7. What is your next career milestone or personal development milestone?</h4>
-
-    <div class="form-control bg-light mb-4"
-         style="min-height:120px; white-space:pre-wrap;">
-        @Model.NextCareerMilestone
-    </div>
-
-    <!-- Question 8 -->
-
-    <h4>8. Do you feel that you have sufficient support and/or opportunities to achieve your personal and/or career milestones at Axis Solutions?</h4>
-
-    <div class="mb-2">
-        <strong>Support Status:</strong>
-        @(Model.FeelsSupported == true ? "I do feel supported" : "I don't feel sufficiently supported")
-    </div>
-
-    <div class="mb-4">
-        <strong>Development Plan:</strong>
-        @(Model.HasDevelopmentPlan == true ? "Yes" : "No")
-    </div>
-
-    <!-- Question 9 -->
-
-    <h4>9. What ideas would you love to see implemented in Axis Solutions in order for it to improve as an employer or make you stay employed and engaged with Axis Solutions?</h4>
-
-    <div class="form-control bg-light mb-4"
-         style="min-height:150px; white-space:pre-wrap;">
-        @Model.ImprovementIdeas
-    </div>
-
-    <!-- Overall Status -->
-
-    <h4>Overall, I am:</h4>
-
-    <div class="form-control bg-light mb-4">
-        @Model.OverallStatus
-    </div>
-
-    <!-- Rating Matrix -->
-
-    <h4>Current Rating Assessment</h4>
-
-    <table class="table table-bordered">
-
-        <thead>
-            <tr>
-                <th>Aspect</th>
-                <th>Rating</th>
-                <th>Comment</th>
-            </tr>
-        </thead>
-
-        <tbody>
-
-            <tr>
-                <td>My Wellbeing at Axis Solutions</td>
-                <td>@Model.WellbeingRating</td>
-                <td>@Model.WellbeingComment</td>
-            </tr>
-
-            <tr>
-                <td>Job Satisfaction Levels</td>
-                <td>@Model.JobSatisfactionRating</td>
-                <td>@Model.JobSatisfactionComment</td>
-            </tr>
-
-            <tr>
-                <td>Career Opportunities</td>
-                <td>@Model.CareerOpportunitiesRating</td>
-                <td>@Model.CareerOpportunitiesComment</td>
-            </tr>
-
-            <tr>
-                <td>Quality of Leadership</td>
-                <td>@Model.LeadershipQualityRating</td>
-                <td>@Model.LeadershipQualityComment</td>
-            </tr>
-
-            <tr>
-                <td>Relationship with my Manager</td>
-                <td>@Model.ManagerRelationshipRating</td>
-                <td>@Model.ManagerRelationshipComment</td>
-            </tr>
-
-            <tr>
-                <td>Relationship with Peers / Team</td>
-                <td>@Model.TeamRelationshipRating</td>
-                <td>@Model.TeamRelationshipComment</td>
-            </tr>
-
-            <tr>
-                <td>BSC System</td>
-                <td>@Model.BSCSystemRating</td>
-                <td>@Model.BSCSystemComment</td>
-            </tr>
-
-            <tr>
-                <td>Reward for Performance</td>
-                <td>@Model.RewardForPerformanceRating</td>
-                <td>@Model.RewardForPerformanceComment</td>
-            </tr>
-
-            <tr>
-                <td>Communication Channels</td>
-                <td>@Model.CommunicationChannelsRating</td>
-                <td>@Model.CommunicationChannelsComment</td>
-            </tr>
-
-            <tr>
-                <td>Opportunities to Develop</td>
-                <td>@Model.DevelopmentOpportunitiesRating</td>
-                <td>@Model.DevelopmentOpportunitiesComment</td>
-            </tr>
-
-            <tr>
-                <td>Pay and Benefits</td>
-                <td>@Model.PayAndBenefitsRating</td>
-                <td>@Model.PayAndBenefitsComment</td>
-            </tr>
-
-            <tr>
-                <td>Working Conditions</td>
-                <td>@Model.WorkingConditionsRating</td>
-                <td>@Model.WorkingConditionsComment</td>
-            </tr>
-
-            <tr>
-                <td>The Organization in General</td>
-                <td>@Model.OrganizationGeneralRating</td>
-                <td>@Model.OrganizationGeneralComment</td>
-            </tr>
-
-            <tr>
-                <td>Other</td>
-                <td>@Model.OtherRating</td>
-                <td>@Model.OtherComment</td>
-            </tr>
-
-        </tbody>
-
-    </table>
-
-    <!-- Interviewer Comments -->
-
-    <h4>Interviewer Overall Comments From Discussion</h4>
-
-    <div class="form-control bg-light mb-5"
-         style="min-height:150px; white-space:pre-wrap;">
-        @Model.InterviewerOverallComments
-    </div>
-    ```
-
 </div>
+
+<style>
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        box-shadow: var(--shadow-lg);
+        transition: transform 0.2s;
+    }
+
+        .hero-section:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
+        }
+
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .hero-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        backdrop-filter: blur(4px);
+    }
+
+    .hero-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .hero-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+        font-size: 0.875rem;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+    }
+
+    .hero-btn-edit {
+        background: white;
+        color: var(--primary);
+    }
+
+        .hero-btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+    .hero-btn-back {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+        .hero-btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    .hero-btn-print {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+        .hero-btn-print:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+        }
+
+    /* Details Card */
+    .details-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .header-icon-wrapper {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.875rem;
+    }
+
+    .card-header-custom span {
+        font-weight: 600;
+        color: var(--gray-700);
+        flex: 1;
+    }
+
+    .section-badge {
+        font-size: 0.6rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        background: var(--gray-200);
+        color: var(--gray-600);
+        border-radius: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* Info Grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+        transition: all 0.2s;
+    }
+
+        .info-item:hover {
+            background: white;
+            border-color: var(--primary-light);
+        }
+
+    .info-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-value {
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        font-weight: 500;
+    }
+
+    /* Purpose Alert */
+    .purpose-alert {
+        background: #e6f7ff;
+        border-left: 4px solid var(--info);
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        gap: 0.75rem;
+        box-shadow: var(--shadow-sm);
+    }
+
+        .purpose-alert i {
+            color: var(--info);
+            font-size: 1.25rem;
+            margin-top: 0.125rem;
+        }
+
+        .purpose-alert div {
+            flex: 1;
+            font-size: 0.875rem;
+            color: var(--gray-600);
+            line-height: 1.5;
+        }
+
+    /* Questions Container */
+    .questions-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .question-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        transition: all 0.2s;
+    }
+
+        .question-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+    .question-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .question-number {
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+        .question-number.status {
+            background: linear-gradient(135deg, var(--warning), #e6a017);
+            font-size: 0.9rem;
+        }
+
+    .question-title {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        flex: 1;
+        line-height: 1.4;
+    }
+
+    .question-body {
+        padding: 1.5rem;
+    }
+
+    .answer-content {
+        background: var(--gray-50);
+        padding: 1rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+        line-height: 1.6;
+        color: var(--gray-700);
+        min-height: 60px;
+        white-space: pre-wrap;
+    }
+
+        .answer-content:empty {
+            color: var(--gray-400);
+        }
+
+            .answer-content:empty::before {
+                content: "No response provided";
+                color: var(--gray-400);
+            }
+
+    /* Sub Answers */
+    .sub-answer {
+        margin-bottom: 1rem;
+    }
+
+        .sub-answer:last-child {
+            margin-bottom: 0;
+        }
+
+    .sub-label {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .sub-label i {
+            color: var(--primary);
+        }
+
+    /* Status Grid */
+    .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .status-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .status-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+    }
+
+    .status-value {
+        font-size: 0.875rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .status-yes {
+        color: var(--success);
+    }
+
+    .status-no {
+        color: var(--danger);
+    }
+
+    /* Overall Status */
+    .overall-status {
+        display: flex;
+        justify-content: center;
+        padding: 0.5rem 0;
+    }
+
+    .overall-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 2rem;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+        .overall-badge.status-engaged {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .overall-badge.status-satisfied {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+        .overall-badge.status-considering {
+            background: #fff5e6;
+            color: var(--warning);
+        }
+
+        .overall-badge.status-dissatisfied {
+            background: #fee;
+            color: var(--danger);
+        }
+
+        .overall-badge.status-unknown {
+            background: var(--gray-100);
+            color: var(--gray-500);
+        }
+
+    /* Ratings Table */
+    .ratings-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .ratings-table th {
+            background: var(--gray-50);
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            border: 1px solid var(--gray-200);
+            letter-spacing: 0.5px;
+        }
+
+        .ratings-table td {
+            padding: 0.75rem;
+            border: 1px solid var(--gray-200);
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+
+    .aspect-cell {
+        font-weight: 600;
+        color: var(--gray-700);
+    }
+
+    .rating-cell {
+        text-align: center;
+        font-weight: 600;
+    }
+
+    .comment-cell {
+        color: var(--gray-600);
+    }
+
+    /* Matrix Card */
+    .matrix-card .question-header {
+        background: var(--gray-50);
+    }
+
+    /* Status Card */
+    .status-card .question-body {
+        background: var(--gray-50);
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .hero-section {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .hero-content {
+            flex-direction: column;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .status-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .question-header {
+            flex-wrap: wrap;
+        }
+
+        .ratings-table {
+            font-size: 0.75rem;
+        }
+
+            .ratings-table th,
+            .ratings-table td {
+                padding: 0.5rem;
+            }
+
+        .overall-badge {
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+        }
+    }
+
+    @@media print {
+        .hero-section {
+            background: var(--gray-100);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .hero-actions {
+            display: none;
+        }
+
+        .question-card {
+            box-shadow: none;
+            border: 1px solid var(--gray-200);
+        }
+
+        .question-header {
+            background: var(--gray-100);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+
+@functions {
+    string GetRatingDisplay(EngagementRating? rating)
+    {
+        if (!rating.HasValue) return "Not rated";
+
+        return rating.Value switch
+        {
+            EngagementRating.NotMeetingExpectations => "Not Meeting Expectations",
+            EngagementRating.NeedsImprovement => "Needs Improvement",
+            EngagementRating.MeetingMyExpectations => "Meeting My Expectations",
+            _ => "Not rated"
+        };
+    }
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
