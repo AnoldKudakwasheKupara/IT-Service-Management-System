@@ -1,0 +1,223 @@
+﻿@using IT_Service_Management_System.Enums
+@model IEnumerable<IT_Service_Management_System.Models.TalentIdentification>
+
+@{
+    ViewData["Title"] = "Talent Identification";
+}
+
+<div class="container-fluid">
+
+    ```
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <h2>
+            Talent Identification
+        </h2>
+
+        <a asp-action="Create"
+           class="btn btn-primary">
+
+            <i class="fas fa-plus"></i>
+            New Talent Assessment
+
+        </a>
+
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+
+            @TempData["Success"]
+
+            <button type="button"
+                    class="btn-close"
+                    data-bs-dismiss="alert">
+            </button>
+
+        </div>
+    }
+
+    <div class="card">
+
+        <div class="card-body">
+
+            <table class="table table-striped table-bordered table-hover">
+
+                <thead class="table-dark">
+
+                    <tr>
+
+                        <th>Employee Name</th>
+
+                        <th>Department</th>
+
+                        <th>Job Title</th>
+
+                        <th>Country</th>
+
+                        <th>Risk Of Leaving</th>
+
+                        <th>Readiness</th>
+
+                        <th>Created Date</th>
+
+                        <th width="250">
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @if (Model.Any())
+                    {
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    @item.EmployeeName
+                                </td>
+
+                                <td>
+                                    @item.Department
+                                </td>
+
+                                <td>
+                                    @item.JobTitle
+                                </td>
+
+                                <td>
+                                    @item.Country
+                                </td>
+
+                                <td>
+
+                                    @switch (item.RiskOfLeaving)
+                                    {
+                                        case RiskLevel.Low:
+                                            <span class="badge bg-success">
+                                                Low
+                                            </span>
+                                            break;
+
+                                        case RiskLevel.Medium:
+                                            <span class="badge bg-warning text-dark">
+                                                Medium
+                                            </span>
+                                            break;
+
+                                        case RiskLevel.High:
+                                            <span class="badge bg-danger">
+                                                High
+                                            </span>
+                                            break;
+
+                                        default:
+                                            <span class="badge bg-secondary">
+                                                Not Set
+                                            </span>
+                                            break;
+                                    }
+
+                                </td>
+
+                                <td>
+
+                                    @switch (item.Readiness)
+                                    {
+                                        case ReadinessLevel.ReadyNow:
+                                            <span class="badge bg-success">
+                                                Ready Now
+                                            </span>
+                                            break;
+
+                                        case ReadinessLevel.ShortTerm:
+                                            <span class="badge bg-info">
+                                                Short Term
+                                            </span>
+                                            break;
+
+                                        case ReadinessLevel.MidTerm:
+                                            <span class="badge bg-primary">
+                                                Mid Term
+                                            </span>
+                                            break;
+
+                                        case ReadinessLevel.LongTerm:
+                                            <span class="badge bg-dark">
+                                                Long Term
+                                            </span>
+                                            break;
+
+                                        default:
+                                            <span class="badge bg-secondary">
+                                                Not Set
+                                            </span>
+                                            break;
+                                    }
+
+                                </td>
+
+                                <td>
+                                    @item.CreatedDate.ToString("dd-MMM-yyyy")
+                                </td>
+
+                                <td>
+
+                                    <a asp-action="Details"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-info btn-sm">
+
+                                        <i class="fas fa-eye"></i>
+
+                                    </a>
+
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-warning btn-sm">
+
+                                        <i class="fas fa-edit"></i>
+
+                                    </a>
+
+                                    <a asp-action="Delete"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-danger btn-sm">
+
+                                        <i class="fas fa-trash"></i>
+
+                                    </a>
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+
+                            <td colspan="8"
+                                class="text-center">
+
+                                No Talent Identification Records Found
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+    ```
+
+</div>
