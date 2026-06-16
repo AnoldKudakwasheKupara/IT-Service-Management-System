@@ -1,5 +1,1048 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model TalentIdentification
+@using IT_Service_Management_System.Enums
+
 @{
+    ViewData["Title"] = "Talent Identification Details - Axis IT Helpdesk";
 }
+
+<div class="page-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <div>
+                <h1 class="hero-title">Talent Identification Details</h1>
+                <p class="hero-subtitle">Complete talent assessment and identification information</p>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="hero-btn hero-btn-edit">
+                <i class="fas fa-pencil-alt"></i> Edit
+            </a>
+            <a asp-action="Index" class="hero-btn hero-btn-back">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            <button type="button" class="hero-btn hero-btn-print" onclick="window.print()">
+                <i class="fas fa-print"></i> Print
+            </button>
+        </div>
+    </div>
+
+    <!-- Employee Information Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <div class="header-icon-wrapper">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <span>Employee Information</span>
+            <span class="section-badge">Personal Details</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Employee Name</span>
+                    <span class="info-value">@Model.EmployeeName</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Department</span>
+                    <span class="info-value">@Model.Department</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Job Title</span>
+                    <span class="info-value">@Model.JobTitle</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Country</span>
+                    <span class="info-value">@Model.Country</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Hire Date</span>
+                    <span class="info-value">@(Model.HireDate?.ToString("dd MMM yyyy") ?? "—")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Track Record -->
+    <div class="details-card">
+        <div class="card-header-custom" style="border-left: 4px solid var(--success);">
+            <div class="header-icon-wrapper" style="background: linear-gradient(135deg, var(--success), #059669);">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <span>Performance Track Record</span>
+            <span class="section-badge">KPIs & Projects</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="kpi-grid">
+                <div class="kpi-item">
+                    <span class="kpi-label">2023</span>
+                    <div class="kpi-value">@(string.IsNullOrEmpty(Model.KPI2023) ? "No data provided" : Model.KPI2023)</div>
+                </div>
+                <div class="kpi-item">
+                    <span class="kpi-label">2024</span>
+                    <div class="kpi-value">@(string.IsNullOrEmpty(Model.KPI2024) ? "No data provided" : Model.KPI2024)</div>
+                </div>
+                <div class="kpi-item">
+                    <span class="kpi-label">2025</span>
+                    <div class="kpi-value">@(string.IsNullOrEmpty(Model.KPI2025) ? "No data provided" : Model.KPI2025)</div>
+                </div>
+                <div class="kpi-item">
+                    <span class="kpi-label">2026</span>
+                    <div class="kpi-value">@(string.IsNullOrEmpty(Model.KPI2026) ? "No data provided" : Model.KPI2026)</div>
+                </div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Key Projects Led</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.KeyProjectsLed) ? "No information provided" : Model.KeyProjectsLed)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Delivery Setbacks</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.DeliverySetbacks) ? "No information provided" : Model.DeliverySetbacks)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Long-Term Business Initiatives</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.LongTermBusinessInitiatives) ? "No information provided" : Model.LongTermBusinessInitiatives)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core Leadership Capability -->
+    <div class="details-card">
+        <div class="card-header-custom" style="border-left: 4px solid var(--info);">
+            <div class="header-icon-wrapper" style="background: linear-gradient(135deg, var(--info), #2563eb);">
+                <i class="fas fa-users"></i>
+            </div>
+            <span>Core Leadership Capability</span>
+            <span class="section-badge">Management</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="info-alert">
+                <i class="fas fa-info-circle"></i>
+                <div>Only complete this section if the employee is in a supervisory or management role.</div>
+            </div>
+
+            @if (Model.DirectReports != null && Model.DirectReports.Any())
+            {
+                <div class="table-responsive">
+                    <table class="details-table">
+                        <thead>
+                            <tr>
+                                <th>Employee Name</th>
+                                <th>Performance Rating</th>
+                                <th>Comments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var report in Model.DirectReports)
+                            {
+                                <tr>
+                                    <td>@report.EmployeeName</td>
+                                    <td>@GetPerformanceRatingDisplay(report.PerformanceRating)</td>
+                                    <td>@(string.IsNullOrEmpty(report.Comments) ? "—" : report.Comments)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-small">
+                    <i class="fas fa-users"></i>
+                    <span>No direct reports recorded</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Leadership Assessment -->
+    <div class="details-card">
+        <div class="card-header-custom" style="border-left: 4px solid var(--info);">
+            <div class="header-icon-wrapper" style="background: linear-gradient(135deg, var(--info), #2563eb);">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <span>Leadership Assessment</span>
+            <span class="section-badge">Evaluation</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="info-block">
+                <span class="info-block-label">Overall Comments</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.LeadershipOverallComments) ? "No comments provided" : Model.LeadershipOverallComments)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Team Capability Development</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.TeamCapabilityDevelopment) ? "No information provided" : Model.TeamCapabilityDevelopment)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Structured One-on-One Meetings</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.StructuredOneOnOnes) ? "No information provided" : Model.StructuredOneOnOnes)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Terminated Poor Performers</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.TerminatedPoorPerformers) ? "No information provided" : Model.TerminatedPoorPerformers)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Leadership Development Areas</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.LeadershipDevelopmentAreas) ? "No information provided" : Model.LeadershipDevelopmentAreas)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Living The Axis Values -->
+    <div class="details-card">
+        <div class="card-header-custom" style="border-left: 4px solid var(--success);">
+            <div class="header-icon-wrapper" style="background: linear-gradient(135deg, var(--success), #059669);">
+                <i class="fas fa-heart"></i>
+            </div>
+            <span>Living The Axis Values</span>
+            <span class="section-badge">Values</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="info-block">
+                <span class="info-block-label">Challenges Applying Axis Values</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.ChallengesApplyingAxisValues) ? "No information provided" : Model.ChallengesApplyingAxisValues)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Self-Development Actions</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.SelfDevelopmentActions) ? "No information provided" : Model.SelfDevelopmentActions)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Self-Initiated Leadership Development</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.SelfInitiatedLeadershipDevelopment) ? "No information provided" : Model.SelfInitiatedLeadershipDevelopment)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Potential Assessment -->
+    <div class="details-card">
+        <div class="card-header-custom" style="border-left: 4px solid var(--warning);">
+            <div class="header-icon-wrapper" style="background: linear-gradient(135deg, var(--warning), #e6a017);">
+                <i class="fas fa-arrow-up"></i>
+            </div>
+            <span>Potential To Take On Higher Or Increased Complexity</span>
+            <span class="section-badge">Assessment</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="assessment-grid">
+                <div class="assessment-section">
+                    <h4 class="assessment-section-title">Thinking</h4>
+                    <div class="assessment-items">
+                        <div class="assessment-item">
+                            <span>Cut through complex and ambiguous data</span>
+                            <span class="assessment-badge @(Model.ThinkingComplexity == true ? "yes" : Model.ThinkingComplexity == false ? "no" : "not-set")">
+                                @(Model.ThinkingComplexity == true ? "Yes" : Model.ThinkingComplexity == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                        <div class="assessment-item">
+                            <span>Use intuition and judgment</span>
+                            <span class="assessment-badge @(Model.ThinkingJudgement == true ? "yes" : Model.ThinkingJudgement == false ? "no" : "not-set")">
+                                @(Model.ThinkingJudgement == true ? "Yes" : Model.ThinkingJudgement == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                        <div class="assessment-item">
+                            <span>Handle scale and manage complexity</span>
+                            <span class="assessment-badge @(Model.ThinkingScale == true ? "yes" : Model.ThinkingScale == false ? "no" : "not-set")">
+                                @(Model.ThinkingScale == true ? "Yes" : Model.ThinkingScale == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assessment-section">
+                    <h4 class="assessment-section-title">Wisdom / Judgment</h4>
+                    <div class="assessment-items">
+                        <div class="assessment-item">
+                            <span>Size up situations fast and use sound judgment</span>
+                            <span class="assessment-badge @(Model.WisdomFastJudgement == true ? "yes" : Model.WisdomFastJudgement == false ? "no" : "not-set")">
+                                @(Model.WisdomFastJudgement == true ? "Yes" : Model.WisdomFastJudgement == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                        <div class="assessment-item">
+                            <span>Know when and where to act</span>
+                            <span class="assessment-badge @(Model.WisdomWhenToAct == true ? "yes" : Model.WisdomWhenToAct == false ? "no" : "not-set")">
+                                @(Model.WisdomWhenToAct == true ? "Yes" : Model.WisdomWhenToAct == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                        <div class="assessment-item">
+                            <span>Combine short-term focus with long-term impact</span>
+                            <span class="assessment-badge @(Model.WisdomLongTermImpact == true ? "yes" : Model.WisdomLongTermImpact == false ? "no" : "not-set")">
+                                @(Model.WisdomLongTermImpact == true ? "Yes" : Model.WisdomLongTermImpact == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assessment-section">
+                    <h4 class="assessment-section-title">Courage</h4>
+                    <div class="assessment-items">
+                        <div class="assessment-item">
+                            <span>Ability to take risks</span>
+                            <span class="assessment-badge @(Model.CourageRiskTaking == true ? "yes" : Model.CourageRiskTaking == false ? "no" : "not-set")">
+                                @(Model.CourageRiskTaking == true ? "Yes" : Model.CourageRiskTaking == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                        <div class="assessment-item">
+                            <span>Stand up for convictions with authenticity</span>
+                            <span class="assessment-badge @(Model.CourageConvictions == true ? "yes" : Model.CourageConvictions == false ? "no" : "not-set")">
+                                @(Model.CourageConvictions == true ? "Yes" : Model.CourageConvictions == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assessment-section">
+                    <h4 class="assessment-section-title">Self Awareness</h4>
+                    <div class="assessment-items">
+                        <div class="assessment-item">
+                            <span>Conscious of strengths and improvement areas</span>
+                            <span class="assessment-badge @(Model.SelfAwareness == true ? "yes" : Model.SelfAwareness == false ? "no" : "not-set")">
+                                @(Model.SelfAwareness == true ? "Yes" : Model.SelfAwareness == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assessment-section">
+                    <h4 class="assessment-section-title">Receptive To Feedback</h4>
+                    <div class="assessment-items">
+                        <div class="assessment-item">
+                            <span>Open to feedback</span>
+                            <span class="assessment-badge @(Model.OpenToFeedback == true ? "yes" : Model.OpenToFeedback == false ? "no" : "not-set")">
+                                @(Model.OpenToFeedback == true ? "Yes" : Model.OpenToFeedback == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                        <div class="assessment-item">
+                            <span>Constantly willing to improve</span>
+                            <span class="assessment-badge @(Model.WillingToImprove == true ? "yes" : Model.WillingToImprove == false ? "no" : "not-set")">
+                                @(Model.WillingToImprove == true ? "Yes" : Model.WillingToImprove == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assessment-section">
+                    <h4 class="assessment-section-title">Learning Agility</h4>
+                    <div class="assessment-items">
+                        <div class="assessment-item">
+                            <span>Adapt effectively and learn quickly</span>
+                            <span class="assessment-badge @(Model.LearningAgility == true ? "yes" : Model.LearningAgility == false ? "no" : "not-set")">
+                                @(Model.LearningAgility == true ? "Yes" : Model.LearningAgility == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assessment-section">
+                    <h4 class="assessment-section-title">Resilience</h4>
+                    <div class="assessment-items">
+                        <div class="assessment-item">
+                            <span>Maintain performance under pressure and uncertainty</span>
+                            <span class="assessment-badge @(Model.Resilience == true ? "yes" : Model.Resilience == false ? "no" : "not-set")">
+                                @(Model.Resilience == true ? "Yes" : Model.Resilience == false ? "No" : "Not Set")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Career Development -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <div class="header-icon-wrapper">
+                <i class="fas fa-route"></i>
+            </div>
+            <span>Career Development</span>
+            <span class="section-badge">Growth</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="info-block">
+                <span class="info-block-label">Career Aspirations</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.CareerAspirations) ? "No information provided" : Model.CareerAspirations)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Mobility Preference</span>
+                <div class="info-block-value">@GetMobilityDisplay(Model.Mobility)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Risk Of Leaving</span>
+                <div class="info-block-value">@GetRiskLevelDisplay(Model.RiskOfLeaving)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Can Occupy Higher Grade Role</span>
+                <div class="info-block-value">@(Model.CanOccupyHigherGrade == true ? "Yes" : Model.CanOccupyHigherGrade == false ? "No" : "Not specified")</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Nine Box Assessment</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.NineBoxAssessment) ? "No information provided" : Model.NineBoxAssessment)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Next Career Milestone / Position</span>
+                <div class="info-block-value">@(string.IsNullOrEmpty(Model.NextCareerMilestone) ? "No information provided" : Model.NextCareerMilestone)</div>
+            </div>
+
+            <div class="info-block">
+                <span class="info-block-label">Readiness</span>
+                <div class="info-block-value">@GetReadinessDisplay(Model.Readiness)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Development Actions -->
+    <div class="details-card">
+        <div class="card-header-custom" style="border-left: 4px solid var(--success);">
+            <div class="header-icon-wrapper" style="background: linear-gradient(135deg, var(--success), #059669);">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <span>Development Actions</span>
+            <span class="section-badge">Plan</span>
+        </div>
+        <div class="card-body-custom">
+            @if (Model.DevelopmentActions != null && Model.DevelopmentActions.Any())
+            {
+                <div class="table-responsive">
+                    <table class="details-table">
+                        <thead>
+                            <tr>
+                                <th>Development Action</th>
+                                <th>Objective</th>
+                                <th>Timeline</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var action in Model.DevelopmentActions)
+                            {
+                                <tr>
+                                    <td>@action.DevelopmentAction</td>
+                                    <td>@action.Objective</td>
+                                    <td>@action.Timeline</td>
+                                    <td>@Html.Raw(GetStatusDisplay(action.Status))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-small">
+                    <i class="fas fa-tasks"></i>
+                    <span>No development actions recorded</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* Hero Section */
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        box-shadow: var(--shadow-lg);
+        transition: transform 0.2s;
+    }
+
+        .hero-section:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-xl);
+        }
+
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .hero-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        backdrop-filter: blur(4px);
+    }
+
+    .hero-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .hero-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+        font-size: 0.875rem;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+    }
+
+    .hero-btn-edit {
+        background: white;
+        color: var(--primary);
+    }
+
+        .hero-btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+    .hero-btn-back {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+        .hero-btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    .hero-btn-print {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+        .hero-btn-print:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+        }
+
+    /* Details Cards */
+    .details-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .header-icon-wrapper {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.875rem;
+    }
+
+    .card-header-custom span {
+        font-weight: 600;
+        color: var(--gray-700);
+        flex: 1;
+    }
+
+    .section-badge {
+        font-size: 0.6rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        background: var(--gray-200);
+        color: var(--gray-600);
+        border-radius: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* Info Grid */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .info-value {
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        font-weight: 500;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .kpi-item {
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .kpi-label {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+
+    .kpi-value {
+        font-size: 0.8rem;
+        color: var(--gray-700);
+        line-height: 1.4;
+    }
+
+    /* Info Block */
+    .info-block {
+        margin-bottom: 1rem;
+    }
+
+        .info-block:last-child {
+            margin-bottom: 0;
+        }
+
+    .info-block-label {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-block-value {
+        background: var(--gray-50);
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        line-height: 1.5;
+        white-space: pre-wrap;
+    }
+
+    /* Info Alert */
+    .info-alert {
+        background: #e6f7ff;
+        border-left: 4px solid var(--info);
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 0.75rem;
+    }
+
+        .info-alert i {
+            color: var(--info);
+            font-size: 1rem;
+            margin-top: 0.125rem;
+        }
+
+        .info-alert div {
+            flex: 1;
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            line-height: 1.4;
+        }
+
+    /* Details Table */
+    .details-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .details-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .details-table th {
+            padding: 0.5rem 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid var(--gray-200);
+        }
+
+        .details-table td {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--gray-200);
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+
+            .details-table td:first-child {
+                font-weight: 500;
+                color: var(--gray-700);
+            }
+
+    /* Empty State Small */
+    .empty-state-small {
+        text-align: center;
+        padding: 2rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state-small i {
+            font-size: 2rem;
+            color: var(--gray-300);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .empty-state-small span {
+            font-size: 0.875rem;
+        }
+
+    /* Assessment Grid */
+    .assessment-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .assessment-section {
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    .assessment-section-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--gray-700);
+        margin: 0 0 0.75rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .assessment-items {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .assessment-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        padding: 0.25rem 0.5rem;
+        background: white;
+        border-radius: 0.375rem;
+        border: 1px solid var(--gray-100);
+    }
+
+    .assessment-badge {
+        padding: 0.125rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+        .assessment-badge.yes {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+        .assessment-badge.no {
+            background: #fee;
+            color: var(--danger);
+        }
+
+        .assessment-badge.not-set {
+            background: var(--gray-100);
+            color: var(--gray-500);
+        }
+
+    /* Status Badge */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .status-completed {
+        background: #e6f5e9;
+        color: var(--success);
+    }
+
+    .status-in-progress {
+        background: #e6f0ff;
+        color: var(--info);
+    }
+
+    .status-delayed {
+        background: #fff5e6;
+        color: var(--warning);
+    }
+
+    .status-not-started {
+        background: var(--gray-100);
+        color: var(--gray-500);
+    }
+
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .hero-section {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .hero-content {
+            flex-direction: column;
+        }
+
+        .kpi-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .assessment-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .info-item {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.5rem;
+        }
+
+        .details-table {
+            font-size: 0.75rem;
+        }
+
+            .details-table th,
+            .details-table td {
+                padding: 0.35rem;
+            }
+    }
+
+    @@media (max-width: 480px) {
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media print {
+        .hero-section {
+            background: var(--gray-100);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .hero-actions {
+            display: none;
+        }
+
+        .details-card {
+            box-shadow: none;
+            border: 1px solid var(--gray-200);
+        }
+
+        .card-header-custom {
+            background: var(--gray-100);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+</style>
+
+@functions {
+    string GetPerformanceRatingDisplay(PerformanceRating? rating)
+    {
+        if (!rating.HasValue) return "Not rated";
+
+        return rating.Value switch
+        {
+            PerformanceRating.CEE => "CEE",
+            PerformanceRating.EE => "EE",
+            PerformanceRating.ME => "ME",
+            PerformanceRating.PME => "PME",
+            PerformanceRating.DNME => "DNME",
+            _ => "Not rated"
+        };
+    }
+
+    string GetMobilityDisplay(MobilityType? mobility)
+    {
+        if (!mobility.HasValue) return "Not specified";
+
+        return mobility.Value switch
+        {
+            MobilityType.LocalZimbabwe => "Local Zimbabwe",
+            MobilityType.Regional => "Regional",
+            _ => "Not specified"
+        };
+    }
+
+    string GetRiskLevelDisplay(RiskLevel? risk)
+    {
+        if (!risk.HasValue) return "Not specified";
+
+        return risk.Value switch
+        {
+            RiskLevel.Low => "Low",
+            RiskLevel.Medium => "Medium",
+            RiskLevel.High => "High",
+            _ => "Not specified"
+        };
+    }
+
+    string GetReadinessDisplay(ReadinessLevel? readiness)
+    {
+        if (!readiness.HasValue) return "Not specified";
+
+        return readiness.Value switch
+        {
+            ReadinessLevel.ReadyNow => "Ready Now",
+            ReadinessLevel.ShortTerm => "Short Term",
+            ReadinessLevel.MidTerm => "Mid Term",
+            ReadinessLevel.LongTerm => "Long Term",
+            _ => "Not specified"
+        };
+    }
+
+    string GetStatusDisplay(DevelopmentStatus? status)
+    {
+        if (!status.HasValue) return "Not specified";
+
+        return status.Value switch
+        {
+            DevelopmentStatus.Completed => "<span class='status-badge status-completed'>Completed</span>",
+            DevelopmentStatus.Delayed => "<span class='status-badge status-delayed'>Delayed</span>",
+            DevelopmentStatus.InProgress => "<span class='status-badge status-in-progress'>In Progress</span>",
+            DevelopmentStatus.NotStarted => "<span class='status-badge status-not-started'>Not Started</span>",
+            _ => "Not specified"
+        };
+    }
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
