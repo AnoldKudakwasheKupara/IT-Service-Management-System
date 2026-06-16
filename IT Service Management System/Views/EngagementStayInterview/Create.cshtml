@@ -5,30 +5,39 @@
 }
 
 <div class="page-container">
+    <!-- Page Header -->
     <div class="page-header">
-        <div class="d-flex align-items-center gap-3 mb-4">
-            <a asp-action="Index" class="btn-back">
+        <div class="header-content">
+            <a asp-action="Index" class="btn-back" aria-label="Back to list">
                 <i class="fas fa-arrow-left"></i>
             </a>
-            <div>
+            <div class="header-text">
                 <h1 class="page-title">
-                    <i class="fas fa-plus-circle me-2" style="color: var(--success);"></i>
+                    <span class="title-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </span>
                     Engagement Stay Interview
                 </h1>
-                <p class="text-muted mt-2">Complete employee engagement and stay interview questionnaire</p>
+                <p class="page-subtitle">Complete employee engagement and stay interview questionnaire</p>
             </div>
+        </div>
+        <div class="header-progress">
+            <span class="progress-badge">Form</span>
         </div>
     </div>
 
-    <form asp-action="Create" method="post" id="stayInterviewForm">
+    <form asp-action="Create" method="post" id="stayInterviewForm" novalidate>
         @Html.AntiForgeryToken()
         <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
         <!-- Employee Information Section -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-user-circle"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-user-circle"></i>
+                </div>
                 <h3>Employee Information</h3>
+                <span class="section-badge">Required</span>
             </div>
             <div class="section-body">
                 <div class="form-row-grid">
@@ -41,7 +50,7 @@
                             <i class="fas fa-user input-icon"></i>
                             <input asp-for="NameAndSurname" class="form-control-modern" placeholder="Enter employee name" />
                         </div>
-                        <span asp-validation-for="NameAndSurname" class="validation-message text-danger"></span>
+                        <span asp-validation-for="NameAndSurname" class="validation-message"></span>
                     </div>
 
                     <div class="form-group-modern">
@@ -53,7 +62,7 @@
                             <i class="fas fa-briefcase input-icon"></i>
                             <input asp-for="JobTitle" class="form-control-modern" placeholder="Enter job title" />
                         </div>
-                        <span asp-validation-for="JobTitle" class="validation-message text-danger"></span>
+                        <span asp-validation-for="JobTitle" class="validation-message"></span>
                     </div>
 
                     <div class="form-group-modern">
@@ -65,7 +74,7 @@
                             <i class="fas fa-building input-icon"></i>
                             <input asp-for="Department" class="form-control-modern" placeholder="Enter department" />
                         </div>
-                        <span asp-validation-for="Department" class="validation-message text-danger"></span>
+                        <span asp-validation-for="Department" class="validation-message"></span>
                     </div>
 
                     <div class="form-group-modern">
@@ -76,7 +85,7 @@
                             <i class="fas fa-calendar-alt input-icon"></i>
                             <input asp-for="DateJoinedAxis" type="date" class="form-control-modern" />
                         </div>
-                        <span asp-validation-for="DateJoinedAxis" class="validation-message text-danger"></span>
+                        <span asp-validation-for="DateJoinedAxis" class="validation-message"></span>
                     </div>
 
                     <div class="form-group-modern">
@@ -88,7 +97,7 @@
                             <i class="fas fa-user-tie input-icon"></i>
                             <input asp-for="ManagerName" class="form-control-modern" placeholder="Enter manager name" />
                         </div>
-                        <span asp-validation-for="ManagerName" class="validation-message text-danger"></span>
+                        <span asp-validation-for="ManagerName" class="validation-message"></span>
                     </div>
 
                     <div class="form-group-modern">
@@ -99,7 +108,7 @@
                             <i class="fas fa-calendar-check input-icon"></i>
                             <input asp-for="CurrentPositionStartDate" type="date" class="form-control-modern" />
                         </div>
-                        <span asp-validation-for="CurrentPositionStartDate" class="validation-message text-danger"></span>
+                        <span asp-validation-for="CurrentPositionStartDate" class="validation-message"></span>
                     </div>
 
                     <div class="form-group-modern">
@@ -111,7 +120,7 @@
                             <i class="fas fa-calendar-week input-icon"></i>
                             <input asp-for="DiscussionDate" type="date" class="form-control-modern" />
                         </div>
-                        <span asp-validation-for="DiscussionDate" class="validation-message text-danger"></span>
+                        <span asp-validation-for="DiscussionDate" class="validation-message"></span>
                     </div>
                 </div>
             </div>
@@ -119,8 +128,10 @@
 
         <!-- Purpose Alert -->
         <div class="info-alert">
-            <i class="fas fa-info-circle"></i>
-            <div>
+            <div class="info-alert-icon">
+                <i class="fas fa-info-circle"></i>
+            </div>
+            <div class="info-alert-content">
                 <strong>Purpose of this conversation:</strong> To gain insight into what motivates or frustrates you as an employee, understand what you value in Axis Solutions and discover how we can improve support, development, engagement and retention.
             </div>
         </div>
@@ -128,7 +139,9 @@
         <!-- Question 1 -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-question-circle"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
                 <h3>1. Tell me a bit about some of your current priorities from a work perspective and how you are doing overall?</h3>
             </div>
             <div class="section-body">
@@ -136,14 +149,16 @@
                     <i class="fas fa-comment textarea-icon"></i>
                     <textarea asp-for="CurrentPrioritiesAndOverallWellbeing" class="form-control-textarea" rows="5" placeholder="Describe your current priorities and overall wellbeing..."></textarea>
                 </div>
-                <span asp-validation-for="CurrentPrioritiesAndOverallWellbeing" class="validation-message text-danger"></span>
+                <span asp-validation-for="CurrentPrioritiesAndOverallWellbeing" class="validation-message"></span>
             </div>
         </div>
 
         <!-- Question 2 -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-rocket"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-rocket"></i>
+                </div>
                 <h3>2. What parts of your work keep you motivated and engaged?</h3>
             </div>
             <div class="section-body">
@@ -151,14 +166,16 @@
                     <i class="fas fa-comment textarea-icon"></i>
                     <textarea asp-for="MotivationAndEngagementFactors" class="form-control-textarea" rows="5" placeholder="What keeps you motivated and engaged?..."></textarea>
                 </div>
-                <span asp-validation-for="MotivationAndEngagementFactors" class="validation-message text-danger"></span>
+                <span asp-validation-for="MotivationAndEngagementFactors" class="validation-message"></span>
             </div>
         </div>
 
         <!-- Question 3 -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-frown"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-frown"></i>
+                </div>
                 <h3>3. What parts of your work or work environment reduces your energy, demotivates you or places obstacles to your ability to perform at your best?</h3>
             </div>
             <div class="section-body">
@@ -166,14 +183,16 @@
                     <i class="fas fa-comment textarea-icon"></i>
                     <textarea asp-for="DemotivatingFactors" class="form-control-textarea" rows="5" placeholder="What demotivates you or creates obstacles?..."></textarea>
                 </div>
-                <span asp-validation-for="DemotivatingFactors" class="validation-message text-danger"></span>
+                <span asp-validation-for="DemotivatingFactors" class="validation-message"></span>
             </div>
         </div>
 
         <!-- Question 4 -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-chart-line"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
                 <h3>4. Do you feel that your skills are being fully utilized in your current role?</h3>
             </div>
             <div class="section-body">
@@ -181,26 +200,28 @@
                     <i class="fas fa-comment textarea-icon"></i>
                     <textarea asp-for="SkillsUtilizationFeedback" class="form-control-textarea" rows="5" placeholder="Are your skills being fully utilized?..."></textarea>
                 </div>
-                <span asp-validation-for="SkillsUtilizationFeedback" class="validation-message text-danger"></span>
+                <span asp-validation-for="SkillsUtilizationFeedback" class="validation-message"></span>
             </div>
         </div>
 
         <!-- Question 5 -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-balance-scale"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-balance-scale"></i>
+                </div>
                 <h3>5. Similarly, what in your view exists in the Company that?</h3>
             </div>
             <div class="section-body">
-                <div class="form-group-modern mb-3">
-                    <label class="form-label">Attracts people to stay:</label>
+                <div class="sub-question">
+                    <label class="sub-question-label">Attracts people to stay:</label>
                     <div class="textarea-wrapper">
                         <i class="fas fa-heart textarea-icon"></i>
                         <textarea asp-for="ReasonsPeopleStay" class="form-control-textarea" rows="4" placeholder="What attracts people to stay?..."></textarea>
                     </div>
                 </div>
-                <div class="form-group-modern">
-                    <label class="form-label">Results in them wanting to leave:</label>
+                <div class="sub-question">
+                    <label class="sub-question-label">Results in them wanting to leave:</label>
                     <div class="textarea-wrapper">
                         <i class="fas fa-door-open textarea-icon"></i>
                         <textarea asp-for="ReasonsPeopleLeave" class="form-control-textarea" rows="4" placeholder="What makes people want to leave?..."></textarea>
@@ -212,7 +233,9 @@
         <!-- Question 6 -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-lightbulb"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
                 <h3>6. What aspects would you change about working for Axis Solutions?</h3>
             </div>
             <div class="section-body">
@@ -220,14 +243,16 @@
                     <i class="fas fa-comment textarea-icon"></i>
                     <textarea asp-for="ChangesToWorkingAtAxis" class="form-control-textarea" rows="5" placeholder="What would you change?..."></textarea>
                 </div>
-                <span asp-validation-for="ChangesToWorkingAtAxis" class="validation-message text-danger"></span>
+                <span asp-validation-for="ChangesToWorkingAtAxis" class="validation-message"></span>
             </div>
         </div>
 
         <!-- Question 7 -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-flag-checkered"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-flag-checkered"></i>
+                </div>
                 <h3>7. What is your next career milestone or personal development milestone?</h3>
             </div>
             <div class="section-body">
@@ -235,29 +260,47 @@
                     <i class="fas fa-comment textarea-icon"></i>
                     <textarea asp-for="NextCareerMilestone" class="form-control-textarea" rows="5" placeholder="What is your next career milestone?..."></textarea>
                 </div>
-                <span asp-validation-for="NextCareerMilestone" class="validation-message text-danger"></span>
+                <span asp-validation-for="NextCareerMilestone" class="validation-message"></span>
             </div>
         </div>
 
         <!-- Question 8 -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-handshake"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-handshake"></i>
+                </div>
                 <h3>8. Do you feel that you have sufficient support and/or opportunities to achieve your personal and/or career milestones at Axis Solutions?</h3>
             </div>
             <div class="section-body">
                 <div class="radio-group">
                     <label class="radio-question">Support Status</label>
                     <div class="radio-options">
-                        <label class="radio-label-inline"><input type="radio" asp-for="FeelsSupported" value="true" /><span>I do feel supported</span></label>
-                        <label class="radio-label-inline"><input type="radio" asp-for="FeelsSupported" value="false" /><span>I don't feel sufficiently supported</span></label>
+                        <label class="radio-label-inline">
+                            <input type="radio" asp-for="FeelsSupported" value="true" />
+                            <span class="radio-custom-inline"></span>
+                            <span>I do feel supported</span>
+                        </label>
+                        <label class="radio-label-inline">
+                            <input type="radio" asp-for="FeelsSupported" value="false" />
+                            <span class="radio-custom-inline"></span>
+                            <span>I don't feel sufficiently supported</span>
+                        </label>
                     </div>
                 </div>
                 <div class="radio-group">
                     <label class="radio-question">I have a Development Plan</label>
                     <div class="radio-options">
-                        <label class="radio-label-inline"><input type="radio" asp-for="HasDevelopmentPlan" value="true" /><span>Yes</span></label>
-                        <label class="radio-label-inline"><input type="radio" asp-for="HasDevelopmentPlan" value="false" /><span>No</span></label>
+                        <label class="radio-label-inline">
+                            <input type="radio" asp-for="HasDevelopmentPlan" value="true" />
+                            <span class="radio-custom-inline"></span>
+                            <span>Yes</span>
+                        </label>
+                        <label class="radio-label-inline">
+                            <input type="radio" asp-for="HasDevelopmentPlan" value="false" />
+                            <span class="radio-custom-inline"></span>
+                            <span>No</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -266,7 +309,9 @@
         <!-- Question 9 -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-lightbulb"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
                 <h3>9. What ideas would you love to see implemented in Axis Solutions in order for it to improve as an employer or make you stay employed and engaged with Axis Solutions?</h3>
             </div>
             <div class="section-body">
@@ -274,43 +319,51 @@
                     <i class="fas fa-comment textarea-icon"></i>
                     <textarea asp-for="ImprovementIdeas" class="form-control-textarea" rows="6" placeholder="Your improvement ideas..."></textarea>
                 </div>
-                <span asp-validation-for="ImprovementIdeas" class="validation-message text-danger"></span>
+                <span asp-validation-for="ImprovementIdeas" class="validation-message"></span>
             </div>
         </div>
 
         <!-- Overall Status -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-chart-line"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
                 <h3>Overall, I am:</h3>
             </div>
             <div class="section-body">
                 <div class="radio-group-vertical">
                     <label class="radio-label-vertical">
                         <input type="radio" asp-for="OverallStatus" value="1" />
+                        <span class="radio-custom-vertical"></span>
                         <span>Considering opportunities outside Axis</span>
                     </label>
                     <label class="radio-label-vertical">
                         <input type="radio" asp-for="OverallStatus" value="2" />
+                        <span class="radio-custom-vertical"></span>
                         <span>Dissatisfied with working at Axis Solutions</span>
                     </label>
                     <label class="radio-label-vertical">
                         <input type="radio" asp-for="OverallStatus" value="3" />
+                        <span class="radio-custom-vertical"></span>
                         <span>Satisfied with working for Axis Solutions</span>
                     </label>
                     <label class="radio-label-vertical">
                         <input type="radio" asp-for="OverallStatus" value="4" />
+                        <span class="radio-custom-vertical"></span>
                         <span>Highly motivated and engaged</span>
                     </label>
                 </div>
-                <span asp-validation-for="OverallStatus" class="validation-message text-danger"></span>
+                <span asp-validation-for="OverallStatus" class="validation-message"></span>
             </div>
         </div>
 
         <!-- Rating Matrix -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-table"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-table"></i>
+                </div>
                 <h3>Currently how would you rate the following:</h3>
             </div>
             <div class="section-body">
@@ -326,20 +379,20 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td class="aspect-cell">My Wellbeing at Axis Solutions<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WellbeingRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WellbeingRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WellbeingRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="WellbeingComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">Job Satisfaction Levels<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="JobSatisfactionRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="JobSatisfactionRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="JobSatisfactionRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="JobSatisfactionComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">Career Opportunities<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CareerOpportunitiesRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CareerOpportunitiesRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CareerOpportunitiesRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="CareerOpportunitiesComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">Quality of Leadership<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="LeadershipQualityRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="LeadershipQualityRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="LeadershipQualityRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="LeadershipQualityComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">Relationship with my Manager<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ManagerRelationshipRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ManagerRelationshipRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ManagerRelationshipRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="ManagerRelationshipComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">Relationship with Peers / Team<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="TeamRelationshipRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="TeamRelationshipRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="TeamRelationshipRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="TeamRelationshipComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">BSC System<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="BSCSystemRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="BSCSystemRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="BSCSystemRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="BSCSystemComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">Reward for Performance<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="RewardForPerformanceRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="RewardForPerformanceRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="RewardForPerformanceRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="RewardForPerformanceComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">Communication Channels<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CommunicationChannelsRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CommunicationChannelsRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CommunicationChannelsRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="CommunicationChannelsComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">Opportunities to Develop<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="DevelopmentOpportunitiesComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">Pay and Benefits<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="PayAndBenefitsRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="PayAndBenefitsRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="PayAndBenefitsRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="PayAndBenefitsComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">Working Conditions<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WorkingConditionsRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WorkingConditionsRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WorkingConditionsRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="WorkingConditionsComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">The Organization in General<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OrganizationGeneralRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OrganizationGeneralRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OrganizationGeneralRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="OrganizationGeneralComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
-                            <tr><td class="aspect-cell">Other<td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OtherRating" value="1" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OtherRating" value="2" /><span class="radio-custom"></span></label><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OtherRating" value="3" /><span class="radio-custom"></span></label><td><input asp-for="OtherComment" class="form-control-modern-sm" placeholder="Comment" /></tr>
+                            <tr><td class="aspect-cell">My Wellbeing at Axis Solutions</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WellbeingRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WellbeingRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WellbeingRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="WellbeingComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">Job Satisfaction Levels</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="JobSatisfactionRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="JobSatisfactionRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="JobSatisfactionRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="JobSatisfactionComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">Career Opportunities</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CareerOpportunitiesRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CareerOpportunitiesRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CareerOpportunitiesRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="CareerOpportunitiesComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">Quality of Leadership</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="LeadershipQualityRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="LeadershipQualityRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="LeadershipQualityRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="LeadershipQualityComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">Relationship with my Manager</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ManagerRelationshipRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ManagerRelationshipRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="ManagerRelationshipRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="ManagerRelationshipComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">Relationship with Peers / Team</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="TeamRelationshipRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="TeamRelationshipRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="TeamRelationshipRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="TeamRelationshipComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">BSC System</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="BSCSystemRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="BSCSystemRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="BSCSystemRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="BSCSystemComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">Reward for Performance</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="RewardForPerformanceRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="RewardForPerformanceRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="RewardForPerformanceRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="RewardForPerformanceComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">Communication Channels</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CommunicationChannelsRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CommunicationChannelsRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="CommunicationChannelsRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="CommunicationChannelsComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">Opportunities to Develop</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="DevelopmentOpportunitiesRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="DevelopmentOpportunitiesComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">Pay and Benefits</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="PayAndBenefitsRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="PayAndBenefitsRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="PayAndBenefitsRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="PayAndBenefitsComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">Working Conditions</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WorkingConditionsRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WorkingConditionsRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="WorkingConditionsRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="WorkingConditionsComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">The Organization in General</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OrganizationGeneralRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OrganizationGeneralRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OrganizationGeneralRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="OrganizationGeneralComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
+                            <tr><td class="aspect-cell">Other</td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OtherRating" value="1" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OtherRating" value="2" /><span class="radio-custom"></span></label></td><td class="radio-cell"><label class="radio-label"><input type="radio" asp-for="OtherRating" value="3" /><span class="radio-custom"></span></label></td><td><input asp-for="OtherComment" class="form-control-modern-sm" placeholder="Comment" /></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -349,7 +402,9 @@
         <!-- Interviewer Comments -->
         <div class="form-section">
             <div class="section-header">
-                <i class="fas fa-clipboard-list"></i>
+                <div class="section-header-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
                 <h3>Interviewer Overall Comments from Discussion</h3>
             </div>
             <div class="section-body">
@@ -357,7 +412,7 @@
                     <i class="fas fa-comment textarea-icon"></i>
                     <textarea asp-for="InterviewerOverallComments" class="form-control-textarea" rows="6" placeholder="Enter interviewer's overall comments..."></textarea>
                 </div>
-                <span asp-validation-for="InterviewerOverallComments" class="validation-message text-danger"></span>
+                <span asp-validation-for="InterviewerOverallComments" class="validation-message"></span>
             </div>
         </div>
 
@@ -376,15 +431,62 @@
 </div>
 
 <style>
-    /* Keep all styles from previous edit pages */
-    .page-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem 1rem;
+    /* ============================================
+       CSS Variables & Reset
+       ============================================ */
+    :root {
+        --primary: #2c7da0;
+        --primary-light: #e8f4f8;
+        --success: #2d9b6e;
+        --success-light: #e8f5ef;
+        --danger: #dc3545;
+        --warning: #f0ad4e;
+        --info: #17a2b8;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f4f8;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --gray-900: #0f172a;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+        --shadow-lg: 0 8px 30px rgba(0,0,0,0.08);
+        --radius: 12px;
+        --radius-sm: 8px;
+        --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
+    /* ============================================
+       Page Container
+       ============================================ */
+    .page-container {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    /* ============================================
+       Page Header
+       ============================================ */
     .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         margin-bottom: 2rem;
+        padding-bottom: 1.25rem;
+        border-bottom: 1px solid var(--gray-200);
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
     }
 
     .btn-back {
@@ -394,207 +496,358 @@
         align-items: center;
         justify-content: center;
         background: white;
-        border-radius: 0.75rem;
-        color: var(--gray-600);
+        border-radius: var(--radius-sm);
+        color: var(--gray-500);
         text-decoration: none;
-        transition: all 0.2s;
+        transition: var(--transition);
         border: 1px solid var(--gray-200);
+        flex-shrink: 0;
     }
 
         .btn-back:hover {
             background: var(--gray-50);
             color: var(--primary);
             transform: translateX(-2px);
+            border-color: var(--primary);
         }
 
+    .header-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
     .page-title {
-        font-size: 1.875rem;
+        font-size: 1.625rem;
         font-weight: 700;
-        color: var(--gray-800);
+        color: var(--gray-900);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        letter-spacing: -0.02em;
+    }
+
+    .title-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--success);
+        font-size: 1.25rem;
+    }
+
+    .page-subtitle {
+        color: var(--gray-500);
+        font-size: 0.875rem;
         margin: 0;
     }
 
-    /* Form Sections */
+    .header-progress {
+        display: flex;
+        align-items: center;
+    }
+
+    .progress-badge {
+        background: var(--primary-light);
+        color: var(--primary);
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.25rem 0.85rem;
+        border-radius: 20px;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+
+    /* ============================================
+       Form Sections
+       ============================================ */
     .form-section {
         background: white;
-        border-radius: 1rem;
+        border-radius: var(--radius);
         margin-bottom: 1.5rem;
         overflow: hidden;
         box-shadow: var(--shadow-sm);
         border: 1px solid var(--gray-200);
+        transition: var(--transition);
     }
+
+        .form-section:hover {
+            box-shadow: var(--shadow-md);
+        }
 
     .section-header {
         background: var(--gray-50);
-        padding: 1rem 1.5rem;
+        padding: 0.9rem 1.5rem;
         border-bottom: 1px solid var(--gray-200);
         display: flex;
         align-items: center;
         gap: 0.75rem;
+        flex-wrap: wrap;
     }
 
-        .section-header i {
-            font-size: 1.25rem;
-            color: var(--primary);
-        }
+    .section-header-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: var(--primary-light);
+        border-radius: var(--radius-sm);
+        color: var(--primary);
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
 
-        .section-header h3 {
-            margin: 0;
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--gray-800);
-        }
+    .section-header h3 {
+        margin: 0;
+        font-size: 0.925rem;
+        font-weight: 600;
+        color: var(--gray-800);
+        flex: 1;
+        line-height: 1.4;
+    }
+
+    .section-badge {
+        font-size: 0.6rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        background: var(--gray-200);
+        padding: 0.15rem 0.6rem;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
 
     .section-body {
         padding: 1.5rem;
     }
 
-    /* Form Row Grid */
+    /* ============================================
+       Form Grid
+       ============================================ */
     .form-row-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.25rem;
     }
 
-    /* Form Groups */
+    /* ============================================
+       Form Groups
+       ============================================ */
     .form-group-modern {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.4rem;
     }
 
     .form-label {
         font-weight: 600;
-        font-size: 0.875rem;
+        font-size: 0.8rem;
         color: var(--gray-700);
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.4rem;
+        letter-spacing: 0.01em;
     }
 
         .form-label i {
-            color: var(--primary);
-            font-size: 0.875rem;
+            color: var(--gray-400);
+            font-size: 0.75rem;
+            width: 1rem;
         }
 
     .required {
         color: var(--danger);
         font-size: 1rem;
+        margin-left: 0.1rem;
     }
 
     .input-icon-wrapper {
         position: relative;
     }
 
-        .input-icon-wrapper i.input-icon {
+        .input-icon-wrapper .input-icon {
             position: absolute;
-            left: 1rem;
+            left: 0.9rem;
             top: 50%;
             transform: translateY(-50%);
             color: var(--gray-400);
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             pointer-events: none;
+            transition: var(--transition);
         }
 
     .form-control-modern {
         width: 100%;
-        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        padding: 0.65rem 1rem 0.65rem 2.4rem;
         font-size: 0.875rem;
         border: 1.5px solid var(--gray-200);
-        border-radius: 0.75rem;
-        transition: all 0.2s ease;
-        font-family: 'Inter', sans-serif;
+        border-radius: var(--radius-sm);
+        transition: var(--transition);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         background: white;
+        color: var(--gray-800);
+        line-height: 1.5;
     }
 
         .form-control-modern:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.08);
+        }
+
+        .form-control-modern::placeholder {
+            color: var(--gray-400);
+            font-size: 0.8rem;
+        }
+
+        .form-control-modern:focus + .input-icon,
+        .form-control-modern:focus ~ .input-icon {
+            color: var(--primary);
         }
 
     .form-control-modern-sm {
         width: 100%;
-        padding: 0.5rem 0.75rem;
+        padding: 0.4rem 0.6rem;
         font-size: 0.75rem;
         border: 1.5px solid var(--gray-200);
-        border-radius: 0.5rem;
-        transition: all 0.2s ease;
+        border-radius: var(--radius-sm);
+        transition: var(--transition);
         font-family: 'Inter', sans-serif;
         background: white;
+        color: var(--gray-800);
+        min-width: 80px;
     }
 
         .form-control-modern-sm:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.08);
         }
 
-    /* Textarea Styling */
+        .form-control-modern-sm::placeholder {
+            color: var(--gray-400);
+            font-size: 0.7rem;
+        }
+
+    /* ============================================
+       Textarea
+       ============================================ */
     .textarea-wrapper {
         position: relative;
     }
 
-    .textarea-icon {
-        position: absolute;
-        left: 1rem;
-        top: 1rem;
-        color: var(--gray-400);
-        font-size: 0.875rem;
-        pointer-events: none;
-    }
+        .textarea-wrapper .textarea-icon {
+            position: absolute;
+            left: 0.9rem;
+            top: 0.9rem;
+            color: var(--gray-400);
+            font-size: 0.8rem;
+            pointer-events: none;
+            transition: var(--transition);
+        }
 
     .form-control-textarea {
         width: 100%;
-        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        padding: 0.75rem 1rem 0.75rem 2.4rem;
         font-size: 0.875rem;
         border: 1.5px solid var(--gray-200);
-        border-radius: 0.75rem;
-        transition: all 0.2s ease;
-        font-family: 'Inter', sans-serif;
+        border-radius: var(--radius-sm);
+        transition: var(--transition);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         background: white;
+        color: var(--gray-800);
         resize: vertical;
+        line-height: 1.6;
+        min-height: 80px;
     }
 
         .form-control-textarea:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.08);
         }
 
-    /* Info Alert */
+        .form-control-textarea::placeholder {
+            color: var(--gray-400);
+            font-size: 0.8rem;
+        }
+
+        .form-control-textarea:focus + .textarea-icon,
+        .form-control-textarea:focus ~ .textarea-icon {
+            color: var(--primary);
+        }
+
+    /* ============================================
+       Info Alert
+       ============================================ */
     .info-alert {
-        background: #e6f7ff;
-        border-left: 3px solid var(--info);
-        border-radius: 0.75rem;
-        padding: 1rem;
+        background: var(--primary-light);
+        border-left: 3px solid var(--primary);
+        border-radius: var(--radius-sm);
+        padding: 0.9rem 1.2rem;
         margin-bottom: 1.5rem;
         display: flex;
-        gap: 0.75rem;
+        gap: 0.9rem;
+        align-items: flex-start;
     }
 
-        .info-alert i {
-            color: var(--info);
-            font-size: 1.25rem;
+    .info-alert-icon {
+        color: var(--primary);
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        margin-top: 0.1rem;
+    }
+
+    .info-alert-content {
+        flex: 1;
+        font-size: 0.85rem;
+        color: var(--gray-700);
+        line-height: 1.5;
+    }
+
+        .info-alert-content strong {
+            color: var(--gray-800);
         }
 
-        .info-alert div {
-            flex: 1;
-            font-size: 0.875rem;
-            color: var(--gray-600);
-            line-height: 1.4;
+    /* ============================================
+       Sub Questions (for Q5)
+       ============================================ */
+    .sub-question {
+        margin-bottom: 1rem;
+    }
+
+        .sub-question:last-child {
+            margin-bottom: 0;
         }
 
-    /* Radio Groups */
+    .sub-question-label {
+        display: block;
+        font-weight: 600;
+        font-size: 0.8rem;
+        color: var(--gray-700);
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.01em;
+    }
+
+    /* ============================================
+       Radio Groups
+       ============================================ */
     .radio-group {
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem;
     }
+
+        .radio-group:last-child {
+            margin-bottom: 0;
+        }
 
     .radio-question {
         display: block;
         font-weight: 600;
+        font-size: 0.8rem;
         color: var(--gray-700);
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.01em;
     }
 
     .radio-options {
@@ -608,61 +861,141 @@
         align-items: center;
         gap: 0.5rem;
         cursor: pointer;
+        font-size: 0.85rem;
+        color: var(--gray-600);
+        transition: var(--transition);
+        padding: 0.2rem 0;
     }
 
         .radio-label-inline input {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
-        .radio-label-inline span {
-            font-size: 0.875rem;
-            color: var(--gray-600);
-        }
+    .radio-custom-inline {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        background: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 50%;
+        transition: var(--transition);
+        position: relative;
+    }
 
+    .radio-label-inline input:checked ~ .radio-custom-inline {
+        border-color: var(--primary);
+        background: var(--primary);
+    }
+
+    .radio-label-inline input:checked ~ .radio-custom-inline::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 5px;
+        height: 5px;
+        background: white;
+        border-radius: 50%;
+    }
+
+    .radio-label-inline:hover .radio-custom-inline {
+        border-color: var(--primary);
+    }
+
+    /* ============================================
+       Vertical Radio (Overall Status)
+       ============================================ */
     .radio-group-vertical {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.6rem;
     }
 
     .radio-label-vertical {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.6rem;
         cursor: pointer;
+        font-size: 0.85rem;
+        color: var(--gray-600);
+        transition: var(--transition);
+        padding: 0.2rem 0;
     }
 
         .radio-label-vertical input {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
-        .radio-label-vertical span {
-            font-size: 0.875rem;
-            color: var(--gray-600);
-        }
+    .radio-custom-vertical {
+        display: inline-block;
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        background: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 50%;
+        transition: var(--transition);
+        position: relative;
+    }
 
-    /* Ratings Matrix Table */
+    .radio-label-vertical input:checked ~ .radio-custom-vertical {
+        border-color: var(--primary);
+        background: var(--primary);
+    }
+
+    .radio-label-vertical input:checked ~ .radio-custom-vertical::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 6px;
+        height: 6px;
+        background: white;
+        border-radius: 50%;
+    }
+
+    .radio-label-vertical:hover .radio-custom-vertical {
+        border-color: var(--primary);
+    }
+
+    /* ============================================
+       Ratings Matrix Table
+       ============================================ */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .ratings-matrix-table {
         width: 100%;
         border-collapse: collapse;
         font-size: 0.75rem;
+        min-width: 600px;
     }
 
         .ratings-matrix-table th {
             background: var(--gray-50);
-            padding: 0.75rem;
+            padding: 0.7rem 0.6rem;
             text-align: center;
             font-weight: 600;
             color: var(--gray-600);
             border: 1px solid var(--gray-200);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
         }
 
         .ratings-matrix-table td {
-            padding: 0.5rem;
+            padding: 0.4rem 0.3rem;
             border: 1px solid var(--gray-200);
             vertical-align: middle;
         }
@@ -670,10 +1003,15 @@
     .aspect-cell {
         font-weight: 600;
         color: var(--gray-700);
+        font-size: 0.7rem;
+        padding-left: 0.8rem !important;
+        white-space: nowrap;
+        min-width: 120px;
     }
 
     .radio-cell {
         text-align: center;
+        width: 60px;
     }
 
     .radio-label {
@@ -681,125 +1019,259 @@
         align-items: center;
         cursor: pointer;
         margin: 0;
+        padding: 0.2rem;
     }
 
         .radio-label input {
             position: absolute;
             opacity: 0;
-            cursor: pointer;
+            width: 0;
+            height: 0;
         }
 
     .radio-custom {
-        position: relative;
         display: inline-block;
         width: 16px;
         height: 16px;
-        background-color: white;
+        background: white;
         border: 2px solid var(--gray-300);
         border-radius: 50%;
-        transition: all 0.2s;
+        transition: var(--transition);
+        position: relative;
+        flex-shrink: 0;
     }
 
     .radio-label input:checked ~ .radio-custom {
         border-color: var(--primary);
+        background: var(--primary);
     }
 
-    .radio-custom:after {
-        content: "";
+    .radio-label input:checked ~ .radio-custom::after {
+        content: '';
         position: absolute;
-        display: none;
-        top: 3px;
-        left: 3px;
-        width: 6px;
-        height: 6px;
-        background-color: var(--primary);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 5px;
+        height: 5px;
+        background: white;
         border-radius: 50%;
     }
 
-    .radio-label input:checked ~ .radio-custom:after {
-        display: block;
+    .radio-label:hover .radio-custom {
+        border-color: var(--primary);
     }
 
-    /* Validation Summary */
+    /* ============================================
+       Validation
+       ============================================ */
     .validation-summary {
-        background: #fee;
+        background: #fef2f2;
         border-left: 3px solid var(--danger);
-        padding: 1rem;
-        border-radius: 0.75rem;
+        padding: 0.9rem 1.2rem;
+        border-radius: var(--radius-sm);
         margin-bottom: 1.5rem;
         color: var(--danger);
-        font-size: 0.875rem;
+        font-size: 0.85rem;
     }
 
+        .validation-summary ul {
+            margin: 0.4rem 0 0 0;
+            padding-left: 1.2rem;
+        }
+
     .validation-message {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
+        color: var(--danger);
         display: flex;
         align-items: center;
         gap: 0.25rem;
+        margin-top: 0.2rem;
+        min-height: 1.2rem;
     }
 
-    /* Form Actions */
+        .validation-message:empty {
+            display: none;
+        }
+
+    .field-validation-error {
+        color: var(--danger);
+        font-size: 0.7rem;
+    }
+
+    /* ============================================
+       Form Actions
+       ============================================ */
     .form-actions {
         display: flex;
         gap: 1rem;
         margin-top: 1.5rem;
+        flex-wrap: wrap;
     }
 
     .btn-save {
-        background: linear-gradient(100deg, var(--success), #1f8a5c);
+        background: linear-gradient(135deg, var(--success), #1f8a5c);
         color: white;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.75rem;
+        padding: 0.75rem 1.75rem;
+        border-radius: var(--radius-sm);
         font-weight: 600;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
+        justify-content: center;
+        gap: 0.6rem;
+        transition: var(--transition);
         border: none;
         cursor: pointer;
         font-size: 0.875rem;
         flex: 1;
-        justify-content: center;
+        min-width: 160px;
+        font-family: 'Inter', sans-serif;
+        box-shadow: 0 1px 2px rgba(45, 155, 110, 0.15);
     }
 
         .btn-save:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 6px 20px rgba(45, 155, 110, 0.3);
+            color: white;
+        }
+
+        .btn-save:active {
+            transform: translateY(0);
+        }
+
+        .btn-save:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
         }
 
     .btn-cancel {
         background: white;
         color: var(--gray-600);
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.75rem;
+        padding: 0.75rem 1.75rem;
+        border-radius: var(--radius-sm);
         font-weight: 600;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-        border: 1px solid var(--gray-300);
+        justify-content: center;
+        gap: 0.6rem;
+        transition: var(--transition);
+        border: 1.5px solid var(--gray-200);
         font-size: 0.875rem;
         flex: 1;
-        justify-content: center;
+        min-width: 120px;
+        font-family: 'Inter', sans-serif;
     }
 
         .btn-cancel:hover {
             background: var(--gray-50);
             color: var(--gray-700);
             text-decoration: none;
+            border-color: var(--gray-300);
         }
 
+    /* ============================================
+       Responsive
+       ============================================ */
+    @@media (max-width: 768px) {
+        .page-container {
+            padding: 1.25rem 1rem;
+        }
+
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .header-content {
+            gap: 0.75rem;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .header-progress {
+            align-self: flex-start;
+        }
+
+        .form-row-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .section-header {
+            padding: 0.75rem 1rem;
+        }
+
+        .section-header h3 {
+            font-size: 0.85rem;
+        }
+
+        .section-body {
+            padding: 1rem;
+        }
+
+        .radio-options {
+            gap: 0.75rem;
+            flex-direction: column;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-save,
+        .btn-cancel {
+            flex: none;
+            width: 100%;
+        }
+
+        .ratings-matrix-table {
+            font-size: 0.65rem;
+            min-width: 500px;
+        }
+
+        .aspect-cell {
+            min-width: 80px;
+            font-size: 0.65rem;
+        }
+
+        .radio-cell {
+            width: 40px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .info-alert {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .section-header-icon {
+            width: 28px;
+            height: 28px;
+            font-size: 0.8rem;
+        }
+    }
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('stayInterviewForm');
         const submitBtn = document.getElementById('submitBtn');
 
-        if (form) {
-            form.addEventListener('submit', function(e) {
+        if (form && submitBtn) {
+            form.addEventListener('submit', function (e) {
+                // Prevent double submission
+                if (submitBtn.disabled) {
+                    e.preventDefault();
+                    return;
+                }
+
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
             });
