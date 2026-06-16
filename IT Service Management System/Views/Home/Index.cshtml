@@ -1,7 +1,7 @@
 ﻿@{
     ViewData["Title"] = "Dashboard - Axis IT Helpdesk";
-    
-    // Get ticket statistics from ViewBag or calculate from your data
+
+    // Get statistics from ViewBag
     var totalTickets = ViewBag.TotalTickets ?? 0;
     var openTickets = ViewBag.OpenTickets ?? 0;
     var inProgressTickets = ViewBag.InProgressTickets ?? 0;
@@ -9,73 +9,265 @@
     var closedTickets = ViewBag.ClosedTickets ?? 0;
     var highPriorityTickets = ViewBag.HighPriorityTickets ?? 0;
     var criticalPriorityTickets = ViewBag.CriticalPriorityTickets ?? 0;
+
+    var totalUsers = ViewBag.TotalUsers ?? 0;
+    var totalDepartments = ViewBag.TotalDepartments ?? 0;
+    var pendingClearances = ViewBag.PendingClearances ?? 0;
+    var expiringCertificates = ViewBag.ExpiringCertificates ?? 0;
+    var totalAssets = ViewBag.TotalAssets ?? 0;
+    var pendingInterviews = ViewBag.PendingInterviews ?? 0;
 }
 
 <div class="dashboard-container">
-    <div class="dashboard-header">
-        <h1 class="dashboard-title">Dashboard</h1>
-        <p class="dashboard-subtitle">Welcome back! Here's an overview of your ticket system</p>
+    <!-- Welcome Section -->
+    <div class="welcome-section">
+        <div class="welcome-content">
+            <div>
+                <h1 class="welcome-title">Welcome back, @(Context.Session.GetString("UserName") ?? "User")!</h1>
+                <p class="welcome-subtitle">Here's what's happening across your helpdesk system</p>
+            </div>
+            <div class="welcome-date">
+                <i class="fas fa-calendar-alt"></i>
+                <span>@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</span>
+            </div>
+        </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon total">
+    <!-- Quick Stats Row -->
+    <div class="quick-stats">
+        <div class="quick-stat-card">
+            <div class="quick-stat-icon tickets">
                 <i class="fas fa-ticket-alt"></i>
             </div>
-            <div class="stat-info">
-                <h3>@totalTickets</h3>
-                <p>Total Tickets</p>
+            <div class="quick-stat-info">
+                <span class="quick-stat-value">@totalTickets</span>
+                <span class="quick-stat-label">Total Tickets</span>
+            </div>
+            <div class="quick-stat-change">
+                <i class="fas fa-arrow-up"></i>
+                <span>12%</span>
             </div>
         </div>
-
-        <div class="stat-card">
-            <div class="stat-icon open">
+        <div class="quick-stat-card">
+            <div class="quick-stat-icon open">
                 <i class="fas fa-circle"></i>
             </div>
-            <div class="stat-info">
-                <h3>@openTickets</h3>
-                <p>Open Tickets</p>
+            <div class="quick-stat-info">
+                <span class="quick-stat-value">@openTickets</span>
+                <span class="quick-stat-label">Open Tickets</span>
+            </div>
+            <div class="quick-stat-change urgent">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>@(openTickets > 0 ? "Action Needed" : "All Clear")</span>
+            </div>
+        </div>
+        <div class="quick-stat-card">
+            <div class="quick-stat-icon users">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="quick-stat-info">
+                <span class="quick-stat-value">@totalUsers</span>
+                <span class="quick-stat-label">Total Users</span>
+            </div>
+            <div class="quick-stat-change">
+                <i class="fas fa-users"></i>
+                <span>@totalDepartments Depts</span>
+            </div>
+        </div>
+        <div class="quick-stat-card">
+            <div class="quick-stat-icon clearances">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+            <div class="quick-stat-info">
+                <span class="quick-stat-value">@pendingClearances</span>
+                <span class="quick-stat-label">Pending Clearances</span>
+            </div>
+            <div class="quick-stat-change urgent">
+                <i class="fas fa-clock"></i>
+                <span>Action Required</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Stats Grid -->
+    <div class="main-stats-grid">
+        <!-- Ticket Statistics -->
+        <div class="stats-card tickets-card">
+            <div class="stats-card-header">
+                <div class="stats-card-title">
+                    <i class="fas fa-ticket-alt"></i>
+                    <h3>Ticket Overview</h3>
+                </div>
+                <a asp-controller="Tickets" asp-action="Index" class="view-all-link">View All</a>
+            </div>
+            <div class="stats-card-body">
+                <div class="stat-item">
+                    <div class="stat-item-icon open">
+                        <i class="fas fa-circle"></i>
+                    </div>
+                    <div class="stat-item-info">
+                        <span class="stat-item-value">@openTickets</span>
+                        <span class="stat-item-label">Open</span>
+                    </div>
+                    <div class="stat-item-progress">
+                        <div class="progress-bar" style="width: @(totalTickets > 0 ? (openTickets * 100 / totalTickets) : 0)%"></div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item-icon progress">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                    <div class="stat-item-info">
+                        <span class="stat-item-value">@inProgressTickets</span>
+                        <span class="stat-item-label">In Progress</span>
+                    </div>
+                    <div class="stat-item-progress">
+                        <div class="progress-bar" style="width: @(totalTickets > 0 ? (inProgressTickets * 100 / totalTickets) : 0)%"></div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item-icon resolved">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-item-info">
+                        <span class="stat-item-value">@resolvedTickets</span>
+                        <span class="stat-item-label">Resolved</span>
+                    </div>
+                    <div class="stat-item-progress">
+                        <div class="progress-bar" style="width: @(totalTickets > 0 ? (resolvedTickets * 100 / totalTickets) : 0)%"></div>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-item-icon closed">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                    <div class="stat-item-info">
+                        <span class="stat-item-value">@closedTickets</span>
+                        <span class="stat-item-label">Closed</span>
+                    </div>
+                    <div class="stat-item-progress">
+                        <div class="progress-bar" style="width: @(totalTickets > 0 ? (closedTickets * 100 / totalTickets) : 0)%"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-icon progress">
-                <i class="fas fa-spinner"></i>
+        <!-- Priority & Status -->
+        <div class="stats-card priority-card">
+            <div class="stats-card-header">
+                <div class="stats-card-title">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Priority & Status</h3>
+                </div>
             </div>
-            <div class="stat-info">
-                <h3>@inProgressTickets</h3>
-                <p>In Progress</p>
+            <div class="stats-card-body">
+                <div class="priority-item critical">
+                    <div class="priority-dot"></div>
+                    <span class="priority-label">Critical</span>
+                    <span class="priority-count">@criticalPriorityTickets</span>
+                </div>
+                <div class="priority-item high">
+                    <div class="priority-dot"></div>
+                    <span class="priority-label">High</span>
+                    <span class="priority-count">@highPriorityTickets</span>
+                </div>
+                <div class="priority-item medium">
+                    <div class="priority-dot"></div>
+                    <span class="priority-label">Medium</span>
+                    <span class="priority-count">@(totalTickets - criticalPriorityTickets - highPriorityTickets - resolvedTickets - closedTickets)</span>
+                </div>
+                <div class="priority-divider"></div>
+                <div class="status-summary">
+                    <div class="status-item">
+                        <span class="status-dot active"></span>
+                        <span>Active</span>
+                        <span class="status-count">@(openTickets + inProgressTickets)</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-dot resolved"></span>
+                        <span>Completed</span>
+                        <span class="status-count">@(resolvedTickets + closedTickets)</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="stat-card">
-            <div class="stat-icon resolved">
-                <i class="fas fa-check-circle"></i>
+        <!-- Recent Activity -->
+        <div class="stats-card activity-card">
+            <div class="stats-card-header">
+                <div class="stats-card-title">
+                    <i class="fas fa-clock"></i>
+                    <h3>Recent Activity</h3>
+                </div>
+                <span class="activity-badge">Live</span>
             </div>
-            <div class="stat-info">
-                <h3>@resolvedTickets</h3>
-                <p>Resolved</p>
+            <div class="stats-card-body">
+                @if (ViewBag.RecentActivities != null && ViewBag.RecentActivities.Count > 0)
+                {
+                    @foreach (var activity in ViewBag.RecentActivities)
+                    {
+                        <div class="activity-item">
+                            <div class="activity-icon @activity.Type">
+                                <i class="fas @activity.Icon"></i>
+                            </div>
+                            <div class="activity-content">
+                                <span class="activity-text">@activity.Message</span>
+                                <span class="activity-time">@activity.TimeAgo</span>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="activity-item empty">
+                        <i class="fas fa-inbox"></i>
+                        <span>No recent activity</span>
+                    </div>
+                }
             </div>
         </div>
+    </div>
 
-        <div class="stat-card">
-            <div class="stat-icon closed">
-                <i class="fas fa-ban"></i>
+    <!-- System Overview -->
+    <div class="system-overview">
+        <div class="system-card">
+            <div class="system-card-icon">
+                <i class="fas fa-lock"></i>
             </div>
-            <div class="stat-info">
-                <h3>@closedTickets</h3>
-                <p>Closed</p>
+            <div class="system-card-content">
+                <h4>SSL Certificates</h4>
+                <p>@expiringCertificates certificates expiring within 30 days</p>
+                <a asp-controller="SSLCertificates" asp-action="ExpiringSoon" class="system-link">View Expiring</a>
             </div>
         </div>
-
-        <div class="stat-card">
-            <div class="stat-icon priority">
-                <i class="fas fa-exclamation-triangle"></i>
+        <div class="system-card">
+            <div class="system-card-icon">
+                <i class="fas fa-laptop"></i>
             </div>
-            <div class="stat-info">
-                <h3>@(highPriorityTickets + criticalPriorityTickets)</h3>
-                <p>High Priority</p>
+            <div class="system-card-content">
+                <h4>Asset Register</h4>
+                <p>@totalAssets assets tracked in the system</p>
+                <a asp-controller="Assets" asp-action="Index" class="system-link">View Assets</a>
+            </div>
+        </div>
+        <div class="system-card">
+            <div class="system-card-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <div class="system-card-content">
+                <h4>Exit Interviews</h4>
+                <p>@pendingInterviews pending exit interviews</p>
+                <a asp-controller="ExitInterview" asp-action="Pending" class="system-link">View Pending</a>
+            </div>
+        </div>
+        <div class="system-card">
+            <div class="system-card-icon">
+                <i class="fas fa-history"></i>
+            </div>
+            <div class="system-card-content">
+                <h4>Audit Logs</h4>
+                <p>System activity tracking</p>
+                <a asp-controller="AuditLogs" asp-action="Index" class="system-link">View Logs</a>
             </div>
         </div>
     </div>
@@ -83,130 +275,525 @@
     <!-- Quick Actions -->
     <div class="quick-actions">
         <h3 class="section-title">Quick Actions</h3>
-        <div class="action-buttons">
-            <a asp-controller="Tickets" asp-action="Create" class="action-btn create-btn">
+        <div class="action-grid">
+            <a asp-controller="Tickets" asp-action="Create" class="action-card">
                 <i class="fas fa-plus-circle"></i>
-                Create New Ticket
+                <span>New Ticket</span>
             </a>
-            <a asp-controller="Tickets" asp-action="Index" class="action-btn view-btn">
-                <i class="fas fa-list"></i>
-                View All Tickets
+            <a asp-controller="Activity" asp-action="Create" class="action-card">
+                <i class="fas fa-tasks"></i>
+                <span>Log Activity</span>
             </a>
-            <a asp-controller="Users" asp-action="Profile" class="action-btn profile-btn">
-                <i class="fas fa-user-circle"></i>
-                My Profile
+            <a asp-controller="Assets" asp-action="Create" class="action-card">
+                <i class="fas fa-box"></i>
+                <span>Add Asset</span>
+            </a>
+            <a asp-controller="ExitClearance" asp-action="Create" class="action-card">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Create Clearance</span>
+            </a>
+            <a asp-controller="SSLCertificates" asp-action="Create" class="action-card">
+                <i class="fas fa-lock"></i>
+                <span>Add Certificate</span>
+            </a>
+            <a asp-controller="PaymentSchedule" asp-action="Create" class="action-card">
+                <i class="fas fa-calendar-dollar"></i>
+                <span>Payment Schedule</span>
             </a>
         </div>
     </div>
 </div>
 
 <style>
-    /* Dashboard Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
 
     .dashboard-container {
-        width: 100%;
-        max-width: none;
-        margin: 0;
-        padding: 0 1rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1rem;
     }
 
-    .dashboard-header {
+    /* Welcome Section */
+    .welcome-section {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        border-radius: 1.5rem;
+        padding: 2rem;
         margin-bottom: 2rem;
+        box-shadow: var(--shadow-lg);
     }
 
-    .dashboard-title {
-        font-size: 2rem;
+    .welcome-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .welcome-title {
+        color: white;
+        font-size: 1.75rem;
         font-weight: 700;
-        color: var(--gray-800);
-        margin: 0 0 0.5rem 0;
+        margin: 0 0 0.25rem 0;
     }
 
-    .dashboard-subtitle {
-        color: var(--gray-500);
+    .welcome-subtitle {
+        color: rgba(255, 255, 255, 0.85);
         margin: 0;
+        font-size: 0.95rem;
     }
 
-    /* Stats Grid */
-    .stats-grid {
+    .welcome-date {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+    }
+
+    /* Quick Stats */
+    .quick-stats {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
         margin-bottom: 2rem;
     }
 
-    .stat-card {
+    .quick-stat-card {
         background: white;
         border-radius: 1rem;
         padding: 1.25rem;
         display: flex;
         align-items: center;
         gap: 1rem;
-        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-        transition: all 0.3s ease;
         border: 1px solid var(--gray-200);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s;
     }
 
-        .stat-card:hover {
+        .quick-stat-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            box-shadow: var(--shadow-md);
         }
 
-    .stat-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 1rem;
+    .quick-stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 0.75rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         flex-shrink: 0;
     }
 
-        .stat-icon.total {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
+        .quick-stat-icon.tickets {
+            background: #e6f0ff;
+            color: var(--info);
         }
 
-        .stat-icon.open {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
+        .quick-stat-icon.open {
+            background: #fff5e6;
+            color: var(--warning);
         }
 
-        .stat-icon.progress {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-            color: white;
+        .quick-stat-icon.users {
+            background: #e6f5e9;
+            color: var(--success);
         }
 
-        .stat-icon.resolved {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
+        .quick-stat-icon.clearances {
+            background: #e6e6ff;
+            color: #6366f1;
         }
 
-        .stat-icon.closed {
-            background: linear-gradient(135deg, #6b7280, #4b5563);
-            color: white;
-        }
-
-        .stat-icon.priority {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-            color: white;
-        }
-
-    .stat-info {
+    .quick-stat-info {
         flex: 1;
     }
 
-        .stat-info h3 {
-            font-size: 1.5rem;
-            font-weight: 700;
+    .quick-stat-value {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        line-height: 1.2;
+    }
+
+    .quick-stat-label {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+    }
+
+    .quick-stat-change {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--success);
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+        .quick-stat-change.urgent {
+            color: var(--danger);
+        }
+
+    /* Main Stats Grid */
+    .main-stats-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stats-card {
+        background: white;
+        border-radius: 1rem;
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .stats-card-header {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .stats-card-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .stats-card-title i {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .stats-card-title h3 {
             margin: 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gray-700);
+        }
+
+    .view-all-link {
+        font-size: 0.75rem;
+        color: var(--primary);
+        text-decoration: none;
+    }
+
+        .view-all-link:hover {
+            text-decoration: underline;
+        }
+
+    .stats-card-body {
+        padding: 1.25rem;
+    }
+
+    /* Ticket Stats */
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+    .stat-item-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+
+        .stat-item-icon.open {
+            background: var(--warning);
+        }
+
+        .stat-item-icon.progress {
+            background: #8b5cf6;
+        }
+
+        .stat-item-icon.resolved {
+            background: var(--success);
+        }
+
+        .stat-item-icon.closed {
+            background: var(--gray-500);
+        }
+
+    .stat-item-info {
+        flex: 1;
+    }
+
+    .stat-item-value {
+        display: block;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--gray-800);
+    }
+
+    .stat-item-label {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+    }
+
+    .stat-item-progress {
+        width: 80px;
+        height: 4px;
+        background: var(--gray-200);
+        border-radius: 2px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: var(--primary);
+        border-radius: 2px;
+        transition: width 0.5s ease;
+    }
+
+    /* Priority Items */
+    .priority-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+        gap: 0.75rem;
+    }
+
+    .priority-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+
+    .priority-item.critical .priority-dot {
+        background: var(--danger);
+    }
+
+    .priority-item.high .priority-dot {
+        background: #e67e22;
+    }
+
+    .priority-item.medium .priority-dot {
+        background: var(--warning);
+    }
+
+    .priority-label {
+        flex: 1;
+        font-size: 0.85rem;
+        color: var(--gray-600);
+    }
+
+    .priority-count {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--gray-800);
+    }
+
+    .priority-divider {
+        height: 1px;
+        background: var(--gray-200);
+        margin: 0.5rem 0;
+    }
+
+    .status-summary {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .status-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--gray-600);
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+
+        .status-dot.active {
+            background: var(--warning);
+        }
+
+        .status-dot.resolved {
+            background: var(--success);
+        }
+
+    .status-count {
+        font-weight: 700;
+        color: var(--gray-800);
+    }
+
+    /* Activity */
+    .activity-badge {
+        font-size: 0.6rem;
+        font-weight: 600;
+        padding: 0.125rem 0.5rem;
+        background: var(--success);
+        color: white;
+        border-radius: 2rem;
+        text-transform: uppercase;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--gray-100);
+    }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-item.empty {
+            justify-content: center;
+            color: var(--gray-400);
+            padding: 1rem 0;
+        }
+
+    .activity-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 0.7rem;
+        flex-shrink: 0;
+    }
+
+        .activity-icon.created {
+            background: var(--success);
+        }
+
+        .activity-icon.updated {
+            background: var(--info);
+        }
+
+        .activity-icon.resolved {
+            background: var(--primary);
+        }
+
+    .activity-content {
+        flex: 1;
+    }
+
+    .activity-text {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--gray-700);
+    }
+
+    .activity-time {
+        font-size: 0.65rem;
+        color: var(--gray-400);
+    }
+
+    /* System Overview */
+    .system-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .system-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        gap: 1rem;
+        border: 1px solid var(--gray-200);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s;
+    }
+
+        .system-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .system-card-icon {
+        width: 44px;
+        height: 44px;
+        background: var(--gray-100);
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: var(--primary);
+        flex-shrink: 0;
+    }
+
+    .system-card-content {
+        flex: 1;
+    }
+
+        .system-card-content h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 0.9rem;
             color: var(--gray-800);
         }
 
-        .stat-info p {
-            margin: 0;
+        .system-card-content p {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.75rem;
             color: var(--gray-500);
-            font-size: 0.875rem;
+        }
+
+    .system-link {
+        font-size: 0.75rem;
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+        .system-link:hover {
+            text-decoration: underline;
         }
 
     /* Quick Actions */
@@ -215,6 +802,7 @@
         border-radius: 1rem;
         padding: 1.5rem;
         border: 1px solid var(--gray-200);
+        box-shadow: var(--shadow-sm);
     }
 
     .section-title {
@@ -224,57 +812,79 @@
         margin: 0 0 1rem 0;
     }
 
-    .action-buttons {
-        display: flex;
+    .action-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         gap: 1rem;
-        flex-wrap: wrap;
     }
 
-    .action-btn {
-        padding: 0.625rem 1.25rem;
-        border-radius: 0.5rem;
-        font-weight: 600;
-        font-size: 0.875rem;
-        text-decoration: none;
-        display: inline-flex;
+    .action-card {
+        display: flex;
         align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-    }
-
-    .create-btn {
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: white;
-    }
-
-        .create-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            color: white;
-            text-decoration: none;
-        }
-
-    .view-btn {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        color: white;
-    }
-
-        .view-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            color: white;
-            text-decoration: none;
-        }
-
-    .profile-btn {
-        background: var(--gray-100);
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        background: var(--gray-50);
+        border-radius: 0.75rem;
+        text-decoration: none;
         color: var(--gray-700);
-        border: 1px solid var(--gray-300);
+        font-weight: 500;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        border: 1px solid transparent;
     }
 
-        .profile-btn:hover {
-            background: var(--gray-200);
+        .action-card:hover {
+            background: white;
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
             text-decoration: none;
-            color: var(--gray-800);
         }
+
+        .action-card i {
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+    /* Responsive */
+    @@media (max-width: 1200px) {
+        .main-stats-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .welcome-content {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .main-stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .quick-stats {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .system-overview {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .action-grid {
+            grid-template-columns: 1fr 1fr;
+  @@media (max-width: 480px) {
+        .quick-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .system-overview {
+            grid-template-columns: 1fr;
+        }
+
+        .action-grid {
+            grid-template-columns: 1fr;
+        }
+    }
 </style>
