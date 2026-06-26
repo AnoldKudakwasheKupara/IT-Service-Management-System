@@ -1,109 +1,766 @@
 ﻿@model IEnumerable<IT_Service_Management_System.Models.MaintenanceRecord>
+@using IT_Service_Management_System.Enums
 
 @{
-    ViewData["Title"] = "Maintenance Records";
+    ViewData["Title"] = "Maintenance Records - Axis IT Helpdesk";
 }
 
-<div class="container mt-4">
-
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3>
-            <i class="bi bi-tools"></i> Equipment Maintenance Records
-        </h3>
-
-        <a asp-action="Create" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Record Maintenance
-        </a>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-tools me-2" style="color: var(--primary);"></i>
+                    Equipment Maintenance Records
+                </h1>
+                <p class="text-muted mt-2">Track and manage equipment maintenance activities</p>
+            </div>
+            <a asp-action="Create" class="btn-create-maintenance">
+                <i class="fas fa-plus-circle me-2"></i>
+                Record Maintenance
+            </a>
+        </div>
     </div>
 
-    <div class="card shadow-sm">
+    <!-- Statistics Cards -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon total">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count()</h3>
+                <p>Total Records</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon this-month">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count(m => m.MaintenanceDate.Month == DateTime.Now.Month && m.MaintenanceDate.Year == DateTime.Now.Year)</h3>
+                <p>This Month</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon upcoming">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count(m => m.NextMaintenanceDate.HasValue && m.NextMaintenanceDate.Value <= DateTime.Now.AddDays(30))</h3>
+                <p>Upcoming (30 days)</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon types">
+                <i class="fas fa-tags"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Select(m => m.MaintenanceType).Distinct().Count()</h3>
+                <p>Maintenance Types</p>
+            </div>
+        </div>
+    </div>
 
-        <div class="card-body">
-
-            <table class="table table-bordered table-hover table-striped align-middle">
-
-                <thead class="table-dark">
-                    <tr>
-                        <th>Asset</th>
-                        <th>Employee</th>
-                        <th>Maintenance Date</th>
-                        <th>Type</th>
-                        <th>Next Maintenance</th>
-                        <th width="220">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    @if (Model.Any())
-                    {
-                        foreach (var item in Model)
-                        {
-                            <tr>
-
-                                <td>
-                                    @item.AssetName
-                                </td>
-
-                                <td>
-                                    @item.EmployeeName
-                                </td>
-
-                                <td>
-                                    @item.MaintenanceDate.ToString("dd MMM yyyy")
-                                </td>
-
-                                <td>
-                                    @item.MaintenanceType
-                                </td>
-
-                                <td>
-                                    @if (item.NextMaintenanceDate.HasValue)
-                                    {
-                                        @item.NextMaintenanceDate.Value.ToString("dd MMM yyyy")
-                                    }
-                                </td>
-
-                                <td>
-
-                                    <a asp-action="Details"
-                                       asp-route-id="@item.Id"
-                                       class="btn btn-info btn-sm">
-                                        <i class="bi bi-eye"></i> View
-                                    </a>
-
-                                    <a asp-action="Edit"
-                                       asp-route-id="@item.Id"
-                                       class="btn btn-warning btn-sm">
-                                        <i class="bi bi-pencil-square"></i> Edit
-                                    </a>
-
-                                    <a asp-action="Delete"
-                                       asp-route-id="@item.Id"
-                                       class="btn btn-danger btn-sm">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </a>
-
-                                </td>
-
-                            </tr>
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="6" class="text-center text-muted">
-                                No maintenance records found.
-                            </td>
-                        </tr>
-                    }
-
-                </tbody>
-
-            </table>
-
+    <!-- Maintenance Table -->
+    <div class="maintenance-table-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Maintenance Records</span>
+            </div>
+            <div class="record-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count()</span> records found
+            </div>
         </div>
 
-    </div>
+        <div class="table-responsive">
+            @if (Model.Any())
+            {
+                <table class="maintenance-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-laptop me-1"></i> Asset</th>
+                            <th><i class="fas fa-user me-1"></i> Employee</th>
+                            <th><i class="fas fa-calendar me-1"></i> Maintenance Date</th>
+                            <th><i class="fas fa-tag me-1"></i> Type</th>
+                            <th><i class="fas fa-calendar-week me-1"></i> Next Maintenance</th>
+                            <th><i class="fas fa-cog me-1"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.OrderByDescending(m => m.MaintenanceDate))
+                        {
+                            var isUpcoming = item.NextMaintenanceDate.HasValue && item.NextMaintenanceDate.Value <= DateTime.Now.AddDays(30);
 
+                            <tr>
+                                <td class="asset-cell">
+                                    <div class="asset-info">
+                                        <div class="asset-icon">
+                                            <i class="fas fa-tools"></i>
+                                        </div>
+                                        <div class="asset-name">
+                                            <strong>@item.AssetName</strong>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="employee-cell">
+                                    <div class="employee-info">
+                                        <div class="employee-avatar">
+                                            @(item.EmployeeName?.Substring(0, 1).ToUpper() ?? "U")
+                                        </div>
+                                        <span>@item.EmployeeName</span>
+                                    </div>
+                                </td>
+                                <td class="date-cell">
+                                    <i class="far fa-calendar-alt"></i>
+                                    @item.MaintenanceDate.ToString("dd MMM yyyy")
+                                </td>
+                                <td class="type-cell">
+                                    @{
+                                        var type = item.MaintenanceType;
+
+                                        if (type == MaintenanceType.Preventive)
+                                        {
+                                            <span class="type-badge type-preventive">
+                                                <i class="fas fa-shield-alt"></i> Preventive
+                                            </span>
+                                        }
+                                        else if (type == MaintenanceType.Corrective)
+                                        {
+                                            <span class="type-badge type-corrective">
+                                                <i class="fas fa-wrench"></i> Corrective
+                                            </span>
+                                        }
+                                        else if (type == MaintenanceType.Emergency)
+                                        {
+                                            <span class="type-badge type-emergency">
+                                                <i class="fas fa-exclamation-triangle"></i> Emergency
+                                            </span>
+                                        }
+                                        else if (type == MaintenanceType.Upgrade)
+                                        {
+                                            <span class="type-badge type-upgrade">
+                                                <i class="fas fa-arrow-up"></i> Upgrade
+                                            </span>
+                                        }
+                                        else if (type == MaintenanceType.Cleaning)
+                                        {
+                                            <span class="type-badge type-cleaning">
+                                                <i class="fas fa-broom"></i> Cleaning
+                                            </span>
+                                        }
+                                        else if (type == MaintenanceType.Inspection)
+                                        {
+                                            <span class="type-badge type-inspection">
+                                                <i class="fas fa-search"></i> Inspection
+                                            </span>
+                                        }
+                                        else if (type == MaintenanceType.SoftwareUpdate)
+                                        {
+                                            <span class="type-badge type-software">
+                                                <i class="fas fa-download"></i> Software Update
+                                            </span>
+                                        }
+                                        else if (type == MaintenanceType.HardwareRepair)
+                                        {
+                                            <span class="type-badge type-hardware">
+                                                <i class="fas fa-tools"></i> Hardware Repair
+                                            </span>
+                                        }
+                                    }
+                                </td>
+                                <td class="next-date-cell">
+                                    @if (item.NextMaintenanceDate.HasValue)
+                                    {
+                                        if (isUpcoming)
+                                        {
+                                            <span class="next-badge upcoming">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                @item.NextMaintenanceDate.Value.ToString("dd MMM yyyy")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="next-badge normal">
+                                                <i class="fas fa-calendar-check"></i>
+                                                @item.NextMaintenanceDate.Value.ToString("dd MMM yyyy")
+                                            </span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td class="action-buttons">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="action-btn btn-view" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="action-btn btn-edit" title="Edit Record">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="action-btn btn-delete" title="Delete Record" onclick="return confirm('Are you sure you want to delete this maintenance record?');">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-tools"></i>
+                    <h3>No Maintenance Records Found</h3>
+                    <p>Get started by recording your first maintenance activity</p>
+                    <a asp-action="Create" class="btn-create-maintenance-sm">
+                        <i class="fas fa-plus-circle"></i> Record Maintenance
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
 </div>
+
+<style>
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Create Button */
+    .btn-create-maintenance {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+        .btn-create-maintenance:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* Statistics Cards */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    @@media (max-width: 1024px) {
+        .stats-cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 640px) {
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+        .stat-icon.total {
+            background: linear-gradient(135deg, var(--info), #2563eb);
+            color: white;
+        }
+
+        .stat-icon.this-month {
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+        }
+
+        .stat-icon.upcoming {
+            background: linear-gradient(135deg, var(--warning), #e6a017);
+            color: white;
+        }
+
+        .stat-icon.types {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+        }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* Maintenance Table Card */
+    .maintenance-table-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .record-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* Table Styles */
+    .maintenance-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .maintenance-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .maintenance-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .maintenance-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+
+        .maintenance-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .maintenance-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+    .type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .type-preventive {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .type-corrective {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .type-emergency {
+        background: #fecaca;
+        color: #7f1d1d;
+    }
+
+    .type-upgrade {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .type-cleaning {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .type-inspection {
+        background: #ede9fe;
+        color: #5b21b6;
+    }
+
+    .type-software {
+        background: #cffafe;
+        color: #155e75;
+    }
+
+    .type-hardware {
+        background: #e5e7eb;
+        color: #374151;
+    }
+    /* Asset Cell */
+    .asset-cell {
+        min-width: 160px;
+    }
+
+    .asset-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .asset-icon {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .asset-name strong {
+        color: var(--gray-800);
+        font-size: 0.875rem;
+    }
+
+    /* Employee Cell */
+    .employee-cell {
+        min-width: 140px;
+    }
+
+    .employee-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .employee-avatar {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    /* Date Cells */
+    .date-cell, .next-date-cell {
+        color: var(--gray-500);
+        white-space: nowrap;
+    }
+
+    /* Type Badges */
+    .type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .type-preventive {
+        background: #e6f5e9;
+        color: var(--success);
+    }
+
+    .type-corrective {
+        background: #fff5e6;
+        color: var(--warning);
+    }
+
+    .type-emergency {
+        background: #fee;
+        color: var(--danger);
+    }
+
+    .type-scheduled {
+        background: #e6f0ff;
+        color: var(--info);
+    }
+
+    .type-other {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+    /* Next Maintenance Badges */
+    .next-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+        .next-badge.upcoming {
+            background: #fee;
+            color: var(--danger);
+        }
+
+        .next-badge.normal {
+            background: var(--gray-100);
+            color: var(--gray-600);
+        }
+
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+    }
+
+    .btn-view {
+        background: var(--gray-100);
+        color: var(--info);
+    }
+
+        .btn-view:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-edit {
+        background: var(--gray-100);
+        color: var(--warning);
+    }
+
+        .btn-edit:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-delete {
+        background: var(--gray-100);
+        color: var(--danger);
+    }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    .btn-create-maintenance-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-create-maintenance-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* Responsive Table */
+    @@media (max-width: 768px) {
+        .maintenance-table thead {
+            display: none;
+        }
+
+        .maintenance-table tbody tr {
+            display: block;
+            margin-bottom: 1rem;
+            border: 1px solid var(--gray-200);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+        }
+
+        .maintenance-table td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            border: none;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+            .maintenance-table td:last-child {
+                border-bottom: none;
+            }
+
+            .maintenance-table td:before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--gray-600);
+                margin-right: 1rem;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+            }
+
+        .action-buttons {
+            justify-content: flex-end;
+        }
+
+        .action-btn {
+            width: 36px;
+            height: 36px;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add data-label attributes for responsive table
+        const tableHeaders = document.querySelectorAll('.maintenance-table th');
+        const tableRows = document.querySelectorAll('.maintenance-table tbody tr');
+
+        tableRows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+                if (tableHeaders[index]) {
+                    const headerText = tableHeaders[index].innerText.replace(/[^\w\s]/g, '').trim();
+                    cell.setAttribute('data-label', headerText);
+                }
+            });
+        });
+    });
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
