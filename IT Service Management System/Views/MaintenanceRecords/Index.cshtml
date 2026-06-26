@@ -1,0 +1,109 @@
+﻿@model IEnumerable<IT_Service_Management_System.Models.MaintenanceRecord>
+
+@{
+    ViewData["Title"] = "Maintenance Records";
+}
+
+<div class="container mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>
+            <i class="bi bi-tools"></i> Equipment Maintenance Records
+        </h3>
+
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Record Maintenance
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+
+        <div class="card-body">
+
+            <table class="table table-bordered table-hover table-striped align-middle">
+
+                <thead class="table-dark">
+                    <tr>
+                        <th>Asset</th>
+                        <th>Employee</th>
+                        <th>Maintenance Date</th>
+                        <th>Type</th>
+                        <th>Next Maintenance</th>
+                        <th width="220">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+
+                                <td>
+                                    @item.AssetName
+                                </td>
+
+                                <td>
+                                    @item.EmployeeName
+                                </td>
+
+                                <td>
+                                    @item.MaintenanceDate.ToString("dd MMM yyyy")
+                                </td>
+
+                                <td>
+                                    @item.MaintenanceType
+                                </td>
+
+                                <td>
+                                    @if (item.NextMaintenanceDate.HasValue)
+                                    {
+                                        @item.NextMaintenanceDate.Value.ToString("dd MMM yyyy")
+                                    }
+                                </td>
+
+                                <td>
+
+                                    <a asp-action="Details"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-info btn-sm">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+
+                                    <a asp-action="Edit"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-warning btn-sm">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </a>
+
+                                    <a asp-action="Delete"
+                                       asp-route-id="@item.Id"
+                                       class="btn btn-danger btn-sm">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </a>
+
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">
+                                No maintenance records found.
+                            </td>
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
