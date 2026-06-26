@@ -1,131 +1,777 @@
 ﻿@model IEnumerable<IT_Service_Management_System.Models.UserAccessRight>
 
 @{
-    ViewData["Title"] = "User Access Rights";
+    ViewData["Title"] = "User Access Rights - Axis IT Helpdesk";
 }
 
-<div class="container-fluid mt-3">
-
-    <div class="card shadow">
-
-        <div class="card-header bg-primary text-white">
-
-            <div class="d-flex justify-content-between align-items-center">
-
-                <h4 class="mb-0">
-                    <i class="fas fa-user-shield"></i>
-                    User Access Rights
-                </h4>
-
-                <a asp-action="Create" class="btn btn-light">
-                    <i class="fas fa-plus-circle"></i>
-                    New Access Form
-                </a>
-
+<div class="page-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-user-shield"></i>
             </div>
-
-        </div>
-
-        <div class="card-body">
-
-            <div class="table-responsive">
-
-                <table class="table table-bordered table-hover table-striped align-middle">
-
-                    <thead class="table-dark">
-
-                        <tr>
-
-                            <th>Solution / Software</th>
-
-                            <th>Production Server</th>
-
-                            <th>Client</th>
-
-                            <th>Version</th>
-
-                            <th>Systems Admin</th>
-
-                            <th>Date</th>
-
-                            <th width="220">Actions</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody>
-
-                        @if (Model.Any())
-                        {
-                            foreach (var item in Model)
-                            {
-                                <tr>
-
-                                    <td>@item.SolutionSoftware</td>
-
-                                    <td>@item.ProductionServerId</td>
-
-                                    <td>@item.ClientName</td>
-
-                                    <td>@item.VersionReleaseNo</td>
-
-                                    <td>@item.SystemsAdmin</td>
-
-                                    <td>@item.Date.ToString("dd MMM yyyy")</td>
-
-                                    <td>
-
-                                        <a asp-action="Details"
-                                           asp-route-id="@item.Id"
-                                           class="btn btn-info btn-sm">
-
-                                            <i class="fas fa-eye"></i>
-
-                                        </a>
-
-                                        <a asp-action="Edit"
-                                           asp-route-id="@item.Id"
-                                           class="btn btn-warning btn-sm">
-
-                                            <i class="fas fa-edit"></i>
-
-                                        </a>
-
-                                        <a asp-action="Delete"
-                                           asp-route-id="@item.Id"
-                                           class="btn btn-danger btn-sm">
-
-                                            <i class="fas fa-trash"></i>
-
-                                        </a>
-
-                                    </td>
-
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-
-                                <td colspan="7" class="text-center text-muted">
-
-                                    No User Access Rights Forms Found.
-
-                                </td>
-
-                            </tr>
-                        }
-
-                    </tbody>
-
-                </table>
-
+            <div>
+                <h1 class="hero-title">User Access Rights</h1>
+                <p class="hero-subtitle">Manage system access permissions for users</p>
             </div>
-
         </div>
-
+        <div class="hero-actions">
+            <a asp-action="Create" class="hero-btn hero-btn-primary">
+                <i class="fas fa-plus-circle"></i>
+                New Access Form
+            </a>
+        </div>
     </div>
 
+    <!-- Access Rights List Card -->
+    <div class="access-rights-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Access Rights Records</span>
+                <span class="badge-count" id="recordCount">@Model.Count()</span>
+            </div>
+            <div class="card-actions">
+                <button class="btn-refresh" onclick="window.location.reload();" title="Refresh">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <a asp-action="Create" class="btn-add-new">
+                    <i class="fas fa-plus"></i> New
+                </a>
+            </div>
+        </div>
+
+        <div class="card-body-custom">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table-modern" id="accessRightsTable">
+                        <thead>
+                            <tr>
+                                <th>Solution / Software</th>
+                                <th>Production Server</th>
+                                <th>Client</th>
+                                <th>Version</th>
+                                <th>Systems Admin</th>
+                                <th>Date</th>
+                                <th class="action-col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="cell-content">
+                                            <i class="fas fa-code cell-icon"></i>
+                                            <span>@item.SolutionSoftware</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="cell-content">
+                                            <i class="fas fa-server cell-icon"></i>
+                                            <span>@item.ProductionServerId</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="cell-content">
+                                            <i class="fas fa-user cell-icon"></i>
+                                            <span>@item.ClientName</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge-version">@item.VersionReleaseNo</span>
+                                    </td>
+                                    <td>
+                                        <div class="cell-content">
+                                            <i class="fas fa-user-cog cell-icon"></i>
+                                            <span>@item.SystemsAdmin</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge-date">
+                                            <i class="far fa-calendar-alt"></i>
+                                            @item.Date.ToString("dd MMM yyyy")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a asp-action="Details" asp-route-id="@item.Id"
+                                               class="btn-action btn-details" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@item.Id"
+                                               class="btn-action btn-edit" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a asp-action="Delete" asp-route-id="@item.Id"
+                                               class="btn-action btn-delete" title="Delete"
+                                               onclick="return confirm('Are you sure you want to delete this access rights record?');">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h3 class="empty-state-title">No Access Rights Forms Found</h3>
+                    <p class="empty-state-description">
+                        Get started by creating a new user access rights configuration.
+                    </p>
+                    <a asp-action="Create" class="empty-state-btn">
+                        <i class="fas fa-plus-circle"></i>
+                        Create New Access Form
+                    </a>
+                </div>
+            }
+        </div>
+
+        <div class="card-footer-custom">
+            <div class="footer-info">
+                <i class="fas fa-info-circle"></i>
+                Showing <strong>@Model.Count()</strong> access right record(s)
+            </div>
+            <div class="footer-actions">
+                <span class="footer-badge">
+                    <i class="far fa-clock"></i>
+                    Last updated: @DateTime.Now.ToString("dd MMM yyyy HH:mm")
+                </span>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    /* ===== Base Variables ===== */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --success-dark: #1f8a5c;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== Page Container ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* ===== Hero Section ===== */
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .hero-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+
+    .hero-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .hero-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+    }
+
+    .hero-btn-primary {
+        background: white;
+        color: var(--primary-dark);
+    }
+
+        .hero-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: var(--primary-dark);
+            text-decoration: none;
+        }
+
+    /* ===== Main Card ===== */
+    .access-rights-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .badge-count {
+        background: var(--primary);
+        color: white;
+        font-size: 0.7rem;
+        padding: 0.1rem 0.6rem;
+        border-radius: 1rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+
+    .card-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .btn-refresh {
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 0.5rem;
+        padding: 0.4rem 0.6rem;
+        color: var(--gray-500);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .btn-refresh:hover {
+            background: var(--gray-100);
+            color: var(--gray-700);
+            transform: rotate(180deg);
+        }
+
+    .btn-add-new {
+        background: linear-gradient(100deg, var(--success), var(--success-dark));
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all 0.2s;
+    }
+
+        .btn-add-new:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    .card-footer-custom {
+        background: var(--gray-50);
+        padding: 0.75rem 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--gray-600);
+    }
+
+    .footer-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .footer-badge {
+        background: white;
+        padding: 0.2rem 0.75rem;
+        border-radius: 1rem;
+        border: 1px solid var(--gray-200);
+        font-size: 0.7rem;
+    }
+
+    /* ===== Table Styles ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        border: 1px solid var(--gray-200);
+        min-width: 800px;
+    }
+
+        .table-modern thead {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+        }
+
+            .table-modern thead th {
+                padding: 0.75rem 1rem;
+                font-size: 0.7rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border: none;
+                text-align: left;
+                vertical-align: middle;
+                white-space: nowrap;
+            }
+
+                .table-modern thead th.action-col {
+                    text-align: center;
+                    width: 140px;
+                }
+
+        .table-modern tbody tr {
+            transition: background-color 0.15s ease;
+        }
+
+        .table-modern tbody td {
+            padding: 0.75rem 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--gray-200);
+            background: white;
+            font-size: 0.875rem;
+        }
+
+        .table-modern tbody tr:hover td {
+            background-color: var(--gray-50);
+        }
+
+        .table-modern tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+    /* ===== Cell Content ===== */
+    .cell-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .cell-icon {
+        color: var(--primary-light);
+        font-size: 0.85rem;
+        width: 18px;
+        text-align: center;
+    }
+
+    /* ===== Badges ===== */
+    .badge-version {
+        background: var(--gray-100);
+        color: var(--gray-600);
+        padding: 0.2rem 0.6rem;
+        border-radius: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        font-family: monospace;
+        border: 1px solid var(--gray-200);
+    }
+
+    .badge-date {
+        background: var(--gray-50);
+        padding: 0.2rem 0.6rem;
+        border-radius: 0.25rem;
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+        .badge-date i {
+            font-size: 0.7rem;
+            color: var(--gray-400);
+        }
+
+    /* ===== Action Buttons ===== */
+    .action-buttons {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+    }
+
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        border-radius: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        font-size: 0.8rem;
+    }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .btn-details {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+        .btn-details:hover {
+            background: var(--info);
+            color: white;
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+        }
+
+    .btn-edit {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+        .btn-edit:hover {
+            background: var(--warning);
+            color: white;
+            box-shadow: 0 4px 8px rgba(245, 176, 66, 0.3);
+        }
+
+    .btn-delete {
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            box-shadow: 0 4px 8px rgba(229, 62, 62, 0.3);
+        }
+
+    /* ===== Empty State ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        color: var(--gray-300);
+        margin-bottom: 1rem;
+    }
+
+    .empty-state-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state-description {
+        color: var(--gray-500);
+        margin-bottom: 1.5rem;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .empty-state-btn {
+        background: linear-gradient(100deg, var(--success), var(--success-dark));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .empty-state-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== Responsive ===== */
+    @@media (max-width: 768px) {
+        .page-container {
+            padding: 1rem 0.5rem;
+        }
+
+        .hero-section {
+            padding: 1.5rem;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .hero-actions {
+            justify-content: stretch;
+        }
+
+            .hero-actions .hero-btn {
+                flex: 1;
+                justify-content: center;
+            }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .card-actions {
+            justify-content: flex-end;
+        }
+
+        .card-footer-custom {
+            flex-direction: column;
+            align-items: stretch;
+            text-align: center;
+        }
+
+        .footer-info {
+            justify-content: center;
+        }
+
+        .footer-actions {
+            display: flex;
+            justify-content: center;
+        }
+
+        .table-modern {
+            font-size: 0.8rem;
+            min-width: 700px;
+        }
+
+            .table-modern thead th {
+                padding: 0.5rem 0.6rem;
+                font-size: 0.6rem;
+            }
+
+            .table-modern tbody td {
+                padding: 0.5rem 0.6rem;
+            }
+
+        .action-buttons {
+            gap: 0.2rem;
+        }
+
+        .btn-action {
+            width: 28px;
+            height: 28px;
+            font-size: 0.7rem;
+        }
+
+        .hero-title {
+            font-size: 1.3rem;
+        }
+
+        .hero-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 1.5rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .empty-state-icon {
+            font-size: 3rem;
+        }
+
+        .empty-state-title {
+            font-size: 1rem;
+        }
+
+        .empty-state-description {
+            font-size: 0.875rem;
+        }
+
+        .badge-version {
+            font-size: 0.65rem;
+        }
+
+        .badge-date {
+            font-size: 0.7rem;
+        }
+
+        .card-footer-custom {
+            font-size: 0.7rem;
+        }
+    }
+
+    /* ===== Row Striping Animation ===== */
+    .table-modern tbody tr {
+        animation: fadeInUp 0.3s ease forwards;
+        opacity: 0;
+    }
+
+        .table-modern tbody tr:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .table-modern tbody tr:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .table-modern tbody tr:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .table-modern tbody tr:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .table-modern tbody tr:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        .table-modern tbody tr:nth-child(6) {
+            animation-delay: 0.3s;
+        }
+
+        .table-modern tbody tr:nth-child(7) {
+            animation-delay: 0.35s;
+        }
+
+        .table-modern tbody tr:nth-child(8) {
+            animation-delay: 0.4s;
+        }
+
+        .table-modern tbody tr:nth-child(9) {
+            animation-delay: 0.45s;
+        }
+
+        .table-modern tbody tr:nth-child(10) {
+            animation-delay: 0.5s;
+        }
+
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update record count
+            const countElement = document.getElementById('recordCount');
+            const rowCount = document.querySelectorAll('#accessRightsTable tbody tr').length;
+            if (countElement) {
+                countElement.textContent = rowCount;
+            }
+
+            // Add hover effect for action buttons
+            document.querySelectorAll('.btn-action').forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                });
+                btn.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+
+            // Refresh button animation
+            document.querySelector('.btn-refresh')?.addEventListener('click', function(e) {
+                e.preventDefault();
+                const icon = this.querySelector('i');
+                icon.style.transition = 'transform 0.6s ease';
+                icon.style.transform = 'rotate(720deg)';
+                setTimeout(() => {
+                    window.location.reload();
+                }, 400);
+            });
+        });
+    </script>
+}
