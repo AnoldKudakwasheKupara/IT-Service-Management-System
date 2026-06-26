@@ -1,4 +1,6 @@
-﻿namespace IT_Service_Management_System.Models
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+
+namespace IT_Service_Management_System.Models
 {
     public class UserAccessRightItem
     {
@@ -6,7 +8,8 @@
 
         public int UserAccessRightsId { get; set; }
 
-        public UserAccessRight UserAccessRight { get; set; }
+        [ValidateNever]
+        public UserAccessRight? UserAccessRight { get; set; }
 
         public string? UserName { get; set; }
 
