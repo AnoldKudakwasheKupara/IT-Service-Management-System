@@ -106,49 +106,59 @@ namespace IT_Service_Management_System.Controllers
                 .Where(x => !string.IsNullOrWhiteSpace(x.UserName))
                 .ToList();
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var existing = await _context.UserAccessRights
+                .Include(x => x.Users)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (existing == null)
+                return NotFound();
+
+            // Update header
+            existing.SolutionSoftware = model.SolutionSoftware;
+            existing.ProductionServerId = model.ProductionServerId;
+            existing.ClientName = model.ClientName;
+            existing.VersionReleaseNo = model.VersionReleaseNo;
+            existing.SystemsAdmin = model.SystemsAdmin;
+            existing.Date = model.Date;
+
+            existing.AssignedBy = model.AssignedBy;
+            existing.AssignedSignature = model.AssignedSignature;
+            existing.AssignedDate = model.AssignedDate;
+
+            existing.ReviewedBy = model.ReviewedBy;
+            existing.ReviewedSignature = model.ReviewedSignature;
+            existing.ReviewedDate = model.ReviewedDate;
+
+            existing.ApprovedBy = model.ApprovedBy;
+            existing.ApprovedSignature = model.ApprovedSignature;
+            existing.ApprovedDate = model.ApprovedDate;
+
+            // Remove existing user rows
+            _context.UserAccessRightItems.RemoveRange(existing.Users);
+
+            // Add the current rows from the form
+            existing.Users.Clear();
+
+            foreach (var user in model.Users)
             {
-                var existing = await _context.UserAccessRights
-                    .Include(x => x.Users)
-                    .FirstOrDefaultAsync(x => x.Id == id);
-
-                if (existing == null)
-                    return NotFound();
-
-                existing.SolutionSoftware = model.SolutionSoftware;
-                existing.ProductionServerId = model.ProductionServerId;
-                existing.ClientName = model.ClientName;
-                existing.VersionReleaseNo = model.VersionReleaseNo;
-                existing.SystemsAdmin = model.SystemsAdmin;
-                existing.Date = model.Date;
-
-                existing.AssignedBy = model.AssignedBy;
-                existing.AssignedSignature = model.AssignedSignature;
-                existing.AssignedDate = model.AssignedDate;
-
-                existing.ReviewedBy = model.ReviewedBy;
-                existing.ReviewedSignature = model.ReviewedSignature;
-                existing.ReviewedDate = model.ReviewedDate;
-
-                existing.ApprovedBy = model.ApprovedBy;
-                existing.ApprovedSignature = model.ApprovedSignature;
-                existing.ApprovedDate = model.ApprovedDate;
-
-                _context.UserAccessRightItems.RemoveRange(existing.Users);
-
-                existing.Users.Clear();
-
-                foreach (var user in model.Users)
+                existing.Users.Add(new UserAccessRightItem
                 {
-                    existing.Users.Add(user);
-                }
-
-                await _context.SaveChangesAsync();
-
-                return RedirectToAction(nameof(Index));
+                    UserName = user.UserName,
+                    UserManagement = user.UserManagement,
+                    Initiate = user.Initiate,
+                    Confirmation = user.Confirmation,
+                    Approval = user.Approval,
+                    AccountManagement = user.AccountManagement,
+                    Reports = user.Reports
+                });
             }
 
-            return View(model);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: UserAccessRights/Delete/5
