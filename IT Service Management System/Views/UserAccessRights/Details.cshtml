@@ -1,304 +1,1057 @@
 ﻿@model IT_Service_Management_System.Models.UserAccessRight
 
 @{
-    ViewData["Title"] = "User Access Rights Details";
+    ViewData["Title"] = "User Access Rights Details - Axis IT Helpdesk";
 }
 
-<div class="container-fluid mt-3">
-
-    <div class="card shadow">
-
-        <div class="card-header bg-primary text-white">
-
-            <div class="d-flex justify-content-between">
-
-                <h4 class="mb-0">
-                    <i class="fas fa-user-shield"></i>
-                    User Access Rights Details
-                </h4>
-
-                <div>
-
-                    <a asp-action="Edit"
-                       asp-route-id="@Model.Id"
-                       class="btn btn-warning">
-
-                        <i class="fas fa-edit"></i>
-                        Edit
-
-                    </a>
-
-                    <a asp-action="Index"
-                       class="btn btn-light">
-
-                        <i class="fas fa-arrow-left"></i>
-                        Back
-
-                    </a>
-
-                </div>
-
+<div class="page-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-user-shield"></i>
             </div>
+            <div>
+                <h1 class="hero-title">Access Rights Details</h1>
+                <p class="hero-subtitle">View complete access rights configuration</p>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="hero-btn hero-btn-edit">
+                <i class="fas fa-edit"></i>
+                Edit
+            </a>
+            <a asp-action="Index" class="hero-btn hero-btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Back
+            </a>
+        </div>
+    </div>
 
+    <!-- Details Card -->
+    <div class="details-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-info-circle me-2"></i>
+                <span>Configuration Details</span>
+                <span class="badge-status" id="statusBadge">
+                    <i class="fas fa-check-circle"></i>
+                    Active
+                </span>
+            </div>
+            <div class="record-id">
+                <i class="fas fa-hashtag"></i>
+                Record #@Model.Id
+            </div>
         </div>
 
-        <div class="card-body">
+        <div class="card-body-custom">
+            <!-- System Information Section -->
+            <div class="section-header">
+                <i class="fas fa-server"></i>
+                System Information
+            </div>
 
-            <!-- System Information -->
-
-            <div class="row">
-
-                <div class="col-md-6 mb-3">
-
-                    <label class="fw-bold">
+            <div class="info-grid">
+                <div class="info-item">
+                    <label class="info-label">
+                        <i class="fas fa-code"></i>
                         Solution / Software
                     </label>
-
-                    <div class="form-control">
-                        @Model.SolutionSoftware
+                    <div class="info-value">
+                        <span class="value-text">@Model.SolutionSoftware</span>
                     </div>
-
                 </div>
 
-                <div class="col-md-6 mb-3">
-
-                    <label class="fw-bold">
+                <div class="info-item">
+                    <label class="info-label">
+                        <i class="fas fa-server"></i>
                         Production Server ID
                     </label>
-
-                    <div class="form-control">
-                        @Model.ProductionServerId
+                    <div class="info-value">
+                        <span class="value-text">@Model.ProductionServerId</span>
                     </div>
-
                 </div>
 
-            </div>
-
-            <div class="row">
-
-                <div class="col-md-4 mb-3">
-
-                    <label class="fw-bold">
+                <div class="info-item">
+                    <label class="info-label">
+                        <i class="fas fa-user"></i>
                         Client Name
                     </label>
-
-                    <div class="form-control">
-                        @Model.ClientName
+                    <div class="info-value">
+                        <span class="value-text">@Model.ClientName</span>
                     </div>
-
                 </div>
 
-                <div class="col-md-4 mb-3">
-
-                    <label class="fw-bold">
+                <div class="info-item">
+                    <label class="info-label">
+                        <i class="fas fa-tag"></i>
                         Version / Release
                     </label>
-
-                    <div class="form-control">
-                        @Model.VersionReleaseNo
+                    <div class="info-value">
+                        <span class="badge-version">@Model.VersionReleaseNo</span>
                     </div>
-
                 </div>
 
-                <div class="col-md-4 mb-3">
-
-                    <label class="fw-bold">
+                <div class="info-item">
+                    <label class="info-label">
+                        <i class="fas fa-user-cog"></i>
                         Systems Administrator
                     </label>
-
-                    <div class="form-control">
-                        @Model.SystemsAdmin
+                    <div class="info-value">
+                        <span class="value-text">@Model.SystemsAdmin</span>
                     </div>
-
                 </div>
 
-            </div>
-
-            <div class="row">
-
-                <div class="col-md-4 mb-4">
-
-                    <label class="fw-bold">
+                <div class="info-item">
+                    <label class="info-label">
+                        <i class="far fa-calendar-alt"></i>
                         Date
                     </label>
-
-                    <div class="form-control">
-                        @Model.Date.ToString("dd MMM yyyy")
+                    <div class="info-value">
+                        <span class="badge-date">
+                            <i class="far fa-calendar-alt"></i>
+                            @Model.Date.ToString("dd MMM yyyy")
+                        </span>
                     </div>
-
                 </div>
-
             </div>
 
-            <hr />
+            <hr class="section-divider" />
 
-            <h5 class="mb-3">
-
-                <i class="fas fa-users"></i>
-
+            <!-- User Access Rights Section -->
+            <div class="section-header">
+                <i class="fas fa-users-cog"></i>
                 User Access Rights
-
-            </h5>
+                <span class="badge-count">@Model.Users.Count</span>
+            </div>
 
             <div class="table-responsive">
-
-                <table class="table table-bordered table-striped">
-
-                    <thead class="table-dark">
-
+                <table class="table-modern" id="usersTable">
+                    <thead>
                         <tr>
-
-                            <th>User</th>
-
-                            <th class="text-center">User Management</th>
-
+                            <th class="user-col">User</th>
+                            <th class="text-center">User Mgmt</th>
                             <th class="text-center">Initiate</th>
-
-                            <th class="text-center">Confirmation</th>
-
-                            <th class="text-center">Approval</th>
-
-                            <th class="text-center">Account Management</th>
-
+                            <th class="text-center">Confirm</th>
+                            <th class="text-center">Approve</th>
+                            <th class="text-center">Account</th>
                             <th class="text-center">Reports</th>
-
                         </tr>
-
                     </thead>
-
                     <tbody>
-
                         @foreach (var item in Model.Users)
                         {
                             <tr>
-
-                                <td>@item.UserName</td>
-
-                                <td class="text-center">
-                                    @(item.UserManagement ? "✔" : "")
+                                <td>
+                                    <div class="cell-content">
+                                        <i class="fas fa-user-circle cell-icon"></i>
+                                        <span>@item.UserName</span>
+                                    </div>
                                 </td>
-
                                 <td class="text-center">
-                                    @(item.Initiate ? "✔" : "")
+                                    @if (item.UserManagement)
+                                    {
+                                        <span class="permission-badge granted">
+                                            <i class="fas fa-check-circle"></i> Granted
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="permission-badge denied">
+                                            <i class="fas fa-times-circle"></i> Denied
+                                        </span>
+                                    }
                                 </td>
-
                                 <td class="text-center">
-                                    @(item.Confirmation ? "✔" : "")
+                                    @if (item.Initiate)
+                                    {
+                                        <span class="permission-badge granted">
+                                            <i class="fas fa-check-circle"></i> Granted
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="permission-badge denied">
+                                            <i class="fas fa-times-circle"></i> Denied
+                                        </span>
+                                    }
                                 </td>
-
                                 <td class="text-center">
-                                    @(item.Approval ? "✔" : "")
+                                    @if (item.Confirmation)
+                                    {
+                                        <span class="permission-badge granted">
+                                            <i class="fas fa-check-circle"></i> Granted
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="permission-badge denied">
+                                            <i class="fas fa-times-circle"></i> Denied
+                                        </span>
+                                    }
                                 </td>
-
                                 <td class="text-center">
-                                    @(item.AccountManagement ? "✔" : "")
+                                    @if (item.Approval)
+                                    {
+                                        <span class="permission-badge granted">
+                                            <i class="fas fa-check-circle"></i> Granted
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="permission-badge denied">
+                                            <i class="fas fa-times-circle"></i> Denied
+                                        </span>
+                                    }
                                 </td>
-
                                 <td class="text-center">
-                                    @(item.Reports ? "✔" : "")
+                                    @if (item.AccountManagement)
+                                    {
+                                        <span class="permission-badge granted">
+                                            <i class="fas fa-check-circle"></i> Granted
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="permission-badge denied">
+                                            <i class="fas fa-times-circle"></i> Denied
+                                        </span>
+                                    }
                                 </td>
-
+                                <td class="text-center">
+                                    @if (item.Reports)
+                                    {
+                                        <span class="permission-badge granted">
+                                            <i class="fas fa-check-circle"></i> Granted
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="permission-badge denied">
+                                            <i class="fas fa-times-circle"></i> Denied
+                                        </span>
+                                    }
+                                </td>
                             </tr>
                         }
-
                     </tbody>
-
                 </table>
-
             </div>
 
-            <hr />
+            <hr class="section-divider" />
 
-            <div class="row">
-
-                <div class="col-md-4">
-
-                    <div class="card border-primary">
-
-                        <div class="card-header bg-primary text-white">
-
-                            Assigned
-
-                        </div>
-
-                        <div class="card-body">
-
-                            <p><strong>Name:</strong> @Model.AssignedBy</p>
-
-                            <p><strong>Signature:</strong> @Model.AssignedSignature</p>
-
-                            <p>
-                                <strong>Date:</strong>
-
-                                @(Model.AssignedDate?.ToString("dd MMM yyyy"))
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="col-md-4">
-
-                    <div class="card border-warning">
-
-                        <div class="card-header bg-warning">
-
-                            Reviewed
-
-                        </div>
-
-                        <div class="card-body">
-
-                            <p><strong>Name:</strong> @Model.ReviewedBy</p>
-
-                            <p><strong>Signature:</strong> @Model.ReviewedSignature</p>
-
-                            <p>
-                                <strong>Date:</strong>
-
-                                @(Model.ReviewedDate?.ToString("dd MMM yyyy"))
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="col-md-4">
-
-                    <div class="card border-success">
-
-                        <div class="card-header bg-success text-white">
-
-                            Approved
-
-                        </div>
-
-                        <div class="card-body">
-
-                            <p><strong>Name:</strong> @Model.ApprovedBy</p>
-
-                            <p><strong>Signature:</strong> @Model.ApprovedSignature</p>
-
-                            <p>
-                                <strong>Date:</strong>
-
-                                @(Model.ApprovedDate?.ToString("dd MMM yyyy"))
-                            </p>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
+            <!-- Authorization Section -->
+            <div class="section-header">
+                <i class="fas fa-gavel"></i>
+                Authorization
             </div>
 
+            <div class="authorization-grid">
+                <!-- Assigned -->
+                <div class="auth-card auth-card-assigned">
+                    <div class="auth-card-header">
+                        <i class="fas fa-pen-fancy"></i>
+                        Assigned By
+                    </div>
+                    <div class="auth-card-body">
+                        <div class="auth-field">
+                            <label>Name</label>
+                            <div class="auth-value">
+                                <i class="fas fa-user"></i>
+                                <span>@Model.AssignedBy</span>
+                            </div>
+                        </div>
+                        <div class="auth-field">
+                            <label>Signature</label>
+                            <div class="auth-value">
+                                <i class="fas fa-signature"></i>
+                                <span>@Model.AssignedSignature</span>
+                            </div>
+                        </div>
+                        <div class="auth-field">
+                            <label>Date</label>
+                            <div class="auth-value">
+                                <i class="far fa-calendar-alt"></i>
+                                <span>@(Model.AssignedDate?.ToString("dd MMM yyyy") ?? "Not assigned")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reviewed -->
+                <div class="auth-card auth-card-reviewed">
+                    <div class="auth-card-header">
+                        <i class="fas fa-search"></i>
+                        Reviewed By
+                    </div>
+                    <div class="auth-card-body">
+                        <div class="auth-field">
+                            <label>Name</label>
+                            <div class="auth-value">
+                                <i class="fas fa-user"></i>
+                                <span>@Model.ReviewedBy</span>
+                            </div>
+                        </div>
+                        <div class="auth-field">
+                            <label>Signature</label>
+                            <div class="auth-value">
+                                <i class="fas fa-signature"></i>
+                                <span>@Model.ReviewedSignature</span>
+                            </div>
+                        </div>
+                        <div class="auth-field">
+                            <label>Date</label>
+                            <div class="auth-value">
+                                <i class="far fa-calendar-alt"></i>
+                                <span>@(Model.ReviewedDate?.ToString("dd MMM yyyy") ?? "Not reviewed")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Approved -->
+                <div class="auth-card auth-card-approved">
+                    <div class="auth-card-header">
+                        <i class="fas fa-check-circle"></i>
+                        Approved By
+                    </div>
+                    <div class="auth-card-body">
+                        <div class="auth-field">
+                            <label>Name</label>
+                            <div class="auth-value">
+                                <i class="fas fa-user"></i>
+                                <span>@Model.ApprovedBy</span>
+                            </div>
+                        </div>
+                        <div class="auth-field">
+                            <label>Signature</label>
+                            <div class="auth-value">
+                                <i class="fas fa-signature"></i>
+                                <span>@Model.ApprovedSignature</span>
+                            </div>
+                        </div>
+                        <div class="auth-field">
+                            <label>Date</label>
+                            <div class="auth-value">
+                                <i class="far fa-calendar-alt"></i>
+                                <span>@(Model.ApprovedDate?.ToString("dd MMM yyyy") ?? "Not approved")</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-edit-main">
+                    <i class="fas fa-edit"></i>
+                    Edit Access Rights
+                </a>
+                <a asp-action="Index" class="btn-cancel-main">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to List
+                </a>
+            </div>
         </div>
-
     </div>
-
 </div>
+
+<style>
+    /* ===== Base Variables ===== */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --success-dark: #1f8a5c;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== Page Container ===== */
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* ===== Hero Section ===== */
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .hero-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+
+    .hero-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .hero-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+    }
+
+    .hero-btn-edit {
+        background: white;
+        color: var(--warning);
+    }
+
+        .hero-btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: var(--warning);
+            text-decoration: none;
+        }
+
+    .hero-btn-back {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+        .hero-btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== Main Card ===== */
+    .details-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .badge-status {
+        background: var(--success);
+        color: white;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 1rem;
+        font-weight: 500;
+        margin-left: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+        .badge-status i {
+            font-size: 0.65rem;
+        }
+
+    .record-id {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+        background: white;
+        padding: 0.2rem 0.8rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+    }
+
+        .record-id i {
+            color: var(--primary-light);
+            margin-right: 0.3rem;
+        }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* ===== Sections ===== */
+    .section-header {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--gray-700);
+        margin: 1.5rem 0 1.25rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+        .section-header i {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+    .badge-count {
+        background: var(--primary);
+        color: white;
+        font-size: 0.7rem;
+        padding: 0.1rem 0.6rem;
+        border-radius: 1rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+
+    .section-divider {
+        border: 0;
+        border-top: 2px dashed var(--gray-200);
+        margin: 2rem 0;
+    }
+
+    /* ===== Info Grid ===== */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+
+    @@media (max-width: 992px) {
+        .info-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+        .info-label i {
+            color: var(--primary-light);
+            font-size: 0.7rem;
+        }
+
+    .info-value {
+        padding: 0.6rem 0.8rem;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+    }
+
+    .value-text {
+        font-size: 0.9rem;
+        color: var(--gray-700);
+        font-weight: 500;
+    }
+
+    .badge-version {
+        background: var(--gray-200);
+        color: var(--gray-700);
+        padding: 0.2rem 0.6rem;
+        border-radius: 0.25rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        font-family: monospace;
+        border: 1px solid var(--gray-300);
+    }
+
+    .badge-date {
+        background: white;
+        padding: 0.2rem 0.6rem;
+        border-radius: 0.25rem;
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border: 1px solid var(--gray-200);
+    }
+
+        .badge-date i {
+            font-size: 0.7rem;
+            color: var(--gray-400);
+        }
+
+    /* ===== Table Styles ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        border: 1px solid var(--gray-200);
+        min-width: 700px;
+    }
+
+        .table-modern thead {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+        }
+
+            .table-modern thead th {
+                padding: 0.6rem 0.5rem;
+                font-size: 0.7rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+                border: none;
+                text-align: center;
+                vertical-align: middle;
+                white-space: nowrap;
+            }
+
+                .table-modern thead th.user-col {
+                    text-align: left;
+                }
+
+        .table-modern tbody td {
+            padding: 0.6rem 0.5rem;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--gray-200);
+            background: white;
+        }
+
+        .table-modern tbody tr:hover td {
+            background-color: var(--gray-50);
+        }
+
+        .table-modern tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+    .cell-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .cell-icon {
+        color: var(--primary-light);
+        font-size: 1.1rem;
+        width: 20px;
+        text-align: center;
+    }
+
+    /* ===== Permission Badges ===== */
+    .permission-badge {
+        padding: 0.2rem 0.6rem;
+        border-radius: 0.25rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+        .permission-badge.granted {
+            background: #e6fffa;
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+
+        .permission-badge.denied {
+            background: #fee;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+
+        .permission-badge i {
+            font-size: 0.65rem;
+        }
+
+    /* ===== Authorization Cards ===== */
+    .authorization-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+        margin-top: 0.5rem;
+    }
+
+    @@media (max-width: 992px) {
+        .authorization-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .authorization-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .auth-card {
+        border: 1px solid var(--gray-200);
+        border-radius: 0.75rem;
+        overflow: hidden;
+        background: white;
+        transition: box-shadow 0.2s ease;
+    }
+
+        .auth-card:hover {
+            box-shadow: var(--shadow-sm);
+        }
+
+    .auth-card-assigned .auth-card-header {
+        background: var(--primary);
+        color: white;
+    }
+
+    .auth-card-reviewed .auth-card-header {
+        background: var(--warning);
+        color: white;
+    }
+
+    .auth-card-approved .auth-card-header {
+        background: var(--success);
+        color: white;
+    }
+
+    .auth-card-header {
+        padding: 0.6rem 1rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .auth-card-body {
+        padding: 1rem;
+    }
+
+    .auth-field {
+        margin-bottom: 0.75rem;
+    }
+
+        .auth-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .auth-field label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 0.2rem;
+            display: block;
+        }
+
+    .auth-value {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.6rem;
+        background: var(--gray-50);
+        border-radius: 0.4rem;
+        font-size: 0.85rem;
+        color: var(--gray-700);
+        border: 1px solid var(--gray-200);
+    }
+
+        .auth-value i {
+            color: var(--gray-400);
+            font-size: 0.8rem;
+            width: 16px;
+        }
+
+    /* ===== Form Actions ===== */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .btn-edit-main {
+        background: linear-gradient(100deg, var(--warning), #e6a020);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-edit-main:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-cancel-main {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-cancel-main:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+    /* ===== Responsive ===== */
+    @@media (max-width: 768px) {
+        .page-container {
+            padding: 1rem 0.5rem;
+        }
+
+        .hero-section {
+            padding: 1.5rem;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .hero-actions {
+            justify-content: stretch;
+        }
+
+            .hero-actions .hero-btn {
+                flex: 1;
+                justify-content: center;
+            }
+
+        .card-body-custom {
+            padding: 1.25rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+            .form-actions .btn-edit-main,
+            .form-actions .btn-cancel-main {
+                flex: none;
+            }
+
+        .section-header {
+            font-size: 0.9rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .hero-title {
+            font-size: 1.3rem;
+        }
+
+        .hero-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 1.5rem;
+        }
+
+        .record-id {
+            font-size: 0.7rem;
+        }
+
+        .permission-badge {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.4rem;
+        }
+
+        .table-modern {
+            font-size: 0.8rem;
+            min-width: 600px;
+        }
+
+            .table-modern thead th {
+                font-size: 0.6rem;
+                padding: 0.3rem 0.3rem;
+            }
+
+            .table-modern tbody td {
+                padding: 0.3rem 0.3rem;
+            }
+    }
+
+    /* ===== Print Styles ===== */
+    @@media print {
+        .hero-section {
+            background: #f0f0f0 !important;
+            padding: 1rem !important;
+        }
+
+        .hero-title {
+            color: #333 !important;
+        }
+
+        .hero-subtitle {
+            color: #666 !important;
+        }
+
+        .hero-icon {
+            background: #ddd !important;
+            color: #333 !important;
+        }
+
+        .hero-btn {
+            display: none !important;
+        }
+
+        .btn-edit-main,
+        .btn-cancel-main {
+            display: none !important;
+        }
+
+        .badge-status {
+            background: #666 !important;
+        }
+
+        .auth-card-assigned .auth-card-header,
+        .auth-card-reviewed .auth-card-header,
+        .auth-card-approved .auth-card-header {
+            background: #f0f0f0 !important;
+            color: #333 !important;
+        }
+
+        .table-modern thead {
+            background: #f0f0f0 !important;
+            color: #333 !important;
+        }
+    }
+</style>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add hover effects for action buttons
+            document.querySelectorAll('.hero-btn').forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                });
+                btn.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+
+            // Animate permission badges on load
+            document.querySelectorAll('.permission-badge').forEach((badge, index) => {
+                badge.style.opacity = '0';
+                badge.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    badge.style.transition = 'all 0.3s ease';
+                    badge.style.opacity = '1';
+                    badge.style.transform = 'scale(1)';
+                }, 100 + (index * 50));
+            });
+        });
+    </script>
+}
