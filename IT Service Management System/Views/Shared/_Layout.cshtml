@@ -606,6 +606,11 @@
                     <i class="fas fa-credit-card"></i> Payments
                 </a>
 
+                <a class="nav-item @(currentController == "MaintenanceRecords" ? "active" : "")"
+                   asp-controller="MaintenanceRecords"
+                   asp-action="Index">
+                    <i class="fas fa-tools"></i> Maintenance
+                </a>
                 <div class="nav-group">Assets & Security</div>
                 <a class="nav-item @(currentController == "Assets" ? "active" : "")"
                    asp-controller="Assets" asp-action="Index">
