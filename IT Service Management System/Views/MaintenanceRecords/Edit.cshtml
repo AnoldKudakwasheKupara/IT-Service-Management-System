@@ -1,0 +1,126 @@
+﻿@model IT_Service_Management_System.Models.MaintenanceRecord
+
+@{
+    ViewData["Title"] = "Edit Maintenance Record";
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-warning text-dark">
+            <h4 class="mb-0">
+                <i class="bi bi-pencil-square"></i> Edit Maintenance Record
+            </h4>
+        </div>
+
+        <div class="card-body">
+
+            <form asp-action="Edit">
+
+                <input type="hidden" asp-for="Id" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="AssetName" class="form-label"></label>
+                        <input asp-for="AssetName" class="form-control" />
+                        <span asp-validation-for="AssetName" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="EmployeeName" class="form-label"></label>
+                        <input asp-for="EmployeeName" class="form-control" />
+                        <span asp-validation-for="EmployeeName" class="text-danger"></span>
+                    </div>
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="MaintenanceDate" class="form-label"></label>
+                        <input asp-for="MaintenanceDate" type="date" class="form-control" />
+                        <span asp-validation-for="MaintenanceDate" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="MaintenanceType" class="form-label"></label>
+                        <select asp-for="MaintenanceType"
+                                asp-items="Html.GetEnumSelectList<IT_Service_Management_System.Enums.MaintenanceType>()"
+                                class="form-select">
+                        </select>
+                        <span asp-validation-for="MaintenanceType" class="text-danger"></span>
+                    </div>
+
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ProblemDescription" class="form-label"></label>
+                    <textarea asp-for="ProblemDescription" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="ProblemDescription" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="WorkDone" class="form-label"></label>
+                    <textarea asp-for="WorkDone" class="form-control" rows="4"></textarea>
+                    <span asp-validation-for="WorkDone" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="PartsReplaced" class="form-label"></label>
+                    <textarea asp-for="PartsReplaced" class="form-control" rows="2"></textarea>
+                    <span asp-validation-for="PartsReplaced" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="SoftwareInstalled" class="form-label"></label>
+                    <textarea asp-for="SoftwareInstalled" class="form-control" rows="2"></textarea>
+                    <span asp-validation-for="SoftwareInstalled" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Comments" class="form-label"></label>
+                    <textarea asp-for="Comments" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Comments" class="text-danger"></span>
+                </div>
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="NextMaintenanceDate" class="form-label"></label>
+                        <input asp-for="NextMaintenanceDate" type="date" class="form-control" />
+                        <span asp-validation-for="NextMaintenanceDate" class="text-danger"></span>
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <div class="d-flex justify-content-between">
+
+                    <a asp-action="Index" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to List
+                    </a>
+
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-save"></i> Update Record
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
