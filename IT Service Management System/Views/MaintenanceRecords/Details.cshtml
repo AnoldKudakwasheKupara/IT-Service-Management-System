@@ -1,0 +1,135 @@
+﻿@model IT_Service_Management_System.Models.MaintenanceRecord
+
+@{
+    ViewData["Title"] = "Maintenance Record Details";
+}
+
+<div class="container mt-4">
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0">
+                <i class="bi bi-tools"></i> Maintenance Record Details
+            </h4>
+        </div>
+
+        <div class="card-body">
+
+            <div class="row mb-3">
+
+                <div class="col-md-6">
+                    <strong>Asset Name</strong>
+                    <div>@Model.AssetName</div>
+                </div>
+
+                <div class="col-md-6">
+                    <strong>Employee Name</strong>
+                    <div>@Model.EmployeeName</div>
+                </div>
+
+            </div>
+
+            <div class="row mb-3">
+
+                <div class="col-md-6">
+                    <strong>Maintenance Date</strong>
+                    <div>@Model.MaintenanceDate.ToString("dd MMMM yyyy")</div>
+                </div>
+
+                <div class="col-md-6">
+                    <strong>Maintenance Type</strong>
+                    <div>@Model.MaintenanceType</div>
+                </div>
+
+            </div>
+
+            <hr />
+
+            <div class="mb-3">
+                <strong>Problem / Reason</strong>
+
+                <div class="border rounded p-3 bg-light">
+                    @(string.IsNullOrWhiteSpace(Model.ProblemDescription)
+                        ? "N/A"
+                        : Model.ProblemDescription)
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <strong>Work Done</strong>
+
+                <div class="border rounded p-3 bg-light">
+                    @(string.IsNullOrWhiteSpace(Model.WorkDone)
+                        ? "N/A"
+                        : Model.WorkDone)
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <strong>Parts Replaced</strong>
+
+                <div class="border rounded p-3 bg-light">
+                    @(string.IsNullOrWhiteSpace(Model.PartsReplaced)
+                        ? "None"
+                        : Model.PartsReplaced)
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <strong>Software Installed</strong>
+
+                <div class="border rounded p-3 bg-light">
+                    @(string.IsNullOrWhiteSpace(Model.SoftwareInstalled)
+                        ? "None"
+                        : Model.SoftwareInstalled)
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <strong>Comments</strong>
+
+                <div class="border rounded p-3 bg-light">
+                    @(string.IsNullOrWhiteSpace(Model.Comments)
+                        ? "No comments."
+                        : Model.Comments)
+                </div>
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6">
+                    <strong>Next Maintenance Date</strong>
+                    <div>
+                        @(Model.NextMaintenanceDate.HasValue
+                            ? Model.NextMaintenanceDate.Value.ToString("dd MMMM yyyy")
+                            : "Not Scheduled")
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <strong>Record Created</strong>
+                    <div>@Model.CreatedAt.ToString("dd MMMM yyyy HH:mm")</div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card-footer d-flex justify-content-between">
+
+            <a asp-action="Index" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to List
+            </a>
+
+            <a asp-action="Edit"
+               asp-route-id="@Model.Id"
+               class="btn btn-warning">
+                <i class="bi bi-pencil-square"></i> Edit
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
