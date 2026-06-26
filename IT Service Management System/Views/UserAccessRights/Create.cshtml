@@ -1,283 +1,1118 @@
 ﻿@model IT_Service_Management_System.Models.UserAccessRight
 
 @{
-    ViewData["Title"] = "Create User Access Rights";
+    ViewData["Title"] = "Create User Access Rights - Axis IT Helpdesk";
+    // Remove Layout = null to keep the navigation bar
+    // If you have a custom layout, use: Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid mt-3">
-
-    <form asp-action="Create" method="post">
-
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-        <div class="card shadow">
-
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">
-                    <i class="fas fa-user-shield"></i>
-                    System User Access Rights Form
-                </h4>
+<div class="page-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <div class="hero-icon">
+                <i class="fas fa-user-shield"></i>
             </div>
+            <div>
+                <h1 class="hero-title">User Access Rights</h1>
+                <p class="hero-subtitle">Configure system access permissions for users</p>
+            </div>
+        </div>
+        <div class="hero-actions">
+            <a asp-action="Index" class="hero-btn hero-btn-back">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+        </div>
+    </div>
 
-            <div class="card-body">
+    <!-- Access Rights Form -->
+    <div class="access-rights-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-cog me-2"></i>
+                <span>Access Rights Configuration</span>
+            </div>
+            <div class="form-steps">
+                <span class="step active">1</span>
+                <span class="step-line"></span>
+                <span class="step">2</span>
+                <span class="step-line"></span>
+                <span class="step">3</span>
+            </div>
+        </div>
 
-                <div class="row">
+        <div class="card-body-custom">
+            <form asp-action="Create" method="post" id="accessRightsForm">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="SolutionSoftware" class="form-label"></label>
-                        <input asp-for="SolutionSoftware" class="form-control" />
-                    </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="ProductionServerId" class="form-label"></label>
-                        <input asp-for="ProductionServerId" class="form-control" />
-                    </div>
-
+                <!-- System Details Section -->
+                <div class="section-header">
+                    <i class="fas fa-server"></i>
+                    System Details
                 </div>
 
-                <div class="row">
-
-                    <div class="col-md-4 mb-3">
-                        <label asp-for="ClientName" class="form-label"></label>
-                        <input asp-for="ClientName" class="form-control" />
+                <div class="form-row">
+                    <div class="form-group-modern">
+                        <label asp-for="SolutionSoftware" class="form-label">
+                            <i class="fas fa-code"></i>
+                            Solution / Software
+                            <span class="required">*</span>
+                        </label>
+                        <input asp-for="SolutionSoftware" class="form-control-modern" placeholder="e.g., Axis Helpdesk v2.0" />
+                        <span asp-validation-for="SolutionSoftware" class="validation-message text-danger"></span>
+                        <div class="form-hint">
+                            <i class="fas fa-info-circle"></i> Name of the solution or software
+                        </div>
                     </div>
 
-                    <div class="col-md-4 mb-3">
-                        <label asp-for="VersionReleaseNo" class="form-label"></label>
-                        <input asp-for="VersionReleaseNo" class="form-control" />
+                    <div class="form-group-modern">
+                        <label asp-for="ProductionServerId" class="form-label">
+                            <i class="fas fa-server"></i>
+                            Production Server ID
+                            <span class="required">*</span>
+                        </label>
+                        <input asp-for="ProductionServerId" class="form-control-modern" placeholder="Server ID or name" />
+                        <span asp-validation-for="ProductionServerId" class="validation-message text-danger"></span>
+                        <div class="form-hint">
+                            <i class="fas fa-info-circle"></i> Server where the solution is hosted
+                        </div>
                     </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label asp-for="SystemsAdmin" class="form-label"></label>
-                        <input asp-for="SystemsAdmin" class="form-control" />
-                    </div>
-
                 </div>
 
-                <div class="row">
-
-                    <div class="col-md-4 mb-3">
-                        <label asp-for="Date" class="form-label"></label>
-                        <input asp-for="Date" type="date" class="form-control" />
+                <div class="form-row">
+                    <div class="form-group-modern">
+                        <label asp-for="ClientName" class="form-label">
+                            <i class="fas fa-user"></i>
+                            Client Name
+                            <span class="required">*</span>
+                        </label>
+                        <input asp-for="ClientName" class="form-control-modern" placeholder="Client/Organization name" />
+                        <span asp-validation-for="ClientName" class="validation-message text-danger"></span>
+                        <div class="form-hint">
+                            <i class="fas fa-info-circle"></i> Client or organization name
+                        </div>
                     </div>
 
+                    <div class="form-group-modern">
+                        <label asp-for="VersionReleaseNo" class="form-label">
+                            <i class="fas fa-tag"></i>
+                            Version / Release No
+                        </label>
+                        <input asp-for="VersionReleaseNo" class="form-control-modern" placeholder="v1.0.0" />
+                        <span asp-validation-for="VersionReleaseNo" class="validation-message text-danger"></span>
+                        <div class="form-hint">
+                            <i class="fas fa-info-circle"></i> Current version of the solution
+                        </div>
+                    </div>
                 </div>
 
-                <hr />
+                <div class="form-row">
+                    <div class="form-group-modern">
+                        <label asp-for="SystemsAdmin" class="form-label">
+                            <i class="fas fa-user-cog"></i>
+                            Systems Administrator
+                            <span class="required">*</span>
+                        </label>
+                        <input asp-for="SystemsAdmin" class="form-control-modern" placeholder="System Administrator name" />
+                        <span asp-validation-for="SystemsAdmin" class="validation-message text-danger"></span>
+                        <div class="form-hint">
+                            <i class="fas fa-info-circle"></i> Responsible systems administrator
+                        </div>
+                    </div>
 
-                <h5>User Access Rights</h5>
+                    <div class="form-group-modern">
+                        <label asp-for="Date" class="form-label">
+                            <i class="far fa-calendar-alt"></i>
+                            Date
+                            <span class="required">*</span>
+                        </label>
+                        <input asp-for="Date" type="date" class="form-control-modern" />
+                        <span asp-validation-for="Date" class="validation-message text-danger"></span>
+                        <div class="form-hint">
+                            <i class="fas fa-info-circle"></i> Date of access rights configuration
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="section-divider" />
+
+                <!-- User Access Rights Section -->
+                <div class="section-header">
+                    <i class="fas fa-users-cog"></i>
+                    User Access Rights
+                    <span class="badge-count" id="userCount">@Model.Users.Count</span>
+                </div>
 
                 <div class="table-responsive">
-
-                    <table class="table table-bordered" id="usersTable">
-
-                        <thead class="table-dark">
-
+                    <table class="table-modern" id="usersTable">
+                        <thead>
                             <tr>
-
-                                <th>User</th>
-
-                                <th>User Management</th>
-
+                                <th class="user-col">User Name</th>
+                                <th>User Mgmt</th>
                                 <th>Initiate</th>
-
-                                <th>Confirmation</th>
-
-                                <th>Approval</th>
-
-                                <th>Account Management</th>
-
+                                <th>Confirm</th>
+                                <th>Approve</th>
+                                <th>Account</th>
                                 <th>Reports</th>
-
-                                <th width="60"></th>
-
+                                <th class="action-col">Action</th>
                             </tr>
-
                         </thead>
-
                         <tbody>
-
                             @for (int i = 0; i < Model.Users.Count; i++)
                             {
                                 <tr>
-
                                     <td>
-                                        <input asp-for="Users[i].UserName" class="form-control" />
+                                        <input asp-for="Users[i].UserName" class="form-control-modern-sm" placeholder="Username" />
+                                        <span asp-validation-for="Users[i].UserName" class="validation-message text-danger"></span>
                                     </td>
-
                                     <td class="text-center">
-                                        <input asp-for="Users[i].UserManagement" />
+                                        <input asp-for="Users[i].UserManagement" class="checkbox-modern" />
                                     </td>
-
                                     <td class="text-center">
-                                        <input asp-for="Users[i].Initiate" />
+                                        <input asp-for="Users[i].Initiate" class="checkbox-modern" />
                                     </td>
-
                                     <td class="text-center">
-                                        <input asp-for="Users[i].Confirmation" />
+                                        <input asp-for="Users[i].Confirmation" class="checkbox-modern" />
                                     </td>
-
                                     <td class="text-center">
-                                        <input asp-for="Users[i].Approval" />
+                                        <input asp-for="Users[i].Approval" class="checkbox-modern" />
                                     </td>
-
                                     <td class="text-center">
-                                        <input asp-for="Users[i].AccountManagement" />
+                                        <input asp-for="Users[i].AccountManagement" class="checkbox-modern" />
                                     </td>
-
                                     <td class="text-center">
-                                        <input asp-for="Users[i].Reports" />
+                                        <input asp-for="Users[i].Reports" class="checkbox-modern" />
                                     </td>
-
                                     <td class="text-center">
-                                        <button type="button"
-                                                class="btn btn-danger btn-sm removeRow">
-                                            ×
+                                        <button type="button" class="btn-remove-row" title="Remove user">
+                                            <i class="fas fa-times"></i>
                                         </button>
                                     </td>
-
                                 </tr>
                             }
-
                         </tbody>
-
                     </table>
-
                 </div>
 
-                <button type="button"
-                        class="btn btn-success"
-                        id="addRow">
-
-                    <i class="fas fa-plus"></i>
-
-                    Add User
-
-                </button>
-
-                <hr />
-
-                <h5>Authorization</h5>
-
-                <div class="row">
-
-                    <div class="col-md-4">
-
-                        <div class="card">
-
-                            <div class="card-header">
-                                Assigned
-                            </div>
-
-                            <div class="card-body">
-
-                                <div class="mb-2">
-                                    <label>Name</label>
-                                    <input asp-for="AssignedBy" class="form-control" />
-                                </div>
-
-                                <div class="mb-2">
-                                    <label>Signature</label>
-                                    <input asp-for="AssignedSignature" class="form-control" />
-                                </div>
-
-                                <div>
-                                    <label>Date</label>
-                                    <input asp-for="AssignedDate" type="date" class="form-control" />
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div class="col-md-4">
-
-                        <div class="card">
-
-                            <div class="card-header">
-                                Reviewed
-                            </div>
-
-                            <div class="card-body">
-
-                                <div class="mb-2">
-                                    <label>Name</label>
-                                    <input asp-for="ReviewedBy" class="form-control" />
-                                </div>
-
-                                <div class="mb-2">
-                                    <label>Signature</label>
-                                    <input asp-for="ReviewedSignature" class="form-control" />
-                                </div>
-
-                                <div>
-                                    <label>Date</label>
-                                    <input asp-for="ReviewedDate" type="date" class="form-control" />
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                    <div class="col-md-4">
-
-                        <div class="card">
-
-                            <div class="card-header">
-                                Approved
-                            </div>
-
-                            <div class="card-body">
-
-                                <div class="mb-2">
-                                    <label>Name</label>
-                                    <input asp-for="ApprovedBy" class="form-control" />
-                                </div>
-
-                                <div class="mb-2">
-                                    <label>Signature</label>
-                                    <input asp-for="ApprovedSignature" class="form-control" />
-                                </div>
-
-                                <div>
-                                    <label>Date</label>
-                                    <input asp-for="ApprovedDate" type="date" class="form-control" />
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
+                <div class="table-actions">
+                    <button type="button" class="btn-add-row" id="addRow">
+                        <i class="fas fa-plus"></i>
+                        Add User
+                    </button>
                 </div>
 
-            </div>
+                <hr class="section-divider" />
 
-            <div class="card-footer text-end">
+                <!-- Authorization Section -->
+                <div class="section-header">
+                    <i class="fas fa-gavel"></i>
+                    Authorization
+                </div>
 
-                <a asp-action="Index" class="btn btn-secondary">
-                    Back
-                </a>
+                <div class="authorization-grid">
+                    <!-- Assigned -->
+                    <div class="auth-card">
+                        <div class="auth-card-header">
+                            <i class="fas fa-pen-fancy"></i>
+                            Assigned By
+                        </div>
+                        <div class="auth-card-body">
+                            <div class="auth-field">
+                                <label asp-for="AssignedBy">Name</label>
+                                <input asp-for="AssignedBy" class="form-control-modern-sm" placeholder="Full name" />
+                                <span asp-validation-for="AssignedBy" class="validation-message text-danger"></span>
+                            </div>
+                            <div class="auth-field">
+                                <label asp-for="AssignedSignature">Signature</label>
+                                <input asp-for="AssignedSignature" class="form-control-modern-sm" placeholder="Electronic signature" />
+                                <span asp-validation-for="AssignedSignature" class="validation-message text-danger"></span>
+                            </div>
+                            <div class="auth-field">
+                                <label asp-for="AssignedDate">Date</label>
+                                <input asp-for="AssignedDate" type="date" class="form-control-modern-sm" />
+                                <span asp-validation-for="AssignedDate" class="validation-message text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
 
-                <button class="btn btn-primary">
-                    Save
-                </button>
+                    <!-- Reviewed -->
+                    <div class="auth-card">
+                        <div class="auth-card-header">
+                            <i class="fas fa-search"></i>
+                            Reviewed By
+                        </div>
+                        <div class="auth-card-body">
+                            <div class="auth-field">
+                                <label asp-for="ReviewedBy">Name</label>
+                                <input asp-for="ReviewedBy" class="form-control-modern-sm" placeholder="Full name" />
+                                <span asp-validation-for="ReviewedBy" class="validation-message text-danger"></span>
+                            </div>
+                            <div class="auth-field">
+                                <label asp-for="ReviewedSignature">Signature</label>
+                                <input asp-for="ReviewedSignature" class="form-control-modern-sm" placeholder="Electronic signature" />
+                                <span asp-validation-for="ReviewedSignature" class="validation-message text-danger"></span>
+                            </div>
+                            <div class="auth-field">
+                                <label asp-for="ReviewedDate">Date</label>
+                                <input asp-for="ReviewedDate" type="date" class="form-control-modern-sm" />
+                                <span asp-validation-for="ReviewedDate" class="validation-message text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
 
-            </div>
+                    <!-- Approved -->
+                    <div class="auth-card">
+                        <div class="auth-card-header">
+                            <i class="fas fa-check-circle"></i>
+                            Approved By
+                        </div>
+                        <div class="auth-card-body">
+                            <div class="auth-field">
+                                <label asp-for="ApprovedBy">Name</label>
+                                <input asp-for="ApprovedBy" class="form-control-modern-sm" placeholder="Full name" />
+                                <span asp-validation-for="ApprovedBy" class="validation-message text-danger"></span>
+                            </div>
+                            <div class="auth-field">
+                                <label asp-for="ApprovedSignature">Signature</label>
+                                <input asp-for="ApprovedSignature" class="form-control-modern-sm" placeholder="Electronic signature" />
+                                <span asp-validation-for="ApprovedSignature" class="validation-message text-danger"></span>
+                            </div>
+                            <div class="auth-field">
+                                <label asp-for="ApprovedDate">Date</label>
+                                <input asp-for="ApprovedDate" type="date" class="form-control-modern-sm" />
+                                <span asp-validation-for="ApprovedDate" class="validation-message text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-create" id="submitBtn">
+                        <i class="fas fa-save"></i>
+                        Save Access Rights
+                    </button>
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
         </div>
-
-    </form>
-
+    </div>
 </div>
 
+<style>
+    /* ===== Base Variables ===== */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --success-dark: #1f8a5c;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== Page Container ===== */
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* ===== Hero Section ===== */
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        border-radius: 1.5rem;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        box-shadow: var(--shadow-lg);
+    }
+
+    .hero-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .hero-icon {
+        width: 60px;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+    }
+
+    .hero-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: white;
+        margin: 0 0 0.25rem 0;
+    }
+
+    .hero-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+
+    .hero-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-btn {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        cursor: pointer;
+        border: none;
+    }
+
+    .hero-btn-back {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+        .hero-btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== Main Card ===== */
+    .access-rights-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .form-steps {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .step {
+        width: 30px;
+        height: 30px;
+        background: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+    }
+
+        .step.active {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+    .step-line {
+        width: 40px;
+        height: 2px;
+        background: var(--gray-300);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* ===== Sections ===== */
+    .section-header {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--gray-700);
+        margin: 1.5rem 0 1.25rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+        .section-header i {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+    .badge-count {
+        background: var(--primary);
+        color: white;
+        font-size: 0.7rem;
+        padding: 0.1rem 0.6rem;
+        border-radius: 1rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+
+    .section-divider {
+        border: 0;
+        border-top: 2px dashed var(--gray-200);
+        margin: 2rem 0;
+    }
+
+    /* ===== Form Layout ===== */
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    @@media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+    }
+
+    .form-group-modern {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .form-label i {
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
+
+    .required {
+        color: var(--danger);
+        font-size: 1rem;
+    }
+
+    /* ===== Form Controls ===== */
+    .form-control-modern {
+        width: 100%;
+        padding: 0.7rem 1rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+        .form-control-modern:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    .form-control-modern-sm {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+        .form-control-modern-sm:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    .validation-message {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .form-hint {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.15rem;
+    }
+
+        .form-hint i {
+            font-size: 0.7rem;
+        }
+
+    /* ===== Table Styles ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .table-modern {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        border: 1px solid var(--gray-200);
+        min-width: 700px;
+    }
+
+        .table-modern thead {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+        }
+
+            .table-modern thead th {
+                padding: 0.6rem 0.5rem;
+                font-size: 0.7rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+                border: none;
+                text-align: center;
+                vertical-align: middle;
+                white-space: nowrap;
+            }
+
+                .table-modern thead th.user-col {
+                    text-align: left;
+                }
+
+                .table-modern thead th.action-col {
+                    width: 50px;
+                }
+
+        .table-modern tbody td {
+            padding: 0.4rem 0.5rem;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--gray-200);
+            background: white;
+        }
+
+        .table-modern tbody tr:hover {
+            background-color: var(--gray-50);
+        }
+
+        .table-modern tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table-modern tbody td .form-control-modern-sm {
+            min-width: 100px;
+        }
+
+    /* ===== Checkbox ===== */
+    .checkbox-modern {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        border: 2px solid var(--gray-300);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        accent-color: var(--primary);
+    }
+
+        .checkbox-modern:hover {
+            border-color: var(--primary);
+        }
+
+    /* ===== Table Buttons ===== */
+    .btn-remove-row {
+        background: none;
+        border: none;
+        color: var(--gray-400);
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.4rem;
+        transition: all 0.2s;
+        font-size: 0.9rem;
+    }
+
+        .btn-remove-row:hover {
+            color: var(--danger);
+            background: #fee;
+        }
+
+    .table-actions {
+        margin-top: 1rem;
+    }
+
+    .btn-add-row {
+        background: var(--gray-100);
+        border: 1.5px dashed var(--gray-300);
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--gray-600);
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-add-row:hover {
+            background: white;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+    /* ===== Authorization Cards ===== */
+    .authorization-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+        margin-top: 0.5rem;
+    }
+
+    @@media (max-width: 992px) {
+        .authorization-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .authorization-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .auth-card {
+        border: 1px solid var(--gray-200);
+        border-radius: 0.75rem;
+        overflow: hidden;
+        background: white;
+        transition: box-shadow 0.2s ease;
+    }
+
+        .auth-card:hover {
+            box-shadow: var(--shadow-sm);
+        }
+
+    .auth-card-header {
+        background: var(--gray-50);
+        padding: 0.6rem 1rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .auth-card-header i {
+            color: var(--primary);
+        }
+
+    .auth-card-body {
+        padding: 1rem;
+    }
+
+    .auth-field {
+        margin-bottom: 0.75rem;
+    }
+
+        .auth-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .auth-field label {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-bottom: 0.2rem;
+            display: block;
+        }
+
+        .auth-field .form-control-modern-sm {
+            font-size: 0.8rem;
+        }
+
+        .auth-field .validation-message {
+            font-size: 0.65rem;
+        }
+
+    /* ===== Form Actions ===== */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .btn-create {
+        background: linear-gradient(100deg, var(--success), var(--success-dark));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-create:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+        }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+    /* ===== Toast Animation ===== */
+    @@keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    /* ===== Responsive ===== */
+    @@media (max-width: 768px) {
+        .page-container {
+            padding: 1rem 0.5rem;
+        }
+
+        .hero-section {
+            padding: 1.5rem;
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .hero-actions {
+            justify-content: stretch;
+        }
+
+            .hero-actions .hero-btn {
+                flex: 1;
+                justify-content: center;
+            }
+
+        .card-body-custom {
+            padding: 1.25rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+            .form-actions .btn-create,
+            .form-actions .btn-cancel {
+                flex: none;
+            }
+
+        .section-header {
+            font-size: 0.9rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .hero-title {
+            font-size: 1.3rem;
+        }
+
+        .hero-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 1.5rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .form-steps {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .step-line {
+            width: 20px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // ===== Update User Count =====
+        function updateUserCount() {
+            const rowCount = document.querySelectorAll('#usersTable tbody tr').length;
+            const badge = document.getElementById('userCount');
+            if (badge) badge.textContent = rowCount;
+        }
+
+        // ===== Add Row =====
+        document.getElementById('addRow')?.addEventListener('click', function() {
+            const table = document.getElementById('usersTable');
+            const tbody = table.querySelector('tbody');
+            const rows = tbody.querySelectorAll('tr');
+            const newIndex = rows.length;
+
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>
+                    <input name="Users[${newIndex}].UserName" class="form-control-modern-sm" placeholder="Username" />
+                    <span class="validation-message text-danger"></span>
+                </td>
+                <td class="text-center">
+                    <input name="Users[${newIndex}].UserManagement" class="checkbox-modern" type="checkbox" />
+                </td>
+                <td class="text-center">
+                    <input name="Users[${newIndex}].Initiate" class="checkbox-modern" type="checkbox" />
+                </td>
+                <td class="text-center">
+                    <input name="Users[${newIndex}].Confirmation" class="checkbox-modern" type="checkbox" />
+                </td>
+                <td class="text-center">
+                    <input name="Users[${newIndex}].Approval" class="checkbox-modern" type="checkbox" />
+                </td>
+                <td class="text-center">
+                    <input name="Users[${newIndex}].AccountManagement" class="checkbox-modern" type="checkbox" />
+                </td>
+                <td class="text-center">
+                    <input name="Users[${newIndex}].Reports" class="checkbox-modern" type="checkbox" />
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn-remove-row" title="Remove user">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            `;
+
+            tbody.appendChild(newRow);
+            updateUserCount();
+
+            // Attach remove handler
+            newRow.querySelector('.btn-remove-row').addEventListener('click', function() {
+                if (tbody.querySelectorAll('tr').length > 1) {
+                    newRow.remove();
+                    updateUserCount();
+                    reindexRows();
+                } else {
+                    showAlert('You need at least one user row.', 'warning');
+                }
+            });
+        });
+
+        // ===== Remove Row =====
+        document.querySelectorAll('.btn-remove-row').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const tbody = row.closest('tbody');
+                if (tbody.querySelectorAll('tr').length > 1) {
+                    row.remove();
+                    updateUserCount();
+                    reindexRows();
+                } else {
+                    showAlert('You need at least one user row.', 'warning');
+                }
+            });
+        });
+
+        // ===== Re-index Rows =====
+        function reindexRows() {
+            const rows = document.querySelectorAll('#usersTable tbody tr');
+            rows.forEach((row, index) => {
+                const inputs = row.querySelectorAll('input');
+                inputs.forEach(input => {
+                    const name = input.getAttribute('name');
+                    if (name) {
+                        const newName = name.replace(/Users\[\d+\]/, `Users[${index}]`);
+                        input.setAttribute('name', newName);
+                    }
+                });
+            });
+        }
+
+        // ===== Form Submit =====
+        const form = document.getElementById('accessRightsForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                // Validate required fields
+                const solution = document.querySelector('[name="SolutionSoftware"]');
+                const serverId = document.querySelector('[name="ProductionServerId"]');
+                const client = document.querySelector('[name="ClientName"]');
+                const admin = document.querySelector('[name="SystemsAdmin"]');
+                const date = document.querySelector('[name="Date"]');
+
+                const requiredFields = [
+                    { element: solution, name: 'Solution / Software' },
+                    { element: serverId, name: 'Production Server ID' },
+                    { element: client, name: 'Client Name' },
+                    { element: admin, name: 'Systems Administrator' },
+                    { element: date, name: 'Date' }
+                ];
+
+                for (let field of requiredFields) {
+                    if (!field.element.value.trim()) {
+                        e.preventDefault();
+                        field.element.focus();
+                        showAlert(`Please enter ${field.name}`, 'error');
+                        return false;
+                    }
+                }
+
+                // Show loading state
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+                return true;
+            });
+        }
+
+        // ===== Alert System =====
+        function showAlert(message, type) {
+            const existing = document.querySelector('.alert-toast');
+            if (existing) existing.remove();
+
+            const colors = {
+                error: { bg: '#fee', border: '#e53e3e', text: '#c53030', icon: 'fa-exclamation-circle' },
+                warning: { bg: '#fffbeb', border: '#f5b042', text: '#92400e', icon: 'fa-exclamation-triangle' },
+                success: { bg: '#e6fffa', border: '#2c9e6e', text: '#1f6e4a', icon: 'fa-check-circle' }
+            };
+
+            const style = colors[type] || colors.error;
+
+            const toast = document.createElement('div');
+            toast.className = 'alert-toast';
+            toast.style.cssText = `
+                position: fixed;
+                top: 1rem;
+                right: 1rem;
+                background: ${style.bg};
+                border-left: 4px solid ${style.border};
+                border-radius: 0.75rem;
+                padding: 1rem 1.25rem;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                color: ${style.text};
+                font-weight: 500;
+                z-index: 1050;
+                animation: slideIn 0.3s ease;
+                box-shadow: var(--shadow-lg);
+                max-width: 400px;
+            `;
+            toast.innerHTML = `
+                <i class="fas ${style.icon}"></i>
+                <span>${message}</span>
+                <button type="button" style="margin-left: auto; background: none; border: none; cursor: pointer; color: inherit;" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        // Initialize count
+        updateUserCount();
+    });
+</script>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
 @section Scripts {
-
     <partial name="_ValidationScriptsPartial" />
-
 }
