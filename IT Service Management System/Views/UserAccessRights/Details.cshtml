@@ -1,0 +1,304 @@
+﻿@model IT_Service_Management_System.Models.UserAccessRight
+
+@{
+    ViewData["Title"] = "User Access Rights Details";
+}
+
+<div class="container-fluid mt-3">
+
+    <div class="card shadow">
+
+        <div class="card-header bg-primary text-white">
+
+            <div class="d-flex justify-content-between">
+
+                <h4 class="mb-0">
+                    <i class="fas fa-user-shield"></i>
+                    User Access Rights Details
+                </h4>
+
+                <div>
+
+                    <a asp-action="Edit"
+                       asp-route-id="@Model.Id"
+                       class="btn btn-warning">
+
+                        <i class="fas fa-edit"></i>
+                        Edit
+
+                    </a>
+
+                    <a asp-action="Index"
+                       class="btn btn-light">
+
+                        <i class="fas fa-arrow-left"></i>
+                        Back
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card-body">
+
+            <!-- System Information -->
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        Solution / Software
+                    </label>
+
+                    <div class="form-control">
+                        @Model.SolutionSoftware
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        Production Server ID
+                    </label>
+
+                    <div class="form-control">
+                        @Model.ProductionServerId
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="fw-bold">
+                        Client Name
+                    </label>
+
+                    <div class="form-control">
+                        @Model.ClientName
+                    </div>
+
+                </div>
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="fw-bold">
+                        Version / Release
+                    </label>
+
+                    <div class="form-control">
+                        @Model.VersionReleaseNo
+                    </div>
+
+                </div>
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="fw-bold">
+                        Systems Administrator
+                    </label>
+
+                    <div class="form-control">
+                        @Model.SystemsAdmin
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-4 mb-4">
+
+                    <label class="fw-bold">
+                        Date
+                    </label>
+
+                    <div class="form-control">
+                        @Model.Date.ToString("dd MMM yyyy")
+                    </div>
+
+                </div>
+
+            </div>
+
+            <hr />
+
+            <h5 class="mb-3">
+
+                <i class="fas fa-users"></i>
+
+                User Access Rights
+
+            </h5>
+
+            <div class="table-responsive">
+
+                <table class="table table-bordered table-striped">
+
+                    <thead class="table-dark">
+
+                        <tr>
+
+                            <th>User</th>
+
+                            <th class="text-center">User Management</th>
+
+                            <th class="text-center">Initiate</th>
+
+                            <th class="text-center">Confirmation</th>
+
+                            <th class="text-center">Approval</th>
+
+                            <th class="text-center">Account Management</th>
+
+                            <th class="text-center">Reports</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var item in Model.Users)
+                        {
+                            <tr>
+
+                                <td>@item.UserName</td>
+
+                                <td class="text-center">
+                                    @(item.UserManagement ? "✔" : "")
+                                </td>
+
+                                <td class="text-center">
+                                    @(item.Initiate ? "✔" : "")
+                                </td>
+
+                                <td class="text-center">
+                                    @(item.Confirmation ? "✔" : "")
+                                </td>
+
+                                <td class="text-center">
+                                    @(item.Approval ? "✔" : "")
+                                </td>
+
+                                <td class="text-center">
+                                    @(item.AccountManagement ? "✔" : "")
+                                </td>
+
+                                <td class="text-center">
+                                    @(item.Reports ? "✔" : "")
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            <hr />
+
+            <div class="row">
+
+                <div class="col-md-4">
+
+                    <div class="card border-primary">
+
+                        <div class="card-header bg-primary text-white">
+
+                            Assigned
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <p><strong>Name:</strong> @Model.AssignedBy</p>
+
+                            <p><strong>Signature:</strong> @Model.AssignedSignature</p>
+
+                            <p>
+                                <strong>Date:</strong>
+
+                                @(Model.AssignedDate?.ToString("dd MMM yyyy"))
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <div class="card border-warning">
+
+                        <div class="card-header bg-warning">
+
+                            Reviewed
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <p><strong>Name:</strong> @Model.ReviewedBy</p>
+
+                            <p><strong>Signature:</strong> @Model.ReviewedSignature</p>
+
+                            <p>
+                                <strong>Date:</strong>
+
+                                @(Model.ReviewedDate?.ToString("dd MMM yyyy"))
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <div class="card border-success">
+
+                        <div class="card-header bg-success text-white">
+
+                            Approved
+
+                        </div>
+
+                        <div class="card-body">
+
+                            <p><strong>Name:</strong> @Model.ApprovedBy</p>
+
+                            <p><strong>Signature:</strong> @Model.ApprovedSignature</p>
+
+                            <p>
+                                <strong>Date:</strong>
+
+                                @(Model.ApprovedDate?.ToString("dd MMM yyyy"))
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
