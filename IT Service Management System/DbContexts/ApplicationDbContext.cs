@@ -25,15 +25,12 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<ActivityCategory> ActivityCategories { get; set; }
         public DbSet<ExitClearance> ExitClearances { get; set; }
         public DbSet<ClearanceWorkflow> ClearanceWorkflows { get; set; }
-
         public DbSet<ExitClearanceEmployeeDetails> ExitClearanceEmployeeDetails { get; set; }
-
         public DbSet<FinanceClearance> FinanceClearances { get; set; }
         public DbSet<SystemsAdminClearance> SystemsAdminClearances { get; set; }
         public DbSet<DevelopmentClearance> DevelopmentClearances { get; set; }
-
         public DbSet<StockHandoverItem> StockHandoverItems { get; set; }
-
+        public DbSet<MaintenanceRecord> MaintenanceRecords { get; set; }
         public DbSet<SupervisorApproval> SupervisorApprovals { get; set; }
         public DbSet<HodApproval> HodApprovals { get; set; }
         public DbSet<HrApproval> HrApprovals { get; set; }
