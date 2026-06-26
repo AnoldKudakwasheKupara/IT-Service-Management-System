@@ -39,6 +39,8 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<TalentIdentification> TalentIdentifications { get; set; }
         public DbSet<TalentDirectReportAssessment> TalentDirectReportAssessments { get; set; }
         public DbSet<TalentDevelopmentAction> TalentDevelopmentActions { get; set; }
+        public DbSet<UserAccessRight> UserAccessRights { get; set; }
+        public DbSet<UserAccessRightItem> UserAccessRightItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -16,7 +16,7 @@
 
         public DateTime Date { get; set; }
 
-        public List<UserAccessRightItem> Users { get; set; } = new();
+        public ICollection<UserAccessRightItem> Users { get; set; }
 
         public string? AssignedBy { get; set; }
 
