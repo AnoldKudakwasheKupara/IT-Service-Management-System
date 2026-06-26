@@ -1,0 +1,235 @@
+﻿@model IT_Service_Management_System.Models.UserAccessRight
+
+@{
+    ViewData["Title"] = "Delete User Access Rights";
+}
+
+<div class="container-fluid mt-3">
+
+    <div class="card shadow border-danger">
+
+        <div class="card-header bg-danger text-white">
+
+            <h4 class="mb-0">
+                <i class="fas fa-trash-alt"></i>
+                Delete User Access Rights
+            </h4>
+
+        </div>
+
+        <div class="card-body">
+
+            <div class="alert alert-danger">
+
+                <h5 class="mb-0">
+
+                    <i class="fas fa-exclamation-triangle"></i>
+
+                    Are you sure you want to delete this User Access Rights Form?
+
+                </h5>
+
+                <small>
+                    This action cannot be undone.
+                </small>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        Solution / Software
+                    </label>
+
+                    <div class="form-control">
+                        @Model.SolutionSoftware
+                    </div>
+
+                </div>
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="fw-bold">
+                        Production Server ID
+                    </label>
+
+                    <div class="form-control">
+                        @Model.ProductionServerId
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="fw-bold">
+                        Client Name
+                    </label>
+
+                    <div class="form-control">
+                        @Model.ClientName
+                    </div>
+
+                </div>
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="fw-bold">
+                        Version / Release
+                    </label>
+
+                    <div class="form-control">
+                        @Model.VersionReleaseNo
+                    </div>
+
+                </div>
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="fw-bold">
+                        Systems Administrator
+                    </label>
+
+                    <div class="form-control">
+                        @Model.SystemsAdmin
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="row">
+
+                <div class="col-md-4">
+
+                    <label class="fw-bold">
+                        Date
+                    </label>
+
+                    <div class="form-control">
+                        @Model.Date.ToString("dd MMM yyyy")
+                    </div>
+
+                </div>
+
+            </div>
+
+            <hr />
+
+            <h5>
+
+                <i class="fas fa-users"></i>
+
+                Users Included
+
+            </h5>
+
+            <div class="table-responsive">
+
+                <table class="table table-bordered table-striped">
+
+                    <thead class="table-dark">
+
+                        <tr>
+
+                            <th>User</th>
+
+                            <th>User Management</th>
+
+                            <th>Initiate</th>
+
+                            <th>Confirmation</th>
+
+                            <th>Approval</th>
+
+                            <th>Account Management</th>
+
+                            <th>Reports</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var item in Model.Users)
+                        {
+                            <tr>
+
+                                <td>@item.UserName</td>
+
+                                <td class="text-center">
+                                    @(item.UserManagement ? "✔" : "")
+                                </td>
+
+                                <td class="text-center">
+                                    @(item.Initiate ? "✔" : "")
+                                </td>
+
+                                <td class="text-center">
+                                    @(item.Confirmation ? "✔" : "")
+                                </td>
+
+                                <td class="text-center">
+                                    @(item.Approval ? "✔" : "")
+                                </td>
+
+                                <td class="text-center">
+                                    @(item.AccountManagement ? "✔" : "")
+                                </td>
+
+                                <td class="text-center">
+                                    @(item.Reports ? "✔" : "")
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+        <div class="card-footer">
+
+            <form asp-action="Delete">
+
+                <input asp-for="Id" type="hidden" />
+
+                <div class="d-flex justify-content-between">
+
+                    <a asp-action="Index"
+                       class="btn btn-secondary">
+
+                        <i class="fas fa-arrow-left"></i>
+
+                        Cancel
+
+                    </a>
+
+                    <button type="submit"
+                            class="btn btn-danger">
+
+                        <i class="fas fa-trash"></i>
+
+                        Delete Form
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
