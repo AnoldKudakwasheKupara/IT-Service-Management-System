@@ -1,0 +1,345 @@
+﻿@model IT_Service_Management_System.Models.UserAccessRight
+
+@{
+    ViewData["Title"] = "Edit User Access Rights";
+}
+
+<div class="container-fluid mt-3">
+
+    <form asp-action="Edit" method="post">
+
+        <input asp-for="Id" type="hidden" />
+
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="card shadow">
+
+            <div class="card-header bg-warning">
+
+                <div class="d-flex justify-content-between align-items-center">
+
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-edit"></i>
+                        Edit User Access Rights
+                    </h4>
+
+                    <a asp-action="Index"
+                       class="btn btn-dark">
+
+                        <i class="fas fa-arrow-left"></i>
+
+                        Back
+
+                    </a>
+
+                </div>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="SolutionSoftware"></label>
+                        <input asp-for="SolutionSoftware" class="form-control" />
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ProductionServerId"></label>
+                        <input asp-for="ProductionServerId" class="form-control" />
+                    </div>
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="ClientName"></label>
+                        <input asp-for="ClientName" class="form-control" />
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="VersionReleaseNo"></label>
+                        <input asp-for="VersionReleaseNo" class="form-control" />
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label asp-for="SystemsAdmin"></label>
+                        <input asp-for="SystemsAdmin" class="form-control" />
+                    </div>
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-md-4 mb-4">
+                        <label asp-for="Date"></label>
+                        <input asp-for="Date"
+                               type="date"
+                               class="form-control" />
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <h5>User Access Rights</h5>
+
+                <div class="table-responsive">
+
+                    <table class="table table-bordered table-striped">
+
+                        <thead class="table-dark">
+
+                            <tr>
+
+                                <th>User</th>
+
+                                <th>User Management</th>
+
+                                <th>Initiate</th>
+
+                                <th>Confirmation</th>
+
+                                <th>Approval</th>
+
+                                <th>Account Management</th>
+
+                                <th>Reports</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            @for (int i = 0; i < Model.Users.Count; i++)
+                            {
+                                <tr>
+
+                                    <td>
+
+                                        <input asp-for="Users.ElementAt(i).UserName"
+                                               class="form-control" />
+
+                                        <input asp-for="Users.ElementAt(i).Id"
+                                               type="hidden" />
+
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <input asp-for="Users.ElementAt(i).UserManagement" />
+
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <input asp-for="Users.ElementAt(i).Initiate" />
+
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <input asp-for="Users.ElementAt(i).Confirmation" />
+
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <input asp-for="Users.ElementAt(i).Approval" />
+
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <input asp-for="Users.ElementAt(i).AccountManagement" />
+
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        <input asp-for="Users.ElementAt(i).Reports" />
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+                <hr />
+
+                <div class="row">
+
+                    <div class="col-md-4">
+
+                        <div class="card">
+
+                            <div class="card-header bg-primary text-white">
+                                Assigned
+                            </div>
+
+                            <div class="card-body">
+
+                                <div class="mb-2">
+
+                                    <label>Name</label>
+
+                                    <input asp-for="AssignedBy"
+                                           class="form-control" />
+
+                                </div>
+
+                                <div class="mb-2">
+
+                                    <label>Signature</label>
+
+                                    <input asp-for="AssignedSignature"
+                                           class="form-control" />
+
+                                </div>
+
+                                <div>
+
+                                    <label>Date</label>
+
+                                    <input asp-for="AssignedDate"
+                                           type="date"
+                                           class="form-control" />
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-4">
+
+                        <div class="card">
+
+                            <div class="card-header bg-warning">
+                                Reviewed
+                            </div>
+
+                            <div class="card-body">
+
+                                <div class="mb-2">
+
+                                    <label>Name</label>
+
+                                    <input asp-for="ReviewedBy"
+                                           class="form-control" />
+
+                                </div>
+
+                                <div class="mb-2">
+
+                                    <label>Signature</label>
+
+                                    <input asp-for="ReviewedSignature"
+                                           class="form-control" />
+
+                                </div>
+
+                                <div>
+
+                                    <label>Date</label>
+
+                                    <input asp-for="ReviewedDate"
+                                           type="date"
+                                           class="form-control" />
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-4">
+
+                        <div class="card">
+
+                            <div class="card-header bg-success text-white">
+                                Approved
+                            </div>
+
+                            <div class="card-body">
+
+                                <div class="mb-2">
+
+                                    <label>Name</label>
+
+                                    <input asp-for="ApprovedBy"
+                                           class="form-control" />
+
+                                </div>
+
+                                <div class="mb-2">
+
+                                    <label>Signature</label>
+
+                                    <input asp-for="ApprovedSignature"
+                                           class="form-control" />
+
+                                </div>
+
+                                <div>
+
+                                    <label>Date</label>
+
+                                    <input asp-for="ApprovedDate"
+                                           type="date"
+                                           class="form-control" />
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="card-footer text-end">
+
+                <a asp-action="Index"
+                   class="btn btn-secondary">
+
+                    Cancel
+
+                </a>
+
+                <button class="btn btn-warning">
+
+                    <i class="fas fa-save"></i>
+
+                    Update Access Rights
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+</div>
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+}
