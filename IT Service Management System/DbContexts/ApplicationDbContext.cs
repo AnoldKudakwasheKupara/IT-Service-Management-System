@@ -144,6 +144,11 @@ namespace IT_Service_Management_System.DbContexts
                 .HasForeignKey(u => u.SupervisorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<UserAccessRightItem>()
+                .HasOne(u => u.UserAccessRight)
+                .WithMany(h => h.Users)
+                .HasForeignKey(u => u.UserAccessRightsId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<TicketAttachment>()
                 .HasCheckConstraint("CK_Attachment_Owner",
