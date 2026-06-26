@@ -1,514 +1,1056 @@
 ﻿@model IT_Service_Management_System.Models.UserAccessRight
 
 @{
-    ViewData["Title"] = "Edit User Access Rights";
+    ViewData["Title"] = "Edit User Access Rights - Axis IT Helpdesk";
 }
 
-<div class="container-fluid mt-3">
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-user-shield me-2" style="color: var(--primary);"></i>
+                    Edit User Access Rights
+                </h1>
+                <p class="text-muted mt-2">Manage user permissions and access controls</p>
+            </div>
+        </div>
+    </div>
 
-    <form asp-action="Edit" method="post">
-
+    <form asp-action="Edit" method="post" id="accessRightsForm">
+        @Html.AntiForgeryToken()
         <input asp-for="Id" type="hidden" />
 
-        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div asp-validation-summary="ModelOnly" class="alert-modern alert-danger"></div>
 
-        <div class="card shadow">
-
-            <div class="card-header bg-warning">
-
-                <div class="d-flex justify-content-between align-items-center">
-
-                    <h4 class="mb-0">
-                        <i class="fas fa-user-edit"></i>
-                        Edit User Access Rights
-                    </h4>
-
-                    <a asp-action="Index"
-                       class="btn btn-dark">
-
-                        <i class="fas fa-arrow-left"></i>
-
-                        Back
-
-                    </a>
-
+        <div class="access-rights-card">
+            <!-- Card Header -->
+            <div class="card-header-custom">
+                <div>
+                    <i class="fas fa-key me-2"></i>
+                    <span>Access Rights Configuration</span>
                 </div>
-
+                <div class="access-id-badge">
+                    <i class="fas fa-hashtag"></i>
+                    ID: @Model.Id
+                </div>
             </div>
 
-            <div class="card-body">
+            <div class="card-body-custom">
+                <!-- Main Information Section -->
+                <div class="info-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-info-circle me-2"></i>
+                        General Information
+                    </h5>
+                    <div class="form-grid">
+                        <div class="form-group-modern">
+                            <label asp-for="SolutionSoftware" class="form-label">
+                                <i class="fas fa-code"></i>
+                                Solution Software
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-code input-icon"></i>
+                                <input asp-for="SolutionSoftware" class="form-control-modern" placeholder="Enter solution software name" />
+                            </div>
+                            <span asp-validation-for="SolutionSoftware" class="text-danger validation-message"></span>
+                        </div>
 
-                <div class="row">
+                        <div class="form-group-modern">
+                            <label asp-for="ProductionServerId" class="form-label">
+                                <i class="fas fa-server"></i>
+                                Production Server ID
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-server input-icon"></i>
+                                <input asp-for="ProductionServerId" class="form-control-modern" placeholder="Enter server ID" />
+                            </div>
+                            <span asp-validation-for="ProductionServerId" class="text-danger validation-message"></span>
+                        </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="SolutionSoftware"></label>
-                        <input asp-for="SolutionSoftware" class="form-control" />
+                        <div class="form-group-modern">
+                            <label asp-for="ClientName" class="form-label">
+                                <i class="fas fa-building"></i>
+                                Client Name
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-building input-icon"></i>
+                                <input asp-for="ClientName" class="form-control-modern" placeholder="Enter client name" />
+                            </div>
+                            <span asp-validation-for="ClientName" class="text-danger validation-message"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="VersionReleaseNo" class="form-label">
+                                <i class="fas fa-tag"></i>
+                                Version/Release No
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-tag input-icon"></i>
+                                <input asp-for="VersionReleaseNo" class="form-control-modern" placeholder="Enter version number" />
+                            </div>
+                            <span asp-validation-for="VersionReleaseNo" class="text-danger validation-message"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="SystemsAdmin" class="form-label">
+                                <i class="fas fa-user-cog"></i>
+                                Systems Administrator
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-user-cog input-icon"></i>
+                                <input asp-for="SystemsAdmin" class="form-control-modern" placeholder="Enter system admin name" />
+                            </div>
+                            <span asp-validation-for="SystemsAdmin" class="text-danger validation-message"></span>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Date" class="form-label">
+                                <i class="fas fa-calendar"></i>
+                                Date
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-calendar input-icon"></i>
+                                <input asp-for="Date" type="date" class="form-control-modern" />
+                            </div>
+                            <span asp-validation-for="Date" class="text-danger validation-message"></span>
+                        </div>
                     </div>
-
-                    <div class="col-md-6 mb-3">
-                        <label asp-for="ProductionServerId"></label>
-                        <input asp-for="ProductionServerId" class="form-control" />
-                    </div>
-
                 </div>
 
-                <div class="row">
-
-                    <div class="col-md-4 mb-3">
-                        <label asp-for="ClientName"></label>
-                        <input asp-for="ClientName" class="form-control" />
+                <!-- User Access Rights Section -->
+                <div class="access-section">
+                    <div class="section-header">
+                        <h5 class="section-title">
+                            <i class="fas fa-users me-2"></i>
+                            User Access Rights
+                        </h5>
+                        <button type="button" class="btn-add-user" id="addRow">
+                            <i class="fas fa-plus-circle"></i>
+                            Add User
+                        </button>
                     </div>
 
-                    <div class="col-md-4 mb-3">
-                        <label asp-for="VersionReleaseNo"></label>
-                        <input asp-for="VersionReleaseNo" class="form-control" />
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label asp-for="SystemsAdmin"></label>
-                        <input asp-for="SystemsAdmin" class="form-control" />
-                    </div>
-
-                </div>
-
-                <div class="row">
-
-                    <div class="col-md-4 mb-4">
-                        <label asp-for="Date"></label>
-                        <input asp-for="Date"
-                               type="date"
-                               class="form-control" />
-                    </div>
-
-                </div>
-
-                <hr />
-
-                <h5 class="mb-3">
-                    <i class="fas fa-users"></i>
-                    User Access Rights
-                </h5>
-
-                <div class="table-responsive">
-
-                    <table class="table table-bordered table-striped" id="usersTable">
-
-                        <thead class="table-dark">
-
-                            <tr>
-
-                                <th style="width:250px;">User</th>
-
-                                <th class="text-center">User Management</th>
-
-                                <th class="text-center">Initiate</th>
-
-                                <th class="text-center">Confirmation</th>
-
-                                <th class="text-center">Approval</th>
-
-                                <th class="text-center">Account Management</th>
-
-                                <th class="text-center">Reports</th>
-
-                                <th style="width:70px;"></th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody id="userRows">
-
-                            @for (int i = 0; i < Model.Users.Count; i++)
-                            {
+                    <div class="table-responsive">
+                        <table class="access-table" id="usersTable">
+                            <thead>
                                 <tr>
-
-                                    <td>
-
-                                        <input asp-for="Users[i].Id" type="hidden" />
-
-                                        <input asp-for="Users[i].UserName"
-                                               class="form-control" />
-
-                                    </td>
-
-                                    <td class="text-center">
-
-                                        <input asp-for="Users[i].UserManagement"
-                                               class="form-check-input" />
-
-                                    </td>
-
-                                    <td class="text-center">
-
-                                        <input asp-for="Users[i].Initiate"
-                                               class="form-check-input" />
-
-                                    </td>
-
-                                    <td class="text-center">
-
-                                        <input asp-for="Users[i].Confirmation"
-                                               class="form-check-input" />
-
-                                    </td>
-
-                                    <td class="text-center">
-
-                                        <input asp-for="Users[i].Approval"
-                                               class="form-check-input" />
-
-                                    </td>
-
-                                    <td class="text-center">
-
-                                        <input asp-for="Users[i].AccountManagement"
-                                               class="form-check-input" />
-
-                                    </td>
-
-                                    <td class="text-center">
-
-                                        <input asp-for="Users[i].Reports"
-                                               class="form-check-input" />
-
-                                    </td>
-
-                                    <td class="text-center">
-
-                                        <button type="button"
-                                                class="btn btn-danger btn-sm removeRow">
-
-                                            <i class="fas fa-times"></i>
-
-                                        </button>
-
-                                    </td>
-
+                                    <th style="min-width: 200px;">
+                                        <i class="fas fa-user me-1"></i> User
+                                    </th>
+                                    <th class="text-center">
+                                        <i class="fas fa-user-cog me-1"></i> User Management
+                                    </th>
+                                    <th class="text-center">
+                                        <i class="fas fa-play me-1"></i> Initiate
+                                    </th>
+                                    <th class="text-center">
+                                        <i class="fas fa-check-circle me-1"></i> Confirmation
+                                    </th>
+                                    <th class="text-center">
+                                        <i class="fas fa-thumbs-up me-1"></i> Approval
+                                    </th>
+                                    <th class="text-center">
+                                        <i class="fas fa-address-book me-1"></i> Account Management
+                                    </th>
+                                    <th class="text-center">
+                                        <i class="fas fa-chart-bar me-1"></i> Reports
+                                    </th>
+                                    <th style="width: 60px;"></th>
                                 </tr>
-                            }
-
-                        </tbody>
-
-                    </table>
-
+                            </thead>
+                            <tbody id="userRows">
+                                @if (Model.Users != null && Model.Users.Any())
+                                {
+                                    for (int i = 0; i < Model.Users.Count; i++)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <input asp-for="Users[i].Id" type="hidden" />
+                                                <div class="input-icon-wrapper">
+                                                    <i class="fas fa-user input-icon"></i>
+                                                    <input asp-for="Users[i].UserName" class="form-control-modern" placeholder="Enter username" />
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="checkbox-wrapper">
+                                                    <input asp-for="Users[i].UserManagement" type="checkbox" />
+                                                    <span class="checkmark"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="checkbox-wrapper">
+                                                    <input asp-for="Users[i].Initiate" type="checkbox" />
+                                                    <span class="checkmark"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="checkbox-wrapper">
+                                                    <input asp-for="Users[i].Confirmation" type="checkbox" />
+                                                    <span class="checkmark"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="checkbox-wrapper">
+                                                    <input asp-for="Users[i].Approval" type="checkbox" />
+                                                    <span class="checkmark"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="checkbox-wrapper">
+                                                    <input asp-for="Users[i].AccountManagement" type="checkbox" />
+                                                    <span class="checkmark"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="checkbox-wrapper">
+                                                    <input asp-for="Users[i].Reports" type="checkbox" />
+                                                    <span class="checkmark"></span>
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn-remove-row" data-row-index="@i">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr id="noUsersRow">
+                                        <td colspan="8" class="text-center text-muted" style="padding: 2rem;">
+                                            <i class="fas fa-users-slash" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+                                            No users added yet. Click "Add User" to get started.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
-                <button type="button"
-                        class="btn btn-success"
-                        id="addRow">
+                <!-- Approval Workflow Section -->
+                <div class="workflow-section">
+                    <h5 class="section-title">
+                        <i class="fas fa-sitemap me-2"></i>
+                        Approval Workflow
+                    </h5>
 
-                    <i class="fas fa-plus-circle"></i>
-
-                    Add User
-
-                </button>
-
-                <hr />
-
-                <div class="row">
-
-                    <div class="col-md-4">
-
-                        <div class="card">
-
-                            <div class="card-header bg-primary text-white">
-                                Assigned
+                    <div class="workflow-grid">
+                        <!-- Assigned -->
+                        <div class="workflow-card assigned">
+                            <div class="workflow-header">
+                                <i class="fas fa-pen"></i>
+                                <span>Assigned</span>
                             </div>
-
-                            <div class="card-body">
-
-                                <div class="mb-2">
-
-                                    <label>Name</label>
-
-                                    <input asp-for="AssignedBy"
-                                           class="form-control" />
-
+                            <div class="workflow-body">
+                                <div class="form-group-modern">
+                                    <label asp-for="AssignedBy" class="form-label-sm">
+                                        <i class="fas fa-user"></i> Name
+                                    </label>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-user input-icon"></i>
+                                        <input asp-for="AssignedBy" class="form-control-modern" placeholder="Enter assignee name" />
+                                    </div>
                                 </div>
-
-                                <div class="mb-2">
-
-                                    <label>Signature</label>
-
-                                    <input asp-for="AssignedSignature"
-                                           class="form-control" />
-
+                                <div class="form-group-modern">
+                                    <label asp-for="AssignedSignature" class="form-label-sm">
+                                        <i class="fas fa-signature"></i> Signature
+                                    </label>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-signature input-icon"></i>
+                                        <input asp-for="AssignedSignature" class="form-control-modern" placeholder="Enter signature" />
+                                    </div>
                                 </div>
-
-                                <div>
-
-                                    <label>Date</label>
-
-                                    <input asp-for="AssignedDate"
-                                           type="date"
-                                           class="form-control" />
-
+                                <div class="form-group-modern">
+                                    <label asp-for="AssignedDate" class="form-label-sm">
+                                        <i class="fas fa-calendar"></i> Date
+                                    </label>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar input-icon"></i>
+                                        <input asp-for="AssignedDate" type="date" class="form-control-modern" />
+                                    </div>
                                 </div>
-
                             </div>
-
                         </div>
 
-                    </div>
-
-                    <div class="col-md-4">
-
-                        <div class="card">
-
-                            <div class="card-header bg-warning">
-                                Reviewed
+                        <!-- Reviewed -->
+                        <div class="workflow-card reviewed">
+                            <div class="workflow-header">
+                                <i class="fas fa-search"></i>
+                                <span>Reviewed</span>
                             </div>
-
-                            <div class="card-body">
-
-                                <div class="mb-2">
-
-                                    <label>Name</label>
-
-                                    <input asp-for="ReviewedBy"
-                                           class="form-control" />
-
+                            <div class="workflow-body">
+                                <div class="form-group-modern">
+                                    <label asp-for="ReviewedBy" class="form-label-sm">
+                                        <i class="fas fa-user"></i> Name
+                                    </label>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-user input-icon"></i>
+                                        <input asp-for="ReviewedBy" class="form-control-modern" placeholder="Enter reviewer name" />
+                                    </div>
                                 </div>
-
-                                <div class="mb-2">
-
-                                    <label>Signature</label>
-
-                                    <input asp-for="ReviewedSignature"
-                                           class="form-control" />
-
+                                <div class="form-group-modern">
+                                    <label asp-for="ReviewedSignature" class="form-label-sm">
+                                        <i class="fas fa-signature"></i> Signature
+                                    </label>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-signature input-icon"></i>
+                                        <input asp-for="ReviewedSignature" class="form-control-modern" placeholder="Enter signature" />
+                                    </div>
                                 </div>
-
-                                <div>
-
-                                    <label>Date</label>
-
-                                    <input asp-for="ReviewedDate"
-                                           type="date"
-                                           class="form-control" />
-
+                                <div class="form-group-modern">
+                                    <label asp-for="ReviewedDate" class="form-label-sm">
+                                        <i class="fas fa-calendar"></i> Date
+                                    </label>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar input-icon"></i>
+                                        <input asp-for="ReviewedDate" type="date" class="form-control-modern" />
+                                    </div>
                                 </div>
-
                             </div>
-
                         </div>
 
-                    </div>
-
-                    <div class="col-md-4">
-
-                        <div class="card">
-
-                            <div class="card-header bg-success text-white">
-                                Approved
+                        <!-- Approved -->
+                        <div class="workflow-card approved">
+                            <div class="workflow-header">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Approved</span>
                             </div>
-
-                            <div class="card-body">
-
-                                <div class="mb-2">
-
-                                    <label>Name</label>
-
-                                    <input asp-for="ApprovedBy"
-                                           class="form-control" />
-
+                            <div class="workflow-body">
+                                <div class="form-group-modern">
+                                    <label asp-for="ApprovedBy" class="form-label-sm">
+                                        <i class="fas fa-user"></i> Name
+                                    </label>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-user input-icon"></i>
+                                        <input asp-for="ApprovedBy" class="form-control-modern" placeholder="Enter approver name" />
+                                    </div>
                                 </div>
-
-                                <div class="mb-2">
-
-                                    <label>Signature</label>
-
-                                    <input asp-for="ApprovedSignature"
-                                           class="form-control" />
-
+                                <div class="form-group-modern">
+                                    <label asp-for="ApprovedSignature" class="form-label-sm">
+                                        <i class="fas fa-signature"></i> Signature
+                                    </label>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-signature input-icon"></i>
+                                        <input asp-for="ApprovedSignature" class="form-control-modern" placeholder="Enter signature" />
+                                    </div>
                                 </div>
-
-                                <div>
-
-                                    <label>Date</label>
-
-                                    <input asp-for="ApprovedDate"
-                                           type="date"
-                                           class="form-control" />
-
+                                <div class="form-group-modern">
+                                    <label asp-for="ApprovedDate" class="form-label-sm">
+                                        <i class="fas fa-calendar"></i> Date
+                                    </label>
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-calendar input-icon"></i>
+                                        <input asp-for="ApprovedDate" type="date" class="form-control-modern" />
+                                    </div>
                                 </div>
-
                             </div>
-
                         </div>
-
                     </div>
-
                 </div>
 
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-save">
+                        <i class="fas fa-save"></i>
+                        Update Access Rights
+                    </button>
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
             </div>
-
-            <div class="card-footer text-end">
-
-                <a asp-action="Index"
-                   class="btn btn-secondary">
-
-                    Cancel
-
-                </a>
-
-                <button class="btn btn-warning">
-
-                    <i class="fas fa-save"></i>
-
-                    Update Access Rights
-
-                </button>
-
-            </div>
-
         </div>
-
     </form>
-
 </div>
 
-@section Scripts {
+<style>
+    /* Edit Access Rights Page Specific Styles */
+    :root {
+        --primary-dark: #1e4c6b;
+        --primary: #2c7da0;
+        --primary-light: #61a5c2;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
 
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+        }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* Main Card */
+    .access-rights-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .access-id-badge {
+        background: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-body-custom {
+        padding: 2rem;
+    }
+
+    /* Sections */
+    .info-section, .access-section, .workflow-section {
+        margin-bottom: 2.5rem;
+    }
+
+    .section-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--gray-700);
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+    }
+
+        .section-title i {
+            color: var(--primary);
+        }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+    }
+
+    /* Form Grid */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .form-group-modern {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-label-sm {
+        font-weight: 500;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .form-label i, .form-label-sm i {
+            color: var(--primary);
+            font-size: 0.875rem;
+        }
+
+    .input-icon-wrapper {
+        position: relative;
+    }
+
+        .input-icon-wrapper i.input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 0.6rem 0.75rem 0.6rem 2.25rem;
+        font-size: 0.875rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+        .form-control-modern:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        }
+
+    .validation-message {
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    /* Add User Button */
+    .btn-add-user {
+        background: linear-gradient(100deg, var(--success), #1f8a5c);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .btn-add-user:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    /* Access Table */
+    .access-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+        .access-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .access-table th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .access-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .access-table tbody tr:hover {
+            background-color: var(--gray-50);
+        }
+
+    /* Custom Checkbox */
+    .checkbox-wrapper {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        position: relative;
+    }
+
+        .checkbox-wrapper input {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            height: 0;
+            width: 0;
+        }
+
+    .checkmark {
+        height: 20px;
+        width: 20px;
+        background: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 4px;
+        display: inline-block;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+    .checkbox-wrapper:hover .checkmark {
+        border-color: var(--primary);
+    }
+
+    .checkbox-wrapper input:checked ~ .checkmark {
+        background: var(--primary);
+        border-color: var(--primary);
+    }
+
+    .checkmark:after {
+        content: "";
+        position: absolute;
+        display: none;
+        left: 7px;
+        top: 3px;
+        width: 5px;
+        height: 10px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+
+    .checkbox-wrapper input:checked ~ .checkmark:after {
+        display: block;
+    }
+
+    /* Remove Row Button */
+    .btn-remove-row {
+        background: none;
+        border: none;
+        color: var(--gray-400);
+        cursor: pointer;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        transition: all 0.2s;
+        font-size: 1rem;
+    }
+
+        .btn-remove-row:hover {
+            color: var(--danger);
+            background: #fee;
+        }
+
+    /* Workflow Cards */
+    .workflow-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .workflow-card {
+        background: white;
+        border-radius: 0.75rem;
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+        transition: all 0.2s;
+    }
+
+        .workflow-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+    .workflow-header {
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .workflow-card.assigned .workflow-header {
+        background: #eff6ff;
+        color: var(--info);
+    }
+
+    .workflow-card.reviewed .workflow-header {
+        background: #fffbeb;
+        color: var(--warning);
+    }
+
+    .workflow-card.approved .workflow-header {
+        background: #f0fdf4;
+        color: var(--success);
+    }
+
+    .workflow-body {
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .btn-save {
+        background: linear-gradient(100deg, var(--warning), #d97706);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+    }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+    }
+
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+    /* Alert Styles */
+    .alert-modern {
+        border-radius: 0.75rem;
+        border: none;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+    }
+
+        .alert-modern.alert-danger {
+            background: #fee;
+            border-left: 4px solid var(--danger);
+            color: #c53030;
+        }
+
+    /* Responsive */
+    @@media (max-width: 1200px) {
+        .form-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .workflow-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .workflow-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .card-body-custom {
+            padding: 1.5rem;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-save, .btn-cancel {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .section-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .access-table {
+            font-size: 0.75rem;
+        }
+
+            .access-table th, .access-table td {
+                padding: 0.5rem;
+            }
+
+            .access-table th {
+                font-size: 0.65rem;
+            }
+    }
+</style>
+
+@section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
     <script>
+        $(document).ready(function() {
+            // Counter for new rows
+            var rowCounter = $('#userRows tr').length;
 
-                // Add new row
-                $("#addRow").click(function () {
+            // Add new row
+            $("#addRow").click(function() {
+                // Remove the "no users" row if it exists
+                $('#noUsersRow').remove();
 
-                    var index = $("#userRows tr").length;
+                var index = rowCounter;
+                var row = `
+                    <tr>
+                        <td>
+                            <input type="hidden" name="Users[${index}].Id" value="0"/>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-user input-icon"></i>
+                                <input class="form-control-modern" name="Users[${index}].UserName" placeholder="Enter username"/>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" name="Users[${index}].UserManagement" value="true"/>
+                                <input type="hidden" name="Users[${index}].UserManagement" value="false"/>
+                                <span class="checkmark"></span>
+                            </label>
+                        </td>
+                        <td class="text-center">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" name="Users[${index}].Initiate" value="true"/>
+                                <input type="hidden" name="Users[${index}].Initiate" value="false"/>
+                                <span class="checkmark"></span>
+                            </label>
+                        </td>
+                        <td class="text-center">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" name="Users[${index}].Confirmation" value="true"/>
+                                <input type="hidden" name="Users[${index}].Confirmation" value="false"/>
+                                <span class="checkmark"></span>
+                            </label>
+                        </td>
+                        <td class="text-center">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" name="Users[${index}].Approval" value="true"/>
+                                <input type="hidden" name="Users[${index}].Approval" value="false"/>
+                                <span class="checkmark"></span>
+                            </label>
+                        </td>
+                        <td class="text-center">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" name="Users[${index}].AccountManagement" value="true"/>
+                                <input type="hidden" name="Users[${index}].AccountManagement" value="false"/>
+                                <span class="checkmark"></span>
+                            </label>
+                        </td>
+                        <td class="text-center">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" name="Users[${index}].Reports" value="true"/>
+                                <input type="hidden" name="Users[${index}].Reports" value="false"/>
+                                <span class="checkmark"></span>
+                            </label>
+                        </td>
+                        <td class="text-center">
+                            <button type="button" class="btn-remove-row">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                $("#userRows").append(row);
+                rowCounter++;
+            });
 
-                    var row = `
-        <tr>
+            // Remove row
+            $(document).on("click", ".btn-remove-row", function() {
+                var row = $(this).closest("tr");
+                var totalRows = $("#userRows tr").length;
 
-        <td>
-
-        <input type="hidden"
-               name="Users[${index}].Id"
-               value="0"/>
-
-        <input class="form-control"
-               name="Users[${index}].UserName"/>
-
-        </td>
-
-        <td class="text-center">
-        <input class="form-check-input"
-               type="checkbox"
-               name="Users[${index}].UserManagement"
-               value="true"/>
-
-        <input type="hidden"
-               name="Users[${index}].UserManagement"
-               value="false"/>
-        </td>
-
-        <td class="text-center">
-        <input class="form-check-input"
-               type="checkbox"
-               name="Users[${index}].Initiate"
-               value="true"/>
-
-        <input type="hidden"
-               name="Users[${index}].Initiate"
-               value="false"/>
-        </td>
-
-        <td class="text-center">
-        <input class="form-check-input"
-               type="checkbox"
-               name="Users[${index}].Confirmation"
-               value="true"/>
-
-        <input type="hidden"
-               name="Users[${index}].Confirmation"
-               value="false"/>
-        </td>
-
-        <td class="text-center">
-        <input class="form-check-input"
-               type="checkbox"
-               name="Users[${index}].Approval"
-               value="true"/>
-
-        <input type="hidden"
-               name="Users[${index}].Approval"
-               value="false"/>
-        </td>
-
-        <td class="text-center">
-        <input class="form-check-input"
-               type="checkbox"
-               name="Users[${index}].AccountManagement"
-               value="true"/>
-
-        <input type="hidden"
-               name="Users[${index}].AccountManagement"
-               value="false"/>
-        </td>
-
-        <td class="text-center">
-        <input class="form-check-input"
-               type="checkbox"
-               name="Users[${index}].Reports"
-               value="true"/>
-
-        <input type="hidden"
-               name="Users[${index}].Reports"
-               value="false"/>
-        </td>
-
-        <td class="text-center">
-
-        <button type="button"
-                class="btn btn-danger btn-sm removeRow">
-
-        <i class="fas fa-times"></i>
-
-        </button>
-
-        </td>
-
-        </tr>
-        `;
-
-                    $("#userRows").append(row);
-
-                });
-
-                // Remove row
-                $(document).on("click", ".removeRow", function () {
-
-                    $(this).closest("tr").remove();
-
+                if (totalRows > 1) {
+                    row.remove();
                     renumberRows();
 
+                    // If no rows left, show the "no users" message
+                    if ($("#userRows tr").length === 0) {
+                        var noUserRow = `
+                            <tr id="noUsersRow">
+                                <td colspan="8" class="text-center text-muted" style="padding: 2rem;">
+                                    <i class="fas fa-users-slash" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+                                    No users added yet. Click "Add User" to get started.
+                                </td>
+                            </tr>
+                        `;
+                        $("#userRows").append(noUserRow);
+                        rowCounter = 0;
+                    }
+                } else {
+                    showAlert('At least one user is required. Cannot remove the last user.', 'danger');
+                }
+            });
+
+            // Renumber all inputs
+            function renumberRows() {
+                $("#userRows tr").each(function(index) {
+                    $(this).find("input, select, textarea").each(function() {
+                        var name = $(this).attr("name");
+                        if (name) {
+                            name = name.replace(/Users\[\d+\]/g, "Users[" + index + "]");
+                            $(this).attr("name", name);
+                        }
+                    });
+                });
+                // Update the data-row-index attribute
+                $("#userRows tr .btn-remove-row").each(function(index) {
+                    $(this).attr("data-row-index", index);
+                });
+                rowCounter = $("#userRows tr").length;
+            }
+
+            // Form validation
+            $("#accessRightsForm").on("submit", function(e) {
+                var hasError = false;
+                var errorMessage = '';
+
+                // Validate required fields
+                var requiredFields = [
+                    { selector: '#SolutionSoftware', name: 'Solution Software' },
+                    { selector: '#ProductionServerId', name: 'Production Server ID' },
+                    { selector: '#ClientName', name: 'Client Name' }
+                ];
+
+                requiredFields.forEach(function(field) {
+                    var value = $(field.selector).val();
+                    if (!value || value.trim() === '') {
+                        hasError = true;
+                        errorMessage += field.name + ' is required. ';
+                        $(field.selector).addClass('is-invalid');
+                    } else {
+                        $(field.selector).removeClass('is-invalid');
+                    }
                 });
 
-                // Renumber all inputs
-                function renumberRows() {
-
-                    $("#userRows tr").each(function (i) {
-
-                        $(this).find("input").each(function () {
-
-                            var name = $(this).attr("name");
-
-                            if (!name)
-                                return;
-
-                            name = name.replace(/Users\[\d+\]/, "Users[" + i + "]");
-
-                            $(this).attr("name", name);
-
-                        });
-
-                    });
-
+                // Validate at least one user
+                if ($("#userRows tr").length === 0 || $("#userRows tr#noUsersRow").length > 0) {
+                    hasError = true;
+                    errorMessage += 'At least one user is required. ';
                 }
 
-    </script>
+                if (hasError) {
+                    e.preventDefault();
+                    showAlert(errorMessage, 'danger');
+                    return false;
+                }
 
+                return true;
+            });
+
+            // Helper function to show alerts
+            function showAlert(message, type) {
+                var existingAlert = $('.alert-modern.dynamic-alert');
+                if (existingAlert.length) existingAlert.remove();
+
+                var alertDiv = $('<div>')
+                    .addClass('alert-modern alert-' + type + ' dynamic-alert')
+                    .html('<i class="fas fa-exclamation-circle"></i> <span>' + message + '</span>')
+                    .insertBefore('.access-rights-card');
+
+                // Auto-remove after 5 seconds
+                setTimeout(function() {
+                    alertDiv.fadeOut('slow', function() {
+                        $(this).remove();
+                    });
+                }, 5000);
+            }
+
+            // Auto-remove validation errors on input
+            $('.form-control-modern').on('input', function() {
+                $(this).removeClass('is-invalid');
+            });
+
+            // Handle checkbox value for new rows
+            $(document).on('change', '.checkbox-wrapper input[type="checkbox"]', function() {
+                var hiddenInput = $(this).siblings('input[type="hidden"]');
+                if (hiddenInput.length) {
+                    hiddenInput.val($(this).is(':checked') ? 'true' : 'false');
+                }
+            });
+        });
+    </script>
 }
