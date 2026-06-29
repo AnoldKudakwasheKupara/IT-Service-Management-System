@@ -91,11 +91,12 @@ namespace IT_Service_Management_System.Controllers
                 _context.Assets.Add(vm.Asset);
                 _context.SaveChanges();
 
-                // Record the opening history entry so the asset has a timeline.
+                // Record the opening history entry so the asset has a timeline
+                // (use the chosen date with the current time so it has a real timestamp).
                 _context.AssetHistories.Add(new AssetHistory
                 {
                     AssetId = vm.Asset.Id,
-                    Date = vm.Asset.Date,
+                    Date = vm.Asset.Date.Date.Add(DateTime.Now.TimeOfDay),
                     UserId = vm.Asset.UserId,
                     EventType = vm.Asset.ActionType,
                     Condition = vm.Asset.Condition,

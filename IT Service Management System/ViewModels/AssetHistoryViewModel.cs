@@ -9,7 +9,8 @@ namespace IT_Service_Management_System.ViewModels
         public int AssetId { get; set; }
 
         [Required(ErrorMessage = "Date is required.")]
-        [DataType(DataType.Date)]
+        [DataType(DataType.DateTime)]
+        [Display(Name = "Date & Time")]
         public DateTime Date { get; set; }
 
         [Display(Name = "User")]

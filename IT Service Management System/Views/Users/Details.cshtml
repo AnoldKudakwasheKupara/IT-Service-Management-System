@@ -208,7 +208,7 @@
                                     <div class="timeline-top">
                                         <span class="event-badge">@h.EventType</span>
                                         <span class="timeline-asset">@(h.Asset?.ItemName ?? "Asset")</span>
-                                        <span class="timeline-date"><i class="far fa-calendar"></i> @h.Date.ToString("MMM dd, yyyy")</span>
+                                        <span class="timeline-date"><i class="far fa-clock"></i> @h.Date.ToString("MMM dd, yyyy 'at' h:mm tt")</span>
                                     </div>
                                     <div class="timeline-meta">
                                         <span><i class="fas fa-clipboard-check"></i> @h.Condition</span>
