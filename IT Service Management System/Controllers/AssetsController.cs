@@ -71,7 +71,7 @@ namespace IT_Service_Management_System.Controllers
         {
             if (ModelState.IsValid && vm.Asset != null)
             {
-                vm.Asset.Status = GetStatusFromEvent(vm.Asset.EventType);
+                vm.Asset.Status = GetStatusFromEvent(vm.Asset.EventType ?? "");
 
                 _context.Add(vm.Asset);
                 _context.SaveChanges();
