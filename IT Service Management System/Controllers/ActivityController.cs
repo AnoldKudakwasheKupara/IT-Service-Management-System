@@ -15,7 +15,7 @@ namespace IT_Service_Management_System.Controllers
             _context = context;
         }
 
-        private IActionResult CheckAccess()
+        private IActionResult? CheckAccess()
         {
             if (HttpContext.Session.GetInt32("UserId") == null)
                 return RedirectToAction("Login", "Account");
@@ -77,7 +77,7 @@ namespace IT_Service_Management_System.Controllers
 
             var userId = HttpContext.Session.GetInt32("UserId");
 
-            activity.UserId = userId.ToString();
+            activity.UserId = userId?.ToString() ?? string.Empty;
             activity.CreatedAt = DateTime.Now;
 
             _context.Activities.Add(activity);

@@ -151,8 +151,8 @@ namespace IT_Service_Management_System.DbContexts
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<TicketAttachment>()
-                .HasCheckConstraint("CK_Attachment_Owner",
-                    "[TicketId] IS NOT NULL OR [TicketMessageId] IS NOT NULL");
+                .ToTable(t => t.HasCheckConstraint("CK_Attachment_Owner",
+                    "[TicketId] IS NOT NULL OR [TicketMessageId] IS NOT NULL"));
         }
     }
 }

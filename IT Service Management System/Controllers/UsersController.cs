@@ -21,7 +21,7 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // 🔒 AUTH + ROLE CHECK
-        private IActionResult CheckAccess()
+        private IActionResult? CheckAccess()
         {
             if (HttpContext.Session.GetInt32("UserId") == null)
                 return RedirectToAction("Login", "Account");
@@ -41,7 +41,7 @@ namespace IT_Service_Management_System.Controllers
 
             var users = await _context.Users
                 .Include(u => u.Department)
-                    .ThenInclude(d => d.Hod)
+                    .ThenInclude(d => d!.Hod)
                 .Include(u => u.Supervisor)
                 .OrderBy(u => u.FirstName)
                 .ThenBy(u => u.LastName)
@@ -58,7 +58,7 @@ namespace IT_Service_Management_System.Controllers
 
             var user = await _context.Users
                 .Include(u => u.Department)
-                    .ThenInclude(d => d.Hod)
+                    .ThenInclude(d => d!.Hod)
                 .Include(u => u.Supervisor)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
