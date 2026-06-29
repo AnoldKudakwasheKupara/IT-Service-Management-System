@@ -171,7 +171,7 @@ namespace IT_Service_Management_System.Controllers
                 new { token = user.ResetToken }, Request.Scheme)!;
 
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
-            _ = TrySendEmailAsync(
+            await TrySendEmailAsync(
                 user.Email, user.FirstName,
                 "Welcome — Activate your account — Axis IT Operations",
                 EmailTemplates.WelcomeActivation(user.FirstName, activationLink, baseUrl));
@@ -362,7 +362,7 @@ namespace IT_Service_Management_System.Controllers
             var resetLink = Url.Action("SetPassword", "Account",
                 new { token = user.ResetToken }, Request.Scheme)!;
 
-            _ = TrySendEmailAsync(
+            await TrySendEmailAsync(
                 user.Email, user.FirstName,
                 "Reset your password — Axis IT Operations",
                 EmailTemplates.PasswordReset(user.FirstName, resetLink));
@@ -399,7 +399,7 @@ namespace IT_Service_Management_System.Controllers
                 new { token = user.ResetToken }, Request.Scheme)!;
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
-            _ = TrySendEmailAsync(
+            await TrySendEmailAsync(
                 user.Email, user.FirstName,
                 "Your activation link has been refreshed — Axis IT Operations",
                 EmailTemplates.ResendActivation(user.FirstName, activationLink));

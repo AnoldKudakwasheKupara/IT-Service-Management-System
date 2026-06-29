@@ -187,9 +187,10 @@ namespace IT_Service_Management_System.Controllers
             await _auditService.LogAsync("Set Password", "User", user.Id,
                 isNewAccount ? "Account activated — first password set" : "Password reset via email link");
 
-            // Send confirmation email (non-blocking — never fail the redirect on email error).
+            // Send confirmation email. TrySendEmailAsync swallows/logs errors, so awaiting it
+            // guarantees delivery is attempted without ever breaking the redirect.
             var loginUrl = Url.Action("Login", "Account", null, Request.Scheme)!;
-            _ = TrySendEmailAsync(
+            await TrySendEmailAsync(
                 user.Email, user.FirstName,
                 isNewAccount ? "Your account is now active — Axis IT Operations" : "Your password has been changed — Axis IT Operations",
                 EmailTemplates.PasswordChanged(user.FirstName, loginUrl, isNewAccount));
@@ -237,7 +238,7 @@ namespace IT_Service_Management_System.Controllers
             var resetLink = Url.Action("SetPassword", "Account",
                 new { token = user.ResetToken }, Request.Scheme)!;
 
-            _ = TrySendEmailAsync(
+            await TrySendEmailAsync(
                 user.Email, user.FirstName,
                 "Reset your password — Axis IT Operations",
                 EmailTemplates.PasswordReset(user.FirstName, resetLink));
