@@ -592,6 +592,11 @@
                     <span class="nav-badge">@(ViewBag.OpenTicketCount ?? 0)</span>
                 </a>
 
+                <a class="nav-item @(currentController == "Reports" ? "active" : "")"
+                   asp-controller="Reports" asp-action="Index">
+                    <i class="fas fa-chart-pie"></i> Reports
+                </a>
+
                 <div class="nav-group">Administration</div>
                 @if (Context.Session.GetString("UserRole") == "Admin")
                 {

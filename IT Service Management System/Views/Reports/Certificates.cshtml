@@ -1,0 +1,55 @@
+@model IT_Service_Management_System.ViewModels.Reports.CertificatesReportVM
+@{
+    ViewData["Title"] = "SSL Certificates Report - Axis IT Operations";
+    var now = DateTime.Now;
+}
+
+@await Html.PartialAsync("_ReportStyles")
+
+<div class="report-container">
+    <div class="report-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="report-title"><i class="fas fa-shield-alt"></i> SSL Certificates</h1>
+            <p class="report-subtitle">Certificate expiry health</p>
+        </div>
+        <div class="report-actions">
+            <a class="report-btn" asp-action="Index"><i class="fas fa-arrow-left"></i> All Reports</a>
+            <button class="report-btn primary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+        </div>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon"><i class="fas fa-certificate"></i></div><div class="kpi-body"><div class="kpi-value">@Model.Total</div><div class="kpi-label">Total Certificates</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon red"><i class="fas fa-ban"></i></div><div class="kpi-body"><div class="kpi-value">@Model.Expired</div><div class="kpi-label">Expired</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon amber"><i class="fas fa-hourglass-end"></i></div><div class="kpi-body"><div class="kpi-value">@Model.Within30</div><div class="kpi-label">Expiring &le; 30 days</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon violet"><i class="fas fa-hourglass-half"></i></div><div class="kpi-body"><div class="kpi-value">@Model.Within90</div><div class="kpi-label">Expiring 31–90 days</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon green"><i class="fas fa-check-circle"></i></div><div class="kpi-body"><div class="kpi-value">@Model.Healthy</div><div class="kpi-label">Healthy (&gt; 90 days)</div></div></div>
+    </div>
+
+    <div class="report-card">
+        <div class="report-card-header"><span><i class="fas fa-triangle-exclamation"></i> Needs Attention (expired or expiring within 30 days)</span></div>
+        <div class="report-card-body" style="padding:0;">
+            @if (Model.Attention.Any())
+            {
+                <table class="report-table">
+                    <thead><tr><th>System</th><th>URL</th><th>Expiry Date</th><th>Days</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var c in Model.Attention)
+                        {
+                            var days = (c.ExpiryDate - now).Days;
+                            var expired = c.ExpiryDate < now;
+                            <tr>
+                                <td>@c.SystemName</td>
+                                <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.URL</td>
+                                <td>@c.ExpiryDate.ToString("MMM dd, yyyy")</td>
+                                <td>@(expired ? $"{Math.Abs(days)} ago" : $"{days} left")</td>
+                                <td><span class="pill @(expired ? "red" : "amber")">@(expired ? "Expired" : "Expiring")</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else { <div class="empty-mini">All certificates are healthy 🎉</div> }
+        </div>
+    </div>
+</div>

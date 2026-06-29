@@ -1,0 +1,47 @@
+@model IT_Service_Management_System.ViewModels.Reports.ReportsDashboardVM
+@{
+    ViewData["Title"] = "Reports - Axis IT Operations";
+    string Money(decimal v) => v.ToString("C0", new System.Globalization.CultureInfo("en-US"));
+}
+
+@await Html.PartialAsync("_ReportStyles")
+
+<div class="report-container">
+    <div class="report-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="report-title"><i class="fas fa-chart-pie"></i> Reports &amp; Analytics</h1>
+            <p class="report-subtitle">System-wide overview &middot; generated @Model.GeneratedAt.ToString("MMM dd, yyyy 'at' h:mm tt")</p>
+        </div>
+        <div class="report-actions">
+            <button class="report-btn" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+        </div>
+    </div>
+
+    <!-- KPI overview -->
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon"><i class="fas fa-ticket-alt"></i></div><div class="kpi-body"><div class="kpi-value">@Model.TotalTickets</div><div class="kpi-label">Total Tickets (@Model.OpenTickets open)</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon violet"><i class="fas fa-laptop-code"></i></div><div class="kpi-body"><div class="kpi-value">@Model.TotalAssets</div><div class="kpi-label">Assets (@Model.AssetsIssued issued)</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon green"><i class="fas fa-box-open"></i></div><div class="kpi-body"><div class="kpi-value">@Model.AssetsInStock</div><div class="kpi-label">Assets In Stock</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon amber"><i class="fas fa-tools"></i></div><div class="kpi-body"><div class="kpi-value">@Model.AssetsInRepair</div><div class="kpi-label">Assets In Repair</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon slate"><i class="fas fa-coins"></i></div><div class="kpi-body"><div class="kpi-value">@Money(Model.TotalAssetValue)</div><div class="kpi-label">Total Asset Value</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon"><i class="fas fa-users"></i></div><div class="kpi-body"><div class="kpi-value">@Model.TotalUsers</div><div class="kpi-label">Users (@Model.ActiveUsers active)</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon green"><i class="fas fa-clock"></i></div><div class="kpi-body"><div class="kpi-value">@Model.TotalActivityHours h</div><div class="kpi-label">Activity Logged (@Model.TotalActivities)</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon red"><i class="fas fa-file-invoice-dollar"></i></div><div class="kpi-body"><div class="kpi-value">@Money(Model.TotalOutstanding)</div><div class="kpi-label">Outstanding (@Model.OverduePayments overdue)</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon amber"><i class="fas fa-shield-alt"></i></div><div class="kpi-body"><div class="kpi-value">@Model.CertsExpiringSoon</div><div class="kpi-label">Certs Expiring &le;30d (@Model.CertsExpired expired)</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon slate"><i class="fas fa-wrench"></i></div><div class="kpi-body"><div class="kpi-value">@Model.MaintenanceRecords</div><div class="kpi-label">Maintenance Records</div></div></div>
+    </div>
+
+    <!-- Detailed report links -->
+    <div class="report-card-header" style="background:transparent;border:none;padding-left:0;font-size:1.05rem;">
+        <span><i class="fas fa-folder-open"></i> Detailed Reports</span>
+    </div>
+    <div class="hub-grid">
+        <a class="hub-card" asp-action="Tickets"><div class="hub-icon"><i class="fas fa-ticket-alt"></i></div><div class="hub-text"><h3>Tickets Report</h3><p>Status, priority, categories, top requesters &amp; resolution rate</p></div></a>
+        <a class="hub-card" asp-action="Assets"><div class="hub-icon"><i class="fas fa-laptop-code"></i></div><div class="hub-text"><h3>Assets Report</h3><p>Status, condition, value, holders &amp; recent activity</p></div></a>
+        <a class="hub-card" asp-action="Users"><div class="hub-icon"><i class="fas fa-users"></i></div><div class="hub-text"><h3>Users &amp; Departments</h3><p>Roles, departments, active users &amp; asset assignments</p></div></a>
+        <a class="hub-card" asp-action="Activity"><div class="hub-icon"><i class="fas fa-tasks"></i></div><div class="hub-text"><h3>Activity Report</h3><p>Hours logged by category &amp; by user, ongoing vs completed</p></div></a>
+        <a class="hub-card" asp-action="Payments"><div class="hub-icon"><i class="fas fa-file-invoice-dollar"></i></div><div class="hub-text"><h3>Payments Report</h3><p>Paid, outstanding &amp; overdue amounts, upcoming dues</p></div></a>
+        <a class="hub-card" asp-action="Certificates"><div class="hub-icon"><i class="fas fa-shield-alt"></i></div><div class="hub-text"><h3>SSL Certificates</h3><p>Expiry buckets &amp; certificates needing attention</p></div></a>
+        <a class="hub-card" asp-action="Maintenance"><div class="hub-icon"><i class="fas fa-wrench"></i></div><div class="hub-text"><h3>Maintenance Report</h3><p>By type, recent work &amp; upcoming scheduled maintenance</p></div></a>
+    </div>
+</div>
