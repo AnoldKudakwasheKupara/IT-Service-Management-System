@@ -62,12 +62,12 @@
                             <label asp-for="Asset.UserId" class="form-label">
                                 <i class="fas fa-user"></i>
                                 User
-                                <span class="required">*</span>
+                                <span class="required" id="userRequiredStar" style="display:none;">*</span>
                             </label>
                             <div class="select-wrapper">
                                 <i class="fas fa-chevron-down select-icon"></i>
-                                <select asp-for="Asset.UserId" class="form-control-modern">
-                                    <option value="">-- Select User --</option>
+                                <select asp-for="Asset.UserId" class="form-control-modern" id="userSelect">
+                                    <option value="">-- No user (in stock) --</option>
                                     @foreach (var user in Model.Users)
                                     {
                                         <option value="@user.Id">
@@ -126,12 +126,12 @@
                             <div class="select-wrapper">
                                 <i class="fas fa-chevron-down select-icon"></i>
                                 <select asp-for="Asset.ActionType" class="form-control-modern" id="actionSelect">
+                                    <option value="In Stock" selected>In Stock</option>
                                     <option value="Issued">Issued</option>
                                     <option value="Returned">Returned</option>
-                                    <option value="Repair">Repair</option>
-                                    <option value="Upgrade">Upgrade</option>
-                                    <option value="Stolen">Stolen</option>
+                                    <option value="In Repair">In Repair</option>
                                     <option value="Retired">Retired</option>
+                                    <option value="Stolen">Stolen</option>
                                 </select>
                             </div>
                             <span asp-validation-for="Asset.ActionType" class="validation-message text-danger"></span>
@@ -619,12 +619,26 @@
         const actionDescription = document.getElementById('actionDescription');
         
         const actionDescriptions = {
+            'In Stock': 'Asset is recorded in stock with no holder',
             'Issued': 'Asset is being issued to the selected user',
-            'Returned': 'Asset is being returned from the selected user'
+            'Returned': 'Asset is returned and goes back to stock',
+            'In Repair': 'Asset is sent for repair',
+            'Retired': 'Asset is retired from service',
+            'Stolen': 'Asset is reported stolen or lost'
         };
-        
+
+        const userStar = document.getElementById('userRequiredStar');
+        const userSelectEl = document.getElementById('userSelect');
+
+        function syncUserRequirement() {
+            var isIssue = actionSelect.value === 'Issued';
+            if (userStar) userStar.style.display = isIssue ? 'inline' : 'none';
+            if (!isIssue && userSelectEl) userSelectEl.value = '';
+        }
+
         function updateActionDescription() {
             var selectedAction = actionSelect.value;
+            syncUserRequirement();
             if (selectedAction && actionDescriptions[selectedAction]) {
                 actionDescription.textContent = actionDescriptions[selectedAction];
                 
@@ -705,9 +719,9 @@
                     return false;
                 }
                 
-                if (!userId) {
+                if (actionType === 'Issued' && !userId) {
                     e.preventDefault();
-                    showValidationError('Please select a user');
+                    showValidationError('Please select the user the asset is issued to');
                     document.querySelector('[name="Asset.UserId"]').focus();
                     return false;
                 }

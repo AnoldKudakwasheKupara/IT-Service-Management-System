@@ -38,17 +38,17 @@
                 <i class="fas fa-hand-holding"></i>
             </div>
             <div class="stat-info">
-                <h3>@Model.Count(a => a.ActionType == "Issued")</h3>
+                <h3>@Model.Count(a => a.Status == "Issued")</h3>
                 <p>Issued Assets</p>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon returned">
-                <i class="fas fa-undo-alt"></i>
+                <i class="fas fa-box-open"></i>
             </div>
             <div class="stat-info">
-                <h3>@Model.Count(a => a.ActionType == "Returned")</h3>
-                <p>Returned Assets</p>
+                <h3>@Model.Count(a => a.Status == "In Stock" || a.Status == "Available" || string.IsNullOrEmpty(a.Status))</h3>
+                <p>In Stock</p>
             </div>
         </div>
         <div class="stat-card">
@@ -112,7 +112,7 @@
                             <th><i class="fas fa-user me-1"></i> User</th>
                             <th><i class="fas fa-laptop me-1"></i> Item</th>
                             <th><i class="fas fa-barcode me-1"></i> Serial Number</th>
-                            <th><i class="fas fa-exchange-alt me-1"></i> Action</th>
+                            <th><i class="fas fa-circle-info me-1"></i> Status</th>
                             <th><i class="fas fa-chart-line me-1"></i> Condition</th>
                             <th><i class="fas fa-user-check me-1"></i> Issued By</th>
                             <th><i class="fas fa-comment me-1"></i> Remarks</th>
@@ -145,40 +145,44 @@
                                     <code>@item.SerialNumber</code>
                                 </td>
                                 <td>
-                                    @if (item.ActionType == "Issued")
+                                    @{
+                                        var rowStatus = item.Status;
+                                        if (string.IsNullOrEmpty(rowStatus) || rowStatus == "Available") { rowStatus = "In Stock"; }
+                                    }
+                                    @if (rowStatus == "Issued")
                                     {
                                         <span class="action-badge action-issued">
                                             <i class="fas fa-hand-holding"></i> Issued
                                         </span>
                                     }
-                                    else if (item.ActionType == "Returned")
+                                    else if (rowStatus == "In Stock")
                                     {
                                         <span class="action-badge action-returned">
-                                            <i class="fas fa-undo-alt"></i> Returned
+                                            <i class="fas fa-box-open"></i> In Stock
                                         </span>
                                     }
-                                    else if (item.ActionType == "Repair")
+                                    else if (rowStatus == "In Repair")
                                     {
                                         <span class="action-badge action-repair">
-                                            <i class="fas fa-tools"></i> Repair
+                                            <i class="fas fa-tools"></i> In Repair
                                         </span>
                                     }
-                                    else if (item.ActionType == "Upgrade")
-                                    {
-                                        <span class="action-badge action-upgrade">
-                                            <i class="fas fa-arrow-up"></i> Upgrade
-                                        </span>
-                                    }
-                                    else if (item.ActionType == "Stolen")
+                                    else if (rowStatus == "Stolen")
                                     {
                                         <span class="action-badge action-stolen">
                                             <i class="fas fa-exclamation-triangle"></i> Stolen
                                         </span>
                                     }
-                                    else if (item.ActionType == "Retired")
+                                    else if (rowStatus == "Retired")
                                     {
                                         <span class="action-badge action-retired">
                                             <i class="fas fa-archive"></i> Retired
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="action-badge action-returned">
+                                            <i class="fas fa-circle"></i> @rowStatus
                                         </span>
                                     }
                                 </td>

@@ -1,789 +1,273 @@
-﻿@model IT_Service_Management_System.Models.Asset
+@model IT_Service_Management_System.ViewModels.AssetHistoryViewModel
 
 @{
-    ViewData["Title"] = $"Asset Details - {Model.ItemName} - Axis IT Helpdesk";
+    ViewData["Title"] = "Record Asset Action - Axis IT Operations";
+    var currentHolder = ViewBag.CurrentHolder as string;
 }
 
 <div class="page-container">
     <div class="page-header">
         <div class="d-flex align-items-center gap-3 mb-4">
-            <a asp-controller="Asset" asp-action="Index" class="btn-back">
+            <a asp-controller="Assets" asp-action="Details" asp-route-id="@Model.AssetId" class="btn-back" title="Back to asset">
                 <i class="fas fa-arrow-left"></i>
             </a>
             <div>
                 <h1 class="page-title">
-                    <i class="fas fa-box-open me-2" style="color: var(--info);"></i>
-                    Asset Details
+                    <i class="fas fa-clock-rotate-left me-2" style="color: var(--primary);"></i>
+                    Record Asset Action
                 </h1>
-                <p class="text-muted mt-2">View complete asset information and tracking history</p>
+                <p class="text-muted mt-2">Log a new event in this asset's history timeline</p>
             </div>
         </div>
     </div>
 
-    <!-- Asset Summary Card -->
-    <div class="asset-summary-card">
-        <div class="card-header-custom">
-            <div>
-                <i class="fas fa-box me-2"></i>
-                <span>Asset Information</span>
-            </div>
-            <div class="asset-tag-badge">
-                <i class="fas fa-tag"></i>
-                @Model.AssetTag
-            </div>
+    <!-- Asset context -->
+    <div class="context-card">
+        <div class="context-icon"><i class="fas fa-laptop"></i></div>
+        <div class="context-body">
+            <span class="context-name">@ViewBag.AssetName</span>
+            <span class="context-serial"><i class="fas fa-barcode"></i> @ViewBag.AssetSerial</span>
         </div>
-
-        <div class="card-body-custom">
-            <div class="asset-main-info">
-                <div class="asset-icon-large">
-                    <i class="fas fa-laptop"></i>
-                </div>
-                <div class="asset-details-main">
-                    <h2 class="asset-name">@Model.ItemName</h2>
-                    <div class="asset-status">
-                        @{
-                            var status = Model.Status?.ToString();
-                            if (status == "Available")
-                            {
-                                <span class="status-badge status-available">
-                                    <i class="fas fa-check-circle"></i> Available
-                                </span>
-                            }
-                            else if (status == "Issued")
-                            {
-                                <span class="status-badge status-issued">
-                                    <i class="fas fa-hand-holding"></i> Issued
-                                </span>
-                            }
-                            else if (status == "Repair")
-                            {
-                                <span class="status-badge status-repair">
-                                    <i class="fas fa-tools"></i> In Repair
-                                </span>
-                            }
-                            else if (status == "Retired")
-                            {
-                                <span class="status-badge status-retired">
-                                    <i class="fas fa-ban"></i> Retired
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="status-badge status-other">
-                                    <i class="fas fa-circle"></i> @status
-                                </span>
-                            }
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <div class="details-grid">
-                <div class="detail-card">
-                    <div class="detail-icon">
-                        <i class="fas fa-barcode"></i>
-                    </div>
-                    <div class="detail-content">
-                        <label>Asset Tag</label>
-                        <p><code>@Model.AssetTag</code></p>
-                    </div>
-                </div>
-
-                <div class="detail-card">
-                    <div class="detail-icon">
-                        <i class="fas fa-qrcode"></i>
-                    </div>
-                    <div class="detail-content">
-                        <label>Serial Number</label>
-                        <p><code>@Model.SerialNumber</code></p>
-                    </div>
-                </div>
-
-                <div class="detail-card">
-                    <div class="detail-icon">
-                        <i class="fas fa-calendar-alt"></i>
-                    </div>
-                    <div class="detail-content">
-                        <label>Purchase Date</label>
-                        <p>@(Model.PurchaseDate?.ToString("MMMM dd, yyyy") ?? "Not specified")</p>
-                    </div>
-                </div>
-
-                <div class="detail-card">
-                    <div class="detail-icon">
-                        <i class="fas fa-dollar-sign"></i>
-                    </div>
-                    <div class="detail-content">
-                        <label>Purchase Cost</label>
-                        <p>@(Model.PurchaseCost?.ToString("C") ?? "Not specified")</p>
-                    </div>
-                </div>
-            </div>
+        <div class="context-state">
+            <span class="context-status">@ViewBag.AssetStatus</span>
+            <span class="context-holder">
+                <i class="fas fa-user"></i>
+                @(string.IsNullOrEmpty(currentHolder) ? "In stock (no holder)" : currentHolder)
+            </span>
         </div>
     </div>
 
-    <!-- Add History Event Button -->
-    <div class="action-bar">
-        <a asp-controller="AssetHistories" asp-action="Create" asp-route-assetId="@Model.Id" class="btn-add-history">
-            <i class="fas fa-plus-circle"></i>
-            Add History Event
-        </a>
-    </div>
+    <div class="form-card">
+        <form asp-action="Create" method="post" id="recordActionForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="AssetId" />
 
-    <!-- Asset History Section -->
-    <div class="history-card">
-        <div class="card-header-custom">
-            <div>
-                <i class="fas fa-history me-2"></i>
-                <span>Asset History Timeline</span>
-            </div>
-            <div class="history-count">
-                <i class="fas fa-chart-simple"></i>
-                <span>@Model.History.Count()</span> events recorded
-            </div>
-        </div>
+            <div asp-validation-summary="ModelOnly" class="validation-summary text-danger"></div>
 
-        <div class="card-body-custom">
-            @if (Model.History != null && Model.History.Any())
-            {
-                <div class="timeline">
-                    @foreach (var item in Model.History.OrderByDescending(h => h.Date))
-                    {
-                        <div class="timeline-item">
-                            <div class="timeline-marker">
-                                @{
-                                    var eventType = item.EventType;
-                                    if (eventType == "Issued")
-                                    {
-                                        <i class="fas fa-hand-holding"></i>
-                                    }
-                                    else if (eventType == "Returned")
-                                    {
-                                        <i class="fas fa-undo-alt"></i>
-                                    }
-                                    else if (eventType == "Repair")
-                                    {
-                                        <i class="fas fa-tools"></i>
-                                    }
-                                    else if (eventType == "Upgrade")
-                                    {
-                                        <i class="fas fa-arrow-up"></i>
-                                    }
-                                    else if (eventType == "Stolen")
-                                    {
-                                        <i class="fas fa-theft"></i>
-                                    }
-                                    else
-                                    {
-                                        <i class="fas fa-circle"></i>
-                                    }
-                                }
-                            </div>
-                            <div class="timeline-content">
-                                <div class="timeline-header">
-                                    <div class="timeline-date">
-                                        <i class="far fa-calendar-alt"></i>
-                                        @item.Date.ToString("MMMM dd, yyyy")
-                                    </div>
-                                    <div class="timeline-event-badge">
-                                        @if (eventType == "Issued")
-                                        {
-                                            <span class="event-badge event-issued">
-                                                <i class="fas fa-hand-holding"></i> Issued
-                                            </span>
-                                        }
-                                        else if (eventType == "Returned")
-                                        {
-                                            <span class="event-badge event-returned">
-                                                <i class="fas fa-undo-alt"></i> Returned
-                                            </span>
-                                        }
-                                        else if (eventType == "Repair")
-                                        {
-                                            <span class="event-badge event-repair">
-                                                <i class="fas fa-tools"></i> Repair
-                                            </span>
-                                        }
-                                        else if (eventType == "Upgrade")
-                                        {
-                                            <span class="event-badge event-upgrade">
-                                                <i class="fas fa-arrow-up"></i> Upgrade
-                                            </span>
-                                        }
-                                        else if (eventType == "Stolen")
-                                        {
-                                            <span class="event-badge event-stolen">
-                                                <i class="fas fa-theft"></i> Stolen
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="event-badge event-other">
-                                                <i class="fas fa-circle"></i> @eventType
-                                            </span>
-                                        }
-                                    </div>
-                                </div>
-                                <div class="timeline-details">
-                                    <div class="timeline-detail-item">
-                                        <i class="fas fa-user"></i>
-                                        <strong>User:</strong>
-                                        <span>@item.User?.FirstName</span>
-                                    </div>
-                                    <div class="timeline-detail-item">
-                                        <i class="fas fa-chart-line"></i>
-                                        <strong>Condition:</strong>
-                                        @{
-                                            var condition = item.Condition;
-                                            if (condition == "New")
-                                            {
-                                                <span class="condition-badge condition-new">New</span>
-                                            }
-                                            else if (condition == "Good")
-                                            {
-                                                <span class="condition-badge condition-good">Good</span>
-                                            }
-                                            else if (condition == "Fair")
-                                            {
-                                                <span class="condition-badge condition-fair">Fair</span>
-                                            }
-                                            else if (condition == "Poor")
-                                            {
-                                                <span class="condition-badge condition-poor">Poor</span>
-                                            }
-                                            else
-                                            {
-                                                <span>@condition</span>
-                                            }
-                                        }
-                                    </div>
-                                    <div class="timeline-detail-item">
-                                        <i class="fas fa-user-check"></i>
-                                        <strong>Performed By:</strong>
-                                        <span>@item.PerformedBy</span>
-                                    </div>
-                                    @if (!string.IsNullOrEmpty(item.Remarks))
-                                    {
-                                        <div class="timeline-detail-item remarks">
-                                            <i class="fas fa-comment"></i>
-                                            <strong>Remarks:</strong>
-                                            <span>@item.Remarks</span>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    }
+            <div class="form-grid">
+                <div class="form-group-modern">
+                    <label asp-for="EventType" class="form-label">
+                        <i class="fas fa-bolt"></i> Action <span class="required">*</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <i class="fas fa-chevron-down select-icon"></i>
+                        <select asp-for="EventType" class="form-control-modern" id="eventSelect">
+                            <option value="">-- Select action --</option>
+                            @foreach (var t in IT_Service_Management_System.Helpers.AssetWorkflow.EventTypes)
+                            {
+                                <option value="@t">@t</option>
+                            }
+                        </select>
+                    </div>
+                    <span asp-validation-for="EventType" class="validation-message text-danger"></span>
+                    <div class="form-hint" id="actionHint"><i class="fas fa-info-circle"></i> Choose what is happening to the asset.</div>
                 </div>
-            }
-            else
-            {
-                <div class="empty-state">
-                    <i class="fas fa-history"></i>
-                    <h3>No History Events</h3>
-                    <p>This asset has no recorded history yet</p>
-                    <a asp-controller="AssetHistories" asp-action="Create" asp-route-assetId="@Model.Id" class="btn-add-history-sm">
-                        <i class="fas fa-plus-circle"></i>
-                        Add First History Event
-                    </a>
+
+                <div class="form-group-modern" id="userGroup">
+                    <label asp-for="UserId" class="form-label">
+                        <i class="fas fa-user"></i> User <span class="required" id="userRequired" style="display:none;">*</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <i class="fas fa-chevron-down select-icon"></i>
+                        <select asp-for="UserId" class="form-control-modern" id="userSelect">
+                            <option value="">-- No user (in stock) --</option>
+                            @foreach (var user in Model.Users)
+                            {
+                                <option value="@user.Id">@user.FirstName @user.LastName</option>
+                            }
+                        </select>
+                    </div>
+                    <span asp-validation-for="UserId" class="validation-message text-danger"></span>
+                    <div class="form-hint"><i class="fas fa-info-circle"></i> Only required when issuing the asset to someone.</div>
                 </div>
-            }
-        </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="Condition" class="form-label">
+                        <i class="fas fa-chart-line"></i> Condition <span class="required">*</span>
+                    </label>
+                    <div class="select-wrapper">
+                        <i class="fas fa-chevron-down select-icon"></i>
+                        <select asp-for="Condition" class="form-control-modern">
+                            <option value="">-- Select condition --</option>
+                            <option value="New">New</option>
+                            <option value="Good">Good</option>
+                            <option value="Fair">Fair</option>
+                            <option value="Poor">Poor</option>
+                        </select>
+                    </div>
+                    <span asp-validation-for="Condition" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="Date" class="form-label">
+                        <i class="fas fa-calendar"></i> Date <span class="required">*</span>
+                    </label>
+                    <div class="input-icon-wrapper">
+                        <i class="fas fa-calendar-alt input-icon"></i>
+                        <input asp-for="Date" type="date" class="form-control-modern" />
+                    </div>
+                    <span asp-validation-for="Date" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern">
+                    <label asp-for="PerformedBy" class="form-label">
+                        <i class="fas fa-user-check"></i> Performed By <span class="required">*</span>
+                    </label>
+                    <div class="input-icon-wrapper">
+                        <i class="fas fa-signature input-icon"></i>
+                        <input asp-for="PerformedBy" class="form-control-modern" placeholder="Staff member processing this action" />
+                    </div>
+                    <span asp-validation-for="PerformedBy" class="validation-message text-danger"></span>
+                </div>
+
+                <div class="form-group-modern full">
+                    <label asp-for="Remarks" class="form-label">
+                        <i class="fas fa-comment"></i> Remarks
+                    </label>
+                    <textarea asp-for="Remarks" class="form-control-modern" rows="3" placeholder="Optional notes about this action..."></textarea>
+                    <span asp-validation-for="Remarks" class="validation-message text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a asp-controller="Assets" asp-action="Details" asp-route-id="@Model.AssetId" class="btn-cancel">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn-save">
+                    <i class="fas fa-save"></i> Record Action
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
 <style>
-    /* Asset Details Page Specific Styles */
-    :root {
-        --primary-dark: #2563eb;
-        --primary: #3b82f6;
-        --primary-light: #60a5fa;
-        --success: #2c9e6e;
-        --warning: #f5b042;
-        --danger: #e53e3e;
-        --info: #3b82f6;
-        --gray-50: #f8fafc;
-        --gray-100: #f1f5f9;
-        --gray-200: #e2e8f0;
-        --gray-300: #cbd5e1;
-        --gray-400: #94a3b8;
-        --gray-500: #64748b;
-        --gray-600: #475569;
-        --gray-700: #334155;
-        --gray-800: #1e293b;
-        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    }
+    .page-container { max-width: 920px; margin: 0 auto; }
 
-    .page-container {
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    .page-header {
-        margin-bottom: 2rem;
-    }
+    .page-title { font-size: 1.6rem; font-weight: 700; color: var(--gray-800); margin: 0; display: flex; align-items: center; }
 
     .btn-back {
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: white;
-        border-radius: 0.75rem;
-        color: var(--gray-600);
-        text-decoration: none;
-        transition: all 0.2s;
-        border: 1px solid var(--gray-200);
+        width: 42px; height: 42px; border-radius: var(--radius-sm);
+        background: var(--bg-card); border: 1px solid var(--gray-200); color: var(--gray-600);
+        display: flex; align-items: center; justify-content: center; text-decoration: none;
+        transition: var(--transition-smooth); flex-shrink: 0;
+    }
+        .btn-back:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    .context-card {
+        display: flex; align-items: center; gap: 1rem;
+        background: var(--bg-card); border: 1px solid var(--gray-200);
+        border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 1.25rem;
+        box-shadow: var(--shadow-sm); flex-wrap: wrap;
+    }
+    .context-icon {
+        width: 46px; height: 46px; border-radius: 0.75rem; flex-shrink: 0;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
+    }
+    .context-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 160px; }
+    .context-name { font-weight: 700; color: var(--gray-800); }
+    .context-serial { font-size: 0.75rem; color: var(--gray-500); }
+    .context-state { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .context-status {
+        font-size: 0.72rem; font-weight: 700; padding: 3px 12px; border-radius: 30px;
+        background: var(--primary-light); color: var(--primary-dark);
+    }
+    .context-holder { font-size: 0.75rem; color: var(--gray-500); }
+
+    .form-card {
+        background: var(--bg-card); border: 1px solid var(--gray-200);
+        border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: 1.75rem;
     }
 
-        .btn-back:hover {
-            background: var(--gray-50);
-            color: var(--primary);
-            transform: translateX(-2px);
-        }
+    .validation-summary:empty { display: none; }
+    .validation-summary { margin-bottom: 1rem; font-size: 0.85rem; }
 
-    .page-title {
-        font-size: 1.875rem;
-        font-weight: 700;
-        color: var(--gray-800);
-        margin: 0;
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem 1.5rem; }
+    .form-group-modern { display: flex; flex-direction: column; gap: 0.5rem; }
+    .form-group-modern.full { grid-column: 1 / -1; }
+
+    .form-label { font-weight: 600; font-size: 0.85rem; color: var(--gray-700); display: flex; align-items: center; gap: 0.5rem; }
+        .form-label i { color: var(--primary); }
+    .required { color: var(--danger); }
+
+    .input-icon-wrapper, .select-wrapper { position: relative; }
+    .input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 0.85rem; pointer-events: none; }
+    .select-icon { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 0.7rem; pointer-events: none; }
+
+    .form-control-modern {
+        width: 100%; padding: 0.7rem 1rem; font-size: 0.88rem; font-family: inherit;
+        border: 1.5px solid var(--gray-200); border-radius: var(--radius-sm); background: #fff;
+        color: var(--gray-800); transition: var(--transition-smooth); resize: vertical;
     }
+    .input-icon-wrapper .form-control-modern { padding-left: 2.5rem; }
+    .select-wrapper select.form-control-modern { appearance: none; cursor: pointer; }
+        .form-control-modern:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-glow); }
 
-    /* Asset Summary Card */
-    .asset-summary-card {
-        background: white;
-        border-radius: 1rem;
-        overflow: hidden;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--gray-200);
-        margin-bottom: 1.5rem;
+    .form-hint { font-size: 0.72rem; color: var(--gray-500); display: flex; align-items: center; gap: 0.4rem; }
+    .validation-message { font-size: 0.75rem; }
+
+    .form-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--gray-200); }
+    .btn-save, .btn-cancel {
+        padding: 0.65rem 1.4rem; border-radius: 40px; font-weight: 600; font-size: 0.88rem;
+        border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;
+        transition: var(--transition-smooth); text-decoration: none;
     }
+    .btn-save { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; }
+        .btn-save:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .btn-cancel { background: var(--gray-100); color: var(--gray-700); }
+        .btn-cancel:hover { background: var(--gray-200); }
 
-    .card-header-custom {
-        background: var(--gray-50);
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid var(--gray-200);
-        font-weight: 600;
-        color: var(--gray-700);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-
-    .asset-tag-badge {
-        background: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 2rem;
-        font-size: 0.75rem;
-        color: var(--gray-600);
-        border: 1px solid var(--gray-200);
-        font-family: monospace;
-    }
-
-    .card-body-custom {
-        padding: 2rem;
-    }
-
-    /* Asset Main Info */
-    .asset-main-info {
-        display: flex;
-        align-items: center;
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-        padding-bottom: 1.5rem;
-        border-bottom: 2px solid var(--gray-100);
-    }
-
-    .asset-icon-large {
-        width: 80px;
-        height: 80px;
-        background: linear-gradient(135deg, var(--primary), var(--primary-light));
-        border-radius: 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-    }
-
-        .asset-icon-large i {
-            font-size: 2.5rem;
-            color: white;
-        }
-
-    .asset-details-main {
-        flex: 1;
-    }
-
-    .asset-name {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--gray-800);
-        margin: 0 0 0.5rem 0;
-    }
-
-    .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.375rem 0.875rem;
-        border-radius: 2rem;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .status-available {
-        background: #e6f5e9;
-        color: var(--success);
-    }
-
-    .status-issued {
-        background: #fff5e6;
-        color: var(--warning);
-    }
-
-    .status-repair {
-        background: #e6f0ff;
-        color: var(--info);
-    }
-
-    .status-retired {
-        background: var(--gray-100);
-        color: var(--gray-500);
-    }
-
-    .status-other {
-        background: var(--gray-100);
-        color: var(--gray-600);
-    }
-
-    /* Details Grid */
-    .details-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1rem;
-    }
-
-    .detail-card {
-        background: var(--gray-50);
-        border-radius: 0.75rem;
-        padding: 1rem;
-        display: flex;
-        gap: 0.75rem;
-        transition: all 0.2s;
-        border: 1px solid var(--gray-200);
-    }
-
-        .detail-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-sm);
-            background: white;
-        }
-
-    .detail-icon {
-        width: 40px;
-        height: 40px;
-        background: white;
-        border-radius: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--primary);
-        font-size: 1rem;
-        flex-shrink: 0;
-        border: 1px solid var(--gray-200);
-    }
-
-    .detail-content {
-        flex: 1;
-    }
-
-        .detail-content label {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--gray-500);
-            font-weight: 600;
-            display: block;
-            margin-bottom: 0.25rem;
-        }
-
-        .detail-content p {
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: var(--gray-800);
-            margin: 0;
-        }
-
-        .detail-content code {
-            background: var(--gray-200);
-            padding: 0.125rem 0.375rem;
-            border-radius: 0.375rem;
-            font-size: 0.75rem;
-            font-family: monospace;
-        }
-
-    /* Action Bar */
-    .action-bar {
-        margin-bottom: 1.5rem;
-    }
-
-    .btn-add-history {
-        background: linear-gradient(100deg, var(--success), #1f8a5c);
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.75rem;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.2s;
-    }
-
-        .btn-add-history:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-            color: white;
-            text-decoration: none;
-        }
-
-    /* History Card */
-    .history-card {
-        background: white;
-        border-radius: 1rem;
-        overflow: hidden;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--gray-200);
-    }
-
-    .history-count {
-        font-size: 0.875rem;
-        font-weight: normal;
-        color: var(--gray-500);
-    }
-
-    /* Timeline */
-    .timeline {
-        position: relative;
-        padding-left: 2rem;
-    }
-
-        .timeline::before {
-            content: '';
-            position: absolute;
-            left: 0.5rem;
-            top: 0;
-            bottom: 0;
-            width: 2px;
-            background: var(--gray-200);
-        }
-
-    .timeline-item {
-        position: relative;
-        margin-bottom: 1.5rem;
-        padding-left: 1.5rem;
-    }
-
-    .timeline-marker {
-        position: absolute;
-        left: -2rem;
-        top: 0;
-        width: 2rem;
-        height: 2rem;
-        background: white;
-        border: 2px solid var(--primary);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1;
-    }
-
-        .timeline-marker i {
-            font-size: 0.75rem;
-            color: var(--primary);
-        }
-
-    .timeline-content {
-        background: var(--gray-50);
-        border-radius: 0.75rem;
-        padding: 1rem;
-        transition: all 0.2s;
-        border: 1px solid var(--gray-200);
-    }
-
-        .timeline-content:hover {
-            background: white;
-            box-shadow: var(--shadow-sm);
-        }
-
-    .timeline-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        margin-bottom: 0.75rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid var(--gray-200);
-    }
-
-    .timeline-date {
-        font-size: 0.75rem;
-        color: var(--gray-500);
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .event-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: 2rem;
-        font-size: 0.7rem;
-        font-weight: 600;
-    }
-
-    .event-issued {
-        background: #e6f5e9;
-        color: var(--success);
-    }
-
-    .event-returned {
-        background: #fff5e6;
-        color: var(--warning);
-    }
-
-    .event-repair {
-        background: #e6f0ff;
-        color: var(--info);
-    }
-
-    .event-upgrade {
-        background: #e6e6ff;
-        color: #6366f1;
-    }
-
-    .event-stolen {
-        background: #fee;
-        color: var(--danger);
-    }
-
-    .event-other {
-        background: var(--gray-100);
-        color: var(--gray-600);
-    }
-
-    .timeline-details {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .timeline-detail-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-        color: var(--gray-600);
-    }
-
-        .timeline-detail-item i {
-            width: 1rem;
-            color: var(--primary);
-        }
-
-        .timeline-detail-item strong {
-            font-weight: 600;
-            color: var(--gray-700);
-        }
-
-        .timeline-detail-item.remarks {
-            margin-top: 0.25rem;
-            padding-top: 0.5rem;
-            border-top: 1px dashed var(--gray-200);
-        }
-
-    /* Condition Badges */
-    .condition-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.125rem 0.5rem;
-        border-radius: 2rem;
-        font-size: 0.7rem;
-        font-weight: 600;
-    }
-
-    .condition-new {
-        background: #e6f0ff;
-        color: var(--info);
-    }
-
-    .condition-good {
-        background: #e6f5e9;
-        color: var(--success);
-    }
-
-    .condition-fair {
-        background: #fff5e6;
-        color: var(--warning);
-    }
-
-    .condition-poor {
-        background: #fee;
-        color: var(--danger);
-    }
-
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: 3rem;
-        color: var(--gray-500);
-    }
-
-        .empty-state i {
-            font-size: 4rem;
-            color: var(--gray-300);
-            margin-bottom: 1rem;
-        }
-
-        .empty-state h3 {
-            font-size: 1.25rem;
-            margin-bottom: 0.5rem;
-            color: var(--gray-600);
-        }
-
-        .empty-state p {
-            margin-bottom: 1.5rem;
-        }
-
-    .btn-add-history-sm {
-        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 0.5rem;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.875rem;
-        transition: all 0.2s;
-    }
-
-        .btn-add-history-sm:hover {
-            transform: translateY(-2px);
-            color: white;
-            text-decoration: none;
-        }
+    @@media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
 </style>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<script>
+    (function () {
+        var eventSelect = document.getElementById('eventSelect');
+        var userSelect = document.getElementById('userSelect');
+        var userRequired = document.getElementById('userRequired');
+        var actionHint = document.getElementById('actionHint');
+        var form = document.getElementById('recordActionForm');
+
+        var hints = {
+            'In Stock': 'Asset is available in stock with no holder.',
+            'Issued': 'Asset is being assigned to the selected user.',
+            'Returned': 'Asset is returned and goes back to stock.',
+            'In Repair': 'Asset is sent for repair (holder is kept).',
+            'Retired': 'Asset is retired from service.',
+            'Stolen': 'Asset is reported stolen/lost.'
+        };
+
+        function sync() {
+            var v = eventSelect.value;
+            var isIssue = v === 'Issued';
+            userRequired.style.display = isIssue ? 'inline' : 'none';
+            if (actionHint) {
+                actionHint.querySelector('span') || actionHint;
+                actionHint.innerHTML = '<i class="fas fa-info-circle"></i> ' + (hints[v] || 'Choose what is happening to the asset.');
+            }
+            if (!isIssue && (v === 'In Stock' || v === 'Returned' || v === 'Retired' || v === 'Stolen')) {
+                userSelect.value = '';
+            }
+        }
+
+        if (eventSelect) {
+            eventSelect.addEventListener('change', sync);
+            sync();
+        }
+
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                if (eventSelect.value === 'Issued' && !userSelect.value) {
+                    e.preventDefault();
+                    userSelect.focus();
+                    alert('Please select the user the asset is issued to.');
+                }
+            });
+        }
+    })();
+</script>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

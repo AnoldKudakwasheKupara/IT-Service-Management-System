@@ -42,11 +42,11 @@
                     <h2 class="asset-name">@Model.ItemName</h2>
                     <div class="asset-status">
                         @{
-                            var status = Model.Status ?? "Available";
-                            if (status == "Available")
+                            var status = Model.Status ?? "In Stock";
+                            if (status == "In Stock" || status == "Available")
                             {
                                 <span class="status-badge status-available">
-                                    <i class="fas fa-check-circle"></i> Available
+                                    <i class="fas fa-check-circle"></i> In Stock
                                 </span>
                             }
                             else if (status == "Issued")
@@ -55,7 +55,7 @@
                                     <i class="fas fa-hand-holding"></i> Issued
                                 </span>
                             }
-                            else if (status == "Repair")
+                            else if (status == "In Repair" || status == "Repair")
                             {
                                 <span class="status-badge status-repair">
                                     <i class="fas fa-tools"></i> In Repair
@@ -65,6 +65,12 @@
                             {
                                 <span class="status-badge status-retired">
                                     <i class="fas fa-ban"></i> Retired
+                                </span>
+                            }
+                            else if (status == "Stolen")
+                            {
+                                <span class="status-badge status-stolen">
+                                    <i class="fas fa-triangle-exclamation"></i> Stolen
                                 </span>
                             }
                             else
@@ -153,17 +159,21 @@
                                     {
                                         <i class="fas fa-undo-alt"></i>
                                     }
-                                    else if (eventType == "Repair")
+                                    else if (eventType == "In Repair")
                                     {
                                         <i class="fas fa-tools"></i>
                                     }
-                                    else if (eventType == "Upgrade")
+                                    else if (eventType == "In Stock")
                                     {
-                                        <i class="fas fa-arrow-up"></i>
+                                        <i class="fas fa-box-open"></i>
+                                    }
+                                    else if (eventType == "Retired")
+                                    {
+                                        <i class="fas fa-ban"></i>
                                     }
                                     else if (eventType == "Stolen")
                                     {
-                                        <i class="fas fa-theft"></i>
+                                        <i class="fas fa-triangle-exclamation"></i>
                                     }
                                     else
                                     {
@@ -190,22 +200,28 @@
                                                 <i class="fas fa-undo-alt"></i> Returned
                                             </span>
                                         }
-                                        else if (eventType == "Repair")
+                                        else if (eventType == "In Repair")
                                         {
                                             <span class="event-badge event-repair">
-                                                <i class="fas fa-tools"></i> Repair
+                                                <i class="fas fa-tools"></i> In Repair
                                             </span>
                                         }
-                                        else if (eventType == "Upgrade")
+                                        else if (eventType == "In Stock")
                                         {
-                                            <span class="event-badge event-upgrade">
-                                                <i class="fas fa-arrow-up"></i> Upgrade
+                                            <span class="event-badge event-instock">
+                                                <i class="fas fa-box-open"></i> In Stock
+                                            </span>
+                                        }
+                                        else if (eventType == "Retired")
+                                        {
+                                            <span class="event-badge event-retired">
+                                                <i class="fas fa-ban"></i> Retired
                                             </span>
                                         }
                                         else if (eventType == "Stolen")
                                         {
                                             <span class="event-badge event-stolen">
-                                                <i class="fas fa-theft"></i> Stolen
+                                                <i class="fas fa-triangle-exclamation"></i> Stolen
                                             </span>
                                         }
                                         else
@@ -450,6 +466,11 @@
         color: var(--gray-600);
     }
 
+    .status-stolen {
+        background: var(--danger-light);
+        color: var(--danger);
+    }
+
     /* Details Grid */
     .details-grid {
         display: grid;
@@ -638,6 +659,16 @@
     .event-stolen {
         background: #fee;
         color: var(--danger);
+    }
+
+    .event-instock {
+        background: var(--success-light);
+        color: var(--success);
+    }
+
+    .event-retired {
+        background: var(--gray-100);
+        color: var(--gray-500);
     }
 
     .event-other {

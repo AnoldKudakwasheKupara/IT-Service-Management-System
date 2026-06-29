@@ -1,7 +1,9 @@
-﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.Controllers
 {
@@ -17,13 +19,22 @@ namespace IT_Service_Management_System.Controllers
         // ➕ CREATE (GET)
         public IActionResult Create(int assetId)
         {
+            var asset = _context.Assets
+                .Include(a => a.User)
+                .FirstOrDefault(a => a.Id == assetId);
+
+            if (asset == null)
+                return NotFound();
+
             var vm = new AssetHistoryViewModel
             {
                 AssetId = assetId,
                 Users = _context.Users.ToList(),
-                Date = DateTime.Now
+                Date = DateTime.Now,
+                Condition = asset.Condition
             };
 
+            LoadContext(asset);
             return View(vm);
         }
 
@@ -32,21 +43,19 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Create(AssetHistoryViewModel vm)
         {
-            // An "Issued" event must specify which user receives the asset.
-            if (vm.EventType == "Issued" && vm.UserId == null)
+            var asset = _context.Assets
+                .Include(a => a.User)
+                .FirstOrDefault(a => a.Id == vm.AssetId);
+
+            if (asset == null)
+                return NotFound();
+
+            // Only an "Issued" event needs a target user.
+            if (AssetWorkflow.RequiresUser(vm.EventType) && vm.UserId == null)
                 ModelState.AddModelError(nameof(vm.UserId), "Please select the user the asset is issued to.");
 
             if (ModelState.IsValid)
             {
-                var asset = _context.Assets.Find(vm.AssetId);
-
-                if (asset == null)
-                {
-                    ModelState.AddModelError("", "The asset could not be found.");
-                    vm.Users = _context.Users.ToList();
-                    return View(vm);
-                }
-
                 _context.AssetHistories.Add(new AssetHistory
                 {
                     AssetId = vm.AssetId,
@@ -58,24 +67,11 @@ namespace IT_Service_Management_System.Controllers
                     Remarks = vm.Remarks
                 });
 
-                // 🔥 Keep the asset's status in sync with the event.
-                asset.Status = vm.EventType switch
-                {
-                    "Issued" => "Assigned",
-                    "Returned" => "Available",
-                    "Repair" => "Under Repair",
-                    "Stolen" => "Stolen",
-                    "Retired" => "Retired",
-                    _ => asset.Status
-                };
-
-                // 🔁 Keep the asset's current holder in sync with the event.
-                if (vm.EventType == "Issued")
-                    asset.UserId = vm.UserId;
-                else if (vm.EventType is "Returned" or "Retired" or "Stolen")
-                    asset.UserId = null;
-
+                // Keep the asset's status and current holder in sync with the event.
+                asset.Status = AssetWorkflow.StatusFor(vm.EventType);
+                asset.UserId = AssetWorkflow.ResolveHolder(vm.EventType, asset.UserId, vm.UserId);
                 asset.EventType = vm.EventType;
+                asset.ActionType = vm.EventType;
                 asset.Condition = vm.Condition;
 
                 _context.SaveChanges();
@@ -84,7 +80,17 @@ namespace IT_Service_Management_System.Controllers
             }
 
             vm.Users = _context.Users.ToList();
+            LoadContext(asset);
             return View(vm);
+        }
+
+        // Surface the asset being acted on to the view header.
+        private void LoadContext(Asset asset)
+        {
+            ViewBag.AssetName = asset.ItemName;
+            ViewBag.AssetSerial = asset.SerialNumber;
+            ViewBag.AssetStatus = asset.Status ?? AssetWorkflow.InStock;
+            ViewBag.CurrentHolder = asset.User != null ? $"{asset.User.FirstName} {asset.User.LastName}" : null;
         }
     }
 }

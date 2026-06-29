@@ -1,8 +1,8 @@
 ﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.ViewModels;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.Controllers
@@ -69,6 +69,10 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Create(AssetCreateViewModel vm)
         {
+            // Only an "Issued" asset needs a user; "In Stock" and others don't.
+            if (vm.Asset != null && AssetWorkflow.RequiresUser(vm.Asset.ActionType) && vm.Asset.UserId == null)
+                ModelState.AddModelError("Asset.UserId", "Please select the user the asset is issued to.");
+
             if (ModelState.IsValid && vm.Asset != null)
             {
                 // Prevent duplicate serial numbers.
@@ -79,9 +83,10 @@ namespace IT_Service_Management_System.Controllers
                     return View(vm);
                 }
 
-                // The initial action determines status; keep EventType in sync.
+                // The initial action determines status and current holder.
                 vm.Asset.EventType = vm.Asset.ActionType;
-                vm.Asset.Status = GetStatusFromEvent(vm.Asset.ActionType);
+                vm.Asset.Status = AssetWorkflow.StatusFor(vm.Asset.ActionType);
+                vm.Asset.UserId = AssetWorkflow.ResolveHolder(vm.Asset.ActionType, vm.Asset.UserId, vm.Asset.UserId);
 
                 _context.Assets.Add(vm.Asset);
                 _context.SaveChanges();
@@ -132,6 +137,9 @@ namespace IT_Service_Management_System.Controllers
             if (vm.Asset == null || id != vm.Asset.Id)
                 return NotFound();
 
+            if (AssetWorkflow.RequiresUser(vm.Asset.ActionType) && vm.Asset.UserId == null)
+                ModelState.AddModelError("Asset.UserId", "Please select the user the asset is issued to.");
+
             if (ModelState.IsValid)
             {
                 // Prevent duplicate serial numbers (excluding this asset).
@@ -148,15 +156,17 @@ namespace IT_Service_Management_System.Controllers
                     return NotFound();
 
                 asset.Date = vm.Asset.Date;
-                asset.UserId = vm.Asset.UserId;
                 asset.ItemName = vm.Asset.ItemName;
                 asset.SerialNumber = vm.Asset.SerialNumber;
-
-                asset.ActionType = vm.Asset.ActionType;
-
                 asset.Condition = vm.Asset.Condition;
                 asset.IssuedBy = vm.Asset.IssuedBy;
                 asset.Remarks = vm.Asset.Remarks;
+
+                // Keep action, status and holder consistent with the workflow.
+                asset.ActionType = vm.Asset.ActionType;
+                asset.EventType = vm.Asset.ActionType;
+                asset.Status = AssetWorkflow.StatusFor(vm.Asset.ActionType);
+                asset.UserId = AssetWorkflow.ResolveHolder(vm.Asset.ActionType, asset.UserId, vm.Asset.UserId);
 
                 _context.SaveChanges();
 
@@ -194,63 +204,6 @@ namespace IT_Service_Management_System.Controllers
             }
 
             return RedirectToAction(nameof(Index));
-        }
-
-        // 🔧 HELPER: Load Users Dropdown
-        private void LoadUsers()
-        {
-            ViewBag.Users = new SelectList(
-                _context.Users
-                    .Where(u => u.IsActive)
-                    .ToList(),
-                "Id",
-                "FullName"
-            );
-        }
-
-        private string GetStatusFromEvent(string eventType)
-        {
-            return eventType switch
-            {
-                "Issued" => "Assigned",
-                "Repair" => "Under Repair",
-                "Stolen" => "Stolen",
-                "Retired" => "Retired",
-                "Returned" => "Available",
-                _ => "Available"
-            };
-        }
-
-        private void LogAssetEvent(int assetId, string eventType, int? userId, string performedBy, string remarks, string condition)
-        {
-            var asset = _context.Assets.Find(assetId);
-
-            if (asset == null) return;
-
-            // 🔥 Update status automatically
-            asset.Status = eventType switch
-            {
-                "Issued" => "Assigned",
-                "Returned" => "Available",
-                "Repair" => "Under Repair",
-                "Stolen" => "Stolen",
-                "Retired" => "Retired",
-                _ => asset.Status
-            };
-
-            // 🔁 Create history automatically
-            var history = new AssetHistory
-            {
-                AssetId = assetId,
-                Date = DateTime.Now,
-                UserId = userId,
-                EventType = eventType,
-                Condition = condition,
-                PerformedBy = performedBy,
-                Remarks = remarks
-            };
-
-            _context.AssetHistories.Add(history);
         }
     }
 }
