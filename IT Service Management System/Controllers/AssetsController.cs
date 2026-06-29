@@ -71,10 +71,34 @@ namespace IT_Service_Management_System.Controllers
         {
             if (ModelState.IsValid && vm.Asset != null)
             {
-                vm.Asset.Status = GetStatusFromEvent(vm.Asset.EventType ?? "");
+                // Prevent duplicate serial numbers.
+                if (_context.Assets.Any(a => a.SerialNumber == vm.Asset.SerialNumber))
+                {
+                    ModelState.AddModelError("Asset.SerialNumber", "An asset with this serial number already exists.");
+                    vm.Users = _context.Users.ToList();
+                    return View(vm);
+                }
 
-                _context.Add(vm.Asset);
+                // The initial action determines status; keep EventType in sync.
+                vm.Asset.EventType = vm.Asset.ActionType;
+                vm.Asset.Status = GetStatusFromEvent(vm.Asset.ActionType);
+
+                _context.Assets.Add(vm.Asset);
                 _context.SaveChanges();
+
+                // Record the opening history entry so the asset has a timeline.
+                _context.AssetHistories.Add(new AssetHistory
+                {
+                    AssetId = vm.Asset.Id,
+                    Date = vm.Asset.Date,
+                    UserId = vm.Asset.UserId,
+                    EventType = vm.Asset.ActionType,
+                    Condition = vm.Asset.Condition,
+                    PerformedBy = vm.Asset.IssuedBy,
+                    Remarks = vm.Asset.Remarks
+                });
+                _context.SaveChanges();
+
                 return RedirectToAction(nameof(Index));
             }
 
@@ -110,6 +134,14 @@ namespace IT_Service_Management_System.Controllers
 
             if (ModelState.IsValid)
             {
+                // Prevent duplicate serial numbers (excluding this asset).
+                if (_context.Assets.Any(a => a.SerialNumber == vm.Asset.SerialNumber && a.Id != id))
+                {
+                    ModelState.AddModelError("Asset.SerialNumber", "Another asset with this serial number already exists.");
+                    vm.Users = _context.Users.ToList();
+                    return View(vm);
+                }
+
                 var asset = _context.Assets.Find(id);
 
                 if (asset == null)

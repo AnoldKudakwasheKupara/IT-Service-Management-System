@@ -153,6 +153,82 @@
                 </div>
             </div>
 
+            @{
+                var assignedAssets = ViewBag.AssignedAssets as List<IT_Service_Management_System.Models.Asset> ?? new List<IT_Service_Management_System.Models.Asset>();
+                var assetHistory = ViewBag.AssetHistory as List<IT_Service_Management_System.Models.AssetHistory> ?? new List<IT_Service_Management_System.Models.AssetHistory>();
+            }
+
+            <!-- Assigned Assets -->
+            <div class="assets-section">
+                <h3 class="section-title">
+                    <i class="fas fa-laptop"></i>
+                    Assigned Assets
+                    <span class="section-count">@assignedAssets.Count</span>
+                </h3>
+
+                @if (assignedAssets.Any())
+                {
+                    <div class="asset-grid">
+                        @foreach (var asset in assignedAssets)
+                        {
+                            <a asp-controller="Assets" asp-action="Details" asp-route-id="@asset.Id" class="asset-tile">
+                                <div class="asset-tile-icon"><i class="fas fa-laptop"></i></div>
+                                <div class="asset-tile-body">
+                                    <span class="asset-tile-name">@asset.ItemName</span>
+                                    <span class="asset-tile-serial"><i class="fas fa-barcode"></i> @asset.SerialNumber</span>
+                                    <span class="asset-status-chip">@(asset.Status ?? "Unknown")</span>
+                                </div>
+                                <i class="fas fa-chevron-right asset-tile-arrow"></i>
+                            </a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-mini"><i class="fas fa-box-open"></i> No assets currently assigned to this user.</div>
+                }
+            </div>
+
+            <!-- Asset History -->
+            <div class="assets-section">
+                <h3 class="section-title">
+                    <i class="fas fa-clock-rotate-left"></i>
+                    Asset History
+                    <span class="section-count">@assetHistory.Count</span>
+                </h3>
+
+                @if (assetHistory.Any())
+                {
+                    <div class="asset-timeline">
+                        @foreach (var h in assetHistory)
+                        {
+                            <div class="timeline-row">
+                                <div class="timeline-dot"><i class="fas fa-circle"></i></div>
+                                <div class="timeline-body">
+                                    <div class="timeline-top">
+                                        <span class="event-badge">@h.EventType</span>
+                                        <span class="timeline-asset">@(h.Asset?.ItemName ?? "Asset")</span>
+                                        <span class="timeline-date"><i class="far fa-calendar"></i> @h.Date.ToString("MMM dd, yyyy")</span>
+                                    </div>
+                                    <div class="timeline-meta">
+                                        <span><i class="fas fa-clipboard-check"></i> @h.Condition</span>
+                                        <span><i class="fas fa-user-pen"></i> @h.PerformedBy</span>
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(h.Remarks))
+                                    {
+                                        <p class="timeline-remarks">@h.Remarks</p>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-mini"><i class="fas fa-clock-rotate-left"></i> No asset history for this user yet.</div>
+                }
+            </div>
+
             <!-- Action Buttons -->
             <div class="action-buttons-container">
                 <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-edit">
@@ -675,6 +751,196 @@
             transform: translateY(-1px);
             box-shadow: var(--shadow-sm);
         }
+
+    /* ===== Assigned Assets & Asset History ===== */
+    .assets-section {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .section-count {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 30px;
+        margin-left: 0.5rem;
+    }
+
+    .asset-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1rem;
+    }
+
+    .asset-tile {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 1rem;
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        border-radius: 0.85rem;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+
+        .asset-tile:hover {
+            background: white;
+            border-color: var(--primary);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+    .asset-tile-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 0.65rem;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .asset-tile-body {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+        flex: 1;
+    }
+
+    .asset-tile-name {
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 0.9rem;
+    }
+
+    .asset-tile-serial {
+        font-size: 0.72rem;
+        color: var(--gray-500);
+    }
+
+    .asset-status-chip {
+        align-self: flex-start;
+        margin-top: 2px;
+        font-size: 0.68rem;
+        font-weight: 600;
+        padding: 2px 9px;
+        border-radius: 30px;
+        background: var(--primary-light);
+        color: var(--primary-dark);
+    }
+
+    .asset-tile-arrow {
+        color: var(--gray-400);
+        font-size: 0.8rem;
+    }
+
+    .asset-timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .timeline-row {
+        display: flex;
+        gap: 1rem;
+        position: relative;
+        padding-bottom: 1.25rem;
+    }
+
+        .timeline-row:not(:last-child) .timeline-dot::after {
+            content: "";
+            position: absolute;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: calc(100% - 10px);
+            background: var(--gray-200);
+        }
+
+    .timeline-dot {
+        position: relative;
+        width: 14px;
+        display: flex;
+        justify-content: center;
+        flex-shrink: 0;
+        padding-top: 4px;
+    }
+
+        .timeline-dot i {
+            font-size: 0.6rem;
+            color: var(--primary);
+        }
+
+    .timeline-body {
+        flex: 1;
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        border-radius: 0.75rem;
+        padding: 0.85rem 1rem;
+    }
+
+    .timeline-top {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+    }
+
+    .event-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 30px;
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .timeline-asset {
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 0.88rem;
+    }
+
+    .timeline-date {
+        margin-left: auto;
+        font-size: 0.74rem;
+        color: var(--gray-500);
+    }
+
+    .timeline-meta {
+        display: flex;
+        gap: 1.25rem;
+        margin-top: 0.5rem;
+        font-size: 0.76rem;
+        color: var(--gray-600);
+    }
+
+    .timeline-remarks {
+        margin: 0.5rem 0 0 0;
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        font-style: italic;
+    }
+
+    .empty-mini {
+        padding: 1.5rem;
+        text-align: center;
+        color: var(--gray-400);
+        font-size: 0.85rem;
+        background: var(--gray-50);
+        border: 1px dashed var(--gray-200);
+        border-radius: 0.75rem;
+    }
 
 </style>
 

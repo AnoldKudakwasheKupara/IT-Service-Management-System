@@ -65,6 +65,19 @@ namespace IT_Service_Management_System.Controllers
             if (user == null)
                 return NotFound();
 
+            // Assets currently assigned to this user.
+            ViewBag.AssignedAssets = await _context.Assets
+                .Where(a => a.UserId == id)
+                .OrderByDescending(a => a.Date)
+                .ToListAsync();
+
+            // Asset-history events involving this user (issued to / returned by, etc.).
+            ViewBag.AssetHistory = await _context.AssetHistories
+                .Include(h => h.Asset)
+                .Where(h => h.UserId == id)
+                .OrderByDescending(h => h.Date)
+                .ToListAsync();
+
             return View(user);
         }
 

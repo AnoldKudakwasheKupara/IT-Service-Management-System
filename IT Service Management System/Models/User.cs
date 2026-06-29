@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using static IT_Service_Management_System.Models.Ticket;
 
 namespace IT_Service_Management_System.Models
@@ -50,5 +51,12 @@ namespace IT_Service_Management_System.Models
 
         [ValidateNever]
         public ICollection<TicketMessage> Messages { get; set; } = new List<TicketMessage>();
+
+        // Assets currently assigned to this user (inverse of Asset.User).
+        [ValidateNever]
+        public ICollection<Asset> Assets { get; set; } = new List<Asset>();
+
+        [NotMapped]
+        public string FullName => $"{FirstName} {LastName}";
     }
 }

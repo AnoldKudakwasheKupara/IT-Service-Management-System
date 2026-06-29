@@ -32,9 +32,22 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Create(AssetHistoryViewModel vm)
         {
+            // An "Issued" event must specify which user receives the asset.
+            if (vm.EventType == "Issued" && vm.UserId == null)
+                ModelState.AddModelError(nameof(vm.UserId), "Please select the user the asset is issued to.");
+
             if (ModelState.IsValid)
             {
-                var history = new AssetHistory
+                var asset = _context.Assets.Find(vm.AssetId);
+
+                if (asset == null)
+                {
+                    ModelState.AddModelError("", "The asset could not be found.");
+                    vm.Users = _context.Users.ToList();
+                    return View(vm);
+                }
+
+                _context.AssetHistories.Add(new AssetHistory
                 {
                     AssetId = vm.AssetId,
                     Date = vm.Date,
@@ -43,26 +56,27 @@ namespace IT_Service_Management_System.Controllers
                     Condition = vm.Condition,
                     PerformedBy = vm.PerformedBy,
                     Remarks = vm.Remarks
+                });
+
+                // 🔥 Keep the asset's status in sync with the event.
+                asset.Status = vm.EventType switch
+                {
+                    "Issued" => "Assigned",
+                    "Returned" => "Available",
+                    "Repair" => "Under Repair",
+                    "Stolen" => "Stolen",
+                    "Retired" => "Retired",
+                    _ => asset.Status
                 };
 
-                _context.AssetHistories.Add(history);
+                // 🔁 Keep the asset's current holder in sync with the event.
+                if (vm.EventType == "Issued")
+                    asset.UserId = vm.UserId;
+                else if (vm.EventType is "Returned" or "Retired" or "Stolen")
+                    asset.UserId = null;
 
-                // 🔥 Update Asset Status Automatically
-                var asset = _context.Assets.Find(vm.AssetId);
-
-                if (asset != null)
-                {
-                    if (vm.EventType == "Issued")
-                        asset.Status = "Assigned";
-                    else if (vm.EventType == "Repair")
-                        asset.Status = "Under Repair";
-                    else if (vm.EventType == "Stolen")
-                        asset.Status = "Stolen";
-                    else if (vm.EventType == "Retired")
-                        asset.Status = "Retired";
-                    else if (vm.EventType == "Returned")
-                        asset.Status = "Available";
-                }
+                asset.EventType = vm.EventType;
+                asset.Condition = vm.Condition;
 
                 _context.SaveChanges();
 
