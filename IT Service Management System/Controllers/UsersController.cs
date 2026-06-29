@@ -339,5 +339,53 @@ namespace IT_Service_Management_System.Controllers
 
             return RedirectToAction("Index");
         }
+
+        // 🔹 ADMIN-TRIGGERED PASSWORD RESET (emails a set-password link)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(int id)
+        {
+            var access = CheckAccess();
+            if (access != null) return access;
+
+            var user = await _context.Users.FindAsync(id);
+
+            if (user == null) return NotFound();
+
+            user.ResetToken = Guid.NewGuid().ToString();
+            user.TokenExpiry = DateTime.Now.AddHours(24);
+
+            await _context.SaveChangesAsync();
+
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Reset Password", "User", user.Id, $"Password reset link sent to {user.Email}");
+
+            var link = Url.Action(
+                "SetPassword",
+                "Account",
+                new { token = user.ResetToken },
+                Request.Scheme);
+
+            var body = $@"
+        <p>Good Day {user.FirstName},</p>
+
+        <p>An administrator has requested a password reset for your account.</p>
+
+        <p>Click the link below to set a new password:</p>
+
+        <p>
+            <a href='{link}' style='color:blue; font-weight:bold;'>Set Your Password</a>
+        </p>
+
+        <p>This link will expire in 24 hours.</p>
+
+        <p>If you did not expect this email, please contact IT Support.</p>";
+
+            await _emailService.SendEmailAsync(user.Email, "Password Reset", body);
+
+            TempData["Success"] = $"A password reset link has been sent to {user.Email}.";
+
+            return RedirectToAction("Details", new { id });
+        }
     }
 }
