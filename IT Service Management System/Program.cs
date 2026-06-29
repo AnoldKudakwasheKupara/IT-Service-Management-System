@@ -22,6 +22,8 @@ builder.Services.AddAntiforgery(options => options.HeaderName = "RequestVerifica
 
 builder.Services.AddSignalR();
 
+builder.Services.AddMemoryCache();
+
 builder.Services.AddScoped<EmailService>();
 
 builder.Services.AddSession(options =>
