@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.Controllers
 {
+    [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin")]
     public class ActivityCategoriesController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -20,7 +21,8 @@ namespace IT_Service_Management_System.Controllers
             if (HttpContext.Session.GetInt32("UserId") == null)
                 return RedirectToAction("Login", "Account");
 
-            if (HttpContext.Session.GetString("UserRole") != "Admin")
+            var role = HttpContext.Session.GetString("UserRole");
+            if (role != "Admin" && role != "SystemsAdmin")
                 return Forbid();
 
             return null;

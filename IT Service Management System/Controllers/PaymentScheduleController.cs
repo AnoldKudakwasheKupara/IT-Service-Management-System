@@ -3,6 +3,7 @@ using IT_Service_Management_System.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+[IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin")]
 public class PaymentScheduleController : Controller
 {
     private readonly ApplicationDbContext _context;

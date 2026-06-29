@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.Controllers
 {
+    [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin", "HR")]
     public class TalentIdentificationController : Controller
     {
         private readonly ApplicationDbContext _context;

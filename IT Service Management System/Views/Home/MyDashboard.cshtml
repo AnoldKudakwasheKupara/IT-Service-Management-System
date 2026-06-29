@@ -1,0 +1,63 @@
+@{
+    ViewData["Title"] = "My Dashboard - Axis IT Operations";
+    var name = Context.Session.GetString("UserName") ?? "there";
+    var myTotal = ViewBag.MyTotalTickets ?? 0;
+    var myOpen = ViewBag.MyOpenTickets ?? 0;
+    var myResolved = ViewBag.MyResolvedTickets ?? 0;
+    var actHours = ViewBag.MyActivityHours ?? 0;
+    var actCount = ViewBag.MyActivityCount ?? 0;
+    var clearanceStatus = ViewBag.MyClearanceStatus as string;
+    var recent = ViewBag.MyRecentTickets as List<IT_Service_Management_System.Models.Ticket> ?? new List<IT_Service_Management_System.Models.Ticket>();
+}
+
+@await Html.PartialAsync("~/Views/Reports/_ReportStyles.cshtml")
+
+<div class="report-container">
+    <div class="report-header">
+        <h1 class="report-title"><i class="fas fa-gauge-high"></i> Welcome back, @name</h1>
+        <p class="report-subtitle">Your personal workspace &middot; @DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="report-actions" style="margin-bottom:1.25rem;">
+        <a class="report-btn primary" asp-controller="Tickets" asp-action="Create"><i class="fas fa-plus"></i> Create Ticket</a>
+        <a class="report-btn" asp-controller="Activity" asp-action="Create"><i class="fas fa-clock"></i> Log Activity</a>
+        <a class="report-btn" asp-controller="ExitClearance" asp-action="Mine"><i class="fas fa-file-signature"></i> My Exit Clearance</a>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon amber"><i class="fas fa-folder-open"></i></div><div class="kpi-body"><div class="kpi-value">@myOpen</div><div class="kpi-label">My Open Tickets</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon"><i class="fas fa-ticket-alt"></i></div><div class="kpi-body"><div class="kpi-value">@myTotal</div><div class="kpi-label">My Total Tickets</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon green"><i class="fas fa-check-circle"></i></div><div class="kpi-body"><div class="kpi-value">@myResolved</div><div class="kpi-label">Resolved / Closed</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon green"><i class="fas fa-clock"></i></div><div class="kpi-body"><div class="kpi-value">@actHours h</div><div class="kpi-label">My Activity Logged</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon violet"><i class="fas fa-list-check"></i></div><div class="kpi-body"><div class="kpi-value">@actCount</div><div class="kpi-label">My Activities</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon slate"><i class="fas fa-file-signature"></i></div><div class="kpi-body"><div class="kpi-value" style="font-size:1.05rem;">@(string.IsNullOrEmpty(clearanceStatus) ? "None" : clearanceStatus)</div><div class="kpi-label">My Exit Clearance</div></div></div>
+    </div>
+
+    <div class="report-card">
+        <div class="report-card-header"><span><i class="fas fa-clock-rotate-left"></i> My Recent Tickets</span><a class="report-btn" asp-controller="Tickets" asp-action="Index"><i class="fas fa-list"></i> View all</a></div>
+        <div class="report-card-body" style="padding:0;">
+            @if (recent.Any())
+            {
+                <table class="report-table">
+                    <thead><tr><th>Title</th><th>Status</th><th>Priority</th><th>Created</th></tr></thead>
+                    <tbody>
+                        @foreach (var t in recent)
+                        {
+                            <tr>
+                                <td>@t.Title</td>
+                                <td><span class="pill slate">@t.Status</span></td>
+                                <td><span class="pill @(t.Priority.ToString() == "High" ? "red" : t.Priority.ToString() == "Medium" ? "amber" : "green")">@t.Priority</span></td>
+                                <td>@t.CreatedAt.ToString("MMM dd, yyyy 'at' h:mm tt")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-mini">You haven't created any tickets yet. <a asp-controller="Tickets" asp-action="Create">Create your first ticket</a>.</div>
+            }
+        </div>
+    </div>
+</div>

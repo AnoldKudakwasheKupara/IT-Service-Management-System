@@ -8,6 +8,7 @@ using static IT_Service_Management_System.Models.Ticket;
 
 namespace IT_Service_Management_System.Controllers
 {
+    [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin", "HR")]
     public class ExitClearanceController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -15,6 +16,24 @@ namespace IT_Service_Management_System.Controllers
         public ExitClearanceController(ApplicationDbContext context)
         {
             _context = context;
+        }
+
+        // 👤 The current user's own exit clearance — visible to every role.
+        [HttpGet]
+        [IT_Service_Management_System.Filters.AllowAnyRole]
+        public IActionResult Mine()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return RedirectToAction("Login", "Account");
+
+            var clearances = _context.ExitClearances
+                .Include(c => c.Employee)
+                .Include(c => c.Workflows)
+                .Where(c => c.EmployeeId == userId)
+                .OrderByDescending(c => c.CreatedDate)
+                .ToList();
+
+            return View(clearances);
         }
 
         [HttpGet]
@@ -260,6 +279,7 @@ namespace IT_Service_Management_System.Controllers
         }
 
         [HttpGet]
+        [IT_Service_Management_System.Filters.AllowAnyRole]
         public IActionResult Complete(string id)
         {
             var clearance = _context.ExitClearances
@@ -287,6 +307,7 @@ namespace IT_Service_Management_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [IT_Service_Management_System.Filters.AllowAnyRole]
         public IActionResult Complete(EmployeeClearanceVM vm)
         {
             if (!ModelState.IsValid)

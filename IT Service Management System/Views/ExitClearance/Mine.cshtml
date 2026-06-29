@@ -1,0 +1,60 @@
+@model List<IT_Service_Management_System.Models.ExitClearance>
+@{
+    ViewData["Title"] = "My Exit Clearance - Axis IT Operations";
+}
+
+@await Html.PartialAsync("~/Views/Reports/_ReportStyles.cshtml")
+
+<div class="report-container">
+    <div class="report-header">
+        <h1 class="report-title"><i class="fas fa-file-signature"></i> My Exit Clearance</h1>
+        <p class="report-subtitle">Your personal exit clearance status</p>
+    </div>
+
+    @if (Model.Any())
+    {
+        foreach (var c in Model)
+        {
+            <div class="report-card">
+                <div class="report-card-header">
+                    <span><i class="fas fa-id-badge"></i> Clearance #@c.Id</span>
+                    <span class="pill @(c.Status.ToString() == "Completed" ? "green" : c.Status.ToString() == "Rejected" ? "red" : "amber")">@c.Status</span>
+                </div>
+                <div class="report-card-body">
+                    <div class="kpi-grid" style="margin-bottom:0;">
+                        <div class="kpi-card"><div class="kpi-icon"><i class="fas fa-stairs"></i></div><div class="kpi-body"><div class="kpi-value" style="font-size:1.05rem;">@c.CurrentStage</div><div class="kpi-label">Current Stage</div></div></div>
+                        <div class="kpi-card"><div class="kpi-icon slate"><i class="fas fa-calendar"></i></div><div class="kpi-body"><div class="kpi-value" style="font-size:1.05rem;">@c.CreatedDate.ToString("MMM dd, yyyy")</div><div class="kpi-label">Started</div></div></div>
+                        <div class="kpi-card"><div class="kpi-icon @(c.IsSent ? "green" : "amber")"><i class="fas fa-paper-plane"></i></div><div class="kpi-body"><div class="kpi-value" style="font-size:1.05rem;">@(c.IsSent ? "Sent" : "Not sent")</div><div class="kpi-label">To Employee</div></div></div>
+                        <div class="kpi-card"><div class="kpi-icon @(c.EmployeeSubmittedDate != null ? "green" : "slate")"><i class="fas fa-check"></i></div><div class="kpi-body"><div class="kpi-value" style="font-size:1.05rem;">@(c.EmployeeSubmittedDate != null ? c.EmployeeSubmittedDate.Value.ToString("MMM dd") : "Pending")</div><div class="kpi-label">Your Submission</div></div></div>
+                    </div>
+
+                    @if (c.Workflows != null && c.Workflows.Any())
+                    {
+                        <h3 style="font-size:0.95rem;font-weight:700;color:var(--gray-800);margin:1.25rem 0 0.75rem;">Approval Progress</h3>
+                        <div class="bars">
+                            @foreach (var w in c.Workflows.OrderBy(w => w.Stage))
+                            {
+                                <div class="bar-row" style="grid-template-columns:140px 1fr 90px;">
+                                    <div class="bar-label">@w.Stage</div>
+                                    <div class="bar-track"><div class="bar-fill @(w.Completed ? "green" : "")" style="width:@(w.Completed ? 100 : 8)%"></div></div>
+                                    <div class="bar-value"><span class="pill @(w.Completed ? "green" : "amber")">@(w.Completed ? "Done" : "Pending")</span></div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="report-card">
+            <div class="report-card-body">
+                <div class="empty-mini" style="padding:3rem 1rem;">
+                    <i class="fas fa-circle-check" style="font-size:2.5rem;color:var(--success);display:block;margin-bottom:0.75rem;"></i>
+                    You have no active exit clearance. This section will show your clearance status if you ever begin the exit process.
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -114,6 +114,19 @@ namespace IT_Service_Management_System.ViewModels.Reports
         public List<SSLCertificate> Attention { get; set; } = new(); // expired or expiring soon
     }
 
+    public class HrReportVM
+    {
+        public int TotalClearances { get; set; }
+        public int ClearancesInProgress { get; set; }
+        public int ClearancesCompleted { get; set; }
+        public int ExitInterviews { get; set; }
+        public int EngagementInterviews { get; set; }
+        public int TalentRecords { get; set; }
+        public List<NameCount> ClearancesByStatus { get; set; } = new();
+        public List<NameCount> ClearancesByStage { get; set; } = new();
+        public List<ExitClearance> RecentClearances { get; set; } = new();
+    }
+
     public class MaintenanceReportVM
     {
         public int Total { get; set; }

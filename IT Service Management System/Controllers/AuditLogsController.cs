@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.Controllers
 {
+    [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin")]
     public class AuditLogsController : Controller
     {
         private readonly ApplicationDbContext _context;

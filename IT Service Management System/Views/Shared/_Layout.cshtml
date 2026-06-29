@@ -580,6 +580,12 @@
                     <span>Axis IT</span>
                 </div>
 
+                @{
+                    var navRole = Context.Session.GetString("UserRole");
+                    var navFull = navRole == "Admin" || navRole == "SystemsAdmin";
+                    var navHr = navRole == "HR";
+                }
+
                 <div class="nav-group">Core</div>
                 <a class="nav-item @(currentController == "Home" ? "active" : "")"
                    asp-controller="Home" asp-action="Index">
@@ -592,99 +598,112 @@
                     <span class="nav-badge">@(ViewBag.OpenTicketCount ?? 0)</span>
                 </a>
 
-                <a class="nav-item @(currentController == "Reports" ? "active" : "")"
-                   asp-controller="Reports" asp-action="Index">
-                    <i class="fas fa-chart-pie"></i> Reports
-                </a>
-
-                <div class="nav-group">Administration</div>
-                @if (Context.Session.GetString("UserRole") == "Admin")
-                {
-                    <a class="nav-item @(currentController == "Users" ? "active" : "")"
-                       asp-controller="Users" asp-action="Index">
-                        <i class="fas fa-users"></i> Users
-                    </a>
-                }
-
-                <a class="nav-item @(currentController == "Departments" ? "active" : "")"
-                   asp-controller="Departments" asp-action="Index">
-                    <i class="fas fa-building"></i> Departments
-                </a>
-
-                <a class="nav-item @(currentController == "AuditLogs" ? "active" : "")"
-                   asp-controller="AuditLogs" asp-action="Index">
-                    <i class="fas fa-history"></i> Audit Logs
-                </a>
-
-                <div class="nav-group">Operations</div>
                 <a class="nav-item @(currentController == "Activity" ? "active" : "")"
                    asp-controller="Activity" asp-action="Index">
                     <i class="fas fa-tasks"></i> Activity Tracker
                 </a>
 
-                <a class="nav-item @(currentController == "ActivityCategories" ? "active" : "")"
-                   asp-controller="ActivityCategories" asp-action="Index">
-                    <i class="fas fa-tags"></i> Categories
+                <a class="nav-item @(currentController == "ExitClearance" && currentAction == "Mine" ? "active" : "")"
+                   asp-controller="ExitClearance" asp-action="Mine">
+                    <i class="fas fa-file-signature"></i> My Exit Clearance
                 </a>
 
-                <a class="nav-item @(currentController == "PaymentSchedule" ? "active" : "")"
-                   asp-controller="PaymentSchedule" asp-action="Index">
-                    <i class="fas fa-credit-card"></i> Payments
-                </a>
+                @if (navFull)
+                {
+                    <div class="nav-group">Reports</div>
+                    <a class="nav-item @(currentController == "Reports" && currentAction != "Hr" ? "active" : "")"
+                       asp-controller="Reports" asp-action="Index">
+                        <i class="fas fa-chart-pie"></i> Reports
+                    </a>
+                }
 
-                <a class="nav-item @(currentController == "MaintenanceRecords" ? "active" : "")"
-                   asp-controller="MaintenanceRecords"
-                   asp-action="Index">
-                    <i class="fas fa-tools"></i> Maintenance
-                </a>
+                @if (navFull)
+                {
+                    <div class="nav-group">Administration</div>
+                    <a class="nav-item @(currentController == "Users" ? "active" : "")"
+                       asp-controller="Users" asp-action="Index">
+                        <i class="fas fa-users"></i> Users
+                    </a>
+                    <a class="nav-item @(currentController == "Departments" ? "active" : "")"
+                       asp-controller="Departments" asp-action="Index">
+                        <i class="fas fa-building"></i> Departments
+                    </a>
+                    <a class="nav-item @(currentController == "AuditLogs" ? "active" : "")"
+                       asp-controller="AuditLogs" asp-action="Index">
+                        <i class="fas fa-history"></i> Audit Logs
+                    </a>
+                }
 
-                <a class="nav-item @(currentController == "UserAccessRights" ? "active" : "")"
-                   asp-controller="UserAccessRights"
-                   asp-action="Index">
-                    <i class="fas fa-user-shield"></i> Access Rights
-                </a>
+                @if (navFull)
+                {
+                    <div class="nav-group">Operations</div>
+                    <a class="nav-item @(currentController == "ActivityCategories" ? "active" : "")"
+                       asp-controller="ActivityCategories" asp-action="Index">
+                        <i class="fas fa-tags"></i> Categories
+                    </a>
+                    <a class="nav-item @(currentController == "PaymentSchedule" ? "active" : "")"
+                       asp-controller="PaymentSchedule" asp-action="Index">
+                        <i class="fas fa-credit-card"></i> Payments
+                    </a>
+                    <a class="nav-item @(currentController == "MaintenanceRecords" ? "active" : "")"
+                       asp-controller="MaintenanceRecords" asp-action="Index">
+                        <i class="fas fa-tools"></i> Maintenance
+                    </a>
+                    <a class="nav-item @(currentController == "UserAccessRights" ? "active" : "")"
+                       asp-controller="UserAccessRights" asp-action="Index">
+                        <i class="fas fa-user-shield"></i> Access Rights
+                    </a>
+                }
 
 
 
 
-                <div class="nav-group">Assets & Security</div>
-                <a class="nav-item @(currentController == "Assets" ? "active" : "")"
-                   asp-controller="Assets" asp-action="Index">
-                    <i class="fas fa-laptop-code"></i> Assets
-                </a>
+                @if (navFull)
+                {
+                    <div class="nav-group">Assets & Security</div>
+                    <a class="nav-item @(currentController == "Assets" ? "active" : "")"
+                       asp-controller="Assets" asp-action="Index">
+                        <i class="fas fa-laptop-code"></i> Assets
+                    </a>
+                    <a class="nav-item @(currentController == "SSLCertificates" ? "active" : "")"
+                       asp-controller="SSLCertificates" asp-action="Index">
+                        <i class="fas fa-shield-alt"></i> SSL Tracker
+                        <span class="nav-badge">@(ViewBag.ExpiringCertCount ?? 0)</span>
+                    </a>
+                }
 
-                <a class="nav-item @(currentController == "SSLCertificates" ? "active" : "")"
-                   asp-controller="SSLCertificates" asp-action="Index">
-                    <i class="fas fa-shield-alt"></i> SSL Tracker
-                    <span class="nav-badge">@(ViewBag.ExpiringCertCount ?? 0)</span>
-                </a>
-
-                <div class="nav-group">HR Management</div>
-
-                <a class="nav-item @(currentController == "ExitClearance" ? "active" : "")"
-                   asp-controller="ExitClearance" asp-action="Index">
-                    <i class="fas fa-file-signature"></i>
-                    Exit Clearance
-                    <span class="nav-badge">@(ViewBag.PendingClearances ?? 0)</span>
-                </a>
-
-                <a class="nav-item @(currentController == "ExitInterview" ? "active" : "")"
-                   asp-controller="ExitInterview" asp-action="Index">
-                    <i class="fas fa-clipboard-list"></i>
-                    Exit Interview
-                </a>
-
-                <a class="nav-item @(currentController == "EngagementStayInterview" ? "active" : "")"
-                   asp-controller="EngagementStayInterview" asp-action="Index">
-                    <i class="fas fa-user-friends"></i>
-                    Engagement Stay Interview
-                </a>
-
-                <a class="nav-item @(currentController == "TalentIdentification" ? "active" : "")"
-                   asp-controller="TalentIdentification" asp-action="Index">
-                    <i class="fas fa-user-tie"></i>
-                    Talent Identification
-                </a>
+                @if (navFull || navHr)
+                {
+                    <div class="nav-group">HR Management</div>
+                    @if (navHr)
+                    {
+                        <a class="nav-item @(currentController == "Reports" && currentAction == "Hr" ? "active" : "")"
+                           asp-controller="Reports" asp-action="Hr">
+                            <i class="fas fa-chart-pie"></i> HR Report
+                        </a>
+                    }
+                    <a class="nav-item @(currentController == "ExitClearance" && currentAction != "Mine" ? "active" : "")"
+                       asp-controller="ExitClearance" asp-action="Index">
+                        <i class="fas fa-file-signature"></i>
+                        Exit Clearance
+                        <span class="nav-badge">@(ViewBag.PendingClearances ?? 0)</span>
+                    </a>
+                    <a class="nav-item @(currentController == "ExitInterview" ? "active" : "")"
+                       asp-controller="ExitInterview" asp-action="Index">
+                        <i class="fas fa-clipboard-list"></i>
+                        Exit Interview
+                    </a>
+                    <a class="nav-item @(currentController == "EngagementStayInterview" ? "active" : "")"
+                       asp-controller="EngagementStayInterview" asp-action="Index">
+                        <i class="fas fa-user-friends"></i>
+                        Engagement Stay Interview
+                    </a>
+                    <a class="nav-item @(currentController == "TalentIdentification" ? "active" : "")"
+                       asp-controller="TalentIdentification" asp-action="Index">
+                        <i class="fas fa-user-tie"></i>
+                        Talent Identification
+                    </a>
+                }
             </aside>
 
             <!-- MAIN AREA -->

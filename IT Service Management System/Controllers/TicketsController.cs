@@ -29,7 +29,7 @@ namespace IT_Service_Management_System.Controllers
 
             List<Ticket> tickets;
 
-            if (role == "Admin")
+            if (role == "Admin" || role == "SystemsAdmin")
             {
                 tickets = await _context.Tickets
                     .Include(t => t.CreatedBy)
@@ -127,7 +127,7 @@ namespace IT_Service_Management_System.Controllers
             if (ticket == null)
                 return NotFound();
 
-            if (role != "Admin" && ticket.CreatedById != userId)
+            if (role != "Admin" && role != "SystemsAdmin" && ticket.CreatedById != userId)
                 return Forbid();
 
             return View(ticket);
@@ -135,7 +135,7 @@ namespace IT_Service_Management_System.Controllers
 
         public async Task<IActionResult> Edit(int id)
         {
-            if (HttpContext.Session.GetString("UserRole") != "Admin")
+            if (HttpContext.Session.GetString("UserRole") != "Admin" && HttpContext.Session.GetString("UserRole") != "SystemsAdmin")
                 return Forbid();
 
             var ticket = await _context.Tickets
@@ -154,7 +154,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(Ticket updatedTicket)
         {
-            if (HttpContext.Session.GetString("UserRole") != "Admin")
+            if (HttpContext.Session.GetString("UserRole") != "Admin" && HttpContext.Session.GetString("UserRole") != "SystemsAdmin")
                 return Forbid();
 
             if (!ModelState.IsValid) return View(updatedTicket);
@@ -178,7 +178,7 @@ namespace IT_Service_Management_System.Controllers
         // 🔹 DELETE (ADMIN ONLY)
         public async Task<IActionResult> Delete(int id)
         {
-            if (HttpContext.Session.GetString("UserRole") != "Admin")
+            if (HttpContext.Session.GetString("UserRole") != "Admin" && HttpContext.Session.GetString("UserRole") != "SystemsAdmin")
                 return Forbid();
 
             var ticket = await _context.Tickets
@@ -194,7 +194,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (HttpContext.Session.GetString("UserRole") != "Admin")
+            if (HttpContext.Session.GetString("UserRole") != "Admin" && HttpContext.Session.GetString("UserRole") != "SystemsAdmin")
                 return Forbid();
 
             var ticket = await _context.Tickets
@@ -274,7 +274,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpGet]
         public async Task<IActionResult> Close(int id)
         {
-            if (HttpContext.Session.GetString("UserRole") != "Admin")
+            if (HttpContext.Session.GetString("UserRole") != "Admin" && HttpContext.Session.GetString("UserRole") != "SystemsAdmin")
                 return Forbid();
 
             var ticket = await _context.Tickets
@@ -292,7 +292,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost]
         public async Task<IActionResult> Close(int id, string closingNotes)
         {
-            if (HttpContext.Session.GetString("UserRole") != "Admin")
+            if (HttpContext.Session.GetString("UserRole") != "Admin" && HttpContext.Session.GetString("UserRole") != "SystemsAdmin")
                 return Forbid();
 
             var ticket = await _context.Tickets.FindAsync(id);

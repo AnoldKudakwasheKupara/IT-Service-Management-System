@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.Controllers
 {
+    [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin")]
     public class ReportsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -13,6 +14,30 @@ namespace IT_Service_Management_System.Controllers
         public ReportsController(ApplicationDbContext context)
         {
             _context = context;
+        }
+
+        // 🧑‍💼 HR ANALYTICS — accessible to HR as well as full-access roles.
+        [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin", "HR")]
+        public IActionResult Hr()
+        {
+            var clearances = _context.ExitClearances.AsNoTracking().Include(c => c.Employee).ToList();
+
+            var vm = new HrReportVM
+            {
+                TotalClearances = clearances.Count,
+                ClearancesInProgress = clearances.Count(c => c.Status == Models.ClearanceStatus.InProgress),
+                ClearancesCompleted = clearances.Count(c => c.Status == Models.ClearanceStatus.Completed),
+                ExitInterviews = _context.ExitInterviews.Count(),
+                EngagementInterviews = _context.EngagementStayInterviews.Count(),
+                TalentRecords = _context.TalentIdentifications.Count(),
+                ClearancesByStatus = clearances.GroupBy(c => c.Status.ToString())
+                    .Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
+                ClearancesByStage = clearances.GroupBy(c => c.CurrentStage.ToString())
+                    .Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
+                RecentClearances = clearances.OrderByDescending(c => c.CreatedDate).Take(10).ToList()
+            };
+
+            return View(vm);
         }
 
         private static bool IsStock(string? status) =>

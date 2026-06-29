@@ -13,6 +13,8 @@ builder.Services.AddControllersWithViews(options =>
 {
     // Require an authenticated session for every action unless [AllowAnonymous].
     options.Filters.Add<SessionAuthorizationFilter>();
+    // Enforce [RoleAuthorize] role restrictions (runs after the login check).
+    options.Filters.Add<RoleAuthorizationFilter>();
     // Validate the anti-forgery token on every unsafe (POST/PUT/DELETE) request.
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
