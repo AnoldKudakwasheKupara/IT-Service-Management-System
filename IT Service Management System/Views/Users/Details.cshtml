@@ -243,6 +243,14 @@
                     <i class="fas fa-key"></i>
                     Reset Password
                 </button>
+                @if (!Model.IsActive)
+                {
+                    <button type="button" class="btn-reset-password" style="background:linear-gradient(100deg,#d97706,#f59e0b);"
+                            onclick="showResendInvitationModal(@Model.Id)">
+                        <i class="fas fa-envelope"></i>
+                        Resend Invitation
+                    </button>
+                }
             </div>
         </div>
     </div>
@@ -274,6 +282,34 @@
                 <button type="submit" form="resetPasswordForm" class="btn-confirm-modal">
                     <i class="fas fa-paper-plane"></i>
                     Send Reset Link
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resend Invitation Modal -->
+<div class="modal fade" id="resendInvitationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content-modern">
+            <div class="modal-header-modern">
+                <h5 class="modal-title"><i class="fas fa-envelope"></i> Resend Activation Email</h5>
+                <button type="button" class="btn-close-modern" data-bs-dismiss="modal" aria-label="Close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body-modern">
+                <p>Send a new activation link to <strong>@Model.FirstName @Model.LastName</strong>?</p>
+                <p class="text-muted small">The previous link (if any) will be invalidated and a fresh 24-hour link will be emailed to <strong>@Model.Email</strong>.</p>
+                <form id="resendInvitationForm" asp-action="ResendInvitation" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                </form>
+            </div>
+            <div class="modal-footer-modern">
+                <button type="button" class="btn-cancel-modal" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="resendInvitationForm" class="btn-confirm-modal" style="background:linear-gradient(100deg,#d97706,#f59e0b);">
+                    <i class="fas fa-paper-plane"></i> Send Activation Email
                 </button>
             </div>
         </div>
@@ -947,6 +983,11 @@
 <script>
 function showResetPasswordModal(userId) {
     const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+    modal.show();
+}
+
+function showResendInvitationModal(userId) {
+    const modal = new bootstrap.Modal(document.getElementById('resendInvitationModal'));
     modal.show();
 }
 

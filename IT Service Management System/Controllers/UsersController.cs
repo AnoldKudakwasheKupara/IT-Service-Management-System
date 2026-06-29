@@ -4,6 +4,7 @@ using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace IT_Service_Management_System.Controllers
 {
@@ -12,13 +13,27 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
-        private readonly AuditService _auditService; // ✅ ADDED
+        private readonly AuditService _auditService;
+        private readonly ILogger<UsersController> _logger;
 
-        public UsersController(ApplicationDbContext context, EmailService emailService, AuditService auditService) // ✅ UPDATED
+        public UsersController(ApplicationDbContext context, EmailService emailService, AuditService auditService, ILogger<UsersController> logger)
         {
             _context = context;
             _emailService = emailService;
             _auditService = auditService;
+            _logger = logger;
+        }
+
+        private async Task TrySendEmailAsync(string toEmail, string toName, string subject, string body)
+        {
+            try
+            {
+                await _emailService.SendEmailAsync(toEmail, toName, subject, body);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send email to {Email} — subject: {Subject}", toEmail, subject);
+            }
         }
 
         // 🔒 AUTH + ROLE CHECK
@@ -144,53 +159,24 @@ namespace IT_Service_Management_System.Controllers
 
             user.CreatedAt = DateTime.Now;
             user.IsActive = false;
-            user.ResetToken = Guid.NewGuid().ToString();
+            user.ResetToken = Guid.NewGuid().ToString("N");
             user.TokenExpiry = DateTime.Now.AddHours(24);
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            await _auditService.LogAsync(
-                "Created",
-                "User",
-                user.Id,
-                $"User {user.Email} created");
+            await _auditService.LogAsync("Created", "User", user.Id, $"User {user.Email} created");
 
-            var link = Url.Action(
-                "SetPassword",
-                "Account",
-                new { token = user.ResetToken },
-                Request.Scheme);
+            var activationLink = Url.Action("SetPassword", "Account",
+                new { token = user.ResetToken }, Request.Scheme)!;
 
-            var body = $@"
-        <p>Good Day {user.FirstName},</p>
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            _ = TrySendEmailAsync(
+                user.Email, user.FirstName,
+                "Welcome — Activate your account — Axis IT Operations",
+                EmailTemplates.WelcomeActivation(user.FirstName, activationLink, baseUrl));
 
-        <p>Welcome to the <strong>IT Service Management System</strong>.</p>
-
-        <p>Your account has been created successfully. To get started, please set your password by clicking the link below:</p>
-
-        <p>
-            <a href='{link}' style='color:blue; font-weight:bold;'>
-                Set Your Password
-            </a>
-        </p>
-
-        <p>This link will expire in 24 hours for security purposes.</p>
-
-        <br/>
-
-        <p>If you did not expect this email, please ignore it.</p>
-
-        <p>
-            Kind Regards,<br/>
-            IT Support Team
-        </p>";
-
-            await _emailService.SendEmailAsync(
-                user.Email,
-                "Welcome - Set Your Password",
-                body);
-
+            TempData["Success"] = $"Account created. An activation email has been sent to {user.Email}.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -355,7 +341,7 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction("Index");
         }
 
-        // 🔹 ADMIN-TRIGGERED PASSWORD RESET (emails a set-password link)
+        // 🔹 ADMIN-TRIGGERED PASSWORD RESET (emails a reset link)
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(int id)
@@ -364,42 +350,61 @@ namespace IT_Service_Management_System.Controllers
             if (access != null) return access;
 
             var user = await _context.Users.FindAsync(id);
-
             if (user == null) return NotFound();
 
-            user.ResetToken = Guid.NewGuid().ToString();
+            user.ResetToken = Guid.NewGuid().ToString("N");
             user.TokenExpiry = DateTime.Now.AddHours(24);
-
             await _context.SaveChangesAsync();
 
-            // ✅ AUDIT LOG
-            await _auditService.LogAsync("Reset Password", "User", user.Id, $"Password reset link sent to {user.Email}");
+            await _auditService.LogAsync("Reset Password", "User", user.Id,
+                $"Admin-triggered password reset link sent to {user.Email}");
 
-            var link = Url.Action(
-                "SetPassword",
-                "Account",
-                new { token = user.ResetToken },
-                Request.Scheme);
+            var resetLink = Url.Action("SetPassword", "Account",
+                new { token = user.ResetToken }, Request.Scheme)!;
 
-            var body = $@"
-        <p>Good Day {user.FirstName},</p>
-
-        <p>An administrator has requested a password reset for your account.</p>
-
-        <p>Click the link below to set a new password:</p>
-
-        <p>
-            <a href='{link}' style='color:blue; font-weight:bold;'>Set Your Password</a>
-        </p>
-
-        <p>This link will expire in 24 hours.</p>
-
-        <p>If you did not expect this email, please contact IT Support.</p>";
-
-            await _emailService.SendEmailAsync(user.Email, "Password Reset", body);
+            _ = TrySendEmailAsync(
+                user.Email, user.FirstName,
+                "Reset your password — Axis IT Operations",
+                EmailTemplates.PasswordReset(user.FirstName, resetLink));
 
             TempData["Success"] = $"A password reset link has been sent to {user.Email}.";
+            return RedirectToAction("Details", new { id });
+        }
 
+        // 🔹 RESEND ACTIVATION EMAIL (for inactive accounts)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResendInvitation(int id)
+        {
+            var access = CheckAccess();
+            if (access != null) return access;
+
+            var user = await _context.Users.FindAsync(id);
+            if (user == null) return NotFound();
+
+            if (user.IsActive)
+            {
+                TempData["Error"] = "This account is already active. Use Reset Password instead.";
+                return RedirectToAction("Details", new { id });
+            }
+
+            user.ResetToken = Guid.NewGuid().ToString("N");
+            user.TokenExpiry = DateTime.Now.AddHours(24);
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync("Resend Invitation", "User", user.Id,
+                $"Activation email resent to {user.Email}");
+
+            var activationLink = Url.Action("SetPassword", "Account",
+                new { token = user.ResetToken }, Request.Scheme)!;
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+
+            _ = TrySendEmailAsync(
+                user.Email, user.FirstName,
+                "Your activation link has been refreshed — Axis IT Operations",
+                EmailTemplates.ResendActivation(user.FirstName, activationLink));
+
+            TempData["Success"] = $"A new activation link has been sent to {user.Email}.";
             return RedirectToAction("Details", new { id });
         }
     }
