@@ -1,40 +1,173 @@
-﻿@model IEnumerable<Payment>
+@model IEnumerable<Payment>
 
-<h2>Payments</h2>
+@{
+    ViewData["Title"] = "Payments - Axis IT Operations";
+}
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Service</th>
-            <th>Amount</th>
-            <th>Due Date</th>
-            <th>Status</th>
-        </tr>
-    </thead>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-money-check-alt me-2" style="color: var(--primary);"></i>
+                    Payments
+                </h1>
+                <p class="text-muted mt-2">Track service payments, amounts and due dates</p>
+            </div>
+        </div>
+    </div>
 
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.ServiceName</td>
-                <td>@item.Amount.ToString("C", new System.Globalization.CultureInfo("en-US"))</td>
-                <td>@item.DueDate.ToShortDateString()</td>
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Payment List</span>
+            </div>
+            <div class="record-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count()</span> records
+            </div>
+        </div>
 
-                <td>
-                    @if (item.Status == "Paid")
-                    {
-                        <span class="badge bg-success">Paid</span>
-                    }
-                    else if (item.Status == "Overdue")
-                    {
-                        <span class="badge bg-danger">Overdue</span>
-                    }
-                    else
-                    {
-                        <span class="badge bg-warning text-dark">Pending</span>
-                    }
-                </td>
-            </tr>
+        <div class="table-responsive">
+            @if (Model != null && Model.Any())
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-cube me-1"></i> Service</th>
+                            <th><i class="fas fa-dollar-sign me-1"></i> Amount</th>
+                            <th><i class="fas fa-calendar-day me-1"></i> Due Date</th>
+                            <th><i class="fas fa-circle-info me-1"></i> Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.ServiceName</td>
+                                <td>@item.Amount.ToString("C", new System.Globalization.CultureInfo("en-US"))</td>
+                                <td>@item.DueDate.ToShortDateString()</td>
+                                <td>
+                                    @if (item.Status == "Paid")
+                                    {
+                                        <span class="status-pill pill-success"><i class="fas fa-check-circle"></i> Paid</span>
+                                    }
+                                    else if (item.Status == "Overdue")
+                                    {
+                                        <span class="status-pill pill-danger"><i class="fas fa-triangle-exclamation"></i> Overdue</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-pill pill-warning"><i class="fas fa-clock"></i> Pending</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-receipt"></i>
+                    <p>No payments recorded yet.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .page-container { max-width: 1200px; margin: 0 auto; }
+
+    .page-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        letter-spacing: -0.4px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .data-card {
+        background: var(--bg-card);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+
+    .card-header-custom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .record-count {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--gray-500);
+        background: var(--gray-100);
+        padding: 4px 12px;
+        border-radius: 30px;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .data-table thead th {
+            text-align: left;
+            padding: 0.85rem 1.5rem;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--gray-500);
+            background: var(--gray-50);
+            font-weight: 600;
         }
-    </tbody>
-</table>
+
+        .data-table tbody td {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--gray-100);
+            color: var(--gray-700);
+            font-size: 0.9rem;
+        }
+
+        .data-table tbody tr {
+            transition: var(--transition-smooth);
+        }
+
+            .data-table tbody tr:hover {
+                background: var(--gray-50);
+            }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 30px;
+    }
+
+    .pill-success { color: var(--success); background: var(--success-light); }
+    .pill-danger { color: var(--danger); background: var(--danger-light); }
+    .pill-warning { color: #b45309; background: var(--warning-light); }
+
+    .empty-state {
+        text-align: center;
+        padding: 3.5rem 1rem;
+        color: var(--gray-400);
+    }
+
+        .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; }
+        .empty-state p { margin: 0; font-size: 0.95rem; }
+</style>
