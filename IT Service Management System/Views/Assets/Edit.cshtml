@@ -60,12 +60,12 @@
                             <label asp-for="Asset.UserId" class="form-label">
                                 <i class="fas fa-user"></i>
                                 User
-                                <span class="required">*</span>
+                                <span class="required" id="userRequiredStar" style="display:none;">*</span>
                             </label>
                             <div class="select-wrapper">
                                 <i class="fas fa-chevron-down select-icon"></i>
-                                <select asp-for="Asset.UserId" class="form-control-modern">
-                                    <option value="">-- Select User --</option>
+                                <select asp-for="Asset.UserId" class="form-control-modern" id="userSelect">
+                                    <option value="">-- No user (in stock) --</option>
                                     @foreach (var user in Model.Users)
                                     {
                                         <option value="@user.Id" selected="@(user.Id == Model.Asset?.UserId)">
@@ -530,12 +530,21 @@
         const actionDescription = document.getElementById('actionDescription');
         
         const actionDescriptions = {
+            'In Stock': 'Asset is in stock with no holder',
             'Issued': 'Asset has been issued to the selected user',
-            'Returned': 'Asset has been returned from the selected user'
+            'Returned': 'Asset has been returned and goes back to stock',
+            'In Repair': 'Asset is in for repair',
+            'Retired': 'Asset is retired from service',
+            'Stolen': 'Asset is reported stolen or lost'
         };
         
         function updateActionDescription() {
             var selectedAction = actionSelect.value;
+
+            // Only "Issued" needs a user; toggle the required marker accordingly.
+            var userStar = document.getElementById('userRequiredStar');
+            if (userStar) userStar.style.display = (selectedAction === 'Issued') ? 'inline' : 'none';
+
             if (selectedAction && actionDescriptions[selectedAction]) {
                 actionDescription.textContent = actionDescriptions[selectedAction];
                 
@@ -616,9 +625,9 @@
                     return false;
                 }
                 
-                if (!userId) {
+                if (document.getElementById('actionSelect').value === 'Issued' && !userId) {
                     e.preventDefault();
-                    showValidationError('Please select a user');
+                    showValidationError('Please select the user the asset is issued to');
                     document.querySelector('[name="Asset.UserId"]').focus();
                     return false;
                 }
