@@ -15,51 +15,51 @@ namespace IT_Service_Management_System.Models
 
         // Employee Information
 
-        public string EmployeeName { get; set; }
+        public string EmployeeName { get; set; } = string.Empty;
 
-        public string Department { get; set; }
+        public string Department { get; set; } = string.Empty;
 
-        public string JobTitle { get; set; }
+        public string JobTitle { get; set; } = string.Empty;
 
-        public string Country { get; set; }
+        public string Country { get; set; } = string.Empty;
 
         public DateTime? HireDate { get; set; }
 
         // Performance Track Record
 
-        public string KPI2023 { get; set; }
+        public string KPI2023 { get; set; } = string.Empty;
 
-        public string KPI2024 { get; set; }
+        public string KPI2024 { get; set; } = string.Empty;
 
-        public string KPI2025 { get; set; }
+        public string KPI2025 { get; set; } = string.Empty;
 
-        public string KPI2026 { get; set; }
+        public string KPI2026 { get; set; } = string.Empty;
 
-        public string KeyProjectsLed { get; set; }
+        public string KeyProjectsLed { get; set; } = string.Empty;
 
-        public string DeliverySetbacks { get; set; }
+        public string DeliverySetbacks { get; set; } = string.Empty;
 
-        public string LongTermBusinessInitiatives { get; set; }
+        public string LongTermBusinessInitiatives { get; set; } = string.Empty;
 
         // Leadership Capability
 
-        public string LeadershipOverallComments { get; set; }
+        public string LeadershipOverallComments { get; set; } = string.Empty;
 
-        public string TeamCapabilityDevelopment { get; set; }
+        public string TeamCapabilityDevelopment { get; set; } = string.Empty;
 
-        public string StructuredOneOnOnes { get; set; }
+        public string StructuredOneOnOnes { get; set; } = string.Empty;
 
-        public string TerminatedPoorPerformers { get; set; }
+        public string TerminatedPoorPerformers { get; set; } = string.Empty;
 
-        public string LeadershipDevelopmentAreas { get; set; }
+        public string LeadershipDevelopmentAreas { get; set; } = string.Empty;
 
         // Living The Axis Values
 
-        public string ChallengesApplyingAxisValues { get; set; }
+        public string ChallengesApplyingAxisValues { get; set; } = string.Empty;
 
-        public string SelfDevelopmentActions { get; set; }
+        public string SelfDevelopmentActions { get; set; } = string.Empty;
 
-        public string SelfInitiatedLeadershipDevelopment { get; set; }
+        public string SelfInitiatedLeadershipDevelopment { get; set; } = string.Empty;
 
         // Potential Assessment
 
@@ -91,7 +91,7 @@ namespace IT_Service_Management_System.Models
 
         // Career Development
 
-        public string CareerAspirations { get; set; }
+        public string CareerAspirations { get; set; } = string.Empty;
 
         public MobilityType Mobility { get; set; }
 
@@ -99,9 +99,9 @@ namespace IT_Service_Management_System.Models
 
         public bool CanOccupyHigherGrade { get; set; }
 
-        public string NineBoxAssessment { get; set; }
+        public string NineBoxAssessment { get; set; } = string.Empty;
 
-        public string NextCareerMilestone { get; set; }
+        public string NextCareerMilestone { get; set; } = string.Empty;
 
         public ReadinessLevel Readiness { get; set; }
 

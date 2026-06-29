@@ -6,9 +6,9 @@
 
         public int ExitClearanceId { get; set; }
 
-        public string ItemDescription { get; set; }
+        public string ItemDescription { get; set; } = string.Empty;
 
-        public string Condition { get; set; }
+        public string Condition { get; set; } = string.Empty;
 
         public int Quantity { get; set; }
 

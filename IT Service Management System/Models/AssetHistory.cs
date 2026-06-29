@@ -5,17 +5,17 @@
         public int Id { get; set; }
 
         public int AssetId { get; set; }
-        public Asset Asset { get; set; }
+        public Asset? Asset { get; set; }
 
         public DateTime Date { get; set; }
 
         public int? UserId { get; set; }
-        public User User { get; set; }
+        public User? User { get; set; }
 
-        public string EventType { get; set; }   // Issued, Returned, Repair, etc
-        public string Condition { get; set; }   // New, Old
+        public string EventType { get; set; } = string.Empty;   // Issued, Returned, Repair, etc
+        public string Condition { get; set; } = string.Empty;   // New, Old
 
-        public string PerformedBy { get; set; }
-        public string Remarks { get; set; }
+        public string PerformedBy { get; set; } = string.Empty;
+        public string Remarks { get; set; } = string.Empty;
     }
 }

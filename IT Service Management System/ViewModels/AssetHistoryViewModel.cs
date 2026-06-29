@@ -11,13 +11,13 @@ namespace IT_Service_Management_System.ViewModels
 
         public int? UserId { get; set; }
 
-        public string EventType { get; set; }
-        public string Condition { get; set; }
+        public string EventType { get; set; } = string.Empty;
+        public string Condition { get; set; } = string.Empty;
 
-        public string PerformedBy { get; set; }
-        public string Remarks { get; set; }
+        public string PerformedBy { get; set; } = string.Empty;
+        public string Remarks { get; set; } = string.Empty;
 
         [ValidateNever]
-        public List<User> Users { get; set; }
+        public List<User> Users { get; set; } = new List<User>();
     }
 }

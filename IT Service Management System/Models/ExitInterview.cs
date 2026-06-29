@@ -9,9 +9,9 @@ namespace IT_Service_Management_System.Models
 
         // Employee Information
         [Required]
-        public string EmployeeName { get; set; }
+        public string EmployeeName { get; set; } = string.Empty;
 
-        public string Position { get; set; }
+        public string Position { get; set; } = string.Empty;
 
         public string? Client { get; set; }
 
