@@ -56,11 +56,17 @@ namespace IT_Service_Management_System.Controllers
 
             if (ModelState.IsValid)
             {
+                // Attribute the event to the affected user: the recipient when issuing,
+                // otherwise the asset's current holder (the person it is returned from /
+                // repaired for). This keeps the event on that user's history even though
+                // the asset's own holder is cleared below.
+                int? eventUserId = vm.EventType == AssetWorkflow.Issued ? vm.UserId : asset.UserId;
+
                 _context.AssetHistories.Add(new AssetHistory
                 {
                     AssetId = vm.AssetId,
                     Date = vm.Date,
-                    UserId = vm.UserId,
+                    UserId = eventUserId,
                     EventType = vm.EventType,
                     Condition = vm.Condition,
                     PerformedBy = vm.PerformedBy,
