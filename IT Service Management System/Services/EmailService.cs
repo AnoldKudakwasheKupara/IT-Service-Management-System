@@ -14,11 +14,16 @@ namespace IT_Service_Management_System.Services
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
+            var port = int.TryParse(_config["EmailSettings:Port"], out var p) ? p : 587;
+
+            var senderEmail = _config["EmailSettings:SenderEmail"]
+                ?? throw new InvalidOperationException("EmailSettings:SenderEmail is not configured.");
+
             var smtp = new SmtpClient(_config["EmailSettings:SmtpServer"])
             {
-                Port = int.Parse(_config["EmailSettings:Port"]),
+                Port = port,
                 Credentials = new NetworkCredential(
-                    _config["EmailSettings:SenderEmail"],
+                    senderEmail,
                     _config["EmailSettings:SenderPassword"]
                 ),
                 EnableSsl = true
@@ -26,7 +31,7 @@ namespace IT_Service_Management_System.Services
 
             var mail = new MailMessage
             {
-                From = new MailAddress(_config["EmailSettings:SenderEmail"]),
+                From = new MailAddress(senderEmail),
                 Subject = subject,
                 Body = body,
                 IsBodyHtml = true

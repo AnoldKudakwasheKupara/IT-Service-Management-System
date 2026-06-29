@@ -32,7 +32,7 @@
     {
         var dayTotal = dayGroup
             .Where(a => a.Duration.HasValue)
-            .Sum(a => a.Duration.Value.TotalMinutes);
+            .Sum(a => a.Duration!.Value.TotalMinutes);
 
         grandTotalMinutes += dayTotal;
     }
@@ -76,7 +76,7 @@
                 {
                     var dayMinutes = day
                         .Where(a => a.Duration.HasValue)
-                        .Sum(a => a.Duration.Value.TotalMinutes);
+                        .Sum(a => a.Duration!.Value.TotalMinutes);
 
                     var hours = (int)(dayMinutes / 60);
                     var minutes = (int)(dayMinutes % 60);
@@ -166,7 +166,7 @@
                                                 {
                                                     <span>
                                                         <i class="far fa-clock"></i>
-                                                        @item.EndTime.Value.ToString("HH:mm")
+                                                        @item.EndTime!.Value.ToString("HH:mm")
                                                     </span>
                                                 }
                                             </td>

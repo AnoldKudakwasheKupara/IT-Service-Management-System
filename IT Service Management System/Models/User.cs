@@ -10,15 +10,15 @@ namespace IT_Service_Management_System.Models
 
         [Required]
         [StringLength(50)]
-        public string FirstName { get; set; }
+        public string FirstName { get; set; } = string.Empty;
 
         [Required]
         [StringLength(50)]
-        public string LastName { get; set; }
+        public string LastName { get; set; } = string.Empty;
 
         [Required]
         [EmailAddress]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         public string? PasswordHash { get; set; }
 
@@ -46,9 +46,9 @@ namespace IT_Service_Management_System.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         [ValidateNever]
-        public ICollection<Ticket> TicketsCreated { get; set; }
+        public ICollection<Ticket> TicketsCreated { get; set; } = new List<Ticket>();
 
         [ValidateNever]
-        public ICollection<TicketMessage> Messages { get; set; }
+        public ICollection<TicketMessage> Messages { get; set; } = new List<TicketMessage>();
     }
 }

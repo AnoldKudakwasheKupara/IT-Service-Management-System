@@ -31,10 +31,10 @@
     <div class="profile-card">
         <div class="profile-header">
             <div class="profile-avatar">
-                @((Model.ExitClearance.Employee?.FirstName?.Substring(0, 1) ?? "E") + (Model.ExitClearance.Employee?.LastName?.Substring(0, 1) ?? "M"))
+                @((Model.ExitClearance?.Employee?.FirstName?.Substring(0, 1) ?? "E") + (Model.ExitClearance?.Employee?.LastName?.Substring(0, 1) ?? "M"))
             </div>
             <div class="profile-info">
-                <h2 class="profile-name">@Model.ExitClearance.Employee?.FirstName @Model.ExitClearance.Employee?.LastName</h2>
+                <h2 class="profile-name">@Model.ExitClearance?.Employee?.FirstName @Model.ExitClearance?.Employee?.LastName</h2>
                 <div class="profile-badges">
                     <span class="badge badge-primary">
                         <i class="fas fa-building"></i> @Model.EmployeeDetails?.Department
@@ -107,7 +107,7 @@
                 </div>
                 <h3>Finance Clearance</h3>
                 <a asp-action="FinanceReview"
-                   asp-route-id="@Model.ExitClearance.Id"
+                   asp-route-id="@Model.ExitClearance?.Id"
                    class="btn btn-sm btn-light">
                     <i class="fas fa-edit"></i> Edit
                 </a>
@@ -156,7 +156,7 @@
                 </div>
                 <h3>Systems Administration</h3>
                 <a asp-action="SystemsAdminReview"
-                   asp-route-id="@Model.ExitClearance.Id"
+                   asp-route-id="@Model.ExitClearance?.Id"
                    class="btn btn-sm btn-light">
                     Edit
                 </a>
@@ -245,7 +245,7 @@
                 </div>
                 <h3>Human Resources</h3>
                 <a asp-action="HrReview"
-                   asp-route-id="@Model.ExitClearance.Id"
+                   asp-route-id="@Model.ExitClearance?.Id"
                    class="btn btn-sm btn-light">
                     Edit
                 </a>
@@ -340,7 +340,7 @@
                 </div>
                 <h3>Development</h3>
                 <a asp-action="DevelopmentReview"
-                   asp-route-id="@Model.ExitClearance.Id"
+                   asp-route-id="@Model.ExitClearance?.Id"
                    class="btn btn-sm btn-light">
                     Edit
                 </a>

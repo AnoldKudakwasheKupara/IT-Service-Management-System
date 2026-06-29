@@ -5,7 +5,7 @@
 
     var totalMinutes = Model
         .Where(a => a.Duration.HasValue)
-        .Sum(a => a.Duration.Value.TotalMinutes);
+        .Sum(a => a.Duration!.Value.TotalMinutes);
 
     var totalHours = (int)(totalMinutes / 60);
     var totalMins = (int)(totalMinutes % 60);
@@ -151,7 +151,7 @@
                                     {
                                         <span>
                                             <i class="far fa-clock"></i>
-                                            @item.EndTime.Value.ToString("HH:mm")
+                                            @item.EndTime!.Value.ToString("HH:mm")
                                         </span>
                                     }
                                 </td>

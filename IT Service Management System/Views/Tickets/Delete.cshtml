@@ -115,9 +115,9 @@
                     <div class="detail-value">
                         <div class="creator-info">
                             <div class="creator-avatar-small">
-                                @((Model.CreatedBy.FirstName?.Substring(0, 1) ?? "U") + (Model.CreatedBy.LastName?.Substring(0, 1) ?? "S"))
+                                @((Model.CreatedBy?.FirstName?.Substring(0, 1) ?? "U") + (Model.CreatedBy?.LastName?.Substring(0, 1) ?? "S"))
                             </div>
-                            <span>@Model.CreatedBy.FirstName @Model.CreatedBy.LastName</span>
+                            <span>@Model.CreatedBy?.FirstName @Model.CreatedBy?.LastName</span>
                         </div>
                     </div>
                 </div>

@@ -9,8 +9,8 @@ namespace IT_Service_Management_System.Models
 
         [Required]
         [MaxLength(50)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
         [ValidateNever]
-        public List<Activity> Activities { get; set; }
+        public List<Activity> Activities { get; set; } = new List<Activity>();
     }
 }

@@ -4,7 +4,7 @@ namespace IT_Service_Management_System.ViewModels
 {
     public class ExitClearanceDetailsVM
     {
-        public ExitClearance ExitClearance { get; set; }
+        public ExitClearance? ExitClearance { get; set; }
 
         public ExitClearanceEmployeeDetails? EmployeeDetails { get; set; }
 

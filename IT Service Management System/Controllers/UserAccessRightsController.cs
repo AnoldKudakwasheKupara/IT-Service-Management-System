@@ -148,6 +148,8 @@ namespace IT_Service_Management_System.Controllers
                 }
 
                 // Add new user items from the form
+                existing.Users ??= new List<UserAccessRightItem>();
+
                 foreach (var user in model.Users)
                 {
                     if (!string.IsNullOrWhiteSpace(user.UserName))
@@ -172,15 +174,13 @@ namespace IT_Service_Management_System.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateException)
             {
-                // Log the exception
                 ModelState.AddModelError("", "Unable to save changes. Please try again.");
                 return View(model);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // Log the exception
                 ModelState.AddModelError("", "An error occurred while saving. Please try again.");
                 return View(model);
             }
