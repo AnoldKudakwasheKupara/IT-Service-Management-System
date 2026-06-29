@@ -198,7 +198,7 @@ namespace IT_Service_Management_System.Controllers
             // Email logic here
 
             TempData["Success"] =
-                $"Clearance sent to {clearance.Employee.Email}";
+                $"Clearance sent to {clearance.Employee?.Email}";
 
             return RedirectToAction(nameof(Index));
         }
@@ -266,13 +266,13 @@ namespace IT_Service_Management_System.Controllers
                 .Include(x => x.Employee)
                 .FirstOrDefault(x => x.AccessToken == id);
 
-            if (clearance == null)
+            if (clearance == null || clearance.Employee == null)
                 return NotFound();
 
             var vm = new EmployeeClearanceVM
             {
                 ExitClearanceId = clearance.Id,
-                AccessToken = clearance.AccessToken,
+                AccessToken = clearance.AccessToken ?? string.Empty,
 
                 Surname = clearance.Employee.LastName,
                 Email = clearance.Employee.Email,
@@ -469,6 +469,12 @@ namespace IT_Service_Management_System.Controllers
             var systemsAdmin = _context.Users
                 .FirstOrDefault(x =>
                     x.Role == UserRole.SystemsAdmin);
+
+            if (systemsAdmin == null)
+            {
+                TempData["Error"] = "No Systems Admin user is configured to receive this clearance.";
+                return RedirectToAction(nameof(Index));
+            }
 
             clearance.CurrentStage = ClearanceStage.SystemsAdmin;
 
@@ -704,10 +710,10 @@ namespace IT_Service_Management_System.Controllers
         {
             var clearance = _context.ExitClearances
                 .Include(x => x.Employee)
-                    .ThenInclude(x => x.Supervisor)
+                    .ThenInclude(x => x!.Supervisor)
                 .Include(x => x.Employee)
-                    .ThenInclude(x => x.Department)
-                        .ThenInclude(x => x.Hod)
+                    .ThenInclude(x => x!.Department)
+                        .ThenInclude(x => x!.Hod)
                 .FirstOrDefault(x => x.Id == model.ExitClearanceId);
 
             if (clearance == null)
@@ -774,7 +780,7 @@ namespace IT_Service_Management_System.Controllers
             }
 
             // Route to Supervisor if configured
-            var supervisor = clearance.Employee.Supervisor;
+            var supervisor = clearance.Employee?.Supervisor;
 
             if (supervisor != null)
             {
@@ -793,7 +799,7 @@ namespace IT_Service_Management_System.Controllers
             {
                 // No supervisor, send directly to HOD
 
-                var hod = clearance.Employee.Department?.Hod;
+                var hod = clearance.Employee?.Department?.Hod;
 
                 if (hod == null)
                 {
@@ -876,8 +882,8 @@ namespace IT_Service_Management_System.Controllers
         {
             var clearance = _context.ExitClearances
                 .Include(x => x.Employee)
-                    .ThenInclude(x => x.Department)
-                        .ThenInclude(x => x.Hod)
+                    .ThenInclude(x => x!.Department)
+                        .ThenInclude(x => x!.Hod)
                 .FirstOrDefault(x => x.Id == model.ExitClearanceId);
 
             if (clearance == null)
@@ -912,7 +918,7 @@ namespace IT_Service_Management_System.Controllers
                 workflow.CompletedDate = DateTime.Now;
             }
 
-            var hod = clearance.Employee.Department?.Hod;
+            var hod = clearance.Employee?.Department?.Hod;
 
             if (hod == null)
             {

@@ -5,7 +5,7 @@
         public int Id { get; set; }
 
         public int EmployeeId { get; set; }
-        public User Employee { get; set; }
+        public User? Employee { get; set; }
 
         public ClearanceStage CurrentStage { get; set; }
 

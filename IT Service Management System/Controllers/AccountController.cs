@@ -1,24 +1,48 @@
 ﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using static IT_Service_Management_System.Models.Ticket;
 
 namespace IT_Service_Management_System.Controllers
 {
+    [AllowAnonymous]
     public class AccountController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
         private readonly AuditService _auditService; // ✅ ADDED
+        private readonly IMemoryCache _cache;
 
-        public AccountController(ApplicationDbContext context, EmailService emailService, AuditService auditService) // ✅ UPDATED
+        // Brute-force throttle: max failed attempts per IP within the window.
+        private const int MaxAttempts = 5;
+        private static readonly TimeSpan AttemptWindow = TimeSpan.FromMinutes(15);
+
+        public AccountController(ApplicationDbContext context, EmailService emailService, AuditService auditService, IMemoryCache cache) // ✅ UPDATED
         {
             _context = context;
             _emailService = emailService;
             _auditService = auditService;
+            _cache = cache;
         }
+
+        private string ClientKey(string scope) =>
+            $"{scope}:{HttpContext.Connection.RemoteIpAddress}";
+
+        private bool IsRateLimited(string key) =>
+            _cache.TryGetValue(key, out int count) && count >= MaxAttempts;
+
+        private void RegisterAttempt(string key)
+        {
+            var count = _cache.TryGetValue(key, out int c) ? c : 0;
+            _cache.Set(key, count + 1, AttemptWindow);
+        }
+
+        private void ResetAttempts(string key) => _cache.Remove(key);
 
         public IActionResult Login()
         {
@@ -28,16 +52,36 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost]
         public async Task<IActionResult> Login(string email, string password)
         {
+            var throttleKey = ClientKey("login");
+
+            if (IsRateLimited(throttleKey))
+            {
+                await _auditService.LogAsync("Login Blocked", "User", null, $"Rate-limited login attempt for {email}");
+                ViewBag.Error = "Too many failed attempts. Please try again in a few minutes.";
+                return View();
+            }
+
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == email);
 
-            if (user == null || user.PasswordHash != password || !user.IsActive)
+            if (user == null || !user.IsActive || !PasswordHasher.VerifyPassword(password, user.PasswordHash))
             {
+                RegisterAttempt(throttleKey);
+
                 // ✅ AUDIT LOG (FAILED LOGIN)
                 await _auditService.LogAsync("Login Failed", "User", null, $"Failed login attempt for {email}");
 
                 ViewBag.Error = "Invalid credentials or account not activated.";
                 return View();
+            }
+
+            ResetAttempts(throttleKey);
+
+            // Transparently upgrade legacy plaintext passwords to a salted hash.
+            if (!PasswordHasher.IsHashed(user.PasswordHash))
+            {
+                user.PasswordHash = PasswordHasher.HashPassword(password);
+                await _context.SaveChangesAsync();
             }
 
             HttpContext.Session.SetInt32("UserId", user.Id);
@@ -50,14 +94,14 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
             var userId = HttpContext.Session.GetInt32("UserId");
 
             // ✅ AUDIT LOG
             if (userId != null)
             {
-                _auditService.LogAsync("Logout", "User", userId, "User logged out");
+                await _auditService.LogAsync("Logout", "User", userId, "User logged out");
             }
 
             HttpContext.Session.Clear();
@@ -93,7 +137,7 @@ namespace IT_Service_Management_System.Controllers
             if (!IsValidPassword(password))
                 return Content("ERROR: Weak password");
 
-            user.PasswordHash = password;
+            user.PasswordHash = PasswordHasher.HashPassword(password);
             user.IsActive = true;
             user.ResetToken = null;
             user.TokenExpiry = null;
@@ -116,6 +160,16 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost]
         public async Task<IActionResult> ForgotPassword(string email)
         {
+            var throttleKey = ClientKey("forgot");
+
+            if (IsRateLimited(throttleKey))
+            {
+                ViewBag.Message = "If the email exists, a reset link has been sent.";
+                return View();
+            }
+
+            RegisterAttempt(throttleKey);
+
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == email);
 

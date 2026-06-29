@@ -129,7 +129,7 @@
                 <tbody>
                     @foreach (var ticket in Model)
                     {
-                        <tr data-title="@ticket.Title" data-creator="@ticket.CreatedBy.FirstName @ticket.CreatedBy.LastName" data-status="@ticket.Status.ToString()" data-priority="@ticket.Priority.ToString()">
+                        <tr data-title="@ticket.Title" data-creator="@ticket.CreatedBy?.FirstName @ticket.CreatedBy?.LastName" data-status="@ticket.Status.ToString()" data-priority="@ticket.Priority.ToString()">
                             <td class="ticket-title-cell">
                                 <div class="ticket-title">
                                     <i class="fas fa-ticket-alt"></i>
@@ -197,9 +197,9 @@
                             <td class="creator-cell">
                                 <div class="creator-info">
                                     <div class="creator-avatar-small">
-                                        @((ticket.CreatedBy.FirstName?.Substring(0, 1) ?? "U") + (ticket.CreatedBy.LastName?.Substring(0, 1) ?? "S"))
+                                        @((ticket.CreatedBy?.FirstName?.Substring(0, 1) ?? "U") + (ticket.CreatedBy?.LastName?.Substring(0, 1) ?? "S"))
                                     </div>
-                                    <span>@ticket.CreatedBy.FirstName @ticket.CreatedBy.LastName</span>
+                                    <span>@ticket.CreatedBy?.FirstName @ticket.CreatedBy?.LastName</span>
                                 </div>
                             </td>
                             <td class="date-cell">

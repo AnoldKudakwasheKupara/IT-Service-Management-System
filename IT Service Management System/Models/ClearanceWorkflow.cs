@@ -5,12 +5,12 @@
         public int Id { get; set; }
 
         public int ExitClearanceId { get; set; }
-        public ExitClearance ExitClearance { get; set; }
+        public ExitClearance? ExitClearance { get; set; }
 
         public ClearanceStage Stage { get; set; }
 
         public int AssignedToUserId { get; set; }
-        public User AssignedToUser { get; set; }
+        public User? AssignedToUser { get; set; }
 
         public bool Completed { get; set; }
 

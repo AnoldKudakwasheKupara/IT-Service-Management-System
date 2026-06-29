@@ -10,7 +10,7 @@
     {
         public int Id { get; set; }
 
-        public string ServiceName { get; set; }
+        public string ServiceName { get; set; } = string.Empty;
 
         public decimal Amount { get; set; }
 
@@ -18,7 +18,7 @@
 
         public PaymentFrequency Frequency { get; set; }
 
-        public string Departments { get; set; }
+        public string Departments { get; set; } = string.Empty;
 
         public DateTime NextRunDate { get; set; }
 

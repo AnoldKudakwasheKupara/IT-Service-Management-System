@@ -9,15 +9,15 @@ namespace IT_Service_Management_System.Models
 
         // Employee Information
 
-        public string NameAndSurname { get; set; }
+        public string NameAndSurname { get; set; } = string.Empty;
 
-        public string JobTitle { get; set; }
+        public string JobTitle { get; set; } = string.Empty;
 
-        public string Department { get; set; }
+        public string Department { get; set; } = string.Empty;
 
         public DateTime? DateJoinedAxis { get; set; }
 
-        public string ManagerName { get; set; }
+        public string ManagerName { get; set; } = string.Empty;
 
         public DateTime? CurrentPositionStartDate { get; set; }
 
@@ -25,27 +25,27 @@ namespace IT_Service_Management_System.Models
 
         // Questions
 
-        public string CurrentPrioritiesAndOverallWellbeing { get; set; }
+        public string CurrentPrioritiesAndOverallWellbeing { get; set; } = string.Empty;
 
-        public string MotivationAndEngagementFactors { get; set; }
+        public string MotivationAndEngagementFactors { get; set; } = string.Empty;
 
-        public string DemotivatingFactors { get; set; }
+        public string DemotivatingFactors { get; set; } = string.Empty;
 
-        public string SkillsUtilizationFeedback { get; set; }
+        public string SkillsUtilizationFeedback { get; set; } = string.Empty;
 
-        public string ReasonsPeopleStay { get; set; }
+        public string ReasonsPeopleStay { get; set; } = string.Empty;
 
-        public string ReasonsPeopleLeave { get; set; }
+        public string ReasonsPeopleLeave { get; set; } = string.Empty;
 
-        public string ChangesToWorkingAtAxis { get; set; }
+        public string ChangesToWorkingAtAxis { get; set; } = string.Empty;
 
-        public string NextCareerMilestone { get; set; }
+        public string NextCareerMilestone { get; set; } = string.Empty;
 
         public bool? FeelsSupported { get; set; }
 
         public bool? HasDevelopmentPlan { get; set; }
 
-        public string ImprovementIdeas { get; set; }
+        public string ImprovementIdeas { get; set; } = string.Empty;
 
         // Overall Status
 
@@ -54,50 +54,50 @@ namespace IT_Service_Management_System.Models
         // Rating Matrix
 
         public EngagementRating WellbeingRating { get; set; }
-        public string WellbeingComment { get; set; }
+        public string WellbeingComment { get; set; } = string.Empty;
 
         public EngagementRating JobSatisfactionRating { get; set; }
-        public string JobSatisfactionComment { get; set; }
+        public string JobSatisfactionComment { get; set; } = string.Empty;
 
         public EngagementRating CareerOpportunitiesRating { get; set; }
-        public string CareerOpportunitiesComment { get; set; }
+        public string CareerOpportunitiesComment { get; set; } = string.Empty;
 
         public EngagementRating LeadershipQualityRating { get; set; }
-        public string LeadershipQualityComment { get; set; }
+        public string LeadershipQualityComment { get; set; } = string.Empty;
 
         public EngagementRating ManagerRelationshipRating { get; set; }
-        public string ManagerRelationshipComment { get; set; }
+        public string ManagerRelationshipComment { get; set; } = string.Empty;
 
         public EngagementRating TeamRelationshipRating { get; set; }
-        public string TeamRelationshipComment { get; set; }
+        public string TeamRelationshipComment { get; set; } = string.Empty;
 
         public EngagementRating BSCSystemRating { get; set; }
-        public string BSCSystemComment { get; set; }
+        public string BSCSystemComment { get; set; } = string.Empty;
 
         public EngagementRating RewardForPerformanceRating { get; set; }
-        public string RewardForPerformanceComment { get; set; }
+        public string RewardForPerformanceComment { get; set; } = string.Empty;
 
         public EngagementRating CommunicationChannelsRating { get; set; }
-        public string CommunicationChannelsComment { get; set; }
+        public string CommunicationChannelsComment { get; set; } = string.Empty;
 
         public EngagementRating DevelopmentOpportunitiesRating { get; set; }
-        public string DevelopmentOpportunitiesComment { get; set; }
+        public string DevelopmentOpportunitiesComment { get; set; } = string.Empty;
 
         public EngagementRating PayAndBenefitsRating { get; set; }
-        public string PayAndBenefitsComment { get; set; }
+        public string PayAndBenefitsComment { get; set; } = string.Empty;
 
         public EngagementRating WorkingConditionsRating { get; set; }
-        public string WorkingConditionsComment { get; set; }
+        public string WorkingConditionsComment { get; set; } = string.Empty;
 
         public EngagementRating OrganizationGeneralRating { get; set; }
-        public string OrganizationGeneralComment { get; set; }
+        public string OrganizationGeneralComment { get; set; } = string.Empty;
 
         public EngagementRating OtherRating { get; set; }
-        public string OtherComment { get; set; }
+        public string OtherComment { get; set; } = string.Empty;
 
         // Interviewer Comments
 
-        public string InterviewerOverallComments { get; set; }
+        public string InterviewerOverallComments { get; set; } = string.Empty;
 
         // Audit Fields
 

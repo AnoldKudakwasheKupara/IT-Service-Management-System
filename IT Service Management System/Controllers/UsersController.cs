@@ -1,4 +1,5 @@
 ﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +21,7 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // 🔒 AUTH + ROLE CHECK
-        private IActionResult CheckAccess()
+        private IActionResult? CheckAccess()
         {
             if (HttpContext.Session.GetInt32("UserId") == null)
                 return RedirectToAction("Login", "Account");
@@ -40,7 +41,7 @@ namespace IT_Service_Management_System.Controllers
 
             var users = await _context.Users
                 .Include(u => u.Department)
-                    .ThenInclude(d => d.Hod)
+                    .ThenInclude(d => d!.Hod)
                 .Include(u => u.Supervisor)
                 .OrderBy(u => u.FirstName)
                 .ThenBy(u => u.LastName)
@@ -57,7 +58,7 @@ namespace IT_Service_Management_System.Controllers
 
             var user = await _context.Users
                 .Include(u => u.Department)
-                    .ThenInclude(d => d.Hod)
+                    .ThenInclude(d => d!.Hod)
                 .Include(u => u.Supervisor)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
@@ -243,7 +244,7 @@ namespace IT_Service_Management_System.Controllers
             // Only update password if supplied
             if (!string.IsNullOrWhiteSpace(user.PasswordHash))
             {
-                existingUser.PasswordHash = user.PasswordHash;
+                existingUser.PasswordHash = PasswordHasher.HashPassword(user.PasswordHash);
             }
 
             await _context.SaveChangesAsync();
@@ -337,6 +338,54 @@ namespace IT_Service_Management_System.Controllers
             await _auditService.LogAsync("Deleted", "User", id, $"User ID {id} deleted");
 
             return RedirectToAction("Index");
+        }
+
+        // 🔹 ADMIN-TRIGGERED PASSWORD RESET (emails a set-password link)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(int id)
+        {
+            var access = CheckAccess();
+            if (access != null) return access;
+
+            var user = await _context.Users.FindAsync(id);
+
+            if (user == null) return NotFound();
+
+            user.ResetToken = Guid.NewGuid().ToString();
+            user.TokenExpiry = DateTime.Now.AddHours(24);
+
+            await _context.SaveChangesAsync();
+
+            // ✅ AUDIT LOG
+            await _auditService.LogAsync("Reset Password", "User", user.Id, $"Password reset link sent to {user.Email}");
+
+            var link = Url.Action(
+                "SetPassword",
+                "Account",
+                new { token = user.ResetToken },
+                Request.Scheme);
+
+            var body = $@"
+        <p>Good Day {user.FirstName},</p>
+
+        <p>An administrator has requested a password reset for your account.</p>
+
+        <p>Click the link below to set a new password:</p>
+
+        <p>
+            <a href='{link}' style='color:blue; font-weight:bold;'>Set Your Password</a>
+        </p>
+
+        <p>This link will expire in 24 hours.</p>
+
+        <p>If you did not expect this email, please contact IT Support.</p>";
+
+            await _emailService.SendEmailAsync(user.Email, "Password Reset", body);
+
+            TempData["Success"] = $"A password reset link has been sent to {user.Email}.";
+
+            return RedirectToAction("Details", new { id });
         }
     }
 }

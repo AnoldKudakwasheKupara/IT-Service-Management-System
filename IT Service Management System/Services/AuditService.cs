@@ -28,7 +28,7 @@ namespace IT_Service_Management_System.Services
                 var ip = GetRealIpAddress();
 
                 var location = await GetLocationFromIp(ip);
-                var device = GetDeviceInfo(http?.Request.Headers["User-Agent"]);
+                var device = GetDeviceInfo(http?.Request.Headers.UserAgent);
 
                 var log = new AuditLog
                 {
@@ -57,7 +57,7 @@ namespace IT_Service_Management_System.Services
             }
         }
 
-        private string GetDeviceInfo(string userAgent)
+        private string GetDeviceInfo(string? userAgent)
         {
             if (string.IsNullOrEmpty(userAgent))
                 return "Unknown Device";
@@ -113,7 +113,7 @@ namespace IT_Service_Management_System.Services
             if (ip == "::1")
                 ip = "127.0.0.1";
 
-            return ip;
+            return ip ?? "Unknown";
         }
     }
 }

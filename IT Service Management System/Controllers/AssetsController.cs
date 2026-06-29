@@ -28,8 +28,8 @@ namespace IT_Service_Management_System.Controllers
                 query = query.Where(a =>
                     a.ItemName.Contains(search) ||
                     a.SerialNumber.Contains(search) ||
-                    a.User.FirstName.Contains(search) ||
-                    a.User.LastName.Contains(search));
+                    a.User!.FirstName.Contains(search) ||
+                    a.User!.LastName.Contains(search));
             }
 
             var data = query
@@ -69,11 +69,9 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Create(AssetCreateViewModel vm)
         {
-            if (ModelState.IsValid)
+            if (ModelState.IsValid && vm.Asset != null)
             {
-
-                vm.Asset.Status = GetStatusFromEvent(vm.Asset.EventType);
-
+                vm.Asset.Status = GetStatusFromEvent(vm.Asset.EventType ?? "");
 
                 _context.Add(vm.Asset);
                 _context.SaveChanges();
@@ -107,7 +105,7 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Edit(int id, AssetCreateViewModel vm)
         {
-            if (id != vm.Asset.Id)
+            if (vm.Asset == null || id != vm.Asset.Id)
                 return NotFound();
 
             if (ModelState.IsValid)

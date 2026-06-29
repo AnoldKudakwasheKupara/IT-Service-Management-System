@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
 
-        public string ServiceName { get; set; }
+        public string ServiceName { get; set; } = string.Empty;
 
         public decimal Amount { get; set; }
 
@@ -12,9 +12,9 @@
 
         public DateTime? PaidDate { get; set; }
 
-        public string Status { get; set; }
+        public string Status { get; set; } = string.Empty;
 
         public int PaymentScheduleId { get; set; }
-        public PaymentSchedule PaymentSchedule { get; set; }
+        public PaymentSchedule? PaymentSchedule { get; set; }
     }
 }

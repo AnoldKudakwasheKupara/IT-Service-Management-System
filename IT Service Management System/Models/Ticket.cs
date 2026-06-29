@@ -8,12 +8,12 @@ namespace IT_Service_Management_System.Models
         public int Id { get; set; }
 
         [Required]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         [Required]
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
-        public string Category { get; set; }
+        public string Category { get; set; } = string.Empty;
 
         public TicketStatus Status { get; set; } = TicketStatus.Open;
 
@@ -23,17 +23,17 @@ namespace IT_Service_Management_System.Models
 
         public int CreatedById { get; set; }
         [ValidateNever]
-        public User CreatedBy { get; set; }
+        public User? CreatedBy { get; set; }
 
         public int? AssignedToId { get; set; }
         [ValidateNever]
-        public User AssignedTo { get; set; }
+        public User? AssignedTo { get; set; }
 
         [ValidateNever]
-        public ICollection<TicketMessage> Messages { get; set; }
+        public ICollection<TicketMessage> Messages { get; set; } = new List<TicketMessage>();
 
         [ValidateNever]
-        public ICollection<TicketAttachment> Attachments { get; set; }
+        public ICollection<TicketAttachment> Attachments { get; set; } = new List<TicketAttachment>();
 
         public enum TicketStatus
         {

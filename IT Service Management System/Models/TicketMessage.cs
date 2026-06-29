@@ -8,7 +8,7 @@ namespace IT_Service_Management_System.Models
         public int Id { get; set; }
 
         [Required]
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
 
         public DateTime SentAt { get; set; } = DateTime.Now;
 
@@ -16,12 +16,12 @@ namespace IT_Service_Management_System.Models
         public int SenderId { get; set; }
 
         [ValidateNever]
-        public Ticket Ticket { get; set; }
+        public Ticket? Ticket { get; set; }
 
         [ValidateNever]
-        public User Sender { get; set; }
+        public User? Sender { get; set; }
 
         [ValidateNever]
-        public ICollection<TicketAttachment> Attachments { get; set; }
+        public ICollection<TicketAttachment> Attachments { get; set; } = new List<TicketAttachment>();
     }
 }

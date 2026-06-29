@@ -50,16 +50,19 @@ namespace IT_Service_Management_System.Controllers
                 // 🔥 Update Asset Status Automatically
                 var asset = _context.Assets.Find(vm.AssetId);
 
-                if (vm.EventType == "Issued")
-                    asset.Status = "Assigned";
-                else if (vm.EventType == "Repair")
-                    asset.Status = "Under Repair";
-                else if (vm.EventType == "Stolen")
-                    asset.Status = "Stolen";
-                else if (vm.EventType == "Retired")
-                    asset.Status = "Retired";
-                else if (vm.EventType == "Returned")
-                    asset.Status = "Available";
+                if (asset != null)
+                {
+                    if (vm.EventType == "Issued")
+                        asset.Status = "Assigned";
+                    else if (vm.EventType == "Repair")
+                        asset.Status = "Under Repair";
+                    else if (vm.EventType == "Stolen")
+                        asset.Status = "Stolen";
+                    else if (vm.EventType == "Retired")
+                        asset.Status = "Retired";
+                    else if (vm.EventType == "Returned")
+                        asset.Status = "Available";
+                }
 
                 _context.SaveChanges();
 

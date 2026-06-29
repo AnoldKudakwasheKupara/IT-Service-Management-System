@@ -8,14 +8,14 @@ namespace IT_Service_Management_System.Models
 
         public int TalentIdentificationId { get; set; }
 
-        public string DevelopmentAction { get; set; }
+        public string DevelopmentAction { get; set; } = string.Empty;
 
-        public string Objective { get; set; }
+        public string Objective { get; set; } = string.Empty;
 
-        public string Timeline { get; set; }
+        public string Timeline { get; set; } = string.Empty;
 
         public DevelopmentStatus Status { get; set; }
 
-        public TalentIdentification TalentIdentification { get; set; }
+        public TalentIdentification? TalentIdentification { get; set; }
     }
 }
