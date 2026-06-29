@@ -1,4 +1,5 @@
 ﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -243,7 +244,7 @@ namespace IT_Service_Management_System.Controllers
             // Only update password if supplied
             if (!string.IsNullOrWhiteSpace(user.PasswordHash))
             {
-                existingUser.PasswordHash = user.PasswordHash;
+                existingUser.PasswordHash = PasswordHasher.HashPassword(user.PasswordHash);
             }
 
             await _context.SaveChangesAsync();

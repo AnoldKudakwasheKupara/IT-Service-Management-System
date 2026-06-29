@@ -1,12 +1,15 @@
 ﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using static IT_Service_Management_System.Models.Ticket;
 
 namespace IT_Service_Management_System.Controllers
 {
+    [AllowAnonymous]
     public class AccountController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -31,13 +34,20 @@ namespace IT_Service_Management_System.Controllers
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == email);
 
-            if (user == null || user.PasswordHash != password || !user.IsActive)
+            if (user == null || !user.IsActive || !PasswordHasher.VerifyPassword(password, user.PasswordHash))
             {
                 // ✅ AUDIT LOG (FAILED LOGIN)
                 await _auditService.LogAsync("Login Failed", "User", null, $"Failed login attempt for {email}");
 
                 ViewBag.Error = "Invalid credentials or account not activated.";
                 return View();
+            }
+
+            // Transparently upgrade legacy plaintext passwords to a salted hash.
+            if (!PasswordHasher.IsHashed(user.PasswordHash))
+            {
+                user.PasswordHash = PasswordHasher.HashPassword(password);
+                await _context.SaveChangesAsync();
             }
 
             HttpContext.Session.SetInt32("UserId", user.Id);
@@ -50,14 +60,14 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction("Index", "Home");
         }
 
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
             var userId = HttpContext.Session.GetInt32("UserId");
 
             // ✅ AUDIT LOG
             if (userId != null)
             {
-                _auditService.LogAsync("Logout", "User", userId, "User logged out");
+                await _auditService.LogAsync("Logout", "User", userId, "User logged out");
             }
 
             HttpContext.Session.Clear();
@@ -93,7 +103,7 @@ namespace IT_Service_Management_System.Controllers
             if (!IsValidPassword(password))
                 return Content("ERROR: Weak password");
 
-            user.PasswordHash = password;
+            user.PasswordHash = PasswordHasher.HashPassword(password);
             user.IsActive = true;
             user.ResetToken = null;
             user.TokenExpiry = null;

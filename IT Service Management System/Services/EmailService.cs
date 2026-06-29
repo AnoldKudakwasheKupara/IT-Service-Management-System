@@ -14,9 +14,11 @@ namespace IT_Service_Management_System.Services
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
+            var port = int.TryParse(_config["EmailSettings:Port"], out var p) ? p : 587;
+
             var smtp = new SmtpClient(_config["EmailSettings:SmtpServer"])
             {
-                Port = int.Parse(_config["EmailSettings:Port"]),
+                Port = port,
                 Credentials = new NetworkCredential(
                     _config["EmailSettings:SenderEmail"],
                     _config["EmailSettings:SenderPassword"]
