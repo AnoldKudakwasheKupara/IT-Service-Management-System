@@ -1,62 +1,74 @@
-﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
-using System.Text.Json;
 
 namespace IT_Service_Management_System.Services
 {
+    /// <summary>
+    /// Writes audit-log entries. Request-bound data (user, IP, user-agent) is captured synchronously,
+    /// then the geo lookup and database write run on the background queue so they never block the
+    /// originating request.
+    /// </summary>
     public class AuditService
     {
-        private readonly ApplicationDbContext _context;
         private readonly IHttpContextAccessor _httpContext;
+        private readonly IBackgroundTaskQueue _queue;
         private readonly ILogger<AuditService> _logger;
 
-        public AuditService(ApplicationDbContext context, IHttpContextAccessor httpContext, ILogger<AuditService> logger)
+        public AuditService(
+            IHttpContextAccessor httpContext,
+            IBackgroundTaskQueue queue,
+            ILogger<AuditService> logger)
         {
-            _context = context;
             _httpContext = httpContext;
+            _queue = queue;
             _logger = logger;
         }
 
-        public async Task LogAsync(string action, string entity, int? entityId = null, string details = "")
+        public Task LogAsync(string action, string entity, int? entityId = null, string details = "")
         {
             try
             {
+                // Capture everything that needs the live HttpContext now; the rest runs in the background.
                 var http = _httpContext.HttpContext;
-
                 var userId = http?.Session.GetInt32("UserId")?.ToString();
                 var userName = http?.Session.GetString("UserName");
                 var userRole = http?.Session.GetString("UserRole");
-
                 var ip = GetRealIpAddress();
-
-                var location = await GetLocationFromIp(ip);
                 var device = GetDeviceInfo(http?.Request.Headers.UserAgent);
+                var timestamp = DateTime.Now;
 
-                var log = new AuditLog
+                var userLabel = string.IsNullOrEmpty(userName) ? "Anonymous" : $"{userName} ({userRole})";
+
+                _queue.Enqueue(async (sp, ct) =>
                 {
-                    UserId = userId ?? "System",
-                    UserName = string.IsNullOrEmpty(userName)
-                        ? "Anonymous"
-                        : $"{userName} ({userRole})",
+                    var db = sp.GetRequiredService<ApplicationDbContext>();
+                    var geo = sp.GetRequiredService<GeoLocationService>();
 
-                    Action = action,
-                    Entity = entity,
-                    EntityId = entityId,
-                    Details = details,
+                    var location = await geo.ResolveAsync(ip);
 
-                    Timestamp = DateTime.Now,
-                    IpAddress = ip,
-                    Location = location,
-                    Device = device
-                };
+                    db.AuditLogs.Add(new AuditLog
+                    {
+                        UserId = userId ?? "System",
+                        UserName = userLabel,
+                        Action = action,
+                        Entity = entity,
+                        EntityId = entityId,
+                        Details = details,
+                        Timestamp = timestamp,
+                        IpAddress = ip,
+                        Location = location,
+                        Device = device
+                    });
 
-                _context.AuditLogs.Add(log);
-                await _context.SaveChangesAsync();
+                    await db.SaveChangesAsync(ct);
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to write audit log for action {Action} on {Entity}", action, entity);
+                _logger.LogError(ex, "Failed to enqueue audit log for action {Action} on {Entity}", action, entity);
             }
+
+            return Task.CompletedTask;
         }
 
         private string GetDeviceInfo(string? userAgent)
@@ -64,57 +76,24 @@ namespace IT_Service_Management_System.Services
             if (string.IsNullOrEmpty(userAgent))
                 return "Unknown Device";
 
-            string browser = "Unknown Browser";
-            string os = "Unknown OS";
+            string browser = userAgent.Contains("Edg") ? "Edge"
+                : userAgent.Contains("Chrome") ? "Chrome"
+                : userAgent.Contains("Firefox") ? "Firefox"
+                : userAgent.Contains("Safari") ? "Safari" : "Unknown Browser";
 
-            // Browser
-            if (userAgent.Contains("Chrome")) browser = "Chrome";
-            else if (userAgent.Contains("Firefox")) browser = "Firefox";
-            else if (userAgent.Contains("Safari")) browser = "Safari";
-            else if (userAgent.Contains("Edge")) browser = "Edge";
-
-            // OS
-            if (userAgent.Contains("Windows")) os = "Windows";
-            else if (userAgent.Contains("Mac")) os = "MacOS";
-            else if (userAgent.Contains("Linux")) os = "Linux";
-            else if (userAgent.Contains("Android")) os = "Android";
-            else if (userAgent.Contains("iPhone")) os = "iOS";
+            string os = userAgent.Contains("Windows") ? "Windows"
+                : userAgent.Contains("Android") ? "Android"
+                : userAgent.Contains("iPhone") || userAgent.Contains("iPad") ? "iOS"
+                : userAgent.Contains("Mac") ? "MacOS"
+                : userAgent.Contains("Linux") ? "Linux" : "Unknown OS";
 
             return $"{browser} on {os}";
-        }
-        private async Task<string> GetLocationFromIp(string ip)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(ip) || ip == "127.0.0.1")
-                    return "Localhost";
-
-                using var client = new HttpClient();
-                var response = await client.GetStringAsync($"http://ip-api.com/json/{ip}");
-
-                var json = JsonDocument.Parse(response);
-
-                var city = json.RootElement.GetProperty("city").GetString();
-                var country = json.RootElement.GetProperty("country").GetString();
-
-                return $"{city}, {country}";
-            }
-            catch
-            {
-                return "Unknown";
-            }
         }
 
         private string GetRealIpAddress()
         {
-            var context = _httpContext.HttpContext;
-
-            var ip = context?.Connection?.RemoteIpAddress?.ToString();
-
-            // Handle IPv6 localhost
-            if (ip == "::1")
-                ip = "127.0.0.1";
-
+            var ip = _httpContext.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+            if (ip == "::1") ip = "127.0.0.1";
             return ip ?? "Unknown";
         }
     }

@@ -12,15 +12,15 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly AuditService _auditService;
-        private readonly EmailService _emailService;
+        private readonly EmailDispatcher _email;
         private readonly ILogger<TicketsController> _logger;
 
         public TicketsController(ApplicationDbContext context, AuditService auditService,
-            EmailService emailService, ILogger<TicketsController> logger)
+            EmailDispatcher email, ILogger<TicketsController> logger)
         {
             _context = context;
             _auditService = auditService;
-            _emailService = emailService;
+            _email = email;
             _logger = logger;
         }
 
@@ -43,10 +43,11 @@ namespace IT_Service_Management_System.Controllers
                 .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
                 .ToListAsync();
 
-        private async Task TrySendEmailAsync(string toEmail, string toName, string subject, string body)
+        // Queues the email on the background worker so SMTP latency never blocks the request.
+        private Task TrySendEmailAsync(string toEmail, string toName, string subject, string body)
         {
-            try { await _emailService.SendEmailAsync(toEmail, toName, subject, body); }
-            catch (Exception ex) { _logger.LogError(ex, "Ticket email to {Email} failed", toEmail); }
+            _email.Queue(toEmail, toName, subject, body);
+            return Task.CompletedTask;
         }
 
         // ── list ─────────────────────────────────────────────────────────────────────

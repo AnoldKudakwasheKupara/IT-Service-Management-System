@@ -14,7 +14,7 @@ namespace IT_Service_Management_System.Controllers
     public class AccountController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly EmailService _emailService;
+        private readonly EmailDispatcher _email;
         private readonly AuditService _auditService;
         private readonly SessionService _sessions;
         private readonly ConfigurationService _configService;
@@ -32,7 +32,7 @@ namespace IT_Service_Management_System.Controllers
 
         public AccountController(
             ApplicationDbContext context,
-            EmailService emailService,
+            EmailDispatcher email,
             AuditService auditService,
             SessionService sessions,
             ConfigurationService configService,
@@ -42,7 +42,7 @@ namespace IT_Service_Management_System.Controllers
             IMemoryCache cache)
         {
             _context = context;
-            _emailService = emailService;
+            _email = email;
             _auditService = auditService;
             _sessions = sessions;
             _configService = configService;
@@ -567,16 +567,12 @@ namespace IT_Service_Management_System.Controllers
             return problems.Count == 0;
         }
 
-        private async Task TrySendEmailAsync(string toEmail, string toName, string subject, string body)
+        // Queues the email on the background worker (its own scope), so a slow/failing SMTP
+        // server never blocks or breaks the request. Returns immediately.
+        private Task TrySendEmailAsync(string toEmail, string toName, string subject, string body)
         {
-            try
-            {
-                await _emailService.SendEmailAsync(toEmail, toName, subject, body);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to send email to {Email} — subject: {Subject}", toEmail, subject);
-            }
+            _email.Queue(toEmail, toName, subject, body);
+            return Task.CompletedTask;
         }
 
         protected UserRole? GetCurrentUserRole()

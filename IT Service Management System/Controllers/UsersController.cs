@@ -12,15 +12,15 @@ namespace IT_Service_Management_System.Controllers
     public class UsersController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly EmailService _emailService;
+        private readonly EmailDispatcher _email;
         private readonly AuditService _auditService;
         private readonly AlertService _alerts;
         private readonly ILogger<UsersController> _logger;
 
-        public UsersController(ApplicationDbContext context, EmailService emailService, AuditService auditService, AlertService alerts, ILogger<UsersController> logger)
+        public UsersController(ApplicationDbContext context, EmailDispatcher email, AuditService auditService, AlertService alerts, ILogger<UsersController> logger)
         {
             _context = context;
-            _emailService = emailService;
+            _email = email;
             _auditService = auditService;
             _alerts = alerts;
             _logger = logger;
@@ -29,16 +29,11 @@ namespace IT_Service_Management_System.Controllers
         private static bool IsPrivileged(Ticket.UserRole role) =>
             role == Ticket.UserRole.Admin || role == Ticket.UserRole.SystemsAdmin;
 
-        private async Task TrySendEmailAsync(string toEmail, string toName, string subject, string body)
+        // Queues the email on the background worker so SMTP latency never blocks the request.
+        private Task TrySendEmailAsync(string toEmail, string toName, string subject, string body)
         {
-            try
-            {
-                await _emailService.SendEmailAsync(toEmail, toName, subject, body);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to send email to {Email} — subject: {Subject}", toEmail, subject);
-            }
+            _email.Queue(toEmail, toName, subject, body);
+            return Task.CompletedTask;
         }
 
         // 🔒 AUTH + ROLE CHECK

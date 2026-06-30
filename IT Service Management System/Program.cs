@@ -87,6 +87,11 @@ builder.Services.AddScoped<AlertService>();
 
 builder.Services.AddScoped<BackupService>();
 
+// Background work queue + hosted processor (audit writes, geo lookups, email sends run off-request).
+builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
+builder.Services.AddHostedService<QueuedHostedService>();
+builder.Services.AddScoped<EmailDispatcher>();
+
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database");
 
