@@ -41,6 +41,8 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<TalentDevelopmentAction> TalentDevelopmentActions { get; set; }
         public DbSet<UserAccessRight> UserAccessRights { get; set; }
         public DbSet<UserAccessRightItem> UserAccessRightItems { get; set; }
+        public DbSet<UserSession> UserSessions { get; set; }
+        public DbSet<AppConfiguration> AppConfigurations { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -153,6 +155,19 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<TicketAttachment>()
                 .ToTable(t => t.HasCheckConstraint("CK_Attachment_Owner",
                     "[TicketId] IS NOT NULL OR [TicketMessageId] IS NOT NULL"));
+
+            // UserSession -> User
+            modelBuilder.Entity<UserSession>()
+                .HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(s => s.SessionToken);
+
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(s => new { s.UserId, s.RevokedAt });
         }
     }
 }

@@ -29,6 +29,25 @@ namespace IT_Service_Management_System.Models
 
         public bool IsActive { get; set; } = false;
 
+        // ── Security / account-protection fields ──────────────────────────────────
+        public int FailedLoginCount { get; set; } = 0;
+
+        /// <summary>When set and in the future, the account is locked out.</summary>
+        public DateTime? LockoutEnd { get; set; }
+
+        public DateTime? LastLoginAt { get; set; }
+
+        public DateTime? PasswordChangedAt { get; set; }
+
+        /// <summary>Rotated on password change / "log out everywhere" to invalidate existing sessions.</summary>
+        public string? SecurityStamp { get; set; }
+
+        /// <summary>Per-user email-OTP MFA toggle (global enable/enforcement lives in AppConfiguration).</summary>
+        public bool MfaEnabled { get; set; } = false;
+
+        [NotMapped]
+        public bool IsLockedOut => LockoutEnd.HasValue && LockoutEnd.Value > DateTime.Now;
+
         [Required]
         public UserRole Role { get; set; }
         public int? DepartmentId { get; set; }

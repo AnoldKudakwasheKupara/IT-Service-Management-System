@@ -45,6 +45,8 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<AuditService>();
 
+builder.Services.AddScoped<ConfigurationService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
