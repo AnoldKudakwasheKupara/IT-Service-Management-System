@@ -16,11 +16,13 @@ namespace IT_Service_Management_System.Services
 
         private readonly ApplicationDbContext _context;
         private readonly IHttpContextAccessor _http;
+        private readonly GeoLocationService _geo;
 
-        public SessionService(ApplicationDbContext context, IHttpContextAccessor http)
+        public SessionService(ApplicationDbContext context, IHttpContextAccessor http, GeoLocationService geo)
         {
             _context = context;
             _http = http;
+            _geo = geo;
         }
 
         /// <summary>Creates a session record and populates the ASP.NET session for a freshly authenticated user.</summary>
@@ -33,12 +35,14 @@ namespace IT_Service_Management_System.Services
             if (string.IsNullOrEmpty(user.SecurityStamp))
                 user.SecurityStamp = Guid.NewGuid().ToString("N");
 
+            var ip = GetIp();
             var session = new UserSession
             {
                 UserId = user.Id,
                 SessionToken = token,
-                IpAddress = GetIp(),
+                IpAddress = ip,
                 Device = GetDevice(),
+                Location = await _geo.ResolveAsync(ip),
                 CreatedAt = DateTime.Now,
                 LastSeenAt = DateTime.Now
             };

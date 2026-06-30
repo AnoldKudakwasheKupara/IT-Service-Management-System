@@ -244,6 +244,29 @@ namespace IT_Service_Management_System.Helpers
             return Wrap(firstName, body);
         }
 
+        /// <summary>Generic security alert sent to administrators.</summary>
+        public static string AdminAlert(string title, string severity, string intro, IEnumerable<KeyValuePair<string, string>> facts)
+        {
+            var color = severity == "critical" ? "#dc2626" : severity == "warning" ? "#f59e0b" : "#3b82f6";
+            var rows = string.Join("", facts.Select(f => $@"
+              <tr>
+                <td style=""padding:6px 12px;color:#64748b;font-size:13px;white-space:nowrap;vertical-align:top;"">{f.Key}</td>
+                <td style=""padding:6px 12px;color:#1e293b;font-size:13px;font-weight:600;"">{f.Value}</td>
+              </tr>"));
+
+            var body = $@"
+<div style=""background:{color}1a;border-left:4px solid {color};border-radius:0 8px 8px 0;padding:14px 18px;margin:0 0 20px;"">
+  <div style=""font-size:15px;font-weight:700;color:{color};"">&#9888;&nbsp; {title}</div>
+</div>
+<p style=""color:#334155;font-size:14px;line-height:1.7;margin:0 0 16px;"">{intro}</p>
+<table style=""width:100%;border-collapse:collapse;background:#f8fafc;border-radius:8px;overflow:hidden;"">
+  {rows}
+</table>
+<p style=""color:#64748b;font-size:12px;margin:18px 0 0;"">Review this in the Security Dashboard &rarr; Recent Security Events.</p>";
+
+            return Wrap("Administrator", body, "Automated security alert — Axis IT Operations.");
+        }
+
         /// <summary>Sent when admin resends an activation link to an inactive user.</summary>
         public static string ResendActivation(string firstName, string activationLink)
         {

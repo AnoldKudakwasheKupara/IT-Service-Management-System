@@ -14,15 +14,20 @@ namespace IT_Service_Management_System.Controllers
         private readonly ApplicationDbContext _context;
         private readonly EmailService _emailService;
         private readonly AuditService _auditService;
+        private readonly AlertService _alerts;
         private readonly ILogger<UsersController> _logger;
 
-        public UsersController(ApplicationDbContext context, EmailService emailService, AuditService auditService, ILogger<UsersController> logger)
+        public UsersController(ApplicationDbContext context, EmailService emailService, AuditService auditService, AlertService alerts, ILogger<UsersController> logger)
         {
             _context = context;
             _emailService = emailService;
             _auditService = auditService;
+            _alerts = alerts;
             _logger = logger;
         }
+
+        private static bool IsPrivileged(Ticket.UserRole role) =>
+            role == Ticket.UserRole.Admin || role == Ticket.UserRole.SystemsAdmin;
 
         private async Task TrySendEmailAsync(string toEmail, string toName, string subject, string body)
         {
@@ -167,6 +172,13 @@ namespace IT_Service_Management_System.Controllers
 
             await _auditService.LogAsync("Created", "User", user.Id, $"User {user.Email} created");
 
+            // Admin alert: a new privileged account was created.
+            if (IsPrivileged(user.Role))
+            {
+                var createdBy = HttpContext.Session.GetString("UserName") ?? "Unknown";
+                await _alerts.NewAdminAccountAsync(user.Email, user.Role.ToString(), createdBy);
+            }
+
             var activationLink = Url.Action("SetPassword", "Account",
                 new { token = user.ResetToken }, Request.Scheme)!;
 
@@ -275,6 +287,14 @@ namespace IT_Service_Management_System.Controllers
             {
                 await _auditService.LogAsync("Permission Changed", "User", existingUser.Id,
                     $"Role changed from {oldRole} to {existingUser.Role} for {existingUser.Email}");
+
+                // Admin alert when a non-privileged account is elevated to a privileged role.
+                if (!IsPrivileged(oldRole) && IsPrivileged(existingUser.Role))
+                {
+                    var changedBy = HttpContext.Session.GetString("UserName") ?? "Unknown";
+                    await _alerts.PrivilegeEscalationAsync(existingUser.Email,
+                        oldRole.ToString(), existingUser.Role.ToString(), changedBy);
+                }
             }
 
             return RedirectToAction(nameof(Index));

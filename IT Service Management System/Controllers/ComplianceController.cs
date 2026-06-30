@@ -10,13 +10,17 @@ namespace IT_Service_Management_System.Controllers
     [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin")]
     public class ComplianceController : Controller
     {
+        private const int LargeExportThreshold = 500;
+
         private readonly ApplicationDbContext _context;
         private readonly AuditService _auditService;
+        private readonly AlertService _alerts;
 
-        public ComplianceController(ApplicationDbContext context, AuditService auditService)
+        public ComplianceController(ApplicationDbContext context, AuditService auditService, AlertService alerts)
         {
             _context = context;
             _auditService = auditService;
+            _alerts = alerts;
         }
 
         // type key -> (title, icon, audit actions [] (empty = all), description)
@@ -90,6 +94,13 @@ namespace IT_Service_Management_System.Controllers
             // A data export is itself an auditable event.
             await _auditService.LogAsync("Data Export", "Compliance", null,
                 $"Exported '{def.Title}' ({logs.Count} rows, {fromD:yyyy-MM-dd}–{toD:yyyy-MM-dd})");
+
+            // Alert admins on unusually large exports.
+            if (logs.Count >= LargeExportThreshold)
+            {
+                var who = HttpContext.Session.GetString("UserName") ?? "Unknown";
+                await _alerts.LargeDataExportAsync(who, def.Title, logs.Count);
+            }
 
             var fileName = $"compliance-{type}-{DateTime.Now:yyyyMMdd-HHmm}.csv";
             return File(Encoding.UTF8.GetBytes(sb.ToString()), "text/csv", fileName);

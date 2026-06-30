@@ -18,6 +18,8 @@ namespace IT_Service_Management_System.Controllers
         private readonly AuditService _auditService;
         private readonly SessionService _sessions;
         private readonly ConfigurationService _configService;
+        private readonly AlertService _alerts;
+        private readonly GeoLocationService _geo;
         private readonly ILogger<AccountController> _logger;
         private readonly IMemoryCache _cache;
 
@@ -33,6 +35,8 @@ namespace IT_Service_Management_System.Controllers
             AuditService auditService,
             SessionService sessions,
             ConfigurationService configService,
+            AlertService alerts,
+            GeoLocationService geo,
             ILogger<AccountController> logger,
             IMemoryCache cache)
         {
@@ -41,6 +45,8 @@ namespace IT_Service_Management_System.Controllers
             _auditService = auditService;
             _sessions = sessions;
             _configService = configService;
+            _alerts = alerts;
+            _geo = geo;
             _logger = logger;
             _cache = cache;
         }
@@ -129,6 +135,9 @@ namespace IT_Service_Management_System.Controllers
                         await TrySendEmailAsync(user.Email, user.FirstName,
                             "Your account has been locked — Axis IT Operations",
                             EmailTemplates.AccountLocked(user.FirstName, user.LockoutEnd?.ToString("h:mm tt") ?? "", resetLink));
+
+                        // Admin alert: account locked after multiple failed logins.
+                        await _alerts.MultipleFailedLoginsAsync(user.Email, _sessions.CurrentIp(), _sessions.CurrentDevice());
                     }
                     else if (config.LockoutMaxFailedAttempts > 2 &&
                              user.FailedLoginCount == Math.Max(2, config.LockoutMaxFailedAttempts - 2))
@@ -267,6 +276,13 @@ namespace IT_Service_Management_System.Controllers
         {
             bool knownDevice = await _sessions.IsKnownDeviceAsync(user.Id);
 
+            // Capture the locations this user has signed in from before (for suspicious-location detection).
+            var priorLocations = await _context.UserSessions
+                .Where(s => s.UserId == user.Id && s.Location != null)
+                .Select(s => s.Location!)
+                .Distinct()
+                .ToListAsync();
+
             await _sessions.StartSessionAsync(user);
             await _auditService.LogAsync("Login", "User", user.Id, $"User {user.Email} logged in");
 
@@ -278,6 +294,15 @@ namespace IT_Service_Management_System.Controllers
                     "New sign-in to your account — Axis IT Operations",
                     EmailTemplates.NewDeviceLogin(user.FirstName, _sessions.CurrentDevice(),
                         _sessions.CurrentIp(), DateTime.Now.ToString("MMM dd, yyyy h:mm tt")));
+            }
+
+            // Suspicious location: a resolvable, previously-unseen location for this user.
+            var ip = _sessions.CurrentIp();
+            var location = await _geo.ResolveAsync(ip);
+            if (location != "Localhost" && location != "Unknown" &&
+                priorLocations.Any() && !priorLocations.Contains(location))
+            {
+                await _alerts.SuspiciousLocationAsync(user.Email, location, ip, _sessions.CurrentDevice());
             }
 
             return RedirectToAction("Index", "Home");

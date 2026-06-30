@@ -67,6 +67,12 @@ builder.Services.AddScoped<ConfigurationService>();
 
 builder.Services.AddScoped<SessionService>();
 
+builder.Services.AddHttpClient();
+
+builder.Services.AddScoped<GeoLocationService>();
+
+builder.Services.AddScoped<AlertService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -80,6 +86,8 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseSession();
+
+app.UseMiddleware<IT_Service_Management_System.Middleware.DatabaseFailureAlertMiddleware>();
 
 app.UseAuthorization();
 
