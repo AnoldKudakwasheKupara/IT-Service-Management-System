@@ -14,6 +14,9 @@
     <!-- Toastr notifications -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" />
 
+    <!-- Shared design system (tokens, accessibility, utilities) -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
     <style>
             * {
                 margin: 0;
@@ -21,51 +24,7 @@
                 box-sizing: border-box;
             }
 
-            :root {
-                --primary: #3b82f6;
-                --primary-dark: #2563eb;
-                --primary-light: #dbeafe;
-                --primary-glow: rgba(59,130,246,0.25);
-
-                /* Semantic colors (shared across all pages) */
-                --success: #2c9e6e;
-                --success-light: #e6f5e9;
-                --warning: #f5b042;
-                --warning-light: #fff5e6;
-                --danger: #e53e3e;
-                --danger-light: #fff5f5;
-                --info: #3b82f6;
-
-                /* Neutral / gray scale (slate) */
-                --gray-50: #f8fafc;
-                --gray-100: #f1f5f9;
-                --gray-200: #e2e8f0;
-                --gray-300: #cbd5e1;
-                --gray-400: #94a3b8;
-                --gray-500: #64748b;
-                --gray-600: #475569;
-                --gray-700: #334155;
-                --gray-800: #1e293b;
-
-                --sidebar-bg: #0f172a;
-                --sidebar-hover: #1e293b;
-                --sidebar-active: #3b82f6;
-                --text-primary: #0f172a;
-                --text-secondary: #475569;
-                --text-light: #e2e8f0;
-                --text-muted: #94a3b8;
-                --bg-main: #f1f5f9;
-                --bg-card: #ffffff;
-                --border-light: #e2e8f0;
-                --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-                --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-                --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
-                --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-                --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-                --radius-lg: 1.5rem;
-                --radius-md: 1rem;
-                --radius-sm: 0.75rem;
-            }
+            /* Design tokens now live in wwwroot/css/site.css (single source of truth). */
 
             body {
                 margin: 0;
@@ -565,6 +524,7 @@
 </head>
 
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
 
     @{
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
@@ -772,15 +732,15 @@
 
                         <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="btn-logout" title="Logout">
-                                <i class="fas fa-sign-out-alt"></i>
+                            <button type="submit" class="btn-logout" title="Logout" aria-label="Log out">
+                                <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
                             </button>
                         </form>
                     </div>
                 </div>
 
                 <!-- CONTENT -->
-                <main class="content fade-in">
+                <main id="main-content" class="content fade-in" tabindex="-1">
                     @RenderBody()
                 </main>
 
@@ -789,7 +749,7 @@
     }
     else
     {
-        <main style="background: var(--bg-main); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem;">
+        <main id="main-content" tabindex="-1" style="background: var(--bg-main); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem;">
             @RenderBody()
         </main>
     }
