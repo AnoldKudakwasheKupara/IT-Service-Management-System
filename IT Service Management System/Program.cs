@@ -47,6 +47,8 @@ builder.Services.AddScoped<AuditService>();
 
 builder.Services.AddScoped<ConfigurationService>();
 
+builder.Services.AddScoped<SessionService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

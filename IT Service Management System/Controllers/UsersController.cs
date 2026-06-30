@@ -274,6 +274,7 @@ namespace IT_Service_Management_System.Controllers
         }
 
         [HttpGet]
+        [IT_Service_Management_System.Filters.AllowAnyRole]
         public async Task<IActionResult> Profile()
         {
             var userId = HttpContext.Session.GetInt32("UserId");
@@ -286,10 +287,18 @@ namespace IT_Service_Management_System.Controllers
             if (user == null)
                 return NotFound();
 
+            var currentToken = HttpContext.Session.GetString(SessionService.SessionTokenKey);
+            ViewBag.ActiveSessions = await _context.UserSessions
+                .Where(s => s.UserId == userId && s.RevokedAt == null)
+                .OrderByDescending(s => s.LastSeenAt)
+                .ToListAsync();
+            ViewBag.CurrentSessionToken = currentToken;
+
             return View(user);
         }
 
         [HttpPost]
+        [IT_Service_Management_System.Filters.AllowAnyRole]
         public async Task<IActionResult> Profile(User model)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
