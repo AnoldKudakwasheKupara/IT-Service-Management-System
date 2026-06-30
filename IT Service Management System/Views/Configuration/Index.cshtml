@@ -21,7 +21,7 @@
     {
         <div class="cfg-flash success"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
     }
-    <div asp-validation-summary="ModelOnly" class="cfg-flash danger"></div>
+    <div asp-validation-summary="All" class="cfg-flash danger"></div>
 
     <form asp-action="Index" method="post">
         @Html.AntiForgeryToken()
@@ -124,8 +124,8 @@
                         </select>
                     </label>
                     <label class="cfg-field"><span>Time (HH:mm)</span><input asp-for="BackupTime" class="cfg-input" placeholder="02:00" /></label>
-                    <label class="cfg-field"><span>Retention (keep last N)</span><input asp-for="BackupRetentionCount" type="number" min="1" max="365" class="cfg-input" /></label>
-                    <label class="cfg-field"><span>Backup folder path</span><input asp-for="BackupPath" class="cfg-input" placeholder="C:\\Backups\\Helpdesk" /></label>
+                    <label class="cfg-field"><span>Retention (keep last N)</span><input asp-for="BackupRetentionCount" type="number" min="1" max="365" class="cfg-input" /><span asp-validation-for="BackupRetentionCount" class="cfg-err"></span></label>
+                    <label class="cfg-field"><span>Backup folder path</span><input asp-for="BackupPath" class="cfg-input" placeholder="C:\Backups\Helpdesk" /><span asp-validation-for="BackupPath" class="cfg-err"></span></label>
                     <p class="cfg-hint"><i class="fas fa-info-circle"></i> Manage and run backups from the <a asp-controller="Backup" asp-action="Index">Backup</a> screen.</p>
                 </div>
             </div>
@@ -178,5 +178,12 @@
     .cfg-flash:empty { display:none; }
     .cfg-flash.success { background:#f0fdf4; border-left:4px solid #22c55e; color:#166534; }
     .cfg-flash.danger { background:#fef2f2; border-left:4px solid #ef4444; color:#b91c1c; }
+    .cfg-err { color:#b91c1c; font-size:0.72rem; font-weight:500; }
+    .cfg-err:empty { display:none; }
+    .input-validation-error { border-color:#ef4444 !important; }
     @@media (max-width:900px){ .cfg-grid,.cfg-toggle-grid { grid-template-columns:1fr; } }
 </style>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

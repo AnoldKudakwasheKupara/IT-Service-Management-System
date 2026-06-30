@@ -33,6 +33,19 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(AppConfiguration model)
         {
+            // These are non-nullable strings (so MVC treats them as required). A blank value
+            // here would otherwise silently block the entire save — coerce to sane defaults.
+            if (string.IsNullOrWhiteSpace(model.BackupTime))
+            {
+                model.BackupTime = "02:00";
+                ModelState.Remove(nameof(model.BackupTime));
+            }
+            if (string.IsNullOrWhiteSpace(model.BackupFrequency))
+            {
+                model.BackupFrequency = "Daily";
+                ModelState.Remove(nameof(model.BackupFrequency));
+            }
+
             if (!ModelState.IsValid)
             {
                 ViewBag.SmtpPasswordConfigured =
