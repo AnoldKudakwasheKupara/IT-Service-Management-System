@@ -649,6 +649,10 @@
                        asp-controller="Configuration" asp-action="Index">
                         <i class="fas fa-sliders"></i> Configuration
                     </a>
+                    <a class="nav-item @(currentController == "Backup" ? "active" : "")"
+                       asp-controller="Backup" asp-action="Index">
+                        <i class="fas fa-database"></i> Backup &amp; Recovery
+                    </a>
                 }
 
                 @if (navFull)

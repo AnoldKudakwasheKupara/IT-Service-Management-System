@@ -73,6 +73,8 @@ builder.Services.AddScoped<GeoLocationService>();
 
 builder.Services.AddScoped<AlertService>();
 
+builder.Services.AddScoped<BackupService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
