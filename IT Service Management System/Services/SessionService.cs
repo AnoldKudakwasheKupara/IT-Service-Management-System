@@ -133,6 +133,18 @@ namespace IT_Service_Management_System.Services
 
         public string? CurrentToken() => _http.HttpContext?.Session.GetString(SessionTokenKey);
 
+        public string CurrentIp() => GetIp();
+        public string CurrentDevice() => GetDevice();
+
+        /// <summary>True when this user has previously had a session from the current device + IP.</summary>
+        public async Task<bool> IsKnownDeviceAsync(int userId)
+        {
+            var ip = GetIp();
+            var device = GetDevice();
+            return await _context.UserSessions
+                .AnyAsync(s => s.UserId == userId && s.IpAddress == ip && s.Device == device);
+        }
+
         // ── helpers ──────────────────────────────────────────────────────────────
         private string GetIp()
         {

@@ -45,6 +45,10 @@ namespace IT_Service_Management_System.Models
         /// <summary>Per-user email-OTP MFA toggle (global enable/enforcement lives in AppConfiguration).</summary>
         public bool MfaEnabled { get; set; } = false;
 
+        /// <summary>Hashed one-time code for the current email-OTP challenge.</summary>
+        public string? MfaOtpCodeHash { get; set; }
+        public DateTime? MfaOtpExpiry { get; set; }
+
         [NotMapped]
         public bool IsLockedOut => LockoutEnd.HasValue && LockoutEnd.Value > DateTime.Now;
 

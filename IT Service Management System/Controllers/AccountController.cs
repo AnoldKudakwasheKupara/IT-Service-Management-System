@@ -121,6 +121,22 @@ namespace IT_Service_Management_System.Controllers
                         justLocked
                             ? $"Account {user.Email} locked after repeated failed sign-ins"
                             : $"Failed login ({user.FailedLoginCount}) for {user.Email}");
+
+                    // Notify the user (locked → always; otherwise a one-time heads-up partway to lockout).
+                    if (justLocked)
+                    {
+                        var resetLink = Url.Action("ForgotPassword", "Account", null, Request.Scheme)!;
+                        await TrySendEmailAsync(user.Email, user.FirstName,
+                            "Your account has been locked — Axis IT Operations",
+                            EmailTemplates.AccountLocked(user.FirstName, user.LockoutEnd?.ToString("h:mm tt") ?? "", resetLink));
+                    }
+                    else if (config.LockoutMaxFailedAttempts > 2 &&
+                             user.FailedLoginCount == Math.Max(2, config.LockoutMaxFailedAttempts - 2))
+                    {
+                        await TrySendEmailAsync(user.Email, user.FirstName,
+                            "Unusual sign-in attempts on your account — Axis IT Operations",
+                            EmailTemplates.FailedLoginAttempt(user.FirstName, user.FailedLoginCount, _sessions.CurrentIp()));
+                    }
                 }
                 else
                 {
@@ -138,19 +154,150 @@ namespace IT_Service_Management_System.Controllers
             if (!PasswordHasher.IsHashed(user.PasswordHash))
                 user.PasswordHash = PasswordHasher.HashPassword(password);
 
-            // Successful auth — reset lockout counters, stamp last login, open a tracked session.
+            // Successful auth — reset lockout counters, stamp last login.
             user.FailedLoginCount = 0;
             user.LockoutEnd = null;
-            user.LastLoginAt = DateTime.Now;
             if (string.IsNullOrEmpty(user.SecurityStamp))
                 user.SecurityStamp = Guid.NewGuid().ToString("N");
+
+            // MFA gate (email OTP) — challenge before completing the login.
+            if (MfaApplies(user, config))
+            {
+                var code = GenerateOtp();
+                user.MfaOtpCodeHash = PasswordHasher.HashPassword(code);
+                user.MfaOtpExpiry = DateTime.Now.AddMinutes(config.MfaOtpValidityMinutes);
+                await _context.SaveChangesAsync();
+
+                HttpContext.Session.SetInt32(MfaPendingKey, user.Id);
+
+                await TrySendEmailAsync(user.Email, user.FirstName,
+                    "Your sign-in verification code — Axis IT Operations",
+                    EmailTemplates.MfaCode(user.FirstName, code, config.MfaOtpValidityMinutes));
+
+                await _auditService.LogAsync("MFA Challenge", "User", user.Id,
+                    $"OTP issued to {user.Email}");
+
+                return RedirectToAction(nameof(VerifyMfa));
+            }
+
+            user.LastLoginAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            await _sessions.StartSessionAsync(user);
+            return await FinalizeLoginAsync(user);
+        }
 
+        // ── MFA challenge (email OTP) ──────────────────────────────────────────────────
+
+        private const string MfaPendingKey = "MfaPendingUserId";
+
+        [HttpGet]
+        public async Task<IActionResult> VerifyMfa()
+        {
+            var pendingId = HttpContext.Session.GetInt32(MfaPendingKey);
+            if (pendingId == null) return RedirectToAction(nameof(Login));
+
+            var user = await _context.Users.FindAsync(pendingId.Value);
+            if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
+
+            ViewBag.MaskedEmail = MaskEmail(user.Email);
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> VerifyMfa(string code)
+        {
+            var pendingId = HttpContext.Session.GetInt32(MfaPendingKey);
+            if (pendingId == null) return RedirectToAction(nameof(Login));
+
+            var user = await _context.Users.FindAsync(pendingId.Value);
+            if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
+
+            ViewBag.MaskedEmail = MaskEmail(user.Email);
+
+            if (user.MfaOtpExpiry == null || user.MfaOtpExpiry < DateTime.Now)
+            {
+                ViewBag.Error = "That code has expired. Please request a new one.";
+                return View();
+            }
+
+            if (string.IsNullOrWhiteSpace(code) || !PasswordHasher.VerifyPassword(code.Trim(), user.MfaOtpCodeHash))
+            {
+                await _auditService.LogAsync("MFA Failed", "User", user.Id, $"Invalid OTP for {user.Email}");
+                ViewBag.Error = "Incorrect code. Please try again.";
+                return View();
+            }
+
+            // OTP verified — clear it and complete the login.
+            user.MfaOtpCodeHash = null;
+            user.MfaOtpExpiry = null;
+            user.LastLoginAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            HttpContext.Session.Remove(MfaPendingKey);
+            await _auditService.LogAsync("MFA Verified", "User", user.Id, $"OTP verified for {user.Email}");
+
+            return await FinalizeLoginAsync(user);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResendMfa()
+        {
+            var pendingId = HttpContext.Session.GetInt32(MfaPendingKey);
+            if (pendingId == null) return RedirectToAction(nameof(Login));
+
+            var user = await _context.Users.FindAsync(pendingId.Value);
+            if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
+
+            var config = _configService.Get();
+            var newCode = GenerateOtp();
+            user.MfaOtpCodeHash = PasswordHasher.HashPassword(newCode);
+            user.MfaOtpExpiry = DateTime.Now.AddMinutes(config.MfaOtpValidityMinutes);
+            await _context.SaveChangesAsync();
+
+            await TrySendEmailAsync(user.Email, user.FirstName,
+                "Your sign-in verification code — Axis IT Operations",
+                EmailTemplates.MfaCode(user.FirstName, newCode, config.MfaOtpValidityMinutes));
+
+            TempData["Success"] = "A new code has been sent to your email.";
+            return RedirectToAction(nameof(VerifyMfa));
+        }
+
+        // Completes a verified login: opens a tracked session and sends a new-device alert if needed.
+        private async Task<IActionResult> FinalizeLoginAsync(User user)
+        {
+            bool knownDevice = await _sessions.IsKnownDeviceAsync(user.Id);
+
+            await _sessions.StartSessionAsync(user);
             await _auditService.LogAsync("Login", "User", user.Id, $"User {user.Email} logged in");
 
+            if (!knownDevice)
+            {
+                await _auditService.LogAsync("New Device Login", "User", user.Id,
+                    $"{user.Email} signed in from a new device ({_sessions.CurrentDevice()})");
+                await TrySendEmailAsync(user.Email, user.FirstName,
+                    "New sign-in to your account — Axis IT Operations",
+                    EmailTemplates.NewDeviceLogin(user.FirstName, _sessions.CurrentDevice(),
+                        _sessions.CurrentIp(), DateTime.Now.ToString("MMM dd, yyyy h:mm tt")));
+            }
+
             return RedirectToAction("Index", "Home");
+        }
+
+        private bool MfaApplies(User user, Models.AppConfiguration config)
+        {
+            if (!config.MfaEnabled) return false;
+            bool isAdmin = user.Role == UserRole.Admin || user.Role == UserRole.SystemsAdmin;
+            return user.MfaEnabled || (config.MfaRequiredForAdmins && isAdmin);
+        }
+
+        private static string GenerateOtp() =>
+            System.Security.Cryptography.RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+
+        private static string MaskEmail(string email)
+        {
+            var at = email.IndexOf('@');
+            if (at <= 1) return email;
+            return email[0] + new string('•', Math.Min(6, at - 1)) + email[(at - 1)..];
         }
 
         // ── logout ───────────────────────────────────────────────────────────────────

@@ -233,6 +233,9 @@ namespace IT_Service_Management_System.Controllers
             if (existingUser == null)
                 return NotFound();
 
+            var oldEmail = existingUser.Email;
+            var oldRole = existingUser.Role;
+
             // Update fields
             existingUser.FirstName = user.FirstName;
             existingUser.LastName = user.LastName;
@@ -246,6 +249,7 @@ namespace IT_Service_Management_System.Controllers
             if (!string.IsNullOrWhiteSpace(user.PasswordHash))
             {
                 existingUser.PasswordHash = PasswordHasher.HashPassword(user.PasswordHash);
+                existingUser.PasswordChangedAt = DateTime.Now;
             }
 
             await _context.SaveChangesAsync();
@@ -256,6 +260,22 @@ namespace IT_Service_Management_System.Controllers
                 "User",
                 user.Id,
                 $"User {user.Email} updated");
+
+            // Notify on email change (both old and new addresses).
+            bool emailChanged = !string.Equals(oldEmail, existingUser.Email, StringComparison.OrdinalIgnoreCase);
+            if (emailChanged)
+            {
+                var html = EmailTemplates.EmailChanged(existingUser.FirstName, oldEmail, existingUser.Email);
+                await TrySendEmailAsync(oldEmail, existingUser.FirstName, "Your account email was changed — Axis IT Operations", html);
+                await TrySendEmailAsync(existingUser.Email, existingUser.FirstName, "Your account email was changed — Axis IT Operations", html);
+            }
+
+            // Audit a role change for the security/compliance trail.
+            if (oldRole != existingUser.Role)
+            {
+                await _auditService.LogAsync("Permission Changed", "User", existingUser.Id,
+                    $"Role changed from {oldRole} to {existingUser.Role} for {existingUser.Email}");
+            }
 
             return RedirectToAction(nameof(Index));
         }
@@ -314,6 +334,8 @@ namespace IT_Service_Management_System.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
+            var oldEmail = user.Email;
+
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.Email = model.Email;
@@ -325,9 +347,56 @@ namespace IT_Service_Management_System.Controllers
 
             HttpContext.Session.SetString("UserName", user.FirstName);
 
+            bool emailChanged = !string.Equals(oldEmail, user.Email, StringComparison.OrdinalIgnoreCase);
+            if (emailChanged)
+            {
+                var html = EmailTemplates.EmailChanged(user.FirstName, oldEmail, user.Email);
+                await TrySendEmailAsync(oldEmail, user.FirstName, "Your account email was changed — Axis IT Operations", html);
+                await TrySendEmailAsync(user.Email, user.FirstName, "Your account email was changed — Axis IT Operations", html);
+            }
+
+            // Reload sidebars/session list for the re-rendered view.
+            ViewBag.ActiveSessions = await _context.UserSessions
+                .Where(s => s.UserId == user.Id && s.RevokedAt == null)
+                .OrderByDescending(s => s.LastSeenAt).ToListAsync();
+            ViewBag.CurrentSessionToken = HttpContext.Session.GetString(SessionService.SessionTokenKey);
             ViewBag.Success = "Profile updated successfully";
 
             return View(user);
+        }
+
+        // 🔹 SELF-SERVICE MFA TOGGLE (email OTP)
+        [HttpPost]
+        [IT_Service_Management_System.Filters.AllowAnyRole]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleMfa(bool enable)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+                return RedirectToAction("Login", "Account");
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                return NotFound();
+
+            bool was = user.MfaEnabled;
+            user.MfaEnabled = enable;
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogAsync(enable ? "MFA Enabled" : "MFA Disabled", "User", user.Id,
+                $"{user.Email} {(enable ? "enabled" : "disabled")} email OTP MFA");
+
+            if (was && !enable)
+            {
+                await TrySendEmailAsync(user.Email, user.FirstName,
+                    "Two-factor authentication disabled — Axis IT Operations",
+                    EmailTemplates.MfaDisabled(user.FirstName));
+            }
+
+            TempData["Success"] = enable
+                ? "Two-factor authentication is now ON. You'll get a code by email when signing in."
+                : "Two-factor authentication is now OFF.";
+            return RedirectToAction(nameof(Profile));
         }
 
         // 🔹 DELETE USER

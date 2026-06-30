@@ -154,6 +154,96 @@ namespace IT_Service_Management_System.Helpers
             return Wrap(firstName, body);
         }
 
+        /// <summary>Email OTP code for MFA challenge during login.</summary>
+        public static string MfaCode(string firstName, string code, int validityMinutes)
+        {
+            var body = $@"
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:0 0 16px;"">
+  Use the verification code below to finish signing in:
+</p>
+<div style=""text-align:center;margin:24px 0;"">
+  <div style=""display:inline-block;background:#eff6ff;border:1px dashed #3b82f6;border-radius:12px;
+               padding:18px 32px;font-size:34px;font-weight:700;letter-spacing:8px;color:#1d4ed8;"">
+    {code}
+  </div>
+</div>
+{WarningBox($"&#9201;&nbsp; This code expires in <strong>{validityMinutes} minute(s)</strong>. Don't share it with anyone.")}
+{InfoBox("&#128683;&nbsp; If you didn't try to sign in, change your password immediately — someone may have it.")}";
+
+            return Wrap(firstName, body, "Axis IT will never ask you for this code.");
+        }
+
+        /// <summary>Sent when a user's email address is changed.</summary>
+        public static string EmailChanged(string firstName, string oldEmail, string newEmail)
+        {
+            var body = $@"
+{SuccessBox("&#10003;&nbsp; The email address on your account was changed.")}
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:16px 0;"">
+  Old address: <strong>{oldEmail}</strong><br/>
+  New address: <strong>{newEmail}</strong>
+</p>
+{WarningBox("&#128683;&nbsp; If you didn't make this change, contact IT Support immediately.")}";
+
+            return Wrap(firstName, body);
+        }
+
+        /// <summary>Sent when a sign-in occurs from a device/IP not seen before.</summary>
+        public static string NewDeviceLogin(string firstName, string device, string ip, string when)
+        {
+            var body = $@"
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:0 0 16px;"">
+  Your account was just signed in from a device we haven't seen before:
+</p>
+<div style=""background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin:16px 0;font-size:14px;color:#334155;"">
+  <strong>Device:</strong> {device}<br/>
+  <strong>IP address:</strong> {ip}<br/>
+  <strong>When:</strong> {when}
+</div>
+{WarningBox("&#128683;&nbsp; If this wasn't you, change your password and use \"Log out from all devices\" right away.")}";
+
+            return Wrap(firstName, body);
+        }
+
+        /// <summary>Sent after repeated failed sign-in attempts (before lockout).</summary>
+        public static string FailedLoginAttempt(string firstName, int attempts, string ip)
+        {
+            var body = $@"
+{WarningBox($"&#9888;&nbsp; There have been <strong>{attempts}</strong> failed sign-in attempts on your account.")}
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:16px 0;"">
+  Most recent attempt came from IP <strong>{ip}</strong>. If this was you, no action is needed.
+  If not, consider changing your password.
+</p>";
+
+            return Wrap(firstName, body);
+        }
+
+        /// <summary>Sent when an account is locked due to failed sign-ins.</summary>
+        public static string AccountLocked(string firstName, string until, string resetLink)
+        {
+            var body = $@"
+{WarningBox($"&#128274;&nbsp; Your account has been <strong>locked</strong> until {until} after repeated failed sign-ins.")}
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:16px 0;"">
+  You can wait for the lockout to expire, or reset your password now to regain access:
+</p>
+{PrimaryButton(resetLink, "&#128273;&nbsp; Reset My Password")}
+{InfoBox("&#128683;&nbsp; If this wasn't you, reset your password — your credentials may be known to someone else.")}";
+
+            return Wrap(firstName, body);
+        }
+
+        /// <summary>Sent when MFA is turned off for an account.</summary>
+        public static string MfaDisabled(string firstName)
+        {
+            var body = $@"
+{WarningBox("&#9888;&nbsp; Two-factor authentication (email OTP) has been <strong>disabled</strong> on your account.")}
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:16px 0;"">
+  Your account is now protected by your password only. We recommend keeping MFA enabled for stronger security.
+</p>
+{InfoBox("&#128683;&nbsp; If you didn't disable MFA, re-enable it and change your password immediately.")}";
+
+            return Wrap(firstName, body);
+        }
+
         /// <summary>Sent when admin resends an activation link to an inactive user.</summary>
         public static string ResendActivation(string firstName, string activationLink)
         {
