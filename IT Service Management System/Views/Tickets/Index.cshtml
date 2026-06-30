@@ -94,6 +94,17 @@
                 </select>
             </div>
             <div class="filter-group">
+                <label>Queue / Category</label>
+                @{ var curCategory = ViewBag.Category as string; var cats = ViewBag.Categories as List<string> ?? new List<string>(); }
+                <select name="category" class="filter-select">
+                    <option value="">All Queues</option>
+                    @foreach (var c in cats)
+                    {
+                        <option value="@c" selected="@(curCategory == c)">@c</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
                 <label>Search</label>
                 <div class="search-wrapper">
                     <i class="fas fa-search"></i>
@@ -229,6 +240,14 @@
                             <td class="date-cell">
                                 <i class="far fa-calendar-alt"></i>
                                 @ticket.CreatedAt.ToString("MMM dd, yyyy")
+                                @if (ticket.DueAt != null && ticket.IsOpen)
+                                {
+                                    <br />
+                                    <span class="sla-chip @(ticket.IsSlaBreached ? "breached" : "")">
+                                        <i class="fas @(ticket.IsSlaBreached ? "fa-triangle-exclamation" : "fa-stopwatch")"></i>
+                                        @IT_Service_Management_System.Helpers.TicketSla.Describe(ticket.DueAt, ticket.IsOpen)
+                                    </span>
+                                }
                             </td>
                             <td class="action-buttons">
                                 <a asp-action="Details" asp-route-id="@ticket.Id" class="action-btn btn-view" title="View Details">
@@ -668,6 +687,13 @@
         font-size: 0.875rem;
         white-space: nowrap;
     }
+
+    .sla-chip {
+        display: inline-flex; align-items: center; gap: 0.3rem; margin-top: 0.3rem;
+        font-size: 0.68rem; font-weight: 600; padding: 0.1rem 0.45rem; border-radius: 1rem;
+        background: #eff6ff; color: #1e40af; border: 1px solid #dbeafe;
+    }
+    .sla-chip.breached { background: #fff5f5; color: #b91c1c; border-color: #fecaca; }
 
     /* Action Buttons */
     .action-buttons {

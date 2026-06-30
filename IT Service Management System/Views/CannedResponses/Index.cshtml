@@ -1,0 +1,329 @@
+@model IEnumerable<IT_Service_Management_System.Models.CannedResponse>
+
+@{
+    ViewData["Title"] = "Canned Replies - Axis IT Helpdesk";
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-reply-all me-2" style="color: var(--primary);"></i>
+                    Canned Replies
+                </h1>
+                <p class="text-muted mt-2">Reusable reply snippets staff can insert into ticket conversations</p>
+            </div>
+            <a asp-action="Create" class="btn-create-cr">
+                <i class="fas fa-plus-circle me-2"></i>
+                New Canned Response
+            </a>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Canned Response List</span>
+            </div>
+            <div class="cr-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count()</span> response(s) found
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            @if (Model != null && Model.Any())
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-heading me-1"></i> Title</th>
+                            <th><i class="fas fa-align-left me-1"></i> Body Preview</th>
+                            <th><i class="fas fa-calendar me-1"></i> Created</th>
+                            <th><i class="fas fa-cog me-1"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var preview = item.Body?.Length > 80 ? item.Body.Substring(0, 80) + "..." : item.Body ?? "-";
+                            <tr>
+                                <td>
+                                    <div class="cr-title-info">
+                                        <div class="cr-icon">
+                                            <i class="fas fa-reply"></i>
+                                        </div>
+                                        <strong>@item.Title</strong>
+                                    </div>
+                                </td>
+                                <td class="body-cell" title="@item.Body">@preview</td>
+                                <td class="date-cell">
+                                    <i class="far fa-calendar-alt"></i>
+                                    @item.CreatedAt.ToString("MMM dd, yyyy")
+                                </td>
+                                <td class="action-buttons">
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="action-btn btn-edit" title="Edit">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="action-btn btn-delete" title="Delete">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-reply-all"></i>
+                    <h3>No canned responses yet</h3>
+                    <p>Get started by adding your first reusable reply snippet</p>
+                    <a asp-action="Create" class="btn-create-cr-sm">
+                        <i class="fas fa-plus-circle"></i> New Canned Response
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .btn-create-cr {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+        .btn-create-cr:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .cr-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .data-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .data-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+
+        .data-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .data-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+    .cr-title-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .cr-icon {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+        flex-shrink: 0;
+    }
+
+    .body-cell {
+        max-width: 480px;
+        color: var(--gray-600);
+        cursor: help;
+    }
+
+    .date-cell {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+        white-space: nowrap;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+    }
+
+    .btn-edit {
+        background: var(--gray-100);
+        color: var(--warning);
+    }
+
+        .btn-edit:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-delete {
+        background: var(--gray-100);
+        color: var(--danger);
+    }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    .btn-create-cr-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-create-cr-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+</style>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">

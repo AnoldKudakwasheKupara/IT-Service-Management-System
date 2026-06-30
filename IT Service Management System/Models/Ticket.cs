@@ -31,6 +31,20 @@ namespace IT_Service_Management_System.Models
         public DateTime? ResolvedAt { get; set; }
         public DateTime? ClosedAt { get; set; }
 
+        /// <summary>SLA target resolution time, set from priority at creation.</summary>
+        public DateTime? DueAt { get; set; }
+
+        // Customer satisfaction (CSAT), captured from the requester after resolution/closure.
+        public int? SatisfactionRating { get; set; }   // 1–5
+        public string? SatisfactionComment { get; set; }
+
+        [NotMapped]
+        public bool IsOpen => Status != TicketStatus.Resolved && Status != TicketStatus.Closed;
+
+        /// <summary>True when the SLA target has passed and the ticket is still open.</summary>
+        [NotMapped]
+        public bool IsSlaBreached => DueAt.HasValue && IsOpen && DueAt.Value < DateTime.Now;
+
         public int CreatedById { get; set; }
         [ValidateNever]
         public User? CreatedBy { get; set; }

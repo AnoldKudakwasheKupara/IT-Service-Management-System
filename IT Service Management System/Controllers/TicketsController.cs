@@ -51,7 +51,7 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ── list ─────────────────────────────────────────────────────────────────────
-        public async Task<IActionResult> Index(int page = 1, string? q = null, string? status = null, string? priority = null)
+        public async Task<IActionResult> Index(int page = 1, string? q = null, string? status = null, string? priority = null, string? category = null)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
             var role = HttpContext.Session.GetString("UserRole");
@@ -81,13 +81,22 @@ namespace IT_Service_Management_System.Controllers
             if (!string.IsNullOrWhiteSpace(priority) && Enum.TryParse<TicketPriority>(priority, out var pr))
                 query = query.Where(t => t.Priority == pr);
 
+            if (!string.IsNullOrWhiteSpace(category))
+                query = query.Where(t => t.Category == category);
+
             var ordered = query.OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt);
+
+            // Distinct categories (queues) for the filter dropdown.
+            ViewBag.Categories = await baseQuery
+                .Where(t => t.Category != null && t.Category != "")
+                .Select(t => t.Category).Distinct().OrderBy(c => c).ToListAsync();
 
             var (tickets, paging) = await ordered.PageAsync(page);
             ViewBag.Paging = paging;
             ViewBag.Search = q;
             ViewBag.Status = status;
             ViewBag.Priority = priority;
+            ViewBag.Category = category;
 
             return View(tickets);
         }
@@ -112,6 +121,7 @@ namespace IT_Service_Management_System.Controllers
             ticket.Status = TicketStatus.Open;
             ticket.CreatedById = userId.Value;
             ticket.AssignedToId = null;
+            ticket.DueAt = TicketSla.DueFrom(ticket.CreatedAt, ticket.Priority);  // SLA target
 
             _context.Tickets.Add(ticket);
             await _context.SaveChangesAsync();
@@ -152,10 +162,18 @@ namespace IT_Service_Management_System.Controllers
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (ticket == null) return NotFound();
-            if (!IsStaff(role) && ticket.CreatedById != userId) return Denied();
+            bool staff = IsStaff(role);
+            if (!staff && ticket.CreatedById != userId) return Denied();
 
-            ViewBag.IsStaff = IsStaff(role);
-            ViewBag.Agents = IsStaff(role) ? await AgentsAsync() : new List<User>();
+            // Requesters never see internal staff notes.
+            if (!staff)
+                ticket.Messages = ticket.Messages.Where(m => !m.IsInternal).ToList();
+
+            ViewBag.IsStaff = staff;
+            ViewBag.Agents = staff ? await AgentsAsync() : new List<User>();
+            ViewBag.CannedResponses = staff
+                ? await _context.CannedResponses.AsNoTracking().OrderBy(c => c.Title).ToListAsync()
+                : new List<CannedResponse>();
             return View(ticket);
         }
 
@@ -301,7 +319,7 @@ namespace IT_Service_Management_System.Controllers
 
         // ── reply ────────────────────────────────────────────────────────────────────
         [HttpPost]
-        public async Task<IActionResult> AddReply(int ticketId, string message, List<IFormFile> files)
+        public async Task<IActionResult> AddReply(int ticketId, string message, List<IFormFile> files, bool isInternal = false)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
             var role = HttpContext.Session.GetString("UserRole");
@@ -324,19 +342,23 @@ namespace IT_Service_Management_System.Controllers
             if (string.IsNullOrWhiteSpace(message))
                 return BadRequest(new { success = false, message = "Message cannot be empty." });
 
+            // Only staff/assignee can post internal notes.
+            bool replierIsStaffSide = staff || isAssignee;
+            bool internalNote = isInternal && replierIsStaffSide;
+
             var sender = await _context.Users.FindAsync(userId.Value);
             var ticketMessage = new TicketMessage
             {
                 TicketId = ticketId,
                 SenderId = userId.Value,
                 Message = message.Trim(),
-                SentAt = DateTime.Now
+                SentAt = DateTime.Now,
+                IsInternal = internalNote
             };
             _context.TicketMessages.Add(ticketMessage);
 
-            // Replying staff (not the owner) → first response + move Open to In Progress.
-            bool replierIsStaffSide = staff || isAssignee;
-            if (replierIsStaffSide && !isOwner)
+            // A public staff reply (not the owner, not an internal note) → first response + Open→In Progress.
+            if (replierIsStaffSide && !isOwner && !internalNote)
             {
                 ticket.FirstRespondedAt ??= DateTime.Now;
                 if (ticket.Status == TicketStatus.Open)
@@ -345,17 +367,43 @@ namespace IT_Service_Management_System.Controllers
             ticket.UpdatedAt = DateTime.Now;
 
             await _context.SaveChangesAsync();
-            await _auditService.LogAsync("Reply Added", "Ticket", ticketId, "Reply posted");
+            await _auditService.LogAsync(internalNote ? "Internal Note Added" : "Reply Added",
+                "Ticket", ticketId, internalNote ? "Internal note posted" : "Reply posted");
 
             await SaveAttachments(files, ticketMessageId: ticketMessage.Id);
 
-            // Email the OTHER party with the message.
+            // Internal notes are never emailed to anyone; public replies notify the other party.
             var senderName = sender?.FullName ?? "Someone";
-            var link = TicketLink(ticket.Id);
-            await NotifyReplyAsync(ticket, isOwner, senderName, ticketMessage.Message, link);
+            if (!internalNote)
+            {
+                var link = TicketLink(ticket.Id);
+                await NotifyReplyAsync(ticket, isOwner, senderName, ticketMessage.Message, link);
+            }
 
             var time = ticketMessage.SentAt.ToString("MMM dd, yyyy HH:mm");
-            return Json(new { success = true, senderName, time, isStaff = replierIsStaffSide && !isOwner });
+            return Json(new { success = true, senderName, time, isStaff = replierIsStaffSide && !isOwner, isInternal = internalNote });
+        }
+
+        // ── CSAT: requester rates a resolved/closed ticket ─────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RateSatisfaction(int id, int rating, string? comment)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return RedirectToAction("Login", "Account");
+
+            var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
+            if (ticket == null) return NotFound();
+            if (ticket.CreatedById != userId) return Denied();   // only the requester rates
+            if (ticket.IsOpen) { TempData["Error"] = "You can rate a ticket once it's resolved or closed."; return RedirectToAction("Details", new { id }); }
+
+            ticket.SatisfactionRating = Math.Clamp(rating, 1, 5);
+            ticket.SatisfactionComment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
+            await _context.SaveChangesAsync();
+            await _auditService.LogAsync("Satisfaction Rated", "Ticket", id, $"Rated {ticket.SatisfactionRating}/5");
+
+            TempData["Success"] = "Thanks for your feedback!";
+            return RedirectToAction("Details", new { id });
         }
 
         // ── close (staff) ────────────────────────────────────────────────────────────

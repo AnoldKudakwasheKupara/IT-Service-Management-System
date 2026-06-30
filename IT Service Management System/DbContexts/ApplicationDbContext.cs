@@ -43,6 +43,7 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<UserAccessRightItem> UserAccessRightItems { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<AppConfiguration> AppConfigurations { get; set; }
+        public DbSet<CannedResponse> CannedResponses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

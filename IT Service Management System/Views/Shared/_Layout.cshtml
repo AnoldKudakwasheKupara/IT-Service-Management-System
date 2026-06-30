@@ -682,6 +682,10 @@
                        asp-controller="UserAccessRights" asp-action="Index">
                         <i class="fas fa-user-shield"></i> Access Rights
                     </a>
+                    <a class="nav-item @(currentController == "CannedResponses" ? "active" : "")"
+                       asp-controller="CannedResponses" asp-action="Index">
+                        <i class="fas fa-reply-all"></i> Canned Replies
+                    </a>
                 }
 
 

@@ -134,6 +134,18 @@
                             <span>@(Model.AssignedTo != null ? $"{Model.AssignedTo.FirstName} {Model.AssignedTo.LastName}" : "Unassigned")</span>
                         </div>
                     </div>
+                    @if (Model.DueAt != null)
+                    {
+                        <div class="meta-item">
+                            <i class="fas @(Model.IsSlaBreached ? "fa-triangle-exclamation" : "fa-stopwatch")" style="color:@(Model.IsSlaBreached ? "var(--danger)" : "var(--primary)");"></i>
+                            <div>
+                                <label>SLA (@Model.Priority)</label>
+                                <span style="color:@(Model.IsSlaBreached ? "var(--danger)" : "inherit");font-weight:@(Model.IsSlaBreached ? "700" : "500");">
+                                    @IT_Service_Management_System.Helpers.TicketSla.Describe(Model.DueAt, Model.IsOpen)
+                                </span>
+                            </div>
+                        </div>
+                    }
                     @if (Model.UpdatedAt != null)
                     {
                         <div class="meta-item">
@@ -211,6 +223,92 @@
     </div>
 
     <!-- Attachments Section -->
+    @{
+        var viewerId = Context.Session.GetInt32("UserId");
+        var isOwnerView = Model.CreatedById == viewerId;
+    }
+    @if (isOwnerView && !Model.IsOpen)
+    {
+        <div class="csat-card">
+            <div class="card-header-custom">
+                <i class="fas fa-star me-2"></i>
+                <span>Your Feedback</span>
+            </div>
+            <div class="card-body-custom">
+                @if (Model.SatisfactionRating == null)
+                {
+                    <p style="margin-bottom:0.75rem;color:var(--gray-600);">How satisfied were you with how this ticket was handled?</p>
+                    <form asp-action="RateSatisfaction" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <div class="csat-stars" id="csatStars">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <button type="button" class="csat-star" data-v="@i" aria-label="@i stars"><i class="fas fa-star"></i></button>
+                            }
+                        </div>
+                        <input type="hidden" name="rating" id="csatRating" value="" required />
+                        <textarea name="comment" class="reply-textarea" rows="2" placeholder="Any comments? (optional)" style="margin-top:0.75rem;"></textarea>
+                        <button type="submit" class="btn-send-reply" style="margin-top:0.6rem;">
+                            <i class="fas fa-paper-plane"></i> Submit Feedback
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <div class="csat-result">
+                        <div class="csat-stars-static">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <i class="fas fa-star @(i <= Model.SatisfactionRating ? "filled" : "")"></i>
+                            }
+                        </div>
+                        <span style="font-weight:600;color:var(--gray-700);">You rated this @Model.SatisfactionRating / 5</span>
+                        @if (!string.IsNullOrEmpty(Model.SatisfactionComment))
+                        {
+                            <p class="csat-comment">“@Model.SatisfactionComment”</p>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <style>
+        /* Internal notes */
+        .internal-message .message-content { background:#fffbeb !important; border-left:3px solid var(--warning,#f59e0b) !important; }
+        .internal-badge { margin-left:auto; font-size:0.62rem; font-weight:700; text-transform:uppercase; letter-spacing:0.4px;
+            color:#92400e; background:#fef3c7; border:1px solid #fde68a; padding:0.1rem 0.5rem; border-radius:1rem; display:inline-flex; align-items:center; gap:0.3rem; }
+        .internal-note-toggle { display:inline-flex; align-items:center; gap:0.35rem; margin-left:0.75rem; font-size:0.78rem; color:#92400e; cursor:pointer; }
+        .internal-note-toggle input { accent-color:var(--warning,#f59e0b); }
+        /* CSAT */
+        .csat-card { background:#fff; border-radius:1rem; overflow:hidden; box-shadow:var(--shadow-sm); border:1px solid var(--gray-200); margin-bottom:1.5rem; }
+        .csat-stars { display:flex; gap:0.25rem; }
+        .csat-star { background:none; border:none; cursor:pointer; font-size:1.6rem; color:var(--gray-300,#cbd5e1); transition:color 0.15s; padding:0; }
+        .csat-star.on, .csat-star:hover, .csat-star.on ~ .csat-star { color:#f59e0b; }
+        .csat-stars:hover .csat-star { color:var(--gray-300,#cbd5e1); }
+        .csat-stars .csat-star:hover, .csat-stars .csat-star:hover ~ .csat-star { color:#f59e0b; }
+        .csat-stars-static .fa-star { color:var(--gray-300,#cbd5e1); font-size:1.3rem; }
+        .csat-stars-static .fa-star.filled { color:#f59e0b; }
+        .csat-result { display:flex; flex-direction:column; gap:0.4rem; }
+        .csat-comment { font-style:italic; color:var(--gray-500); margin:0.25rem 0 0; }
+    </style>
+    <script>
+        (function () {
+            var stars = document.querySelectorAll('#csatStars .csat-star');
+            var input = document.getElementById('csatRating');
+            stars.forEach(function (s) {
+                s.addEventListener('click', function () {
+                    var v = parseInt(this.getAttribute('data-v'));
+                    if (input) input.value = v;
+                    stars.forEach(function (x) {
+                        x.classList.toggle('on', parseInt(x.getAttribute('data-v')) <= v);
+                    });
+                });
+            });
+        })();
+    </script>
+
     <div class="attachments-card">
         <div class="card-header-custom">
             <i class="fas fa-paperclip me-2"></i>
@@ -256,7 +354,8 @@
             {
                 foreach (var msg in Model.Messages.OrderBy(m => m.SentAt))
                 {
-                    <div class="message-item @(msg.SenderId == Model.CreatedBy?.Id ? "user-message" : "support-message")">
+                    var sideClass = msg.IsInternal ? "internal-message" : (msg.SenderId == Model.CreatedBy?.Id ? "user-message" : "support-message");
+                    <div class="message-item @sideClass">
                         <div class="message-header">
                             <div class="message-sender">
                                 <div class="sender-avatar">
@@ -267,6 +366,10 @@
                                     <span class="message-time">@msg.SentAt.ToString("MMM dd, yyyy HH:mm")</span>
                                 </div>
                             </div>
+                            @if (msg.IsInternal)
+                            {
+                                <span class="internal-badge"><i class="fas fa-user-shield"></i> Internal</span>
+                            }
                         </div>
                         <div class="message-content">
                             @msg.Message
@@ -306,7 +409,23 @@
                 <form id="chatForm" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="ticketId" value="@Model.Id" />
-                    
+
+                    @{
+                        var isStaffView = (bool?)ViewBag.IsStaff ?? false;
+                        var canned = ViewBag.CannedResponses as List<IT_Service_Management_System.Models.CannedResponse>
+                            ?? new List<IT_Service_Management_System.Models.CannedResponse>();
+                    }
+                    @if (isStaffView && canned.Any())
+                    {
+                        <select id="cannedSelect" class="reply-textarea" style="margin-bottom:0.5rem;cursor:pointer;">
+                            <option value="">＋ Insert a canned reply…</option>
+                            @foreach (var c in canned)
+                            {
+                                <option value="@c.Body">@c.Title</option>
+                            }
+                        </select>
+                    }
+
                     <div class="reply-input-wrapper">
                         <textarea id="messageInput" class="reply-textarea" placeholder="Type your reply here..." rows="3"></textarea>
                         <div class="reply-actions">
@@ -317,6 +436,13 @@
                                 </label>
                                 <input type="file" id="fileInput" multiple style="display: none;" />
                                 <span id="fileNameDisplay" class="file-name-display"></span>
+                                @if (isStaffView)
+                                {
+                                    <label class="internal-note-toggle" title="Visible to staff only — not shown to the requester and not emailed">
+                                        <input type="checkbox" id="isInternalCheck" />
+                                        <i class="fas fa-user-shield"></i> Internal note
+                                    </label>
+                                }
                             </div>
                             <button type="button" onclick="sendMessage()" class="btn-send-reply">
                                 <i class="fas fa-paper-plane"></i>
@@ -905,6 +1031,18 @@
         });
     }
 
+    // Insert a canned reply into the message box.
+    const cannedSelect = document.getElementById('cannedSelect');
+    if (cannedSelect) {
+        cannedSelect.addEventListener('change', function () {
+            if (!this.value) return;
+            const box = document.getElementById('messageInput');
+            box.value = box.value ? (box.value.trimEnd() + "\n\n" + this.value) : this.value;
+            box.focus();
+            this.value = "";
+        });
+    }
+
     function sendMessage() {
         const message = document.getElementById("messageInput").value.trim();
         if (!message) {
@@ -912,10 +1050,14 @@
             return;
         }
 
+        const internalCheck = document.getElementById("isInternalCheck");
+        const isInternal = internalCheck ? internalCheck.checked : false;
+
         const formData = new FormData();
         formData.append("ticketId", ticketId);
         formData.append("message", message);
-        
+        formData.append("isInternal", isInternal);
+
         const files = document.getElementById("fileInput").files;
         for (let i = 0; i < files.length; i++) {
             formData.append("files", files[i]);
@@ -942,9 +1084,12 @@
             if (data.success) {
                 const senderName = data.senderName || "You";
                 const when = data.time || "Just now";
-                const sideClass = data.isStaff ? "support-message" : "user-message";
+                const sideClass = data.isInternal ? "internal-message" : (data.isStaff ? "support-message" : "user-message");
+                const internalBadge = data.isInternal
+                    ? '<span class="internal-badge"><i class="fas fa-user-shield"></i> Internal</span>' : '';
 
-                if (connection) {
+                // Internal notes are staff-only, so don't broadcast them over SignalR.
+                if (connection && !data.isInternal) {
                     connection.invoke("SendMessage", ticketId, senderName, message, when);
                 }
 
@@ -962,6 +1107,7 @@
                                 <span class="message-time">${when}</span>
                             </div>
                         </div>
+                        ${internalBadge}
                     </div>
                     <div class="message-content">${escapeHtml(message)}</div>
                 `;
@@ -972,7 +1118,8 @@
                 document.getElementById("messageInput").value = "";
                 document.getElementById("fileInput").value = "";
                 fileNameDisplay.textContent = "";
-                showNotification('Reply sent — the other party has been emailed.', 'success');
+                if (internalCheck) internalCheck.checked = false;
+                showNotification(data.isInternal ? 'Internal note saved (staff only).' : 'Reply sent — the other party has been emailed.', 'success');
             } else {
                 showNotification(data.message || 'Failed to send message', 'error');
             }
