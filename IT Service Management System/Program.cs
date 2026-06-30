@@ -4,6 +4,7 @@ using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Hubs;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -37,6 +38,37 @@ builder.Services.AddAntiforgery(options => options.HeaderName = "RequestVerifica
 builder.Services.AddSignalR();
 
 builder.Services.AddMemoryCache();
+
+// Distributed cache + session store. Uses Redis when a connection string is configured
+// (enables horizontal scaling + shared Data Protection keys); otherwise an in-memory store
+// (single instance). Set ConnectionStrings:Redis or Redis:Configuration to enable.
+var redisConnection = builder.Configuration.GetConnectionString("Redis")
+    ?? builder.Configuration["Redis:Configuration"];
+
+if (!string.IsNullOrWhiteSpace(redisConnection))
+{
+    try
+    {
+        var multiplexer = StackExchange.Redis.ConnectionMultiplexer.Connect(redisConnection);
+        builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(multiplexer);
+        builder.Services.AddStackExchangeRedisCache(o =>
+            o.ConnectionMultiplexerFactory = () =>
+                Task.FromResult<StackExchange.Redis.IConnectionMultiplexer>(multiplexer));
+        builder.Services.AddDataProtection()
+            .PersistKeysToStackExchangeRedis(multiplexer, "ITSM:DataProtection:Keys")
+            .SetApplicationName("ITSM");
+        Console.WriteLine("[startup] Distributed cache + Data Protection backed by Redis.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[startup] Redis unavailable ({ex.Message}); falling back to in-memory cache.");
+        builder.Services.AddDistributedMemoryCache();
+    }
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
 
 builder.Services.AddScoped<EmailService>();
 
@@ -133,7 +165,9 @@ try
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-    context.Database.Migrate();
+    // In production, run migrations as a deliberate deploy step instead (set Database:MigrateOnStartup=false).
+    if (app.Configuration.GetValue("Database:MigrateOnStartup", true))
+        context.Database.Migrate();
 
     if (!context.Users.Any())
     {
