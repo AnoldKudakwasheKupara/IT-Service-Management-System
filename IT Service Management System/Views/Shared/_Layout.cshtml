@@ -636,6 +636,19 @@
 
                 @if (navFull)
                 {
+                    <div class="nav-group">Security</div>
+                    <a class="nav-item @(currentController == "Security" ? "active" : "")"
+                       asp-controller="Security" asp-action="Index">
+                        <i class="fas fa-shield-halved"></i> Security Dashboard
+                    </a>
+                    <a class="nav-item @(currentController == "Configuration" ? "active" : "")"
+                       asp-controller="Configuration" asp-action="Index">
+                        <i class="fas fa-sliders"></i> Configuration
+                    </a>
+                }
+
+                @if (navFull)
+                {
                     <div class="nav-group">Operations</div>
                     <a class="nav-item @(currentController == "ActivityCategories" ? "active" : "")"
                        asp-controller="ActivityCategories" asp-action="Index">
