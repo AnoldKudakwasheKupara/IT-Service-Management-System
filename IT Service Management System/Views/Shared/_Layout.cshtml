@@ -615,6 +615,10 @@
                        asp-controller="Reports" asp-action="Index">
                         <i class="fas fa-chart-pie"></i> Reports
                     </a>
+                    <a class="nav-item @(currentController == "Compliance" ? "active" : "")"
+                       asp-controller="Compliance" asp-action="Index">
+                        <i class="fas fa-scale-balanced"></i> Compliance
+                    </a>
                 }
 
                 @if (navFull)

@@ -1,0 +1,45 @@
+@{
+    ViewData["Title"] = "Compliance Reports - Axis IT Operations";
+    var reports = ViewBag.Reports as Dictionary<string, (string Title, string Icon, string[] Actions, string Desc)>
+        ?? new Dictionary<string, (string, string, string[], string)>();
+}
+
+@await Html.PartialAsync("~/Views/Reports/_ReportStyles.cshtml")
+
+<div class="report-container">
+    <div class="report-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="report-title"><i class="fas fa-scale-balanced"></i> Compliance Reports</h1>
+            <p class="report-subtitle">Audit-grade reports for governance &amp; investigations</p>
+        </div>
+        <div class="report-actions">
+            <a class="report-btn" asp-controller="Security" asp-action="Index"><i class="fas fa-shield-halved"></i> Security Dashboard</a>
+        </div>
+    </div>
+
+    <div class="hub-grid">
+        @foreach (var kv in reports)
+        {
+            <a class="hub-card" asp-action="Report" asp-route-type="@kv.Key">
+                <div class="hub-icon"><i class="fas @kv.Value.Icon"></i></div>
+                <div class="hub-body">
+                    <div class="hub-title">@kv.Value.Title</div>
+                    <div class="hub-desc">@kv.Value.Desc</div>
+                </div>
+                <i class="fas fa-chevron-right hub-arrow"></i>
+            </a>
+        }
+    </div>
+</div>
+
+<style>
+    .hub-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:1rem; }
+    .hub-card { display:flex; align-items:center; gap:1rem; padding:1.1rem 1.25rem; background:#fff;
+        border:1px solid var(--gray-200,#e2e8f0); border-radius:0.9rem; text-decoration:none; transition:all 0.2s; }
+    .hub-card:hover { border-color:var(--primary,#3b82f6); box-shadow:0 6px 18px rgba(0,0,0,0.07); transform:translateY(-2px); }
+    .hub-icon { width:46px; height:46px; flex-shrink:0; border-radius:0.7rem; display:flex; align-items:center;
+        justify-content:center; font-size:1.2rem; color:#fff; background:linear-gradient(135deg,#1d4ed8,#3b82f6); }
+    .hub-title { font-weight:700; color:var(--gray-800,#1e293b); font-size:0.98rem; }
+    .hub-desc { font-size:0.78rem; color:var(--gray-500,#64748b); margin-top:0.15rem; }
+    .hub-arrow { margin-left:auto; color:var(--gray-400,#94a3b8); }
+</style>

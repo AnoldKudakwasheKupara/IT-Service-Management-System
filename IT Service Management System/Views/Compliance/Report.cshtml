@@ -1,0 +1,92 @@
+@model List<IT_Service_Management_System.Models.AuditLog>
+@{
+    ViewData["Title"] = (ViewBag.Title as string ?? "Report") + " - Compliance";
+    var type = ViewBag.Type as string;
+    var fromD = (DateTime)ViewBag.From;
+    var toD = (DateTime)ViewBag.To;
+    var selUser = ViewBag.User as string;
+    var users = ViewBag.Users as IEnumerable<dynamic>;
+}
+
+@await Html.PartialAsync("~/Views/Reports/_ReportStyles.cshtml")
+
+<div class="report-container">
+    <div class="report-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="report-title"><i class="fas @(ViewBag.Icon)"></i> @ViewBag.Title</h1>
+            <p class="report-subtitle">@ViewBag.Desc</p>
+        </div>
+        <div class="report-actions">
+            <a class="report-btn" asp-action="Index"><i class="fas fa-arrow-left"></i> All Reports</a>
+            <a class="report-btn primary"
+               asp-action="Export" asp-route-type="@type" asp-route-from="@fromD.ToString("yyyy-MM-dd")"
+               asp-route-to="@toD.ToString("yyyy-MM-dd")" asp-route-user="@selUser">
+                <i class="fas fa-file-export"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="report-card">
+        <div class="report-card-body">
+            <form method="get" asp-action="Report" class="cmp-filter">
+                <input type="hidden" name="type" value="@type" />
+                <label>From <input type="date" name="from" value="@fromD.ToString("yyyy-MM-dd")" class="cmp-input" /></label>
+                <label>To <input type="date" name="to" value="@toD.ToString("yyyy-MM-dd")" class="cmp-input" /></label>
+                <label>User
+                    <select name="user" class="cmp-input">
+                        <option value="">All users</option>
+                        @if (users != null)
+                        {
+                            foreach (var u in users)
+                            {
+                                var idStr = u.Id.ToString();
+                                <option value="@idStr" selected="@(selUser == idStr)">@u.Name</option>
+                            }
+                        }
+                    </select>
+                </label>
+                <button type="submit" class="report-btn primary"><i class="fas fa-filter"></i> Apply</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="report-card">
+        <div class="report-card-header">
+            <span><i class="fas fa-list"></i> @Model.Count record(s) @(Model.Count >= 2000 ? "(showing latest 2000)" : "")</span>
+        </div>
+        <div class="report-card-body" style="padding:0;">
+            @if (Model.Any())
+            {
+                <table class="report-table">
+                    <thead><tr><th>When</th><th>Action</th><th>By</th><th>Entity</th><th>Details</th><th>IP / Location</th><th>Device</th></tr></thead>
+                    <tbody>
+                        @foreach (var l in Model)
+                        {
+                            var cls = l.Action.Contains("Failed") || l.Action.Contains("Locked") || l.Action.Contains("Blocked") || l.Action == "Deleted" ? "red"
+                                : l.Action.Contains("Login") || l.Action.Contains("Verified") || l.Action.Contains("Enabled") ? "green"
+                                : l.Action.Contains("Export") || l.Action.Contains("Changed") || l.Action.Contains("Updated") ? "amber" : "slate";
+                            <tr>
+                                <td style="white-space:nowrap;">@l.Timestamp.ToString("MMM dd, yyyy h:mm tt")</td>
+                                <td><span class="pill @cls">@l.Action</span></td>
+                                <td>@l.UserName</td>
+                                <td>@l.Entity @(l.EntityId.HasValue ? $"#{l.EntityId}" : "")</td>
+                                <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="@l.Details">@l.Details</td>
+                                <td>@l.IpAddress @(string.IsNullOrEmpty(l.Location) ? "" : $"· {l.Location}")</td>
+                                <td>@(string.IsNullOrEmpty(l.Device) ? "—" : l.Device)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else { <div class="empty-mini">No records in this period</div> }
+        </div>
+    </div>
+</div>
+
+<style>
+    .cmp-filter { display:flex; flex-wrap:wrap; align-items:flex-end; gap:1rem; }
+    .cmp-filter label { display:flex; flex-direction:column; gap:0.3rem; font-size:0.78rem; font-weight:600; color:var(--gray-700,#334155); }
+    .cmp-input { padding:0.5rem 0.7rem; border:1.5px solid var(--gray-200,#e2e8f0); border-radius:0.6rem; font-size:0.85rem; font-family:inherit; }
+    .cmp-input:focus { outline:none; border-color:var(--primary,#3b82f6); box-shadow:0 0 0 3px rgba(59,130,246,0.1); }
+</style>
