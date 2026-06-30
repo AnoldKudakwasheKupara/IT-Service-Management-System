@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IT_Service_Management_System.Models
 {
@@ -21,6 +22,15 @@ namespace IT_Service_Management_System.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
+        /// <summary>Last time the ticket changed (reply, status, assignment).</summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>First time a staff member responded (first-response SLA).</summary>
+        public DateTime? FirstRespondedAt { get; set; }
+
+        public DateTime? ResolvedAt { get; set; }
+        public DateTime? ClosedAt { get; set; }
+
         public int CreatedById { get; set; }
         [ValidateNever]
         public User? CreatedBy { get; set; }
@@ -35,6 +45,10 @@ namespace IT_Service_Management_System.Models
         [ValidateNever]
         public ICollection<TicketAttachment> Attachments { get; set; } = new List<TicketAttachment>();
 
+        /// <summary>Human-friendly reference, e.g. TKT-00042.</summary>
+        [NotMapped]
+        public string Reference => $"TKT-{Id:D5}";
+
         public enum TicketStatus
         {
             Open,
@@ -47,7 +61,8 @@ namespace IT_Service_Management_System.Models
         {
             Low,
             Medium,
-            High
+            High,
+            Critical
         }
 
         public enum UserRole

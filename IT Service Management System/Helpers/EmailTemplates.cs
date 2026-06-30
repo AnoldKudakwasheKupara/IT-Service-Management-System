@@ -267,6 +267,76 @@ namespace IT_Service_Management_System.Helpers
             return Wrap("Administrator", body, "Automated security alert — Axis IT Operations.");
         }
 
+        // ── Ticketing ────────────────────────────────────────────────────────────────
+
+        private static string TicketFacts(string reference, string title, string priority, string status) => $@"
+<table style=""width:100%;border-collapse:collapse;background:#f8fafc;border-radius:8px;overflow:hidden;margin:16px 0;"">
+  <tr><td style=""padding:7px 14px;color:#64748b;font-size:13px;width:120px;"">Reference</td><td style=""padding:7px 14px;color:#1e293b;font-size:13px;font-weight:700;"">{reference}</td></tr>
+  <tr><td style=""padding:7px 14px;color:#64748b;font-size:13px;"">Subject</td><td style=""padding:7px 14px;color:#1e293b;font-size:13px;font-weight:600;"">{title}</td></tr>
+  <tr><td style=""padding:7px 14px;color:#64748b;font-size:13px;"">Priority</td><td style=""padding:7px 14px;color:#1e293b;font-size:13px;"">{priority}</td></tr>
+  <tr><td style=""padding:7px 14px;color:#64748b;font-size:13px;"">Status</td><td style=""padding:7px 14px;color:#1e293b;font-size:13px;"">{status}</td></tr>
+</table>";
+
+        private static string Quote(string text) => $@"
+<div style=""background:#eff6ff;border-left:4px solid #3b82f6;border-radius:0 8px 8px 0;padding:14px 18px;margin:16px 0;color:#1e293b;font-size:14px;line-height:1.6;white-space:pre-wrap;"">{System.Net.WebUtility.HtmlEncode(text)}</div>";
+
+        /// <summary>To admins/agents when a new ticket is logged.</summary>
+        public static string TicketCreatedForStaff(string reference, string title, string description,
+            string priority, string createdByName, string link)
+        {
+            var body = $@"
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:0 0 8px;"">
+  A new support ticket has been logged by <strong>{createdByName}</strong> and needs attention.
+</p>
+{TicketFacts(reference, title, priority, "Open")}
+<p style=""color:#64748b;font-size:13px;margin:0 0 4px;"">Description:</p>
+{Quote(description)}
+{PrimaryButton(link, "&#128203;&nbsp; Open Ticket")}";
+            return Wrap("Team", body, "You receive this because you are an administrator.");
+        }
+
+        /// <summary>To the other party when a reply is posted.</summary>
+        public static string TicketReply(string recipientFirstName, string reference, string title,
+            string replierName, string message, string link)
+        {
+            var body = $@"
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:0 0 8px;"">
+  <strong>{replierName}</strong> replied to ticket <strong>{reference}</strong> &mdash; <em>{title}</em>:
+</p>
+{Quote(message)}
+{PrimaryButton(link, "&#128172;&nbsp; View &amp; Reply")}";
+            return Wrap(recipientFirstName, body, $"Ticket {reference}");
+        }
+
+        /// <summary>To the ticket owner when status changes.</summary>
+        public static string TicketStatusChanged(string recipientFirstName, string reference, string title,
+            string newStatus, string byName, string link)
+        {
+            var box = newStatus == "Resolved" || newStatus == "Closed"
+                ? SuccessBox($"&#10003;&nbsp; Ticket <strong>{reference}</strong> is now <strong>{newStatus}</strong>.")
+                : InfoBox($"&#8505;&nbsp; Ticket <strong>{reference}</strong> status changed to <strong>{newStatus}</strong>.");
+            var body = $@"
+{box}
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:16px 0;"">
+  <em>{title}</em> &mdash; updated by {byName}.
+</p>
+{PrimaryButton(link, "&#128203;&nbsp; View Ticket")}";
+            return Wrap(recipientFirstName, body, $"Ticket {reference}");
+        }
+
+        /// <summary>To an agent when a ticket is assigned to them.</summary>
+        public static string TicketAssigned(string assigneeFirstName, string reference, string title,
+            string priority, string byName, string link)
+        {
+            var body = $@"
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:0 0 8px;"">
+  <strong>{byName}</strong> assigned ticket <strong>{reference}</strong> to you.
+</p>
+{TicketFacts(reference, title, priority, "Assigned")}
+{PrimaryButton(link, "&#128203;&nbsp; Open Ticket")}";
+            return Wrap(assigneeFirstName, body, $"Ticket {reference}");
+        }
+
         /// <summary>Sent when admin resends an activation link to an inactive user.</summary>
         public static string ResendActivation(string firstName, string activationLink)
         {

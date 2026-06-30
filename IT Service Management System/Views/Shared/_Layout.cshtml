@@ -358,6 +358,11 @@
                 display: inline-block;
             }
 
+            .logout-form {
+                display: flex;
+                margin: 0;
+            }
+
             .btn-logout {
                 background: rgba(239,68,68,0.1);
                 border: none;
@@ -758,9 +763,12 @@
                             </div>
                         </a>
 
-                        <a class="btn-logout" asp-controller="Account" asp-action="Logout" title="Logout">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </a>
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-logout" title="Logout">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </button>
+                        </form>
                     </div>
                 </div>
 

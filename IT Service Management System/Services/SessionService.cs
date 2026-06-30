@@ -80,13 +80,14 @@ namespace IT_Service_Management_System.Services
             if (session == null || session.RevokedAt != null)
                 return false;
 
-            // Security-stamp check: rotated on password change / revoke-all.
+            // Security-stamp check: rotated on password change / revoke-all. Fail closed —
+            // a missing server-side stamp or any mismatch invalidates the session.
             var currentStamp = await _context.Users
                 .Where(u => u.Id == userId)
                 .Select(u => u.SecurityStamp)
                 .FirstOrDefaultAsync();
 
-            if (!string.IsNullOrEmpty(currentStamp) && currentStamp != stamp)
+            if (string.IsNullOrEmpty(currentStamp) || currentStamp != stamp)
                 return false;
 
             // Throttled heartbeat to avoid a write on every request.

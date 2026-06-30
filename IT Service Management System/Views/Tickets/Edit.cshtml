@@ -28,7 +28,7 @@
             </div>
             <div class="ticket-id-badge">
                 <i class="fas fa-hashtag"></i>
-                Ticket #@Model.Id
+                @Model.Reference
             </div>
         </div>
 
@@ -100,11 +100,23 @@
                             </div>
                         </div>
 
-                        <p>
-    @(Model.CreatedBy != null 
-        ? Model.CreatedBy.FirstName + " " + Model.CreatedBy.LastName 
-        : "N/A")
-</p>
+                        <div class="form-group-modern">
+                            <label asp-for="AssignedToId" class="form-label">
+                                <i class="fas fa-user-gear"></i>
+                                Assigned To
+                            </label>
+                            <div class="select-wrapper">
+                                <i class="fas fa-chevron-down select-icon"></i>
+                                <select asp-for="AssignedToId" class="form-control-modern">
+                                    <option value="">— Unassigned —</option>
+                                    @foreach (var ag in (ViewBag.Agents as List<IT_Service_Management_System.Models.User> ?? new List<IT_Service_Management_System.Models.User>()))
+                                    {
+                                        <option value="@ag.Id" selected="@(Model.AssignedToId == ag.Id)">@ag.FirstName @ag.LastName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-hint"><i class="fas fa-info-circle"></i> The agent responsible for this ticket is notified by email.</div>
+                        </div>
 
                         <div class="form-group-modern">
                             <label asp-for="Priority" class="form-label">

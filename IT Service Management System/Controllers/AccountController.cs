@@ -26,6 +26,7 @@ namespace IT_Service_Management_System.Controllers
         // Coarse per-IP backstop against scripted brute force (per-user lockout is the primary,
         // configurable mechanism). Generous so the configurable account lockout governs UX.
         private const int MaxIpAttempts = 15;
+        private const int MaxMfaAttempts = 5;
         private static readonly TimeSpan AttemptWindow = TimeSpan.FromMinutes(15);
         private static readonly TimeSpan TokenLifetime = TimeSpan.FromHours(24);
 
@@ -69,10 +70,12 @@ namespace IT_Service_Management_System.Controllers
 
         // ── login ────────────────────────────────────────────────────────────────────
 
-        public IActionResult Login(bool expired = false)
+        public IActionResult Login(bool expired = false, bool mfaFailed = false)
         {
             if (expired)
                 ViewBag.Error = "Your session ended. Please sign in again.";
+            else if (mfaFailed)
+                ViewBag.Error = "Too many incorrect verification codes. Please sign in again.";
             return View();
         }
 
@@ -231,8 +234,29 @@ namespace IT_Service_Management_System.Controllers
 
             if (string.IsNullOrWhiteSpace(code) || !PasswordHasher.VerifyPassword(code.Trim(), user.MfaOtpCodeHash))
             {
-                await _auditService.LogAsync("MFA Failed", "User", user.Id, $"Invalid OTP for {user.Email}");
-                ViewBag.Error = "Incorrect code. Please try again.";
+                // Cap failed OTP attempts to defeat brute force of the 6-digit code.
+                var attemptKey = $"mfa-attempts:{user.Id}";
+                var attempts = (_cache.TryGetValue(attemptKey, out int a) ? a : 0) + 1;
+                _cache.Set(attemptKey, attempts, TimeSpan.FromMinutes(15));
+
+                if (attempts >= MaxMfaAttempts)
+                {
+                    // Invalidate the code and end the challenge — user must sign in again.
+                    user.MfaOtpCodeHash = null;
+                    user.MfaOtpExpiry = null;
+                    await _context.SaveChangesAsync();
+                    _cache.Remove(attemptKey);
+                    HttpContext.Session.Remove(MfaPendingKey);
+                    await _auditService.LogAsync("MFA Locked", "User", user.Id,
+                        $"Too many invalid OTP attempts for {user.Email}");
+                    TempData["Success"] = null;
+                    ViewBag.Error = null;
+                    return RedirectToAction(nameof(Login), new { mfaFailed = true });
+                }
+
+                await _auditService.LogAsync("MFA Failed", "User", user.Id,
+                    $"Invalid OTP ({attempts}/{MaxMfaAttempts}) for {user.Email}");
+                ViewBag.Error = $"Incorrect code. {MaxMfaAttempts - attempts} attempt(s) left.";
                 return View();
             }
 
@@ -242,6 +266,7 @@ namespace IT_Service_Management_System.Controllers
             user.LastLoginAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
+            _cache.Remove($"mfa-attempts:{user.Id}");
             HttpContext.Session.Remove(MfaPendingKey);
             await _auditService.LogAsync("MFA Verified", "User", user.Id, $"OTP verified for {user.Email}");
 
@@ -256,6 +281,15 @@ namespace IT_Service_Management_System.Controllers
 
             var user = await _context.Users.FindAsync(pendingId.Value);
             if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
+
+            // Throttle resends to prevent OTP flooding / window extension.
+            var resendKey = $"mfa-resend:{user.Id}";
+            if (_cache.TryGetValue(resendKey, out _))
+            {
+                TempData["Success"] = "A code was just sent. Please wait a moment before requesting another.";
+                return RedirectToAction(nameof(VerifyMfa));
+            }
+            _cache.Set(resendKey, true, TimeSpan.FromSeconds(60));
 
             var config = _configService.Get();
             var newCode = GenerateOtp();
@@ -327,6 +361,8 @@ namespace IT_Service_Management_System.Controllers
 
         // ── logout ───────────────────────────────────────────────────────────────────
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             var userId = HttpContext.Session.GetInt32("UserId");

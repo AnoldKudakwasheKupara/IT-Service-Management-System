@@ -1,8 +1,10 @@
 ﻿@model IT_Service_Management_System.Models.Ticket
 
 @{
-    ViewData["Title"] = $"Ticket #{Model.Id} - Axis IT Helpdesk";
+    ViewData["Title"] = $"{Model.Reference} - Axis IT Helpdesk";
     var isClosed = Model.Status.ToString() == "Closed";
+    var isStaff = (bool)(ViewBag.IsStaff ?? false);
+    var agents = ViewBag.Agents as List<IT_Service_Management_System.Models.User> ?? new List<IT_Service_Management_System.Models.User>();
 }
 
 <div class="page-container">
@@ -21,12 +23,17 @@
         </div>
     </div>
 
+    @if (TempData["Success"] != null)
+    {
+        <div class="ticket-flash"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
+    }
+
     <!-- Main Ticket Card -->
     <div class="ticket-details-card">
         <div class="card-header-custom">
             <div>
                 <i class="fas fa-ticket-alt me-2"></i>
-                <span>Ticket #@Model.Id</span>
+                <span>@Model.Reference</span>
             </div>
             <div class="ticket-status-badge @(isClosed ? "closed" : "active")">
                 @if (isClosed)
@@ -120,6 +127,23 @@
                             <span>@Model.CreatedAt.ToString("MMMM dd, yyyy 'at' HH:mm")</span>
                         </div>
                     </div>
+                    <div class="meta-item">
+                        <i class="fas fa-user-gear"></i>
+                        <div>
+                            <label>Assigned to</label>
+                            <span>@(Model.AssignedTo != null ? $"{Model.AssignedTo.FirstName} {Model.AssignedTo.LastName}" : "Unassigned")</span>
+                        </div>
+                    </div>
+                    @if (Model.UpdatedAt != null)
+                    {
+                        <div class="meta-item">
+                            <i class="fas fa-clock-rotate-left"></i>
+                            <div>
+                                <label>Last updated</label>
+                                <span>@Model.UpdatedAt.Value.ToString("MMM dd, yyyy 'at' HH:mm")</span>
+                            </div>
+                        </div>
+                    }
             </div>
 
             <!-- Description Section -->
@@ -133,32 +157,54 @@
                 </div>
             </div>
 
-            <!-- Close Ticket Button -->
-            @if (!isClosed)
-                {
-                    <div class="close-ticket-section">
-
-                        <!-- 🔥 NEW: Redirect instead of popup -->
-                        <a asp-action="Close" asp-route-id="@Model.Id" class="btn-close-ticket">
-                            <i class="fas fa-lock"></i>
-                            Close Ticket
-                        </a>
-
-                        <div class="close-hint">
-                            <i class="fas fa-info-circle"></i>
-                            Closing the ticket will open a confirmation page
-                        </div>
+            <!-- Staff toolbar -->
+            @if (isStaff && !isClosed)
+            {
+                <div class="staff-toolbar">
+                    <div class="staff-toolbar-row">
+                        <span class="toolbar-label"><i class="fas fa-bolt"></i> Set status</span>
+                        <form asp-action="ChangeStatus" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button name="status" value="InProgress" class="status-btn progress"><i class="fas fa-spinner"></i> In Progress</button>
+                        </form>
+                        <form asp-action="ChangeStatus" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button name="status" value="Resolved" class="status-btn resolved"><i class="fas fa-check-circle"></i> Resolved</button>
+                        </form>
+                        <a asp-action="Close" asp-route-id="@Model.Id" class="status-btn closed"><i class="fas fa-lock"></i> Close</a>
                     </div>
-                }
-                   
-            else
+                    <div class="staff-toolbar-row">
+                        <span class="toolbar-label"><i class="fas fa-user-gear"></i> Assign</span>
+                        <form asp-action="Assign" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <select name="assignedToId" class="assign-select">
+                                <option value="">— Unassigned —</option>
+                                @foreach (var ag in agents)
+                                {
+                                    <option value="@ag.Id" selected="@(Model.AssignedToId == ag.Id)">@ag.FirstName @ag.LastName</option>
+                                }
+                            </select>
+                            <button type="submit" class="status-btn assign"><i class="fas fa-paper-plane"></i> Update</button>
+                        </form>
+                    </div>
+                </div>
+            }
+            else if (isClosed)
             {
                 <div class="closed-alert">
                     <i class="fas fa-lock"></i>
-                    <div>
+                    <div style="flex:1;">
                         <strong>This ticket is closed</strong>
-                        <p>No further replies or changes can be made to this ticket.</p>
+                        <p>Reopen it to continue the conversation.</p>
                     </div>
+                    <form asp-action="Reopen" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button type="submit" class="status-btn progress"><i class="fas fa-rotate-left"></i> Reopen</button>
+                    </form>
                 </div>
             }
         </div>
@@ -769,6 +815,37 @@
         transform: translateY(-1px);
         box-shadow: var(--shadow-md);
     }
+
+    /* Flash banner */
+    .ticket-flash {
+        background: #f0fdf4; border-left: 4px solid var(--success); color: #166534;
+        padding: 0.8rem 1rem; border-radius: 0.6rem; margin-bottom: 1rem;
+        display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; font-weight: 500;
+    }
+
+    /* Staff toolbar */
+    .staff-toolbar {
+        background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 0.75rem;
+        padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .staff-toolbar-row { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+    .toolbar-label { font-size: 0.75rem; font-weight: 700; color: var(--gray-600); min-width: 90px; }
+    .toolbar-label i { color: var(--primary); margin-right: 0.25rem; }
+    .inline-form { display: inline; margin: 0; }
+    .status-btn {
+        border: none; cursor: pointer; padding: 0.45rem 0.9rem; border-radius: 0.5rem;
+        font-size: 0.8rem; font-weight: 600; color: white; display: inline-flex; align-items: center;
+        gap: 0.4rem; text-decoration: none; transition: all 0.15s;
+    }
+    .status-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); color: white; }
+    .status-btn.progress { background: var(--info); }
+    .status-btn.resolved { background: var(--success); }
+    .status-btn.closed { background: var(--gray-600); }
+    .status-btn.assign { background: var(--primary-dark); }
+    .assign-select {
+        padding: 0.45rem 0.7rem; border: 1.5px solid var(--gray-200); border-radius: 0.5rem;
+        font-size: 0.8rem; font-family: inherit; background: white; min-width: 180px;
+    }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
@@ -863,21 +940,26 @@
         })
         .then(data => {
             if (data.success) {
+                const senderName = data.senderName || "You";
+                const when = data.time || "Just now";
+                const sideClass = data.isStaff ? "support-message" : "user-message";
+
                 if (connection) {
-                    connection.invoke("SendMessage", ticketId, "Admin", message, new Date().toLocaleString());
+                    connection.invoke("SendMessage", ticketId, senderName, message, when);
                 }
-                
+
                 // Add message to chat immediately
                 const chatBox = document.getElementById("chatBox");
                 const msgDiv = document.createElement("div");
-                msgDiv.classList.add("message-item", "support-message");
+                msgDiv.classList.add("message-item", sideClass);
+                const initials = senderName.split(' ').map(p => p.charAt(0)).join('').substring(0,2).toUpperCase();
                 msgDiv.innerHTML = `
                     <div class="message-header">
                         <div class="message-sender">
-                            <div class="sender-avatar">A</div>
+                            <div class="sender-avatar">${initials}</div>
                             <div>
-                                <strong>Admin</strong>
-                                <span class="message-time">Just now</span>
+                                <strong>${escapeHtml(senderName)}</strong>
+                                <span class="message-time">${when}</span>
                             </div>
                         </div>
                     </div>
@@ -885,12 +967,12 @@
                 `;
                 chatBox.appendChild(msgDiv);
                 chatBox.scrollTop = chatBox.scrollHeight;
-                
+
                 // Clear form
                 document.getElementById("messageInput").value = "";
                 document.getElementById("fileInput").value = "";
                 fileNameDisplay.textContent = "";
-                showNotification('Message sent successfully', 'success');
+                showNotification('Reply sent — the other party has been emailed.', 'success');
             } else {
                 showNotification(data.message || 'Failed to send message', 'error');
             }
