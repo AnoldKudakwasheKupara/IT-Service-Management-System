@@ -17,7 +17,7 @@ namespace IT_Service_Management_System.Services
 
             _queue.Enqueue(async (sp, ct) =>
             {
-                var email = sp.GetRequiredService<EmailService>();
+                var email = sp.GetRequiredService<IEmailSender>();
                 await email.SendEmailAsync(toEmail, toName, subject, htmlBody);
             });
         }

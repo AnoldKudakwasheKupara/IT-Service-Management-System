@@ -70,7 +70,18 @@ else
     builder.Services.AddDistributedMemoryCache();
 }
 
+// Email transport: SendGrid when EmailSettings:SendGridApiKey is set, otherwise SMTP (MailKit).
+// The chosen sender is wrapped in a retry decorator; all sends run on the background queue.
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<SendGridEmailSender>();
+var useSendGrid = !string.IsNullOrWhiteSpace(builder.Configuration["EmailSettings:SendGridApiKey"]);
+builder.Services.AddScoped<IEmailSender>(sp =>
+{
+    IEmailSender inner = useSendGrid
+        ? sp.GetRequiredService<SendGridEmailSender>()
+        : sp.GetRequiredService<EmailService>();
+    return new RetryingEmailSender(inner, sp.GetRequiredService<ILogger<RetryingEmailSender>>());
+});
 
 // Read the configurable idle timeout from the DB (falls back to 30 min if unavailable,
 // e.g. on a brand-new database before the table exists). Applied at startup.

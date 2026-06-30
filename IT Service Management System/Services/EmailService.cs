@@ -4,7 +4,8 @@ using MimeKit;
 
 namespace IT_Service_Management_System.Services
 {
-    public class EmailService
+    /// <summary>SMTP email sender (MailKit, StartTLS). The default <see cref="IEmailSender"/>.</summary>
+    public class EmailService : IEmailSender
     {
         private readonly IConfiguration _config;
         private readonly ILogger<EmailService> _logger;

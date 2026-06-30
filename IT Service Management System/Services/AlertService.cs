@@ -10,11 +10,11 @@ namespace IT_Service_Management_System.Services
     public class AlertService
     {
         private readonly ConfigurationService _config;
-        private readonly EmailService _email;
+        private readonly IEmailSender _email;
         private readonly AuditService _audit;
         private readonly ILogger<AlertService> _logger;
 
-        public AlertService(ConfigurationService config, EmailService email, AuditService audit, ILogger<AlertService> logger)
+        public AlertService(ConfigurationService config, IEmailSender email, AuditService audit, ILogger<AlertService> logger)
         {
             _config = config;
             _email = email;
