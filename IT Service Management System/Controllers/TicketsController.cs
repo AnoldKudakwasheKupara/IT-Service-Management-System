@@ -51,23 +51,43 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ── list ─────────────────────────────────────────────────────────────────────
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, string? q = null, string? status = null, string? priority = null)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
             var role = HttpContext.Session.GetString("UserRole");
             if (userId == null) return RedirectToAction("Login", "Account");
 
-            var query = _context.Tickets
-                .Include(t => t.CreatedBy)
-                .Include(t => t.AssignedTo)
-                .AsQueryable();
-
+            // Role-scoped base set drives the (unfiltered) summary counts so the stat cards
+            // stay stable regardless of the current search/filter or page.
+            var baseQuery = _context.Tickets.AsQueryable();
             if (!IsStaff(role))
-                query = query.Where(t => t.CreatedById == userId);
+                baseQuery = baseQuery.Where(t => t.CreatedById == userId);
 
-            var tickets = await query
-                .OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt)
-                .ToListAsync();
+            ViewBag.TotalTickets = await baseQuery.CountAsync();
+            ViewBag.OpenTickets = await baseQuery.CountAsync(t => t.Status == TicketStatus.Open);
+            ViewBag.InProgressTickets = await baseQuery.CountAsync(t => t.Status == TicketStatus.InProgress);
+            ViewBag.ClosedTickets = await baseQuery.CountAsync(t => t.Status == TicketStatus.Closed);
+
+            IQueryable<Ticket> query = baseQuery
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo);
+
+            if (!string.IsNullOrWhiteSpace(q))
+                query = query.Where(t => t.Title.Contains(q) || t.Description.Contains(q));
+
+            if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<TicketStatus>(status, out var st))
+                query = query.Where(t => t.Status == st);
+
+            if (!string.IsNullOrWhiteSpace(priority) && Enum.TryParse<TicketPriority>(priority, out var pr))
+                query = query.Where(t => t.Priority == pr);
+
+            var ordered = query.OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt);
+
+            var (tickets, paging) = await ordered.PageAsync(page);
+            ViewBag.Paging = paging;
+            ViewBag.Search = q;
+            ViewBag.Status = status;
+            ViewBag.Priority = priority;
 
             return View(tickets);
         }

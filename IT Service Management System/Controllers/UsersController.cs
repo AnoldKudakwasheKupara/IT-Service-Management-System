@@ -50,21 +50,40 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // 🔹 LIST USERS
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int page = 1, string? q = null)
         {
             var access = CheckAccess();
             if (access != null)
                 return access;
 
-            var users = await _context.Users
+            // Summary counts over the full (unfiltered) set so the stat cards
+            // reflect ALL users regardless of the current search or page.
+            var baseQuery = _context.Users.AsQueryable();
+            ViewBag.TotalUsers = await baseQuery.CountAsync();
+            ViewBag.AdminUsers = await baseQuery.CountAsync(u => u.Role == Ticket.UserRole.Admin);
+            ViewBag.RegularUsers = await baseQuery.CountAsync(u => u.Role == Ticket.UserRole.Employee);
+            ViewBag.NewUsers = await baseQuery.CountAsync(u => u.CreatedAt >= DateTime.Now.AddDays(-30));
+
+            // Declared as IQueryable<User> so the Includes don't lock us into IIncludableQueryable
+            // (which can't be reassigned by .Where below).
+            IQueryable<User> query = _context.Users
                 .Include(u => u.Department)
                     .ThenInclude(d => d!.Hod)
-                .Include(u => u.Supervisor)
-                .OrderBy(u => u.FirstName)
-                .ThenBy(u => u.LastName)
-                .ToListAsync();
+                .Include(u => u.Supervisor);
 
-            return View(users);
+            if (!string.IsNullOrWhiteSpace(q))
+                query = query.Where(u =>
+                    u.FirstName.Contains(q) || u.LastName.Contains(q) || u.Email.Contains(q));
+
+            query = query
+                .OrderBy(u => u.FirstName)
+                .ThenBy(u => u.LastName);
+
+            var (items, paging) = await query.PageAsync(page);
+            ViewBag.Paging = paging;
+            ViewBag.Search = q;
+
+            return View(items);
         }
 
         public async Task<IActionResult> Details(int id)

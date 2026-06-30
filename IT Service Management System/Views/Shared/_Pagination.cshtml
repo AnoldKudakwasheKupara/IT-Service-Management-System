@@ -1,0 +1,81 @@
+@model IT_Service_Management_System.Helpers.PagingInfo
+@{
+    if (Model == null || Model.TotalPages <= 1)
+    {
+        // Still show the summary line even with a single page.
+    }
+
+    // Build a base query string preserving all params except "page".
+    string PageUrl(int p)
+    {
+        var q = Context.Request.Query
+            .Where(kv => kv.Key != "page")
+            .Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value!)}")
+            .ToList();
+        q.Add($"page={p}");
+        return $"{Context.Request.Path}?{string.Join("&", q)}";
+    }
+
+    int windowStart = Math.Max(1, Model.Page - 2);
+    int windowEnd = Math.Min(Model.TotalPages, Model.Page + 2);
+}
+
+<div class="pager">
+    <div class="pager-summary">
+        @if (Model.TotalCount == 0)
+        {
+            <span>No records</span>
+        }
+        else
+        {
+            <span>Showing <strong>@Model.FirstItem–@Model.LastItem</strong> of <strong>@Model.TotalCount</strong></span>
+        }
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="pager-nav" aria-label="Pagination">
+            <a class="pager-btn @(Model.HasPrevious ? "" : "disabled")"
+               href="@(Model.HasPrevious ? PageUrl(Model.Page - 1) : "#")" aria-label="Previous">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+
+            @if (windowStart > 1)
+            {
+                <a class="pager-btn" href="@PageUrl(1)">1</a>
+                @if (windowStart > 2) { <span class="pager-ellipsis">…</span> }
+            }
+
+            @for (int p = windowStart; p <= windowEnd; p++)
+            {
+                <a class="pager-btn @(p == Model.Page ? "active" : "")" href="@PageUrl(p)">@p</a>
+            }
+
+            @if (windowEnd < Model.TotalPages)
+            {
+                @if (windowEnd < Model.TotalPages - 1) { <span class="pager-ellipsis">…</span> }
+                <a class="pager-btn" href="@PageUrl(Model.TotalPages)">@Model.TotalPages</a>
+            }
+
+            <a class="pager-btn @(Model.HasNext ? "" : "disabled")"
+               href="@(Model.HasNext ? PageUrl(Model.Page + 1) : "#")" aria-label="Next">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </nav>
+    }
+</div>
+
+<style>
+    .pager { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.75rem; padding:1rem 1.25rem; }
+    .pager-summary { font-size:0.82rem; color:var(--gray-500,#64748b); }
+    .pager-nav { display:flex; align-items:center; gap:0.3rem; }
+    .pager-btn {
+        min-width:34px; height:34px; padding:0 0.55rem; display:inline-flex; align-items:center; justify-content:center;
+        border:1px solid var(--gray-200,#e2e8f0); border-radius:0.5rem; background:#fff; color:var(--gray-700,#334155);
+        text-decoration:none; font-size:0.82rem; font-weight:600; transition:all 0.15s;
+    }
+    .pager-btn:hover:not(.disabled):not(.active) { background:var(--gray-50,#f8fafc); border-color:var(--primary,#3b82f6); color:var(--primary,#3b82f6); }
+    .pager-btn.active { background:var(--primary,#3b82f6); border-color:var(--primary,#3b82f6); color:#fff; }
+    .pager-btn.disabled { opacity:0.45; pointer-events:none; }
+    .pager-ellipsis { padding:0 0.25rem; color:var(--gray-400,#94a3b8); }
+</style>

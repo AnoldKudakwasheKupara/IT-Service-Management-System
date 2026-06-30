@@ -1,4 +1,6 @@
 ﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Helpers;
+using IT_Service_Management_System.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,41 +16,30 @@ namespace IT_Service_Management_System.Controllers
             _context = context;
         }
 
-        public IActionResult Index(int page = 1, int pageSize = 10)
+        public async Task<IActionResult> Index(int page = 1, string? q = null)
         {
-            // Get all logs ordered by most recent first
-            var logs = _context.AuditLogs
-                .OrderByDescending(l => l.Timestamp)
-                .AsQueryable();
+            // Statistics over the full (unfiltered) set so the stat cards stay
+            // stable regardless of the current search or page.
+            ViewBag.TotalCount = await _context.AuditLogs.CountAsync();
+            ViewBag.CreatedCount = await _context.AuditLogs.CountAsync(l => l.Action == "Created");
+            ViewBag.UpdatedCount = await _context.AuditLogs.CountAsync(l => l.Action == "Updated");
+            ViewBag.DeletedCount = await _context.AuditLogs.CountAsync(l => l.Action == "Deleted");
 
-            // Calculate total count for pagination
-            var totalLogs = logs.Count();
-            var totalPages = (int)Math.Ceiling(totalLogs / (double)pageSize);
+            // Declared as IQueryable<AuditLog> before .Where so the search filter composes cleanly.
+            IQueryable<AuditLog> query = _context.AuditLogs;
 
-            // Ensure page is within valid range
-            if (page < 1) page = 1;
-            if (page > totalPages && totalPages > 0) page = totalPages;
+            if (!string.IsNullOrWhiteSpace(q))
+                query = query.Where(a =>
+                    a.Action.Contains(q) || a.UserName.Contains(q) ||
+                    a.Details.Contains(q) || a.Entity.Contains(q));
 
-            // Apply pagination
-            var paginatedLogs = logs
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToList();
+            query = query.OrderByDescending(a => a.Timestamp);
 
-            // Calculate statistics from all logs
-            ViewBag.TotalCount = totalLogs;
-            ViewBag.CreatedCount = _context.AuditLogs.Count(l => l.Action == "Created");
-            ViewBag.UpdatedCount = _context.AuditLogs.Count(l => l.Action == "Updated");
-            ViewBag.DeletedCount = _context.AuditLogs.Count(l => l.Action == "Deleted");
+            var (items, paging) = await query.PageAsync(page);
+            ViewBag.Paging = paging;
+            ViewBag.Search = q;
 
-            // Pagination data
-            ViewBag.CurrentPage = page;
-            ViewBag.TotalPages = totalPages;
-            ViewBag.PageSize = pageSize;
-            ViewBag.HasPreviousPage = page > 1;
-            ViewBag.HasNextPage = page < totalPages;
-
-            return View(paginatedLogs);
+            return View(items);
         }
     }
 }

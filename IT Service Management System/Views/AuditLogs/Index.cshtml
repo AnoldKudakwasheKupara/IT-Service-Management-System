@@ -2,12 +2,7 @@
 
 @{
     ViewData["Title"] = "Audit Logs - Axis IT Helpdesk";
-    
-    // Pagination values
-    var currentPage = ViewBag.CurrentPage ?? 1;
-    var totalPages = ViewBag.TotalPages ?? 1;
-    var hasPreviousPage = ViewBag.HasPreviousPage ?? false;
-    var hasNextPage = ViewBag.HasNextPage ?? false;
+    var search = ViewBag.Search as string;
 }
 
 <div class="page-container">
@@ -73,10 +68,14 @@
                 <i class="fas fa-list me-2"></i>
                 <span>Activity Log</span>
             </div>
-            <div class="log-count">
-                <i class="fas fa-chart-simple"></i>
-                <span>@ViewBag.TotalCount</span> total entries | Showing @Model.Count() on page @currentPage of @totalPages
-            </div>
+            <form method="get" asp-action="Index" class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" name="q" value="@search" placeholder="     Search logs..." class="search-input">
+                @if (!string.IsNullOrWhiteSpace(search))
+                {
+                    <a asp-action="Index" class="search-clear" title="Clear search"><i class="fas fa-times"></i></a>
+                }
+            </form>
         </div>
 
         <div class="table-responsive">
@@ -199,81 +198,9 @@
             }
         </div>
 
-        <!-- Pagination -->
-        @if (totalPages > 1)
+        @if (ViewBag.Paging != null)
         {
-            <div class="pagination-container">
-                <div class="pagination-info">
-                    Showing page @currentPage of @totalPages
-                </div>
-                <div class="pagination-controls">
-                    @if (hasPreviousPage)
-                    {
-                        <a asp-action="Index" asp-route-page="@(currentPage - 1)" class="pagination-btn">
-                            <i class="fas fa-chevron-left"></i>
-                            Previous
-                        </a>
-                    }
-                    else
-                    {
-                        <span class="pagination-btn disabled">
-                            <i class="fas fa-chevron-left"></i>
-                            Previous
-                        </span>
-                    }
-
-                    @{
-                        // Display page numbers
-                        int startPage = Math.Max(1, currentPage - 2);
-                        int endPage = Math.Min(totalPages, currentPage + 2);
-                        
-                        if (startPage > 1)
-                        {
-                            <a asp-action="Index" asp-route-page="1" class="pagination-number">1</a>
-                            if (startPage > 2)
-                            {
-                                <span class="pagination-dots">...</span>
-                            }
-                        }
-
-                        for (int i = startPage; i <= endPage; i++)
-                        {
-                            if (i == currentPage)
-                            {
-                                <span class="pagination-number active">@i</span>
-                            }
-                            else
-                            {
-                                <a asp-action="Index" asp-route-page="@i" class="pagination-number">@i</a>
-                            }
-                        }
-
-                        if (endPage < totalPages)
-                        {
-                            if (endPage < totalPages - 1)
-                            {
-                                <span class="pagination-dots">...</span>
-                            }
-                            <a asp-action="Index" asp-route-page="@totalPages" class="pagination-number">@totalPages</a>
-                        }
-                    }
-
-                    @if (hasNextPage)
-                    {
-                        <a asp-action="Index" asp-route-page="@(currentPage + 1)" class="pagination-btn">
-                            Next
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
-                    }
-                    else
-                    {
-                        <span class="pagination-btn disabled">
-                            Next
-                            <i class="fas fa-chevron-right"></i>
-                        </span>
-                    }
-                </div>
-            </div>
+            @await Html.PartialAsync("_Pagination", (IT_Service_Management_System.Helpers.PagingInfo)ViewBag.Paging)
         }
     </div>
 </div>
@@ -414,6 +341,46 @@
         font-size: 0.875rem;
         font-weight: normal;
         color: var(--gray-500);
+    }
+
+    .search-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-box i.fa-search {
+        position: absolute;
+        left: 0.75rem;
+        color: var(--gray-400);
+        font-size: 0.875rem;
+    }
+
+    .search-input {
+        padding: 0.5rem 0.75rem 0.5rem 2rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        width: 250px;
+        transition: all 0.2s;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+    }
+
+    .search-clear {
+        position: absolute;
+        right: 0.6rem;
+        color: var(--gray-400);
+        text-decoration: none;
+        font-size: 0.8rem;
+    }
+
+    .search-clear:hover {
+        color: var(--danger);
     }
 
     .logs-table {

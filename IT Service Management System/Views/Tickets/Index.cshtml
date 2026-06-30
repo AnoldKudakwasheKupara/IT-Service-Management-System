@@ -28,7 +28,7 @@
                 <i class="fas fa-chart-line"></i>
             </div>
             <div class="stat-info">
-                <h3>@Model.Count()</h3>
+                <h3>@(ViewBag.TotalTickets ?? 0)</h3>
                 <p>Total Tickets</p>
             </div>
         </div>
@@ -37,7 +37,7 @@
                 <i class="fas fa-clock"></i>
             </div>
             <div class="stat-info">
-                <h3>@Model.Count(t => t.Status.ToString() == "Open")</h3>
+                <h3>@(ViewBag.OpenTickets ?? 0)</h3>
                 <p>Open Tickets</p>
             </div>
         </div>
@@ -46,7 +46,7 @@
                 <i class="fas fa-spinner"></i>
             </div>
             <div class="stat-info">
-                <h3>@Model.Count(t => t.Status.ToString() == "InProgress")</h3>
+                <h3>@(ViewBag.InProgressTickets ?? 0)</h3>
                 <p>In Progress</p>
             </div>
         </div>
@@ -55,7 +55,7 @@
                 <i class="fas fa-check-circle"></i>
             </div>
             <div class="stat-info">
-                <h3>@Model.Count(t => t.Status.ToString() == "Closed")</h3>
+                <h3>@(ViewBag.ClosedTickets ?? 0)</h3>
                 <p>Closed</p>
             </div>
         </div>
@@ -67,38 +67,48 @@
             <i class="fas fa-filter"></i>
             <span>Filter Tickets</span>
         </div>
-        <div class="filters-body">
+        @{
+            var curStatus = ViewBag.Status as string;
+            var curPriority = ViewBag.Priority as string;
+            var curSearch = ViewBag.Search as string;
+        }
+        <form method="get" asp-action="Index" class="filters-body">
             <div class="filter-group">
                 <label>Status</label>
-                <select id="statusFilter" class="filter-select">
+                <select name="status" class="filter-select">
                     <option value="">All Status</option>
-                    <option value="Open">Open</option>
-                    <option value="InProgress">In Progress</option>
-                    <option value="Closed">Closed</option>
+                    <option value="Open" selected="@(curStatus == "Open")">Open</option>
+                    <option value="InProgress" selected="@(curStatus == "InProgress")">In Progress</option>
+                    <option value="Resolved" selected="@(curStatus == "Resolved")">Resolved</option>
+                    <option value="Closed" selected="@(curStatus == "Closed")">Closed</option>
                 </select>
             </div>
             <div class="filter-group">
                 <label>Priority</label>
-                <select id="priorityFilter" class="filter-select">
+                <select name="priority" class="filter-select">
                     <option value="">All Priorities</option>
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                    <option value="Critical">Critical</option>
+                    <option value="Low" selected="@(curPriority == "Low")">Low</option>
+                    <option value="Medium" selected="@(curPriority == "Medium")">Medium</option>
+                    <option value="High" selected="@(curPriority == "High")">High</option>
+                    <option value="Critical" selected="@(curPriority == "Critical")">Critical</option>
                 </select>
             </div>
             <div class="filter-group">
                 <label>Search</label>
                 <div class="search-wrapper">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Search by title or creator..." class="search-input">
+                    <input type="text" name="q" value="@curSearch" placeholder="Search by title or description..." class="search-input">
                 </div>
             </div>
-            <button class="btn-clear-filters" id="clearFilters">
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary,#3b82f6);color:#fff;border:none;">
+                <i class="fas fa-search"></i>
+                Search
+            </button>
+            <a asp-action="Index" class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
                 <i class="fas fa-undo-alt"></i>
                 Clear
-            </button>
-        </div>
+            </a>
+        </form>
     </div>
 
     <!-- Tickets Table -->
@@ -247,6 +257,11 @@
                     <i class="fas fa-plus-circle"></i> Create Ticket
                 </a>
             </div>
+        }
+
+        @if (ViewBag.Paging != null)
+        {
+            @await Html.PartialAsync("_Pagination", (IT_Service_Management_System.Helpers.PagingInfo)ViewBag.Paging)
         }
     </div>
 </div>

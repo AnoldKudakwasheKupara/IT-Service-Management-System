@@ -28,7 +28,7 @@
                     <i class="fas fa-users"></i>
                 </div>
                 <div class="stat-info">
-                    <h3>@Model.Count()</h3>
+                    <h3>@(ViewBag.TotalUsers ?? 0)</h3>
                     <p>Total Users</p>
                 </div>
             </div>
@@ -37,7 +37,7 @@
                     <i class="fas fa-user-shield"></i>
                 </div>
                 <div class="stat-info">
-                    <h3>@Model.Count(u => u.Role.ToString() == "Admin")</h3>
+                    <h3>@(ViewBag.AdminUsers ?? 0)</h3>
                     <p>Administrators</p>
                 </div>
             </div>
@@ -46,7 +46,7 @@
                     <i class="fas fa-user-check"></i>
                 </div>
                 <div class="stat-info">
-                    <h3>@Model.Count(u => u.Role.ToString() == "Employee")</h3>
+                    <h3>@(ViewBag.RegularUsers ?? 0)</h3>
                     <p>Regular Users</p>
                 </div>
             </div>
@@ -55,7 +55,7 @@
                     <i class="fas fa-calendar-alt"></i>
                 </div>
                 <div class="stat-info">
-                    <h3>@Model.Count(u => u.CreatedAt >= DateTime.Now.AddDays(-30))</h3>
+                    <h3>@(ViewBag.NewUsers ?? 0)</h3>
                     <p>New (30 days)</p>
                 </div>
             </div>
@@ -68,10 +68,14 @@
                         <i class="fas fa-list me-2"></i>
                         <span>User Directory</span>
                     </div>
-                    <div class="search-box">
+                    <form method="get" asp-action="Index" class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="     Search users..." class="search-input">
-                    </div>
+                        <input type="text" name="q" value="@(ViewBag.Search as string)" placeholder="     Search users..." class="search-input">
+                        @if (!string.IsNullOrWhiteSpace(ViewBag.Search as string))
+                        {
+                            <a asp-action="Index" class="search-clear" title="Clear search"><i class="fas fa-times"></i></a>
+                        }
+                    </form>
                 </div>
             </div>
 
@@ -164,6 +168,11 @@
                         <i class="fas fa-plus-circle"></i> Add User
                     </a>
                 </div>
+            }
+
+            @if (ViewBag.Paging != null)
+            {
+                @await Html.PartialAsync("_Pagination", (IT_Service_Management_System.Helpers.PagingInfo)ViewBag.Paging)
             }
         </div>
     </div>
@@ -347,6 +356,18 @@
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .search-clear {
+        position: absolute;
+        right: 0.6rem;
+        color: var(--gray-400);
+        text-decoration: none;
+        font-size: 0.8rem;
+    }
+
+        .search-clear:hover {
+            color: var(--danger);
         }
 
     /* Table Styles */
@@ -563,13 +584,11 @@
 </style>
 
 <script>
-    // Search functionality
+    // Responsive table: add data-label attributes for stacked mobile layout.
     document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('searchInput');
         const table = document.getElementById('usersTable');
+        if (!table) return;
         const rows = table.querySelectorAll('tbody tr');
-
-        // Add data-label attributes for responsive table
         const tableHeaders = document.querySelectorAll('.users-table th');
 
         rows.forEach(row => {
@@ -581,45 +600,6 @@
                 }
             });
         });
-
-        if (searchInput) {
-            searchInput.addEventListener('keyup', function() {
-                const searchTerm = this.value.toLowerCase().trim();
-
-                rows.forEach(row => {
-                    const searchData = row.getAttribute('data-search')?.toLowerCase() || '';
-                    const textContent = row.textContent.toLowerCase();
-
-                    if (searchTerm === '' || searchData.includes(searchTerm) || textContent.includes(searchTerm)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                // Show empty state if no results
-                const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
-                const emptyState = document.querySelector('.empty-state');
-
-                if (visibleRows.length === 0 && rows.length > 0) {
-                    if (!emptyState || emptyState.classList.contains('original')) {
-                        const noResultsDiv = document.createElement('div');
-                        noResultsDiv.className = 'empty-state';
-                        noResultsDiv.innerHTML = `
-                            <i class="fas fa-search"></i>
-                            <h3>No matching users found</h3>
-                            <p>Try adjusting your search terms</p>
-                        `;
-                        table.parentNode.appendChild(noResultsDiv);
-                        table.style.display = 'none';
-                    }
-                } else {
-                    const existingEmpty = table.parentNode.querySelector('.empty-state:not(.original)');
-                    if (existingEmpty) existingEmpty.remove();
-                    table.style.display = '';
-                }
-            });
-        }
     });
 </script>
 
