@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IT_Service_Management_System.Models
 {
-    public class Ticket
+    public class Ticket : ISoftDelete
     {
         public int Id { get; set; }
 
@@ -44,6 +44,15 @@ namespace IT_Service_Management_System.Models
 
         [ValidateNever]
         public ICollection<TicketAttachment> Attachments { get; set; } = new List<TicketAttachment>();
+
+        // Soft-delete (retained for audit/compliance; hidden by a global query filter).
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>Optimistic-concurrency token; prevents lost updates on concurrent edits.</summary>
+        [Timestamp]
+        [ValidateNever]
+        public byte[]? RowVersion { get; set; }
 
         /// <summary>Human-friendly reference, e.g. TKT-00042.</summary>
         [NotMapped]

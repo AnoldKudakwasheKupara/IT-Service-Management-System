@@ -178,7 +178,21 @@ namespace IT_Service_Management_System.Controllers
             ticket.UpdatedAt = DateTime.Now;
             ApplyStatusTimestamps(ticket, oldStatus);
 
-            await _context.SaveChangesAsync();
+            // Optimistic concurrency: when the form round-trips the original RowVersion, use it so
+            // a concurrent edit is detected (otherwise fall back to last-write-wins).
+            if (updatedTicket.RowVersion != null)
+                _context.Entry(ticket).Property(t => t.RowVersion).OriginalValue = updatedTicket.RowVersion;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                TempData["Error"] = "This ticket was changed by someone else while you were editing. Please review the latest version and try again.";
+                return RedirectToAction("Edit", new { id = ticket.Id });
+            }
+
             await _auditService.LogAsync("Updated", "Ticket", ticket.Id, $"Ticket '{ticket.Title}' updated");
 
             await NotifyStatusChangeAsync(ticket, oldStatus);
@@ -388,12 +402,13 @@ namespace IT_Service_Management_System.Controllers
             var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
             if (ticket == null) return NotFound();
 
-            _context.TicketAttachments.RemoveRange(_context.TicketAttachments.Where(a => a.TicketId == id));
-            _context.TicketMessages.RemoveRange(_context.TicketMessages.Where(m => m.TicketId == id));
-            _context.Tickets.Remove(ticket);
+            // Soft delete — the ticket (and its messages/attachments) are retained for audit,
+            // but hidden everywhere by the global query filter.
+            ticket.IsDeleted = true;
+            ticket.DeletedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            await _auditService.LogAsync("Deleted", "Ticket", id, $"Ticket ID {id} deleted");
+            await _auditService.LogAsync("Deleted", "Ticket", id, $"Ticket ID {id} deleted (soft)");
             TempData["Success"] = $"Ticket {ticket.Reference} deleted.";
             return RedirectToAction("Index");
         }

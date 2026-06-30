@@ -35,7 +35,8 @@
         <form asp-action="Edit" method="post" id="editTicketForm">
             @Html.AntiForgeryToken()
             <input type="hidden" asp-for="Id" />
-            
+            <input type="hidden" asp-for="RowVersion" />
+
             <div class="card-body-custom">
                 <div class="form-grid">
                     <!-- Left Column -->

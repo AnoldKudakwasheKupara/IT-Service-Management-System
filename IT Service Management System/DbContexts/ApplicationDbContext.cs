@@ -156,6 +156,14 @@ namespace IT_Service_Management_System.DbContexts
                 .ToTable(t => t.HasCheckConstraint("CK_Attachment_Owner",
                     "[TicketId] IS NOT NULL OR [TicketMessageId] IS NOT NULL"));
 
+            // Decimal precision — avoids silent truncation (and EF model-validation warnings).
+            modelBuilder.Entity<Asset>().Property(a => a.PurchaseCost).HasPrecision(18, 2);
+            modelBuilder.Entity<Payment>().Property(p => p.Amount).HasPrecision(18, 2);
+            modelBuilder.Entity<PaymentSchedule>().Property(p => p.Amount).HasPrecision(18, 2);
+
+            // Soft-delete: retain deleted tickets but hide them from normal queries.
+            modelBuilder.Entity<Ticket>().HasQueryFilter(t => !t.IsDeleted);
+
             // UserSession -> User
             modelBuilder.Entity<UserSession>()
                 .HasOne(s => s.User)
