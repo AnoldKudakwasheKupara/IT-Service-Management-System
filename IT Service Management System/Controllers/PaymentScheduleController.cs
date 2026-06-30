@@ -76,21 +76,21 @@ public class PaymentScheduleController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        try
-        {
-            // 🔥 Recalculate Next Run Date
-            model.NextRunDate = CalculateNextRun(model);
+        var existing = await _context.PaymentSchedules.FindAsync(model.Id);
+        if (existing == null)
+            return NotFound();
 
-            _context.Update(model);
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!_context.PaymentSchedules.Any(e => e.Id == model.Id))
-                return NotFound();
-            else
-                throw;
-        }
+        existing.ServiceName = model.ServiceName;
+        existing.Amount = model.Amount;
+        existing.PaymentDate = model.PaymentDate;
+        existing.Frequency = model.Frequency;
+        existing.Departments = model.Departments;
+
+        // 🔥 Recalculate Next Run Date
+        existing.NextRunDate = CalculateNextRun(model);
+        // IsActive preserved from existing entity (not editable via the form)
+
+        await _context.SaveChangesAsync();
 
         TempData["Success"] = "Payment schedule updated.";
         return RedirectToAction(nameof(Index));

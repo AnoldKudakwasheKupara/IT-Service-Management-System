@@ -80,34 +80,29 @@ namespace IT_Service_Management_System.Controllers
 
             if (ModelState.IsValid)
             {
-                try
+                var existingCert = await _context.SSLCertificates.FindAsync(cert.Id);
+                if (existingCert == null)
+                    return NotFound();
+
+                // 🔥 Detect if renewal checkbox was just ticked
+                bool justRenewed = !existingCert.IsRenewed && cert.IsRenewed;
+
+                existingCert.SystemName = cert.SystemName;
+                existingCert.URL = cert.URL;
+                existingCert.ExpiryDate = cert.ExpiryDate;
+                existingCert.IsRenewed = cert.IsRenewed;
+                existingCert.LastRenewedDate = cert.LastRenewedDate;
+                // DaysRemaining is a computed read-only property (not persisted)
+
+                if (justRenewed)
                 {
-                    var existingCert = await _context.SSLCertificates
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(c => c.Id == id);
+                    existingCert.LastRenewedDate = DateTime.Now;
 
-                    if (existingCert == null)
-                        return NotFound();
-
-                    // 🔥 Detect if renewal checkbox was just ticked
-                    if (!existingCert.IsRenewed && cert.IsRenewed)
-                    {
-                        cert.LastRenewedDate = DateTime.Now;
-
-                        // ✅ Reset expiry to 1 year from now
-                        cert.ExpiryDate = DateTime.Now.AddYears(1);
-                    }
-
-                    _context.Update(cert);
-                    await _context.SaveChangesAsync();
+                    // ✅ Reset expiry to 1 year from now
+                    existingCert.ExpiryDate = DateTime.Now.AddYears(1);
                 }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.SSLCertificates.Any(e => e.Id == cert.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
+
+                await _context.SaveChangesAsync();
 
                 TempData["Success"] = "SSL certificate updated.";
                 return RedirectToAction(nameof(Index));

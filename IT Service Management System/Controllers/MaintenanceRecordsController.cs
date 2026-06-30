@@ -87,18 +87,23 @@ namespace IT_Service_Management_System.Controllers
 
             if (ModelState.IsValid)
             {
-                try
-                {
-                    _context.Update(maintenanceRecord);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!MaintenanceRecordExists(maintenanceRecord.Id))
-                        return NotFound();
+                var existing = await _context.MaintenanceRecords.FindAsync(maintenanceRecord.Id);
+                if (existing == null)
+                    return NotFound();
 
-                    throw;
-                }
+                existing.AssetName = maintenanceRecord.AssetName;
+                existing.EmployeeName = maintenanceRecord.EmployeeName;
+                existing.MaintenanceDate = maintenanceRecord.MaintenanceDate;
+                existing.MaintenanceType = maintenanceRecord.MaintenanceType;
+                existing.ProblemDescription = maintenanceRecord.ProblemDescription;
+                existing.WorkDone = maintenanceRecord.WorkDone;
+                existing.PartsReplaced = maintenanceRecord.PartsReplaced;
+                existing.SoftwareInstalled = maintenanceRecord.SoftwareInstalled;
+                existing.Comments = maintenanceRecord.Comments;
+                existing.NextMaintenanceDate = maintenanceRecord.NextMaintenanceDate;
+                // CreatedAt preserved from existing entity
+
+                await _context.SaveChangesAsync();
 
                 TempData["Success"] = "Maintenance record updated.";
                 return RedirectToAction(nameof(Index));

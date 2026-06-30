@@ -106,24 +106,70 @@ namespace IT_Service_Management_System.Controllers
 
             if (ModelState.IsValid)
             {
-                try
-                {
-                    model.ModifiedDate = DateTime.Now;
+                var existing = await _context.TalentIdentifications
+                    .FindAsync(model.Id);
+                if (existing == null)
+                    return NotFound();
 
-                    _context.Update(model);
+                // Employee Information
+                existing.EmployeeName = model.EmployeeName;
+                existing.Department = model.Department;
+                existing.JobTitle = model.JobTitle;
+                existing.Country = model.Country;
+                existing.HireDate = model.HireDate;
 
-                    await _context.SaveChangesAsync();
+                // Performance Track Record
+                existing.KPI2023 = model.KPI2023;
+                existing.KPI2024 = model.KPI2024;
+                existing.KPI2025 = model.KPI2025;
+                existing.KPI2026 = model.KPI2026;
+                existing.KeyProjectsLed = model.KeyProjectsLed;
+                existing.DeliverySetbacks = model.DeliverySetbacks;
+                existing.LongTermBusinessInitiatives = model.LongTermBusinessInitiatives;
 
-                    TempData["Success"] =
-                        "Talent Identification record updated successfully.";
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!TalentIdentificationExists(model.Id))
-                        return NotFound();
+                // Leadership Capability
+                existing.LeadershipOverallComments = model.LeadershipOverallComments;
+                existing.TeamCapabilityDevelopment = model.TeamCapabilityDevelopment;
+                existing.StructuredOneOnOnes = model.StructuredOneOnOnes;
+                existing.TerminatedPoorPerformers = model.TerminatedPoorPerformers;
+                existing.LeadershipDevelopmentAreas = model.LeadershipDevelopmentAreas;
 
-                    throw;
-                }
+                // Living The Axis Values
+                existing.ChallengesApplyingAxisValues = model.ChallengesApplyingAxisValues;
+                existing.SelfDevelopmentActions = model.SelfDevelopmentActions;
+                existing.SelfInitiatedLeadershipDevelopment = model.SelfInitiatedLeadershipDevelopment;
+
+                // Potential Assessment
+                existing.ThinkingComplexity = model.ThinkingComplexity;
+                existing.ThinkingJudgement = model.ThinkingJudgement;
+                existing.ThinkingScale = model.ThinkingScale;
+                existing.WisdomFastJudgement = model.WisdomFastJudgement;
+                existing.WisdomWhenToAct = model.WisdomWhenToAct;
+                existing.WisdomLongTermImpact = model.WisdomLongTermImpact;
+                existing.CourageRiskTaking = model.CourageRiskTaking;
+                existing.CourageConvictions = model.CourageConvictions;
+                existing.SelfAwareness = model.SelfAwareness;
+                existing.OpenToFeedback = model.OpenToFeedback;
+                existing.WillingToImprove = model.WillingToImprove;
+                existing.LearningAgility = model.LearningAgility;
+                existing.Resilience = model.Resilience;
+
+                // Career Development
+                existing.CareerAspirations = model.CareerAspirations;
+                existing.Mobility = model.Mobility;
+                existing.RiskOfLeaving = model.RiskOfLeaving;
+                existing.CanOccupyHigherGrade = model.CanOccupyHigherGrade;
+                existing.NineBoxAssessment = model.NineBoxAssessment;
+                existing.NextCareerMilestone = model.NextCareerMilestone;
+                existing.Readiness = model.Readiness;
+
+                // Audit (CreatedDate/IsDeleted and child collections preserved)
+                existing.ModifiedDate = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] =
+                    "Talent Identification record updated successfully.";
 
                 return RedirectToAction(nameof(Index));
             }

@@ -15,20 +15,33 @@ namespace IT_Service_Management_System.Controllers
             _context = context;
         }
 
+        // Read-only list. Generation is an explicit POST action (a GET must not mutate data).
         public async Task<IActionResult> Index()
         {
-            await GeneratePayments();
-
             var payments = await _context.Payments
                 .Include(p => p.PaymentSchedule)
+                .OrderByDescending(p => p.DueDate)
                 .ToListAsync();
 
             return View(payments);
         }
 
-        public async Task GeneratePayments()
+        // Generates any due payments from active schedules and advances their next run date.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Generate()
+        {
+            var created = await GeneratePayments();
+            TempData["Success"] = created > 0
+                ? $"{created} due payment(s) generated."
+                : "No new payments were due.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        private async Task<int> GeneratePayments()
         {
             var today = DateTime.Today;
+            var created = 0;
 
             var schedules = await _context.PaymentSchedules
                 .Where(s => s.IsActive)
@@ -36,31 +49,27 @@ namespace IT_Service_Management_System.Controllers
 
             foreach (var schedule in schedules)
             {
-                // If it's time to generate a payment
                 if (schedule.NextRunDate <= today)
                 {
-                    // جلوگیری duplicate
+                    // Guard against duplicate generation for the same due date.
                     bool exists = await _context.Payments.AnyAsync(p =>
                         p.PaymentScheduleId == schedule.Id &&
                         p.DueDate == schedule.NextRunDate);
 
                     if (!exists)
                     {
-                        var payment = new Payment
+                        _context.Payments.Add(new Payment
                         {
                             ServiceName = schedule.ServiceName,
                             Amount = schedule.Amount,
                             DueDate = schedule.NextRunDate,
                             Status = "Pending",
                             PaymentScheduleId = schedule.Id
-                        };
+                        });
+                        created++;
 
-                        _context.Payments.Add(payment);
-
-                        // 🔁 Move to next cycle
                         if (schedule.Frequency == PaymentFrequency.Monthly)
                             schedule.NextRunDate = schedule.NextRunDate.AddMonths(1);
-
                         else if (schedule.Frequency == PaymentFrequency.Annual)
                             schedule.NextRunDate = schedule.NextRunDate.AddYears(1);
                     }
@@ -68,6 +77,7 @@ namespace IT_Service_Management_System.Controllers
             }
 
             await _context.SaveChangesAsync();
+            return created;
         }
     }
 }

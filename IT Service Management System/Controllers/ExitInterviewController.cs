@@ -86,22 +86,78 @@ namespace IT_Service_Management_System.Controllers
 
             if (ModelState.IsValid)
             {
-                try
-                {
-                    model.ModifiedDate = DateTime.Now;
+                var existing = await _context.ExitInterviews.FindAsync(model.Id);
+                if (existing == null)
+                    return NotFound();
 
-                    _context.Update(model);
-                    await _context.SaveChangesAsync();
+                // Employee Information
+                existing.EmployeeName = model.EmployeeName;
+                existing.Position = model.Position;
+                existing.Client = model.Client;
+                existing.DateOfResignation = model.DateOfResignation;
+                existing.LastWorkingDay = model.LastWorkingDay;
+                existing.InterviewConductedBy = model.InterviewConductedBy;
+                existing.InterviewDate = model.InterviewDate;
 
-                    TempData["Success"] = "Exit Interview updated successfully.";
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ExitInterviewExists(model.Id))
-                        return NotFound();
+                // Primary Reason for Leaving
+                existing.PrimaryReasonForDeparture = model.PrimaryReasonForDeparture;
 
-                    throw;
-                }
+                // Section 1: Overall Views
+                existing.CareerGrowthOpportunities = model.CareerGrowthOpportunities;
+                existing.CompensationAndBenefits = model.CompensationAndBenefits;
+                existing.WorkLifeBalanceRating = model.WorkLifeBalanceRating;
+                existing.ManagementLeadershipStyle = model.ManagementLeadershipStyle;
+                existing.CompanyCultureWorkEnvironment = model.CompanyCultureWorkEnvironment;
+                existing.JobResponsibilities = model.JobResponsibilities;
+                existing.RelationshipWithManagerRating = model.RelationshipWithManagerRating;
+                existing.OtherReasonDescription = model.OtherReasonDescription;
+                existing.OtherRating = model.OtherRating;
+
+                // Section 2: Job Satisfaction & Role Clarity
+                existing.RoleMetExpectations = model.RoleMetExpectations;
+                existing.ResponsibilitiesClearlyDefined = model.ResponsibilitiesClearlyDefined;
+                existing.AdequateTrainingAndResources = model.AdequateTrainingAndResources;
+                existing.JobSatisfactionComments = model.JobSatisfactionComments;
+
+                // Section 3: Management & Team Dynamics
+                existing.RelationshipWithManagerDescription = model.RelationshipWithManagerDescription;
+                existing.SupportedByTeamAndLeadership = model.SupportedByTeamAndLeadership;
+                existing.CommunicationCollaborationSuggestions = model.CommunicationCollaborationSuggestions;
+
+                // Section 4: Compensation & Benefits
+                existing.SatisfiedWithSalaryAndBenefits = model.SatisfiedWithSalaryAndBenefits;
+                existing.CompensationMarketCompetitiveness = model.CompensationMarketCompetitiveness;
+
+                // Section 5: Work Environment & Culture
+                existing.FeltValuedAndRecognized = model.FeltValuedAndRecognized;
+                existing.MostLikedAboutCompany = model.MostLikedAboutCompany;
+                existing.CultureImprovementSuggestions = model.CultureImprovementSuggestions;
+
+                // Section 6: Suggestions for Improvement
+                existing.EmployeeRetentionRecommendations = model.EmployeeRetentionRecommendations;
+                existing.ResignationPreventionSuggestions = model.ResignationPreventionSuggestions;
+
+                // Section 7: Future Engagement
+                existing.WouldReturnToCompany = model.WouldReturnToCompany;
+                existing.WouldRecommendCompany = model.WouldRecommendCompany;
+
+                // Section 8: Work-Life Balance
+                existing.WorkLifeBalanceComments = model.WorkLifeBalanceComments;
+
+                // Section 9: Additional Comments
+                existing.AdditionalComments = model.AdditionalComments;
+
+                // Sign-off
+                existing.EmployeeSignature = model.EmployeeSignature;
+                existing.HRRepresentativeSignature = model.HRRepresentativeSignature;
+                existing.SignOffDate = model.SignOffDate;
+
+                // Audit (CreatedDate/IsDeleted preserved from existing entity)
+                existing.ModifiedDate = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Exit Interview updated successfully.";
 
                 return RedirectToAction(nameof(Index));
             }

@@ -198,7 +198,10 @@ namespace IT_Service_Management_System.Controllers
         }
 
 
-        [HttpGet]
+        // State-relevant action that surfaces the employee access-token link — must be POST,
+        // not a GET (no CSRF / link-prefetch side effects).
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Send(int id)
         {
             var clearance = _context.ExitClearances
