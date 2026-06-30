@@ -1,0 +1,182 @@
+@model IT_Service_Management_System.Models.AppConfiguration
+@{
+    ViewData["Title"] = "Configuration - Axis IT Operations";
+    bool smtpPwd = ViewBag.SmtpPasswordConfigured ?? false;
+}
+
+@await Html.PartialAsync("~/Views/Reports/_ReportStyles.cshtml")
+
+<div class="report-container">
+    <div class="report-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="report-title"><i class="fas fa-sliders"></i> Configuration</h1>
+            <p class="report-subtitle">Security policy &amp; system settings &middot; last updated @Model.UpdatedAt.ToString("MMM dd, yyyy h:mm tt")@(string.IsNullOrEmpty(Model.UpdatedBy) ? "" : $" by {Model.UpdatedBy}")</p>
+        </div>
+        <div class="report-actions">
+            <a class="report-btn" asp-controller="Security" asp-action="Index"><i class="fas fa-shield-halved"></i> Security Dashboard</a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="cfg-flash success"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
+    }
+    <div asp-validation-summary="ModelOnly" class="cfg-flash danger"></div>
+
+    <form asp-action="Index" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+
+        <div class="cfg-grid">
+
+            <!-- Password policy -->
+            <div class="report-card cfg-card">
+                <div class="report-card-header"><span><i class="fas fa-key"></i> Password Policy</span></div>
+                <div class="report-card-body">
+                    <label class="cfg-field">
+                        <span>Minimum length</span>
+                        <input asp-for="PasswordMinLength" type="number" min="6" max="128" class="cfg-input" />
+                    </label>
+                    <label class="cfg-toggle"><input asp-for="PasswordRequireUppercase" type="checkbox" /> <span>Require uppercase letter</span></label>
+                    <label class="cfg-toggle"><input asp-for="PasswordRequireLowercase" type="checkbox" /> <span>Require lowercase letter</span></label>
+                    <label class="cfg-toggle"><input asp-for="PasswordRequireDigit" type="checkbox" /> <span>Require a number</span></label>
+                    <label class="cfg-toggle"><input asp-for="PasswordRequireSpecial" type="checkbox" /> <span>Require special character</span></label>
+                    <label class="cfg-field">
+                        <span>Password expiry (days, 0 = never)</span>
+                        <input asp-for="PasswordExpiryDays" type="number" min="0" max="3650" class="cfg-input" />
+                    </label>
+                </div>
+            </div>
+
+            <!-- Lockout -->
+            <div class="report-card cfg-card">
+                <div class="report-card-header"><span><i class="fas fa-lock"></i> Account Lockout</span></div>
+                <div class="report-card-body">
+                    <label class="cfg-field">
+                        <span>Max failed attempts (0 = disabled)</span>
+                        <input asp-for="LockoutMaxFailedAttempts" type="number" min="0" max="50" class="cfg-input" />
+                    </label>
+                    <label class="cfg-field">
+                        <span>Lockout duration (minutes)</span>
+                        <input asp-for="LockoutDurationMinutes" type="number" min="1" max="1440" class="cfg-input" />
+                    </label>
+                    <p class="cfg-hint"><i class="fas fa-info-circle"></i> After this many consecutive failed sign-ins, the account is locked for the duration set above.</p>
+                </div>
+            </div>
+
+            <!-- Session -->
+            <div class="report-card cfg-card">
+                <div class="report-card-header"><span><i class="fas fa-hourglass-half"></i> Session</span></div>
+                <div class="report-card-body">
+                    <label class="cfg-field">
+                        <span>Idle timeout (minutes)</span>
+                        <input asp-for="SessionIdleTimeoutMinutes" type="number" min="1" max="1440" class="cfg-input" />
+                    </label>
+                    <p class="cfg-hint"><i class="fas fa-triangle-exclamation"></i> Applies after the next application restart.</p>
+                </div>
+            </div>
+
+            <!-- MFA -->
+            <div class="report-card cfg-card">
+                <div class="report-card-header"><span><i class="fas fa-mobile-screen-button"></i> Multi-Factor Authentication (Email OTP)</span></div>
+                <div class="report-card-body">
+                    <label class="cfg-toggle"><input asp-for="MfaEnabled" type="checkbox" /> <span>Enable email OTP MFA</span></label>
+                    <label class="cfg-toggle"><input asp-for="MfaRequiredForAdmins" type="checkbox" /> <span>Require MFA for Admin / SystemsAdmin</span></label>
+                    <label class="cfg-field">
+                        <span>OTP validity (minutes)</span>
+                        <input asp-for="MfaOtpValidityMinutes" type="number" min="1" max="60" class="cfg-input" />
+                    </label>
+                </div>
+            </div>
+
+            <!-- Email server -->
+            <div class="report-card cfg-card">
+                <div class="report-card-header"><span><i class="fas fa-envelope"></i> Email Server</span></div>
+                <div class="report-card-body">
+                    <label class="cfg-field"><span>SMTP server</span><input asp-for="SmtpServer" class="cfg-input" placeholder="smtp.gmail.com" /></label>
+                    <label class="cfg-field"><span>SMTP port</span><input asp-for="SmtpPort" type="number" min="1" max="65535" class="cfg-input" /></label>
+                    <label class="cfg-field"><span>Sender name</span><input asp-for="SenderName" class="cfg-input" placeholder="Axis IT Operations" /></label>
+                    <label class="cfg-field"><span>Sender email</span><input asp-for="SenderEmail" type="email" class="cfg-input" /></label>
+                    <p class="cfg-hint">
+                        @if (smtpPwd)
+                        {
+                            <span style="color:#166534;"><i class="fas fa-check-circle"></i> SMTP password is configured (stored in user-secrets).</span>
+                        }
+                        else
+                        {
+                            <span style="color:#b45309;"><i class="fas fa-triangle-exclamation"></i> SMTP password not set. Run <code>dotnet user-secrets set "EmailSettings:SenderPassword" "&lt;app-password&gt;"</code></span>
+                        }
+                    </p>
+                </div>
+            </div>
+
+            <!-- Backup -->
+            <div class="report-card cfg-card">
+                <div class="report-card-header"><span><i class="fas fa-database"></i> Backup Schedule</span></div>
+                <div class="report-card-body">
+                    <label class="cfg-toggle"><input asp-for="BackupEnabled" type="checkbox" /> <span>Enable scheduled backups</span></label>
+                    <label class="cfg-field">
+                        <span>Frequency</span>
+                        <select asp-for="BackupFrequency" class="cfg-input">
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                        </select>
+                    </label>
+                    <label class="cfg-field"><span>Time (HH:mm)</span><input asp-for="BackupTime" class="cfg-input" placeholder="02:00" /></label>
+                    <label class="cfg-field"><span>Retention (keep last N)</span><input asp-for="BackupRetentionCount" type="number" min="1" max="365" class="cfg-input" /></label>
+                    <label class="cfg-field"><span>Backup folder path</span><input asp-for="BackupPath" class="cfg-input" placeholder="C:\\Backups\\Helpdesk" /></label>
+                    <p class="cfg-hint"><i class="fas fa-info-circle"></i> Manage and run backups from the <a asp-controller="Backup" asp-action="Index">Backup</a> screen.</p>
+                </div>
+            </div>
+
+            <!-- Alerts -->
+            <div class="report-card cfg-card cfg-span">
+                <div class="report-card-header"><span><i class="fas fa-bell"></i> Security Alerts</span></div>
+                <div class="report-card-body">
+                    <label class="cfg-field">
+                        <span>Alert recipient emails (comma-separated)</span>
+                        <input asp-for="AlertEmailRecipients" class="cfg-input" placeholder="admin@company.com, security@company.com" />
+                    </label>
+                    <div class="cfg-toggle-grid">
+                        <label class="cfg-toggle"><input asp-for="AlertOnMultipleFailedLogins" type="checkbox" /> <span>Multiple failed logins</span></label>
+                        <label class="cfg-toggle"><input asp-for="AlertOnNewAdminAccount" type="checkbox" /> <span>New administrator account</span></label>
+                        <label class="cfg-toggle"><input asp-for="AlertOnPrivilegeEscalation" type="checkbox" /> <span>Privilege escalation</span></label>
+                        <label class="cfg-toggle"><input asp-for="AlertOnSuspiciousLocation" type="checkbox" /> <span>Suspicious login location</span></label>
+                        <label class="cfg-toggle"><input asp-for="AlertOnLargeDataExport" type="checkbox" /> <span>Large / unusual data export</span></label>
+                        <label class="cfg-toggle"><input asp-for="AlertOnBackupFailure" type="checkbox" /> <span>Backup failure</span></label>
+                        <label class="cfg-toggle"><input asp-for="AlertOnDatabaseFailure" type="checkbox" /> <span>Database failure</span></label>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="cfg-actions">
+            <button type="submit" class="report-btn primary"><i class="fas fa-save"></i> Save Configuration</button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .cfg-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:1.25rem; }
+    .cfg-span { grid-column:1 / -1; }
+    .cfg-card .report-card-body { display:flex; flex-direction:column; gap:0.85rem; }
+    .cfg-field { display:flex; flex-direction:column; gap:0.3rem; font-size:0.82rem; font-weight:600; color:var(--gray-700,#334155); }
+    .cfg-input {
+        padding:0.55rem 0.75rem; border:1.5px solid var(--gray-200,#e2e8f0); border-radius:0.6rem;
+        font-size:0.875rem; font-weight:400; font-family:inherit; background:white;
+    }
+    .cfg-input:focus { outline:none; border-color:var(--primary,#3b82f6); box-shadow:0 0 0 3px rgba(59,130,246,0.1); }
+    .cfg-toggle { display:flex; align-items:center; gap:0.6rem; font-size:0.85rem; color:var(--gray-700,#334155); cursor:pointer; font-weight:500; }
+    .cfg-toggle input { width:18px; height:18px; accent-color:var(--primary,#3b82f6); cursor:pointer; }
+    .cfg-toggle-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:0.6rem; margin-top:0.5rem; }
+    .cfg-hint { font-size:0.72rem; color:var(--gray-500,#64748b); margin:0.25rem 0 0; }
+    .cfg-hint code { background:var(--gray-100,#f1f5f9); padding:0.1rem 0.35rem; border-radius:0.3rem; font-size:0.68rem; }
+    .cfg-actions { margin-top:1.5rem; display:flex; justify-content:flex-end; }
+    .cfg-flash { padding:0.8rem 1rem; border-radius:0.6rem; margin-bottom:1rem; font-size:0.85rem; display:flex; align-items:center; gap:0.5rem; }
+    .cfg-flash:empty { display:none; }
+    .cfg-flash.success { background:#f0fdf4; border-left:4px solid #22c55e; color:#166534; }
+    .cfg-flash.danger { background:#fef2f2; border-left:4px solid #ef4444; color:#b91c1c; }
+    @@media (max-width:900px){ .cfg-grid,.cfg-toggle-grid { grid-template-columns:1fr; } }
+</style>

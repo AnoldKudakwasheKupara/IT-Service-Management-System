@@ -28,9 +28,27 @@ builder.Services.AddMemoryCache();
 
 builder.Services.AddScoped<EmailService>();
 
+// Read the configurable idle timeout from the DB (falls back to 30 min if unavailable,
+// e.g. on a brand-new database before the table exists). Applied at startup.
+int sessionIdleMinutes = 30;
+try
+{
+    var probeOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
+        .UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+        .Options;
+    using var probe = new ApplicationDbContext(probeOptions);
+    var cfg = probe.AppConfigurations.AsNoTracking().FirstOrDefault();
+    if (cfg != null && cfg.SessionIdleTimeoutMinutes > 0)
+        sessionIdleMinutes = cfg.SessionIdleTimeoutMinutes;
+}
+catch
+{
+    // Configuration table not present yet — use the default.
+}
+
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.IdleTimeout = TimeSpan.FromMinutes(sessionIdleMinutes);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;

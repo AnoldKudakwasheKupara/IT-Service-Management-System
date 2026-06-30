@@ -8,20 +8,26 @@ namespace IT_Service_Management_System.Services
     {
         private readonly IConfiguration _config;
         private readonly ILogger<EmailService> _logger;
+        private readonly ConfigurationService _appConfig;
 
-        public EmailService(IConfiguration config, ILogger<EmailService> logger)
+        public EmailService(IConfiguration config, ILogger<EmailService> logger, ConfigurationService appConfig)
         {
             _config = config;
             _logger = logger;
+            _appConfig = appConfig;
         }
 
         public async Task SendEmailAsync(string toEmail, string toName, string subject, string htmlBody)
         {
-            var smtpServer = _config["EmailSettings:SmtpServer"] ?? "smtp.gmail.com";
-            var port = int.TryParse(_config["EmailSettings:Port"], out var p) ? p : 587;
-            var senderEmail = _config["EmailSettings:SenderEmail"];
+            // Prefer the admin-managed configuration; fall back to appsettings. Password is
+            // always read from appsettings/user-secrets and never stored in the database.
+            var cfg = _appConfig.Get();
+            var smtpServer = cfg.SmtpServer ?? _config["EmailSettings:SmtpServer"] ?? "smtp.gmail.com";
+            var port = cfg.SmtpPort > 0 ? cfg.SmtpPort
+                : (int.TryParse(_config["EmailSettings:Port"], out var p) ? p : 587);
+            var senderEmail = cfg.SenderEmail ?? _config["EmailSettings:SenderEmail"];
             var senderPassword = _config["EmailSettings:SenderPassword"];
-            var senderName = _config["EmailSettings:SenderName"] ?? "Axis IT Operations";
+            var senderName = cfg.SenderName ?? _config["EmailSettings:SenderName"] ?? "Axis IT Operations";
 
             if (string.IsNullOrWhiteSpace(senderEmail))
             {
