@@ -51,6 +51,7 @@ namespace IT_Service_Management_System.Controllers
             {
                 _context.Add(cert);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "SSL certificate created.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -108,6 +109,7 @@ namespace IT_Service_Management_System.Controllers
                         throw;
                 }
 
+                TempData["Success"] = "SSL certificate updated.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -137,6 +139,11 @@ namespace IT_Service_Management_System.Controllers
             {
                 _context.SSLCertificates.Remove(cert);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "SSL certificate deleted.";
+            }
+            else
+            {
+                TempData["Error"] = "SSL certificate not found.";
             }
 
             return RedirectToAction(nameof(Index));

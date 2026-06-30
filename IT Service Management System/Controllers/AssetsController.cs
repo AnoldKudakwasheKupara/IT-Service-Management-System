@@ -106,6 +106,7 @@ namespace IT_Service_Management_System.Controllers
                 });
                 _context.SaveChanges();
 
+                TempData["Success"] = "Asset created.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -172,6 +173,7 @@ namespace IT_Service_Management_System.Controllers
 
                 _context.SaveChanges();
 
+                TempData["Success"] = "Asset updated.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -203,6 +205,11 @@ namespace IT_Service_Management_System.Controllers
             {
                 _context.Assets.Remove(asset);
                 _context.SaveChanges();
+                TempData["Success"] = "Asset deleted.";
+            }
+            else
+            {
+                TempData["Error"] = "Asset not found.";
             }
 
             return RedirectToAction(nameof(Index));

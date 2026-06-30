@@ -49,7 +49,7 @@ namespace IT_Service_Management_System.Controllers
 
             var role = HttpContext.Session.GetString("UserRole");
             if (role != "Admin" && role != "SystemsAdmin")
-                return Forbid();
+                return RedirectToAction("AccessDenied", "Home"); // Forbid() throws under session auth
 
             return null;
         }
@@ -436,6 +436,7 @@ namespace IT_Service_Management_System.Controllers
             // ✅ AUDIT LOG
             await _auditService.LogAsync("Deleted", "User", id, $"User ID {id} deleted");
 
+            TempData["Success"] = $"User {user.Email} deleted.";
             return RedirectToAction("Index");
         }
 

@@ -11,6 +11,9 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
+    <!-- Toastr notifications -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" />
+
     <style>
             * {
                 margin: 0;
@@ -785,6 +788,46 @@
         <main style="background: var(--bg-main); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem;">
             @RenderBody()
         </main>
+    }
+
+    <!-- jQuery + Toastr (global notifications) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js"></script>
+    <script>
+        // Global Toastr configuration + helper.
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            newestOnTop: true,
+            positionClass: "toast-top-right",
+            timeOut: 4000,
+            extendedTimeOut: 1500,
+            preventDuplicates: true
+        };
+        // Convenience global so any page/script can raise a toast.
+        window.notify = function (type, message, title) {
+            if (!message) return;
+            (toastr[type] || toastr.info)(message, title || "");
+        };
+    </script>
+
+    @* Bridge server-side TempData/ViewBag messages to Toastr on page load *@
+    @{
+        var _toastSuccess = TempData["Success"] as string ?? ViewBag.Success as string;
+        var _toastError = TempData["Error"] as string ?? ViewBag.Error as string;
+        var _toastInfo = TempData["Info"] as string ?? ViewBag.Info as string;
+        var _toastWarning = TempData["Warning"] as string ?? ViewBag.Warning as string;
+    }
+    @if (_toastSuccess != null || _toastError != null || _toastInfo != null || _toastWarning != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                @if (_toastSuccess != null) { <text>toastr.success(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_toastSuccess)));</text> }
+                @if (_toastError != null) { <text>toastr.error(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_toastError)));</text> }
+                @if (_toastInfo != null) { <text>toastr.info(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_toastInfo)));</text> }
+                @if (_toastWarning != null) { <text>toastr.warning(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_toastWarning)));</text> }
+            });
+        </script>
     }
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

@@ -51,6 +51,7 @@ public class PaymentScheduleController : Controller
         _context.Add(model);
         await _context.SaveChangesAsync();
 
+        TempData["Success"] = "Payment schedule created.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -91,6 +92,7 @@ public class PaymentScheduleController : Controller
                 throw;
         }
 
+        TempData["Success"] = "Payment schedule updated.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -114,6 +116,11 @@ public class PaymentScheduleController : Controller
         {
             _context.PaymentSchedules.Remove(schedule);
             await _context.SaveChangesAsync();
+            TempData["Success"] = "Payment schedule deleted.";
+        }
+        else
+        {
+            TempData["Error"] = "Payment schedule not found.";
         }
 
         return RedirectToAction(nameof(Index));

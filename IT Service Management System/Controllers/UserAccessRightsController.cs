@@ -73,6 +73,7 @@ namespace IT_Service_Management_System.Controllers
 
                 await _context.SaveChangesAsync();
 
+                TempData["Success"] = "User access rights created.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -219,6 +220,11 @@ namespace IT_Service_Management_System.Controllers
                 _context.UserAccessRights.Remove(model);
 
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "Access right deleted.";
+            }
+            else
+            {
+                TempData["Error"] = "Access right not found.";
             }
 
             return RedirectToAction(nameof(Index));

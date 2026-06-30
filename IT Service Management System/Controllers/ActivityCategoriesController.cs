@@ -23,7 +23,7 @@ namespace IT_Service_Management_System.Controllers
 
             var role = HttpContext.Session.GetString("UserRole");
             if (role != "Admin" && role != "SystemsAdmin")
-                return Forbid();
+                return RedirectToAction("AccessDenied", "Home"); // Forbid() throws under session auth
 
             return null;
         }
@@ -83,6 +83,7 @@ namespace IT_Service_Management_System.Controllers
             _context.ActivityCategories.Add(category);
             await _context.SaveChangesAsync();
 
+            TempData["Success"] = "Activity category created.";
             return RedirectToAction("Index");
         }
 
@@ -119,6 +120,7 @@ namespace IT_Service_Management_System.Controllers
             _context.ActivityCategories.Update(category);
             await _context.SaveChangesAsync();
 
+            TempData["Success"] = "Activity category updated.";
             return RedirectToAction("Index");
         }
 

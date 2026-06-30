@@ -83,6 +83,7 @@ namespace IT_Service_Management_System.Controllers
             _context.Activities.Add(activity);
             await _context.SaveChangesAsync();
 
+            TempData["Success"] = "Activity created.";
             return RedirectToAction("Index");
         }
         public async Task<IActionResult> Edit(int id)
@@ -128,6 +129,7 @@ namespace IT_Service_Management_System.Controllers
 
             await _context.SaveChangesAsync();
 
+            TempData["Success"] = "Activity updated.";
             return RedirectToAction("Index");
         }
         public async Task<IActionResult> Delete(int id)
@@ -162,6 +164,7 @@ namespace IT_Service_Management_System.Controllers
             _context.Activities.Remove(activity);
             await _context.SaveChangesAsync();
 
+            TempData["Success"] = "Activity deleted.";
             return RedirectToAction("Index");
         }
         public async Task<IActionResult> WeeklyReport()

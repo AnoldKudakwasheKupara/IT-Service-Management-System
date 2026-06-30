@@ -393,6 +393,7 @@ namespace IT_Service_Management_System.Controllers
             await _context.SaveChangesAsync();
 
             await _auditService.LogAsync("Deleted", "Ticket", id, $"Ticket ID {id} deleted");
+            TempData["Success"] = $"Ticket {ticket.Reference} deleted.";
             return RedirectToAction("Index");
         }
 

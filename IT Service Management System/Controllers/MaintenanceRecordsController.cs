@@ -56,6 +56,7 @@ namespace IT_Service_Management_System.Controllers
                 _context.Add(maintenanceRecord);
                 await _context.SaveChangesAsync();
 
+                TempData["Success"] = "Maintenance record created.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -99,6 +100,7 @@ namespace IT_Service_Management_System.Controllers
                     throw;
                 }
 
+                TempData["Success"] = "Maintenance record updated.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -131,6 +133,11 @@ namespace IT_Service_Management_System.Controllers
             {
                 _context.MaintenanceRecords.Remove(maintenanceRecord);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "Maintenance record deleted.";
+            }
+            else
+            {
+                TempData["Error"] = "Maintenance record not found.";
             }
 
             return RedirectToAction(nameof(Index));
