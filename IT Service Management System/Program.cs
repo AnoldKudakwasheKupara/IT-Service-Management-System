@@ -6,8 +6,20 @@ using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Structured logging — console + daily rolling file (logs/). Overridable from appsettings.
+builder.Host.UseSerilog((ctx, services, cfg) => cfg
+    .ReadFrom.Configuration(ctx.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.File("logs/itsm-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 14,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"));
 
 builder.Services.AddControllersWithViews(options =>
 {
@@ -75,6 +87,9 @@ builder.Services.AddScoped<AlertService>();
 
 builder.Services.AddScoped<BackupService>();
 
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database");
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -87,6 +102,9 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
+// Concise structured request logging (method, path, status, elapsed).
+app.UseSerilogRequestLogging();
+
 app.UseSession();
 
 app.UseMiddleware<IT_Service_Management_System.Middleware.DatabaseFailureAlertMiddleware>();
@@ -97,13 +115,17 @@ app.MapStaticAssets();
 
 app.MapHub<ChatHub>("/chathub");
 
+// Liveness/readiness endpoint for load balancers and uptime monitors.
+app.MapHealthChecks("/health");
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}")
     .WithStaticAssets();
 
-using (var scope = app.Services.CreateScope())
+try
 {
+    using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
     context.Database.Migrate();
@@ -124,6 +146,19 @@ using (var scope = app.Services.CreateScope())
         context.SaveChanges();
     }
 
+    Log.Information("Database migrated and seeded; application starting.");
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Startup database migration/seed failed.");
+    throw;
 }
 
-app.Run();
+try
+{
+    app.Run();
+}
+finally
+{
+    Log.CloseAndFlush();
+}

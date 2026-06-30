@@ -8,11 +8,13 @@ namespace IT_Service_Management_System.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IHttpContextAccessor _httpContext;
+        private readonly ILogger<AuditService> _logger;
 
-        public AuditService(ApplicationDbContext context, IHttpContextAccessor httpContext)
+        public AuditService(ApplicationDbContext context, IHttpContextAccessor httpContext, ILogger<AuditService> logger)
         {
             _context = context;
             _httpContext = httpContext;
+            _logger = logger;
         }
 
         public async Task LogAsync(string action, string entity, int? entityId = null, string details = "")
@@ -53,7 +55,7 @@ namespace IT_Service_Management_System.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Audit Error: " + ex.Message);
+                _logger.LogError(ex, "Failed to write audit log for action {Action} on {Entity}", action, entity);
             }
         }
 
