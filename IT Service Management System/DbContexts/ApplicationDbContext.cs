@@ -44,6 +44,7 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<AppConfiguration> AppConfigurations { get; set; }
         public DbSet<CannedResponse> CannedResponses { get; set; }
+        public DbSet<EmployeeFile> EmployeeFiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -177,6 +178,16 @@ namespace IT_Service_Management_System.DbContexts
 
             modelBuilder.Entity<UserSession>()
                 .HasIndex(s => new { s.UserId, s.RevokedAt });
+
+            // EmployeeFile -> User (employee). Cascade so a user's files are removed with them.
+            modelBuilder.Entity<EmployeeFile>()
+                .HasOne(f => f.Employee)
+                .WithMany()
+                .HasForeignKey(f => f.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<EmployeeFile>()
+                .HasIndex(f => f.EmployeeId);
         }
     }
 }

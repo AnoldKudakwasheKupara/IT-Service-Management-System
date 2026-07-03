@@ -363,3 +363,7 @@ MigrationBackup/
 FodyWeavers.xsd
 # Serilog output
 logs/
+
+# HR employee document storage (outside wwwroot)
+employee-files/
+**/employee-files/

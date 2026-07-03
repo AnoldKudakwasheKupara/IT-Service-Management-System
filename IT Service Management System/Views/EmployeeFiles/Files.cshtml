@@ -1,0 +1,144 @@
+@model IT_Service_Management_System.Models.User
+@{
+    ViewData["Title"] = $"{Model.FullName} - Employee Files";
+    var files = ViewBag.Files as List<IT_Service_Management_System.Models.EmployeeFile> ?? new();
+    string Size(long b) => b >= 1048576 ? $"{b / 1048576.0:0.#} MB" : b >= 1024 ? $"{b / 1024.0:0.#} KB" : $"{b} B";
+    string Icon(string name)
+    {
+        var e = System.IO.Path.GetExtension(name).ToLowerInvariant();
+        return e switch
+        {
+            ".pdf" => "fa-file-pdf",
+            ".doc" or ".docx" => "fa-file-word",
+            ".xls" or ".xlsx" or ".csv" => "fa-file-excel",
+            ".png" or ".jpg" or ".jpeg" or ".gif" or ".bmp" or ".webp" => "fa-file-image",
+            ".zip" or ".rar" or ".7z" => "fa-file-zipper",
+            ".txt" => "fa-file-lines",
+            _ => "fa-file"
+        };
+    }
+    var categories = new[] { "Contract", "ID Document", "Certificate", "Qualification", "Payslip", "Appraisal", "Medical", "Other" };
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-folder-open me-2" style="color: var(--primary);"></i>
+                    @Model.FullName
+                </h1>
+                <p class="text-muted mt-2">
+                    @Model.Email · @(Model.Department?.Name ?? "No department") · @Model.Role
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload -->
+    <div class="data-card" style="margin-bottom:1.5rem;">
+        <div class="card-header-custom">
+            <div><i class="fas fa-cloud-arrow-up me-2"></i><span>Upload Documents</span></div>
+        </div>
+        <div style="padding:1.5rem;">
+            <form asp-action="Upload" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="employeeId" value="@Model.Id" />
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">Category</label>
+                        <select name="category" class="form-select">
+                            <option value="">— None —</option>
+                            @foreach (var c in categories)
+                            {
+                                <option value="@c">@c</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-semibold">Description (optional)</label>
+                        <input type="text" name="description" class="form-control" placeholder="e.g. Signed employment contract 2026" maxlength="500" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">Files</label>
+                        <input type="file" name="files" class="form-control" multiple required />
+                        <div class="form-text">Up to 25&nbsp;MB per file. Executable file types are not allowed.</div>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload"></i> Upload
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- File list -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-paperclip me-2"></i><span>Documents</span></div>
+            <span class="record-count"><i class="fas fa-file"></i> @files.Count file(s)</span>
+        </div>
+        <div class="table-responsive">
+            @if (files.Any())
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Category</th>
+                            <th>Size</th>
+                            <th>Uploaded</th>
+                            <th>By</th>
+                            <th style="text-align:right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var f in files)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fas @Icon(f.FileName)" style="color:var(--primary);font-size:1.1rem;"></i>
+                                        <div>
+                                            <strong>@f.FileName</strong>
+                                            @if (!string.IsNullOrEmpty(f.Description))
+                                            {
+                                                <div class="text-muted" style="font-size:0.75rem;">@f.Description</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>@(string.IsNullOrEmpty(f.Category) ? "—" : f.Category)</td>
+                                <td>@Size(f.FileSize)</td>
+                                <td>@f.UploadedAt.ToString("MMM dd, yyyy HH:mm")</td>
+                                <td>@(f.UploadedBy ?? "—")</td>
+                                <td style="text-align:right;white-space:nowrap;">
+                                    <a asp-action="Download" asp-route-id="@f.Id" class="btn btn-sm btn-outline-primary" title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <form asp-action="Delete" asp-route-id="@f.Id" method="post" style="display:inline;"
+                                          onsubmit="return confirm('Delete this file permanently?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="text-center p-5 text-muted">
+                    <i class="fas fa-folder-open fa-2x mb-3"></i>
+                    <p>No documents yet. Upload the employee's first file above.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

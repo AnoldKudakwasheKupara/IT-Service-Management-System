@@ -1,0 +1,106 @@
+@model IEnumerable<IT_Service_Management_System.Models.User>
+@{
+    ViewData["Title"] = "Employee Files - Axis IT Operations";
+    var counts = ViewBag.FileCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var q = ViewBag.Search as string;
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-folder-open me-2" style="color: var(--primary);"></i>
+                    Employee Files
+                </h1>
+                <p class="text-muted mt-2">Select an employee to view and manage their personal documents</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-users me-2"></i>
+                <span>Employees</span>
+            </div>
+            <form method="get" asp-action="Index" class="d-flex align-items-center gap-2 m-0">
+                <div class="search-wrapper" style="position:relative;">
+                    <i class="fas fa-search" style="position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:var(--gray-400);"></i>
+                    <input type="text" name="q" value="@q" placeholder="Search name or email..." class="form-control" style="padding-left:2.25rem;min-width:240px;" />
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
+                @if (!string.IsNullOrEmpty(q))
+                {
+                    <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-times"></i></a>
+                }
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            @if (Model.Any())
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                            <th>Role</th>
+                            <th style="text-align:center;">Files</th>
+                            <th style="text-align:right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var u in Model)
+                        {
+                            var n = counts.TryGetValue(u.Id, out var c) ? c : 0;
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar-sm">@((u.FirstName.Substring(0,1) + (u.LastName.Length > 0 ? u.LastName.Substring(0,1) : "")))</div>
+                                        <strong>@u.FullName</strong>
+                                    </div>
+                                </td>
+                                <td>@u.Email</td>
+                                <td>@(u.Department?.Name ?? "—")</td>
+                                <td>@u.Role</td>
+                                <td style="text-align:center;">
+                                    <span class="file-count-badge @(n > 0 ? "has-files" : "")">
+                                        <i class="fas fa-paperclip"></i> @n
+                                    </span>
+                                </td>
+                                <td style="text-align:right;">
+                                    <a asp-action="Files" asp-route-id="@u.Id" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-folder-open"></i> Manage Files
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="text-center p-5 text-muted">
+                    <i class="fas fa-user-slash fa-2x mb-3"></i>
+                    <p>No employees found@(string.IsNullOrEmpty(q) ? "." : $" matching \"{q}\".")</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-sm {
+        width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), #60a5fa);
+        color: #fff; font-weight: 700; font-size: 0.72rem;
+        display: flex; align-items: center; justify-content: center; text-transform: uppercase;
+    }
+    .file-count-badge {
+        display: inline-flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; font-weight: 600;
+        padding: 0.15rem 0.6rem; border-radius: 1rem; background: var(--gray-100); color: var(--gray-500);
+    }
+    .file-count-badge.has-files { background: var(--primary-light); color: var(--primary-dark); }
+</style>
