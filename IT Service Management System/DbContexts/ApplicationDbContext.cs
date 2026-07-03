@@ -1,4 +1,5 @@
 ﻿using IT_Service_Management_System.Models;
+using IT_Service_Management_System.Models.Efm;
 using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.DbContexts
@@ -45,6 +46,23 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<AppConfiguration> AppConfigurations { get; set; }
         public DbSet<CannedResponse> CannedResponses { get; set; }
         public DbSet<EmployeeFile> EmployeeFiles { get; set; }
+
+        // ── Employee File Management (EFM) ─────────────────────────────────────────
+        public DbSet<DocumentFolder> DocumentFolders { get; set; }
+        public DbSet<DocumentCategory> DocumentCategories { get; set; }
+        public DbSet<RequiredDocument> RequiredDocuments { get; set; }
+        public DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
+        public DbSet<DocumentVersion> DocumentVersions { get; set; }
+        public DbSet<DocumentTag> DocumentTags { get; set; }
+        public DbSet<DocumentTagMap> DocumentTagMaps { get; set; }
+        public DbSet<DocumentAuditLog> DocumentAuditLogs { get; set; }
+        public DbSet<DocumentShare> DocumentShares { get; set; }
+        public DbSet<DocumentApproval> DocumentApprovals { get; set; }
+        public DbSet<DocumentComment> DocumentComments { get; set; }
+        public DbSet<DocumentNotification> DocumentNotifications { get; set; }
+        public DbSet<StorageProvider> StorageProviders { get; set; }
+        public DbSet<RetentionPolicy> RetentionPolicies { get; set; }
+        public DbSet<ExpiryAlert> ExpiryAlerts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -188,6 +206,130 @@ namespace IT_Service_Management_System.DbContexts
 
             modelBuilder.Entity<EmployeeFile>()
                 .HasIndex(f => f.EmployeeId);
+
+            // ── Employee File Management (EFM) relationships & indexes ──────────────
+            modelBuilder.Entity<EmployeeDocument>().HasQueryFilter(d => !d.IsDeleted);
+            modelBuilder.Entity<EmployeeDocument>()
+                .HasOne(d => d.Employee).WithMany().HasForeignKey(d => d.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<EmployeeDocument>()
+                .HasOne(d => d.Folder).WithMany(f => f.Documents).HasForeignKey(d => d.FolderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<EmployeeDocument>()
+                .HasOne(d => d.Category).WithMany(c => c.Documents).HasForeignKey(d => d.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<EmployeeDocument>()
+                .HasOne(d => d.CurrentVersion).WithMany().HasForeignKey(d => d.CurrentVersionId)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<EmployeeDocument>().HasIndex(d => new { d.EmployeeId, d.FolderId });
+            modelBuilder.Entity<EmployeeDocument>().HasIndex(d => d.CategoryId);
+            modelBuilder.Entity<EmployeeDocument>().HasIndex(d => d.Status);
+            modelBuilder.Entity<EmployeeDocument>().HasIndex(d => d.ExpiryDate);
+
+            modelBuilder.Entity<DocumentVersion>()
+                .HasOne(v => v.Document).WithMany(d => d.Versions).HasForeignKey(v => v.EmployeeDocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<DocumentVersion>().HasIndex(v => v.EmployeeDocumentId);
+
+            modelBuilder.Entity<DocumentTagMap>().HasKey(m => new { m.EmployeeDocumentId, m.DocumentTagId });
+            modelBuilder.Entity<DocumentTagMap>()
+                .HasOne(m => m.Document).WithMany(d => d.Tags).HasForeignKey(m => m.EmployeeDocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<DocumentTagMap>()
+                .HasOne(m => m.Tag).WithMany(t => t.Documents).HasForeignKey(m => m.DocumentTagId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<DocumentTag>().HasIndex(t => t.Name).IsUnique();
+
+            modelBuilder.Entity<DocumentCategory>()
+                .HasOne(c => c.DefaultFolder).WithMany().HasForeignKey(c => c.DefaultFolderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RequiredDocument>()
+                .HasOne(r => r.Category).WithMany().HasForeignKey(r => r.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<RequiredDocument>()
+                .HasOne(r => r.AppliesToDepartment).WithMany().HasForeignKey(r => r.AppliesToDepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DocumentApproval>()
+                .HasOne(a => a.Document).WithMany(d => d.Approvals).HasForeignKey(a => a.EmployeeDocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<DocumentComment>()
+                .HasOne(c => c.Document).WithMany(d => d.Comments).HasForeignKey(c => c.EmployeeDocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<DocumentShare>()
+                .HasOne(s => s.Document).WithMany().HasForeignKey(s => s.EmployeeDocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<DocumentShare>().HasIndex(s => s.Token).IsUnique();
+            modelBuilder.Entity<ExpiryAlert>()
+                .HasOne(e => e.Document).WithMany().HasForeignKey(e => e.EmployeeDocumentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RetentionPolicy>()
+                .HasOne(r => r.Category).WithMany().HasForeignKey(r => r.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<RetentionPolicy>()
+                .HasOne(r => r.Folder).WithMany().HasForeignKey(r => r.FolderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DocumentAuditLog>().HasIndex(a => a.EmployeeDocumentId);
+            modelBuilder.Entity<DocumentAuditLog>().HasIndex(a => a.EmployeeId);
+            modelBuilder.Entity<DocumentAuditLog>().HasIndex(a => a.Timestamp);
+            modelBuilder.Entity<DocumentNotification>().HasIndex(n => new { n.RecipientUserId, n.IsRead });
+
+            // ── Seed: system folders, starter categories, default storage provider ──
+            var efmSeed = new DateTime(2026, 1, 1);
+            modelBuilder.Entity<DocumentFolder>().HasData(
+                new DocumentFolder { Id = 1, Name = "Personal Documents", Icon = "fa-id-card", SortOrder = 1, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 2, Name = "Employment Documents", Icon = "fa-briefcase", SortOrder = 2, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 3, Name = "Academic Qualifications", Icon = "fa-graduation-cap", SortOrder = 3, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 4, Name = "Professional Certifications", Icon = "fa-certificate", SortOrder = 4, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 5, Name = "Medical Records", Icon = "fa-notes-medical", SortOrder = 5, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 6, Name = "Payroll Documents", Icon = "fa-money-check-dollar", SortOrder = 6, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 7, Name = "Tax Documents", Icon = "fa-file-invoice-dollar", SortOrder = 7, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 8, Name = "Contracts", Icon = "fa-file-contract", SortOrder = 8, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 9, Name = "Disciplinary Records", Icon = "fa-gavel", SortOrder = 9, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 10, Name = "Performance Reviews", Icon = "fa-chart-line", SortOrder = 10, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 11, Name = "Training Records", Icon = "fa-chalkboard-user", SortOrder = 11, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 12, Name = "Leave Documents", Icon = "fa-plane-departure", SortOrder = 12, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 13, Name = "Promotion Documents", Icon = "fa-arrow-up-right-dots", SortOrder = 13, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 14, Name = "Transfer Documents", Icon = "fa-right-left", SortOrder = 14, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 15, Name = "Awards", Icon = "fa-award", SortOrder = 15, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 16, Name = "Warnings", Icon = "fa-triangle-exclamation", SortOrder = 16, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 17, Name = "Exit Documents", Icon = "fa-door-open", SortOrder = 17, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 18, Name = "Resignation Documents", Icon = "fa-file-signature", SortOrder = 18, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 19, Name = "Retirement Documents", Icon = "fa-umbrella-beach", SortOrder = 19, IsSystem = true, IsActive = true },
+                new DocumentFolder { Id = 20, Name = "Other Documents", Icon = "fa-folder", SortOrder = 20, IsSystem = true, IsActive = true }
+            );
+
+            modelBuilder.Entity<DocumentCategory>().HasData(
+                new DocumentCategory { Id = 1, Name = "Passport", DefaultFolderId = 1, IsExpiryTracked = true, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 2, Name = "National ID", DefaultFolderId = 1, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 3, Name = "Birth Certificate", DefaultFolderId = 1, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 4, Name = "Driver's License", DefaultFolderId = 1, IsExpiryTracked = true, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 5, Name = "Police Clearance", DefaultFolderId = 1, IsExpiryTracked = true, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 6, Name = "CV", DefaultFolderId = 2, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 7, Name = "Offer Letter", DefaultFolderId = 2, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 8, Name = "Employment Contract", DefaultFolderId = 8, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 9, Name = "NDA", DefaultFolderId = 8, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 10, Name = "Medical Aid Card", DefaultFolderId = 5, IsExpiryTracked = true, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 11, Name = "NSSA", DefaultFolderId = 6, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 12, Name = "Tax Certificate", DefaultFolderId = 7, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 13, Name = "Degree Certificate", DefaultFolderId = 3, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 14, Name = "Diploma", DefaultFolderId = 3, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 15, Name = "Professional License", DefaultFolderId = 4, IsExpiryTracked = true, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 16, Name = "Performance Review", DefaultFolderId = 10, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 17, Name = "Training Certificate", DefaultFolderId = 11, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 18, Name = "Warning Letter", DefaultFolderId = 16, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 19, Name = "Promotion Letter", DefaultFolderId = 13, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 20, Name = "Termination Letter", DefaultFolderId = 17, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 21, Name = "Retirement Letter", DefaultFolderId = 19, IsActive = true, CreatedAt = efmSeed },
+                new DocumentCategory { Id = 22, Name = "Other", DefaultFolderId = 20, IsActive = true, CreatedAt = efmSeed }
+            );
+
+            modelBuilder.Entity<StorageProvider>().HasData(
+                new StorageProvider { Id = 1, Name = "Local Disk", Type = StorageProviderType.LocalDisk, RootLocation = "employee-documents", IsDefault = true, IsActive = true, CreatedAt = efmSeed }
+            );
         }
     }
 }
