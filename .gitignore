@@ -367,3 +367,7 @@ logs/
 # HR employee document storage (outside wwwroot)
 employee-files/
 **/employee-files/
+
+# EFM document storage (outside wwwroot)
+employee-documents/
+**/employee-documents/

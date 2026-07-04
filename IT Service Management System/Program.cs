@@ -4,6 +4,7 @@ using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Hubs;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
+using IT_Service_Management_System.Services.Efm;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -134,6 +135,23 @@ builder.Services.AddScoped<BackupService>();
 builder.Services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
 builder.Services.AddHostedService<QueuedHostedService>();
 builder.Services.AddScoped<EmailDispatcher>();
+
+// EFM document storage (pluggable). LocalDisk by default; set EFM:StorageProvider
+// to "AzureBlob" or "AwsS3" once those providers are implemented + configured.
+builder.Services.AddScoped<LocalDiskDocumentStorage>();
+builder.Services.AddScoped<AzureBlobDocumentStorage>();
+builder.Services.AddScoped<AwsS3DocumentStorage>();
+builder.Services.AddScoped<IDocumentStorage>(sp =>
+{
+    var provider = (sp.GetRequiredService<IConfiguration>()["EFM:StorageProvider"] ?? "LocalDisk")
+        .Trim().ToLowerInvariant();
+    return provider switch
+    {
+        "azureblob" or "azure" => sp.GetRequiredService<AzureBlobDocumentStorage>(),
+        "awss3" or "s3" => sp.GetRequiredService<AwsS3DocumentStorage>(),
+        _ => sp.GetRequiredService<LocalDiskDocumentStorage>()
+    };
+});
 
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database");
