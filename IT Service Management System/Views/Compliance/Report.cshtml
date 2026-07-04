@@ -8,85 +8,805 @@
     var users = ViewBag.Users as IEnumerable<dynamic>;
 }
 
-@await Html.PartialAsync("~/Views/Reports/_ReportStyles.cshtml")
-
-<div class="report-container">
-    <div class="report-header d-flex justify-content-between align-items-start flex-wrap gap-2">
-        <div>
-            <h1 class="report-title"><i class="fas @(ViewBag.Icon)"></i> @ViewBag.Title</h1>
-            <p class="report-subtitle">@ViewBag.Desc</p>
-        </div>
-        <div class="report-actions">
-            <a class="report-btn" asp-action="Index"><i class="fas fa-arrow-left"></i> All Reports</a>
-            <a class="report-btn primary"
-               asp-action="Export" asp-route-type="@type" asp-route-from="@fromD.ToString("yyyy-MM-dd")"
-               asp-route-to="@toD.ToString("yyyy-MM-dd")" asp-route-user="@selUser">
-                <i class="fas fa-file-export"></i> Export CSV
-            </a>
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas @(ViewBag.Icon) me-2" style="color: var(--primary);"></i>
+                    @ViewBag.Title
+                </h1>
+                <p class="text-muted mt-2">@ViewBag.Desc</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn-create-ticket" asp-action="Index" style="background: var(--gray-100); color: var(--gray-700);">
+                    <i class="fas fa-arrow-left"></i>
+                    All Reports
+                </a>
+                <a class="btn-create-ticket"
+                   asp-action="Export" asp-route-type="@type"
+                   asp-route-from="@fromD.ToString("yyyy-MM-dd")"
+                   asp-route-to="@toD.ToString("yyyy-MM-dd")"
+                   asp-route-user="@selUser">
+                    <i class="fas fa-file-export"></i>
+                    Export CSV
+                </a>
+            </div>
         </div>
     </div>
 
-    <!-- Filters -->
-    <div class="report-card">
-        <div class="report-card-body">
-            <form method="get" asp-action="Report" class="cmp-filter">
-                <input type="hidden" name="type" value="@type" />
-                <label>From <input type="date" name="from" value="@fromD.ToString("yyyy-MM-dd")" class="cmp-input" /></label>
-                <label>To <input type="date" name="to" value="@toD.ToString("yyyy-MM-dd")" class="cmp-input" /></label>
-                <label>User
-                    <select name="user" class="cmp-input">
-                        <option value="">All users</option>
-                        @if (users != null)
+    <!-- STATISTICS CARDS -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--primary-light), var(--primary));">
+                <i class="fas fa-list"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count</h3>
+                <p>Total Records</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count(l => !l.Action.Contains("Failed") && !l.Action.Contains("Locked") && !l.Action.Contains("Blocked"))</h3>
+                <p>Successful Actions</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count(l => l.Action.Contains("Failed") || l.Action.Contains("Locked") || l.Action.Contains("Blocked"))</h3>
+                <p>Failed / Blocked</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Select(l => l.UserName).Distinct().Count()</h3>
+                <p>Unique Users</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTERS CARD -->
+    <div class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Filter Report</span>
+        </div>
+        <form method="get" asp-action="Report" class="filters-body">
+            <input type="hidden" name="type" value="@type" />
+
+            <div class="filter-group">
+                <label>From Date</label>
+                <input type="date" name="from" value="@fromD.ToString("yyyy-MM-dd")" class="filter-input" />
+            </div>
+            <div class="filter-group">
+                <label>To Date</label>
+                <input type="date" name="to" value="@toD.ToString("yyyy-MM-dd")" class="filter-input" />
+            </div>
+            <div class="filter-group">
+                <label>User</label>
+                <select name="user" class="filter-select">
+                    <option value="">All users</option>
+                    @if (users != null)
+                    {
+                        foreach (var u in users)
                         {
-                            foreach (var u in users)
-                            {
-                                var idStr = u.Id.ToString();
-                                <option value="@idStr" selected="@(selUser == idStr)">@u.Name</option>
-                            }
+                            var idStr = u.Id.ToString();
+                            <option value="@idStr" selected="@(selUser == idStr)">@u.Name</option>
                         }
-                    </select>
-                </label>
-                <button type="submit" class="report-btn primary"><i class="fas fa-filter"></i> Apply</button>
-            </form>
-        </div>
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary,#3b82f6);color:#fff;border:none;">
+                <i class="fas fa-filter"></i>
+                Apply Filters
+            </button>
+            <a asp-action="Report" asp-route-type="@type" class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+                <i class="fas fa-undo-alt"></i>
+                Reset
+            </a>
+        </form>
     </div>
 
-    <div class="report-card">
-        <div class="report-card-header">
-            <span><i class="fas fa-list"></i> @Model.Count record(s) @(Model.Count >= 2000 ? "(showing latest 2000)" : "")</span>
+    <!-- REPORT DATA CARD -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Audit Records</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count</span> record(s) @(Model.Count >= 2000 ? "(showing latest 2000)" : "")
+            </div>
         </div>
-        <div class="report-card-body" style="padding:0;">
+
+        <div class="card-body-custom" style="padding:0;">
             @if (Model.Any())
             {
-                <table class="report-table">
-                    <thead><tr><th>When</th><th>Action</th><th>By</th><th>Entity</th><th>Details</th><th>IP / Location</th><th>Device</th></tr></thead>
-                    <tbody>
-                        @foreach (var l in Model)
-                        {
-                            var cls = l.Action.Contains("Failed") || l.Action.Contains("Locked") || l.Action.Contains("Blocked") || l.Action == "Deleted" ? "red"
-                                : l.Action.Contains("Login") || l.Action.Contains("Verified") || l.Action.Contains("Enabled") ? "green"
-                                : l.Action.Contains("Export") || l.Action.Contains("Changed") || l.Action.Contains("Updated") ? "amber" : "slate";
+                <div class="table-responsive">
+                    <table class="tickets-table" id="auditTable">
+                        <thead>
                             <tr>
-                                <td style="white-space:nowrap;">@l.Timestamp.ToString("MMM dd, yyyy h:mm tt")</td>
-                                <td><span class="pill @cls">@l.Action</span></td>
-                                <td>@l.UserName</td>
-                                <td>@l.Entity @(l.EntityId.HasValue ? $"#{l.EntityId}" : "")</td>
-                                <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="@l.Details">@l.Details</td>
-                                <td>@l.IpAddress @(string.IsNullOrEmpty(l.Location) ? "" : $"· {l.Location}")</td>
-                                <td>@(string.IsNullOrEmpty(l.Device) ? "—" : l.Device)</td>
+                                <th><i class="fas fa-clock me-1"></i> When</th>
+                                <th><i class="fas fa-code me-1"></i> Action</th>
+                                <th><i class="fas fa-user me-1"></i> By</th>
+                                <th><i class="fas fa-database me-1"></i> Entity</th>
+                                <th><i class="fas fa-info-circle me-1"></i> Details</th>
+                                <th><i class="fas fa-globe me-1"></i> IP / Location</th>
+                                <th><i class="fas fa-laptop me-1"></i> Device</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var l in Model)
+                            {
+                                var cls = l.Action.Contains("Failed") || l.Action.Contains("Locked") || l.Action.Contains("Blocked") || l.Action == "Deleted" ? "danger"
+                                    : l.Action.Contains("Login") || l.Action.Contains("Verified") || l.Action.Contains("Enabled") || l.Action.Contains("Success") ? "success"
+                                    : l.Action.Contains("Export") || l.Action.Contains("Changed") || l.Action.Contains("Updated") || l.Action.Contains("Modified") ? "warning"
+                                    : l.Action.Contains("Create") || l.Action.Contains("New") ? "info" : "default";
+                                <tr>
+                                    <td class="audit-date">@l.Timestamp.ToString("MMM dd, yyyy h:mm tt")</td>
+                                    <td><span class="audit-pill @cls">@l.Action</span></td>
+                                    <td class="audit-user">@l.UserName</td>
+                                    <td>
+                                        <span class="audit-entity">
+                                            @l.Entity @(l.EntityId.HasValue ? $"<span class=\"entity-id\">#{l.EntityId}</span>" : "")
+                                        </span>
+                                    </td>
+                                    <td class="audit-details" title="@l.Details">@l.Details</td>
+                                    <td class="audit-location">
+                                        @l.IpAddress
+                                        @if (!string.IsNullOrEmpty(l.Location))
+                                        {
+                                            <span class="location-badge">
+                                                <i class="fas fa-map-pin"></i> @l.Location
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="audit-device">@(string.IsNullOrEmpty(l.Device) ? "—" : l.Device)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
-            else { <div class="empty-mini">No records in this period</div> }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-search"></i>
+                    <h3>No records found</h3>
+                    <p>No audit records match the current filter criteria.</p>
+                    <a asp-action="Report" asp-route-type="@type" class="btn-create-ticket-sm">
+                        <i class="fas fa-undo-alt"></i> Reset Filters
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- EXPORT INFO CARD -->
+    <div class="data-card mt-4">
+        <div class="card-header-custom">
+            <i class="fas fa-circle-info me-2"></i>
+            <span>Report Information</span>
+        </div>
+        <div class="card-body-custom" style="font-size:0.85rem;color:var(--gray-600);line-height:1.8;">
+            <div class="report-info-grid">
+                <div class="report-info-item">
+                    <i class="fas fa-calendar-alt" style="color:var(--primary);"></i>
+                    <div>
+                        <strong>Date Range</strong>
+                        <span>@fromD.ToString("MMM dd, yyyy") — @toD.ToString("MMM dd, yyyy")</span>
+                    </div>
+                </div>
+                <div class="report-info-item">
+                    <i class="fas fa-file-export" style="color:var(--success);"></i>
+                    <div>
+                        <strong>Export Available</strong>
+                        <span>Download CSV for further analysis or archiving</span>
+                    </div>
+                </div>
+                <div class="report-info-item">
+                    <i class="fas fa-shield-halved" style="color:var(--warning);"></i>
+                    <div>
+                        <strong>Audit Retention</strong>
+                        <span>Audit logs are retained for @(ViewBag.RetentionDays ?? 90) days</span>
+                    </div>
+                </div>
+                <div class="report-info-item">
+                    <i class="fas fa-clock-rotate-left" style="color:var(--info);"></i>
+                    <div>
+                        <strong>Generated</strong>
+                        <span>@DateTime.Now.ToString("MMM dd, yyyy h:mm tt")</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <style>
-    .cmp-filter { display:flex; flex-wrap:wrap; align-items:flex-end; gap:1rem; }
-    .cmp-filter label { display:flex; flex-direction:column; gap:0.3rem; font-size:0.78rem; font-weight:600; color:var(--gray-700,#334155); }
-    .cmp-input { padding:0.5rem 0.7rem; border:1.5px solid var(--gray-200,#e2e8f0); border-radius:0.6rem; font-size:0.85rem; font-family:inherit; }
-    .cmp-input:focus { outline:none; border-color:var(--primary,#3b82f6); box-shadow:0 0 0 3px rgba(59,130,246,0.1); }
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== STATISTICS CARDS ===== */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .stat-info h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-create-ticket-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-create-ticket-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== FILTERS CARD ===== */
+    .filters-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .filters-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filters-body {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 160px;
+    }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+    .filter-input {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        background: white;
+    }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        cursor: pointer;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .btn-clear-filters {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-clear-filters:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+        .data-card.mt-4 {
+            margin-top: 1.5rem;
+        }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 0.9rem 1.2rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.75rem 1.2rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+    /* ===== AUDIT SPECIFIC ===== */
+    .audit-date {
+        white-space: nowrap;
+        color: var(--gray-600);
+        font-size: 0.78rem;
+    }
+
+    .audit-user {
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .audit-details {
+        max-width: 240px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--gray-500);
+        font-size: 0.8rem;
+    }
+
+    .audit-location {
+        font-size: 0.78rem;
+        color: var(--gray-500);
+    }
+
+    .location-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        font-size: 0.65rem;
+        background: var(--gray-100);
+        padding: 0.05rem 0.4rem;
+        border-radius: 1rem;
+        color: var(--gray-600);
+        margin-left: 0.2rem;
+    }
+
+        .location-badge i {
+            font-size: 0.5rem;
+        }
+
+    .audit-device {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .audit-entity {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+    }
+
+    .entity-id {
+        font-weight: 600;
+        color: var(--gray-400);
+        font-size: 0.7rem;
+    }
+
+    /* ===== AUDIT PILLS ===== */
+    .audit-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+        .audit-pill.danger {
+            background: #fee;
+            color: var(--danger);
+            border: 1px solid #fed7d7;
+        }
+
+        .audit-pill.success {
+            background: #e6f5e9;
+            color: var(--success);
+            border: 1px solid #c6e0c9;
+        }
+
+        .audit-pill.warning {
+            background: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        .audit-pill.info {
+            background: #e6f0ff;
+            color: var(--info);
+            border: 1px solid #cce4ff;
+        }
+
+        .audit-pill.default {
+            background: var(--gray-100);
+            color: var(--gray-600);
+            border: 1px solid var(--gray-200);
+        }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 3.5rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+    /* ===== REPORT INFO ===== */
+    .report-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1rem;
+    }
+
+    .report-info-item {
+        display: flex;
+        gap: 0.75rem;
+        padding: 0.6rem 0.75rem;
+        background: var(--gray-50);
+        border-radius: 0.6rem;
+    }
+
+        .report-info-item i {
+            font-size: 1.1rem;
+            margin-top: 0.1rem;
+            flex-shrink: 0;
+        }
+
+        .report-info-item strong {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--gray-700);
+        }
+
+        .report-info-item span {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 1024px) {
+        .tickets-table td,
+        .tickets-table th {
+            padding: 0.6rem 0.8rem;
+        }
+
+        .audit-details {
+            max-width: 140px;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .stats-cards {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .filters-body {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-group {
+            min-width: 100%;
+        }
+
+        .page-header .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .report-info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .audit-details {
+            max-width: 100px;
+        }
+
+        .audit-device {
+            max-width: 80px;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.75rem;
+        }
+
+            .tickets-table td,
+            .tickets-table th {
+                padding: 0.4rem 0.5rem;
+            }
+
+        .audit-pill {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.4rem;
+        }
+
+        .audit-date {
+            font-size: 0.65rem;
+        }
+
+        .audit-user {
+            font-size: 0.7rem;
+        }
+
+        .audit-details {
+            max-width: 60px;
+        }
+
+        .location-badge {
+            display: none;
+        }
+    }
 </style>
