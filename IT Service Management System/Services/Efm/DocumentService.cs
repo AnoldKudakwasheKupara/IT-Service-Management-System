@@ -100,6 +100,102 @@ namespace IT_Service_Management_System.Services.Efm
             return doc;
         }
 
+        /// <summary>
+        /// Adds a NEW version of an existing document (v2, v3, …) instead of overwriting.
+        /// The uploaded file becomes the current version; prior versions stay intact.
+        /// </summary>
+        public async Task<DocumentVersion> AddVersionAsync(int documentId, IFormFile file, string? changeNote,
+            int? userId, string? userName, CancellationToken ct = default)
+        {
+            var doc = await _db.EmployeeDocuments.FirstOrDefaultAsync(d => d.Id == documentId, ct)
+                      ?? throw new InvalidOperationException("Document not found.");
+
+            StoredFileResult stored;
+            await using (var read = file.OpenReadStream())
+                stored = await _storage.SaveAsync(read, file.FileName, file.ContentType, ct);
+
+            var maxVer = await _db.DocumentVersions
+                .Where(v => v.EmployeeDocumentId == documentId)
+                .MaxAsync(v => (int?)v.VersionNumber, ct) ?? 0;
+
+            foreach (var c in await _db.DocumentVersions
+                         .Where(v => v.EmployeeDocumentId == documentId && v.IsCurrent).ToListAsync(ct))
+                c.IsCurrent = false;
+
+            var version = new DocumentVersion
+            {
+                EmployeeDocumentId = documentId,
+                VersionNumber = maxVer + 1,
+                FileName = Path.GetFileName(file.FileName),
+                StoredKey = stored.StoredKey,
+                StorageProvider = _storage.ProviderType,
+                ContentType = stored.ContentType,
+                FileSizeBytes = stored.SizeBytes,
+                Sha256 = stored.Sha256,
+                ChangeNote = changeNote,
+                UploadedAt = DateTime.Now,
+                UploadedById = userId,
+                UploadedByName = userName,
+                IsCurrent = true
+            };
+            _db.DocumentVersions.Add(version);
+            await _db.SaveChangesAsync(ct);
+
+            doc.CurrentVersionId = version.Id;
+            doc.UpdatedAt = DateTime.Now;
+            if (doc.Status == DocumentStatus.Expired) doc.Status = DocumentStatus.Active;
+            await _db.SaveChangesAsync(ct);
+
+            await LogAsync(DocumentAuditAction.VersionUploaded, documentId, doc.EmployeeId,
+                $"Uploaded v{version.VersionNumber} ({version.FileName})");
+            return version;
+        }
+
+        /// <summary>Restores an older version by promoting its content to a new current version.</summary>
+        public async Task<DocumentVersion?> RestoreVersionAsync(int documentId, int versionId,
+            int? userId, string? userName, CancellationToken ct = default)
+        {
+            var doc = await _db.EmployeeDocuments.FirstOrDefaultAsync(d => d.Id == documentId, ct);
+            var target = await _db.DocumentVersions
+                .FirstOrDefaultAsync(v => v.Id == versionId && v.EmployeeDocumentId == documentId, ct);
+            if (doc == null || target == null) return null;
+
+            var maxVer = await _db.DocumentVersions
+                .Where(v => v.EmployeeDocumentId == documentId).MaxAsync(v => v.VersionNumber, ct);
+
+            foreach (var c in await _db.DocumentVersions
+                         .Where(v => v.EmployeeDocumentId == documentId && v.IsCurrent).ToListAsync(ct))
+                c.IsCurrent = false;
+
+            // New version reuses the restored version's stored blob (storage-efficient, history intact).
+            var restored = new DocumentVersion
+            {
+                EmployeeDocumentId = documentId,
+                VersionNumber = maxVer + 1,
+                FileName = target.FileName,
+                StoredKey = target.StoredKey,
+                StorageProvider = target.StorageProvider,
+                ContentType = target.ContentType,
+                FileSizeBytes = target.FileSizeBytes,
+                Sha256 = target.Sha256,
+                ChangeNote = $"Restored from v{target.VersionNumber}",
+                UploadedAt = DateTime.Now,
+                UploadedById = userId,
+                UploadedByName = userName,
+                IsCurrent = true
+            };
+            _db.DocumentVersions.Add(restored);
+            await _db.SaveChangesAsync(ct);
+
+            doc.CurrentVersionId = restored.Id;
+            doc.UpdatedAt = DateTime.Now;
+            await _db.SaveChangesAsync(ct);
+
+            await LogAsync(DocumentAuditAction.VersionRestored, documentId, doc.EmployeeId,
+                $"Restored v{target.VersionNumber} as v{restored.VersionNumber}");
+            return restored;
+        }
+
         /// <summary>Loads a document's current version and opens a readable stream for it.</summary>
         public async Task<(DocumentVersion Version, Stream Stream)?> OpenCurrentAsync(int documentId, CancellationToken ct = default)
         {

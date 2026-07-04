@@ -221,6 +221,50 @@ namespace IT_Service_Management_System.Controllers
             return File(result.Value.Stream, result.Value.Version.ContentType, result.Value.Version.FileName);
         }
 
+        // ── version control ────────────────────────────────────────────────────────────
+        // Uploads a NEW version of an existing document (never overwrites).
+        [HttpPost]
+        [RequestSizeLimit(long.MaxValue)]
+        public async Task<IActionResult> UploadVersion(int id, IFormFile? file, string? changeNote)
+        {
+            var doc = await _db.EmployeeDocuments.FirstOrDefaultAsync(d => d.Id == id);
+            if (doc == null) return NotFound();
+
+            if (file == null || file.Length == 0)
+            { TempData["Error"] = "Please choose a file."; return RedirectToAction(nameof(Details), new { id }); }
+            if (file.Length > MaxFileBytes)
+            { TempData["Error"] = "File exceeds the 50 MB limit."; return RedirectToAction(nameof(Details), new { id }); }
+            if (BlockedExtensions.Contains(Path.GetExtension(file.FileName).ToLowerInvariant()))
+            { TempData["Error"] = "That file type is not allowed."; return RedirectToAction(nameof(Details), new { id }); }
+
+            var v = await _docs.AddVersionAsync(id, file, changeNote,
+                HttpContext.Session.GetInt32("UserId"), HttpContext.Session.GetString("UserName"));
+            TempData["Success"] = $"Version {v.VersionNumber} uploaded and set as current.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // Downloads a specific historical version.
+        public async Task<IActionResult> DownloadVersion(int versionId)
+        {
+            var result = await _docs.OpenVersionAsync(versionId);
+            if (result == null) return NotFound();
+            await _docs.LogAsync(DocumentAuditAction.Downloaded, result.Value.Version.EmployeeDocumentId, null,
+                $"Downloaded v{result.Value.Version.VersionNumber} ({result.Value.Version.FileName})");
+            return File(result.Value.Stream, result.Value.Version.ContentType, result.Value.Version.FileName);
+        }
+
+        // Restores an older version by promoting it to a new current version.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RestoreVersion(int documentId, int versionId)
+        {
+            var restored = await _docs.RestoreVersionAsync(documentId, versionId,
+                HttpContext.Session.GetInt32("UserId"), HttpContext.Session.GetString("UserName"));
+            if (restored == null) return NotFound();
+            TempData["Success"] = $"Restored as version {restored.VersionNumber} (now current).";
+            return RedirectToAction(nameof(Details), new { id = documentId });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)

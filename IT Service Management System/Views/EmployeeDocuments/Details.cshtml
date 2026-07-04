@@ -18,6 +18,7 @@
                 </p>
             </div>
             <div class="ms-auto d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#versionModal"><i class="fas fa-upload"></i> New Version</button>
                 <a class="btn btn-outline-primary btn-sm" asp-action="Preview" asp-route-id="@Model.Id" target="_blank"><i class="fas fa-eye"></i> Preview</a>
                 <a class="btn btn-primary btn-sm" asp-action="Download" asp-route-id="@Model.Id"><i class="fas fa-download"></i> Download</a>
             </div>
@@ -78,21 +79,64 @@
                 <div class="card-header-custom"><div><i class="fas fa-code-branch me-2"></i><span>Versions</span></div><span class="record-count">@Model.Versions.Count</span></div>
                 <div class="table-responsive">
                     <table class="data-table">
-                        <thead><tr><th>Ver</th><th>File</th><th>Size</th><th>Uploaded</th></tr></thead>
+                        <thead><tr><th>Ver</th><th>File</th><th>Size</th><th>Uploaded</th><th>Note</th><th style="text-align:right;">Actions</th></tr></thead>
                         <tbody>
                             @foreach (var v in Model.Versions.OrderByDescending(v => v.VersionNumber))
                             {
                                 <tr>
                                     <td>v@(v.VersionNumber) @(v.IsCurrent ? Html.Raw("<span class='pill' style='background:var(--primary-light);color:var(--primary-dark);'>current</span>") : null)</td>
-                                    <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@v.FileName</td>
+                                    <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="@v.FileName">@v.FileName</td>
                                     <td>@Size(v.FileSizeBytes)</td>
-                                    <td>@v.UploadedAt.ToString("MMM dd, yyyy")</td>
+                                    <td>@v.UploadedAt.ToString("MMM dd, yyyy")<div class="text-muted" style="font-size:0.7rem;">@v.UploadedByName</div></td>
+                                    <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="@v.ChangeNote">@(v.ChangeNote ?? "—")</td>
+                                    <td style="text-align:right;white-space:nowrap;">
+                                        <a class="btn btn-sm btn-outline-primary" asp-action="DownloadVersion" asp-route-versionId="@v.Id" title="Download this version"><i class="fas fa-download"></i></a>
+                                        @if (!v.IsCurrent)
+                                        {
+                                            <form asp-action="RestoreVersion" method="post" style="display:inline;" onsubmit="return confirm('Restore v@(v.VersionNumber) as the current version?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="documentId" value="@Model.Id" />
+                                                <input type="hidden" name="versionId" value="@v.Id" />
+                                                <button class="btn btn-sm btn-outline-secondary" title="Restore this version"><i class="fas fa-rotate-left"></i></button>
+                                            </form>
+                                        }
+                                    </td>
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload new version modal -->
+<div class="modal fade" id="versionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="UploadVersion" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-upload me-2"></i>Upload New Version</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted" style="font-size:0.85rem;">This creates a new version and makes it current. The current version (v@(Model.CurrentVersion?.VersionNumber)) is kept in history.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">File</label>
+                        <input type="file" name="file" class="form-control" required />
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label fw-semibold">Change note <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="text" name="changeNote" class="form-control" maxlength="500" placeholder="What changed in this version?" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Upload Version</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
