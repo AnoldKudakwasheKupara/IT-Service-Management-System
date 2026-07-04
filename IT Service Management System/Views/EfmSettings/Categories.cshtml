@@ -7,55 +7,116 @@
 }
 
 <div class="page-container">
+    <!-- PAGE HEADER -->
     <div class="page-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
             <div>
-                <h1 class="page-title"><i class="fas fa-sliders me-2" style="color:var(--primary);"></i>File Settings</h1>
+                <h1 class="page-title">
+                    <i class="fas fa-sliders me-2" style="color: var(--primary);"></i>
+                    File Settings
+                </h1>
                 <p class="text-muted mt-2">Add and manage document categories — no code changes needed.</p>
             </div>
-            <button class="btn-create" onclick="openCat()"><i class="fas fa-plus"></i> New Category</button>
+            <button class="btn-create-ticket" onclick="openCat()">
+                <i class="fas fa-plus"></i> New Category
+            </button>
         </div>
+
+        <!-- Navigation -->
         <partial name="_Nav" />
     </div>
 
+    <!-- CATEGORIES CARD -->
     <div class="data-card">
         <div class="card-header-custom">
-            <div><i class="fas fa-tags me-2"></i><span>Categories</span></div>
-            <span class="record-count">@Model.Count</span>
+            <div>
+                <i class="fas fa-tags me-2"></i>
+                <span>Categories</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count</span> categories
+            </div>
         </div>
         <div class="table-responsive">
-            <table class="data-table">
-                <thead><tr>
-                    <th><i class="fas fa-tag me-1"></i> Name</th><th><i class="fas fa-folder me-1"></i> Default folder</th>
-                    <th><i class="fas fa-hourglass-half me-1"></i> Expiry-tracked</th><th><i class="fas fa-clock-rotate-left me-1"></i> Retention</th>
-                    <th><i class="fas fa-file me-1"></i> Documents</th><th><i class="fas fa-chart-simple me-1"></i> Status</th>
-                    <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
-                </tr></thead>
+            <table class="tickets-table" id="categoriesTable">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-tag me-1"></i> Name</th>
+                        <th><i class="fas fa-folder me-1"></i> Default folder</th>
+                        <th><i class="fas fa-hourglass-half me-1"></i> Expiry-tracked</th>
+                        <th><i class="fas fa-clock-rotate-left me-1"></i> Retention</th>
+                        <th><i class="fas fa-file me-1"></i> Documents</th>
+                        <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                        <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @foreach (var c in Model.OrderBy(c => c.Name))
                     {
-                        <tr style="@(c.IsActive ? "" : "opacity:0.55;")">
+                        <tr class="@(c.IsActive ? "" : "inactive-row")">
                             <td>
-                                <strong>@c.Name</strong>
-                                @if (!string.IsNullOrWhiteSpace(c.Description)) { <div class="text-muted" style="font-size:0.72rem;">@c.Description</div> }
+                                <div class="category-name-cell">
+                                    <strong>@c.Name</strong>
+                                    @if (!string.IsNullOrWhiteSpace(c.Description))
+                                    {
+                                        <div class="category-description" title="@c.Description">@c.Description</div>
+                                    }
+                                </div>
                             </td>
-                            <td>@(c.DefaultFolder?.Name ?? "—")</td>
-                            <td>@(c.IsExpiryTracked ? Html.Raw("<i class='fas fa-check text-success'></i>") : Html.Raw("<span class='text-muted'>—</span>"))</td>
-                            <td>@(c.DefaultRetentionYears.HasValue ? $"{c.DefaultRetentionYears} yr" : "Permanent")</td>
-                            <td>@(counts.TryGetValue(c.Id, out var n) ? n : 0)</td>
+                            <td class="category-folder">@(c.DefaultFolder?.Name ?? "—")</td>
                             <td>
-                                @if (c.IsActive) { <span class="status-badge badge-green">Active</span> } else { <span class="status-badge badge-gray">Inactive</span> }
+                                @if (c.IsExpiryTracked)
+                                {
+                                    <span class="status-badge status-active">
+                                        <i class="fas fa-check-circle"></i> Tracked
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted" style="font-size:0.8rem;">—</span>
+                                }
+                            </td>
+                            <td class="category-retention">
+                                @if (c.DefaultRetentionYears.HasValue)
+                                {
+                                    <span class="retention-badge">
+                                        <i class="fas fa-calendar-alt"></i> @c.DefaultRetentionYears yrs
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="retention-badge permanent">
+                                        <i class="fas fa-infinity"></i> Permanent
+                                    </span>
+                                }
                             </td>
                             <td>
-                                <div class="action-buttons" style="justify-content:flex-end;">
-                                    <button class="action-btn btn-edit" title="Edit"
+                                <span class="document-count-badge @(counts.TryGetValue(c.Id, out var n) && n > 0 ? "has-docs" : "")">
+                                    <i class="fas fa-file"></i> @(counts.TryGetValue(c.Id, out var count) ? count : 0)
+                                </span>
+                            </td>
+                            <td>
+                                @if (c.IsActive)
+                                {
+                                    <span class="status-badge status-active">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-inactive">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="action-btn btn-edit" title="Edit Category"
                                             onclick="openCat(@c.Id, '@Html.Raw(Encode(c.Name))', '@Html.Raw(Encode(c.Description))', @(c.DefaultFolderId?.ToString() ?? "null"), @c.IsExpiryTracked.ToString().ToLower(), @(c.DefaultRetentionYears?.ToString() ?? "null"), @c.IsActive.ToString().ToLower())">
                                         <i class="fas fa-pen"></i>
                                     </button>
                                     <form asp-action="ToggleCategory" method="post" style="display:inline;">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@c.Id" />
-                                        <button class="action-btn btn-view" title="@(c.IsActive ? "Deactivate" : "Activate")">
+                                        <button class="action-btn @(c.IsActive ? "btn-toggle-on" : "btn-toggle-off")"
+                                                title="@(c.IsActive ? "Deactivate" : "Activate")">
                                             <i class="fas @(c.IsActive ? "fa-toggle-on" : "fa-toggle-off")"></i>
                                         </button>
                                     </form>
@@ -63,7 +124,9 @@
                                           onsubmit="return confirm('Delete the category &quot;@c.Name&quot;? This cannot be undone.');">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="id" value="@c.Id" />
-                                        <button class="action-btn btn-delete" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                                        <button class="action-btn btn-delete" title="Delete Category">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
                                     </form>
                                 </div>
                             </td>
@@ -75,6 +138,7 @@
     </div>
 </div>
 
+<!-- MODAL -->
 <div class="modal fade" id="catModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -82,13 +146,18 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="catId" value="0" />
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-tags me-2"></i><span id="catModalTitle">New Category</span></h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-tags me-2" style="color: var(--primary);"></i>
+                        <span id="catModalTitle">New Category</span>
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold">
+                                Name <span class="text-danger">*</span>
+                            </label>
                             <input type="text" name="name" id="catName" class="form-control" required maxlength="120" />
                         </div>
                         <div class="col-12">
@@ -97,9 +166,12 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Default folder</label>
-                            <select name="defaultFolderId" id="catFolder" class="form-select">
+                            <select name="defaultFolderId" id="catFolder" class="form-control form-select">
                                 <option value="">— None —</option>
-                                @foreach (var f in folders) { <option value="@f.Id">@f.Name</option> }
+                                @foreach (var f in folders)
+                                {
+                                    <option value="@f.Id">@f.Name</option>
+                                }
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -109,18 +181,24 @@
                         <div class="col-12">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="isExpiryTracked" id="catExpiry" value="true" />
-                                <label class="form-check-label" for="catExpiry">Track expiry dates &amp; raise alerts</label>
+                                <label class="form-check-label" for="catExpiry">
+                                    <i class="fas fa-clock text-muted me-1"></i> Track expiry dates &amp; raise alerts
+                                </label>
                             </div>
-                            <div class="form-check">
+                            <div class="form-check mt-1">
                                 <input class="form-check-input" type="checkbox" name="isActive" id="catActive" value="true" checked />
-                                <label class="form-check-label" for="catActive">Active (available for new uploads)</label>
+                                <label class="form-check-label" for="catActive">
+                                    <i class="fas fa-check-circle text-success me-1"></i> Active (available for new uploads)
+                                </label>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                    <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-modal-save">
+                        <i class="fas fa-save"></i> Save
+                    </button>
                 </div>
             </form>
         </div>
@@ -145,3 +223,497 @@
         bootstrap.Modal.getOrCreateInstance(document.getElementById('catModal')).show();
     }
 </script>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.9rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .tickets-table tbody tr.inactive-row {
+                opacity: 0.6;
+            }
+
+                .tickets-table tbody tr.inactive-row:hover {
+                    opacity: 0.8;
+                }
+
+    /* ===== CATEGORY NAME ===== */
+    .category-name-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
+        .category-name-cell strong {
+            color: var(--gray-800);
+            font-size: 0.95rem;
+        }
+
+    .category-description {
+        font-size: 0.72rem;
+        color: var(--gray-500);
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .category-folder {
+        color: var(--gray-600);
+        font-size: 0.85rem;
+    }
+
+    .category-retention {
+        font-size: 0.85rem;
+    }
+
+    /* ===== RETENTION BADGE ===== */
+    .retention-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.15rem 0.6rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: var(--gray-100);
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+        .retention-badge.permanent {
+            background: #e6f0ff;
+            color: var(--info);
+            border-color: #cce4ff;
+        }
+
+        .retention-badge i {
+            font-size: 0.65rem;
+        }
+
+    /* ===== DOCUMENT COUNT BADGE ===== */
+    .document-count-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.15rem 0.6rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-200);
+    }
+
+        .document-count-badge.has-docs {
+            background: #dbeafe;
+            color: var(--primary-dark);
+            border-color: #bfdbfe;
+        }
+
+        .document-count-badge i {
+            font-size: 0.65rem;
+        }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .status-active {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .status-inactive {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    /* ===== ACTION BUTTONS ===== */
+    .action-buttons {
+        display: flex;
+        gap: 0.25rem;
+        justify-content: flex-end;
+    }
+
+    .action-btn {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.8rem;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-edit {
+        background: var(--gray-100);
+        color: var(--warning);
+    }
+
+        .btn-edit:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-toggle-on {
+        background: var(--gray-100);
+        color: var(--success);
+    }
+
+        .btn-toggle-on:hover {
+            background: var(--success);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-toggle-off {
+        background: var(--gray-100);
+        color: var(--gray-500);
+    }
+
+        .btn-toggle-off:hover {
+            background: var(--gray-500);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-delete {
+        background: var(--gray-100);
+        color: var(--danger);
+    }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* ===== MODAL STYLES ===== */
+    .modal-content {
+        border-radius: 1rem;
+        border: 1px solid var(--gray-200);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .modal-header {
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-200);
+        padding: 1.25rem 1.5rem;
+        border-radius: 1rem 1rem 0 0;
+    }
+
+        .modal-header .modal-title {
+            font-weight: 700;
+            color: var(--gray-800);
+            font-size: 1.1rem;
+        }
+
+            .modal-header .modal-title i {
+                color: var(--primary);
+            }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        background: var(--gray-50);
+        border-top: 1px solid var(--gray-200);
+        padding: 1rem 1.5rem;
+        border-radius: 0 0 1rem 1rem;
+        gap: 0.5rem;
+    }
+
+        .modal-footer .btn-modal-cancel {
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.5rem;
+            background: white;
+            color: var(--gray-600);
+            border: 1.5px solid var(--gray-200);
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+            .modal-footer .btn-modal-cancel:hover {
+                background: var(--gray-50);
+                border-color: var(--gray-300);
+            }
+
+        .modal-footer .btn-modal-save {
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.5rem;
+            background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+            color: white;
+            border: none;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+            .modal-footer .btn-modal-save:hover {
+                transform: translateY(-1px);
+                box-shadow: var(--shadow-md);
+            }
+
+    .modal-body .form-label {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        margin-bottom: 0.25rem;
+    }
+
+    .modal-body .form-control,
+    .modal-body .form-select {
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .modal-body .form-control:focus,
+        .modal-body .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+    .modal-body .form-check-input {
+        accent-color: var(--primary);
+        width: 1.1rem;
+        height: 1.1rem;
+        margin-top: 0.1rem;
+    }
+
+    .modal-body .form-check-label {
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        cursor: pointer;
+    }
+
+    .modal-body .text-danger {
+        color: var(--danger) !important;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.6rem 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.8rem;
+        }
+
+        .category-description {
+            max-width: 120px;
+        }
+
+        .action-btn {
+            width: 30px;
+            height: 30px;
+            font-size: 0.7rem;
+        }
+
+        .modal-dialog {
+            margin: 1rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .category-description {
+            max-width: 80px;
+        }
+
+        .status-badge,
+        .retention-badge,
+        .document-count-badge {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.4rem;
+        }
+
+        .modal-body {
+            padding: 1rem;
+        }
+    }
+</style>

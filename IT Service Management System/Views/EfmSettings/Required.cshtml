@@ -8,50 +8,109 @@
 }
 
 <div class="page-container">
+    <!-- PAGE HEADER -->
     <div class="page-header">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
             <div>
-                <h1 class="page-title"><i class="fas fa-sliders me-2" style="color:var(--primary);"></i>File Settings</h1>
-                <p class="text-muted mt-2">Define which categories are required — overall or scoped to a role/department. Drives file completeness.</p>
+                <h1 class="page-title">
+                    <i class="fas fa-sliders me-2" style="color: var(--primary);"></i>
+                    File Settings
+                </h1>
+                <p class="text-muted mt-2">
+                    Define which categories are required — overall or scoped to a role/department. Drives file completeness.
+                </p>
             </div>
-            <button class="btn-create" onclick="openReq()"><i class="fas fa-plus"></i> New Requirement</button>
+            <button class="btn-create-ticket" onclick="openReq()">
+                <i class="fas fa-plus"></i> New Requirement
+            </button>
         </div>
+
+        <!-- Navigation -->
         <partial name="_Nav" />
     </div>
 
+    <!-- REQUIRED DOCUMENTS CARD -->
     <div class="data-card">
         <div class="card-header-custom">
-            <div><i class="fas fa-list-check me-2"></i><span>Required Documents</span></div>
-            <span class="record-count">@Model.Count</span>
+            <div>
+                <i class="fas fa-list-check me-2"></i>
+                <span>Required Documents</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count</span> requirements
+            </div>
         </div>
         <div class="table-responsive">
-            <table class="data-table">
-                <thead><tr>
-                    <th><i class="fas fa-tag me-1"></i> Category</th><th><i class="fas fa-user-shield me-1"></i> Applies to role</th>
-                    <th><i class="fas fa-building me-1"></i> Applies to department</th><th><i class="fas fa-asterisk me-1"></i> Mandatory</th>
-                    <th><i class="fas fa-chart-simple me-1"></i> Status</th><th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
-                </tr></thead>
+            <table class="tickets-table" id="requiredTable">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-tag me-1"></i> Category</th>
+                        <th><i class="fas fa-user-shield me-1"></i> Applies to role</th>
+                        <th><i class="fas fa-building me-1"></i> Applies to department</th>
+                        <th><i class="fas fa-asterisk me-1"></i> Mandatory</th>
+                        <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                        <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
+                    </tr>
+                </thead>
                 <tbody>
                     @if (Model.Any())
                     {
                         @foreach (var r in Model)
                         {
-                            <tr style="@(r.IsActive ? "" : "opacity:0.55;")">
-                                <td><strong>@r.Category?.Name</strong></td>
-                                <td>@(r.AppliesToRole ?? "All roles")</td>
-                                <td>@(r.AppliesToDepartment?.Name ?? "All departments")</td>
-                                <td>@(r.IsMandatory ? Html.Raw("<span class='status-badge badge-amber'>Mandatory</span>") : Html.Raw("<span class='status-badge badge-gray'>Optional</span>"))</td>
-                                <td>@(r.IsActive ? Html.Raw("<span class='status-badge badge-green'>Active</span>") : Html.Raw("<span class='status-badge badge-gray'>Inactive</span>"))</td>
+                            <tr class="@(r.IsActive ? "" : "inactive-row")">
                                 <td>
-                                    <div class="action-buttons" style="justify-content:flex-end;">
-                                        <button class="action-btn btn-edit" title="Edit"
+                                    <div class="requirement-category">
+                                        <strong>@r.Category?.Name</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="role-badge @(r.AppliesToRole == null ? "role-all" : "role-specific")">
+                                        @(r.AppliesToRole ?? "All roles")
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="dept-badge @(r.AppliesToDepartmentId == null ? "dept-all" : "dept-specific")">
+                                        @(r.AppliesToDepartment?.Name ?? "All departments")
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (r.IsMandatory)
+                                    {
+                                        <span class="status-badge status-mandatory">
+                                            <i class="fas fa-exclamation-circle"></i> Mandatory
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge status-optional">
+                                            <i class="fas fa-circle"></i> Optional
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (r.IsActive)
+                                    {
+                                        <span class="status-badge status-active">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge status-inactive">Inactive</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="action-btn btn-edit" title="Edit Requirement"
                                                 onclick="openReq(@r.Id, @r.CategoryId, '@(r.AppliesToRole)', @(r.AppliesToDepartmentId?.ToString() ?? "null"), @r.IsMandatory.ToString().ToLower(), @r.IsActive.ToString().ToLower())">
                                             <i class="fas fa-pen"></i>
                                         </button>
-                                        <form asp-action="DeleteRequired" method="post" style="display:inline;" onsubmit="return confirm('Remove this requirement?');">
+                                        <form asp-action="DeleteRequired" method="post" style="display:inline;"
+                                              onsubmit="return confirm('Remove this requirement?');">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@r.Id" />
-                                            <button class="action-btn btn-delete" title="Remove"><i class="fas fa-trash-alt"></i></button>
+                                            <button class="action-btn btn-delete" title="Remove Requirement">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
                                         </form>
                                     </div>
                                 </td>
@@ -60,7 +119,14 @@
                     }
                     else
                     {
-                        <tr><td colspan="6" class="text-center text-muted p-4">No requirements defined yet.</td></tr>
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state-mini">
+                                    <i class="fas fa-list-check"></i>
+                                    <span>No requirements defined yet.</span>
+                                </div>
+                            </td>
+                        </tr>
                     }
                 </tbody>
             </table>
@@ -68,6 +134,7 @@
     </div>
 </div>
 
+<!-- MODAL -->
 <div class="modal fade" id="reqModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -75,46 +142,66 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="reqId" value="0" />
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-list-check me-2"></i><span id="reqModalTitle">New Requirement</span></h5>
+                    <h5 class="modal-title">
+                        <i class="fas fa-list-check me-2" style="color: var(--primary);"></i>
+                        <span id="reqModalTitle">New Requirement</span>
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
                         <div class="col-12">
-                            <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold">
+                                Category <span class="text-danger">*</span>
+                            </label>
                             <select name="categoryId" id="reqCategory" class="form-select" required>
-                                @foreach (var c in cats) { <option value="@c.Id">@c.Name</option> }
+                                @foreach (var c in cats)
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Applies to role</label>
                             <select name="appliesToRole" id="reqRole" class="form-select">
                                 <option value="">All roles</option>
-                                @foreach (var r in roles) { <option value="@r">@r</option> }
+                                @foreach (var r in roles)
+                                {
+                                    <option value="@r">@r</option>
+                                }
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Applies to department</label>
                             <select name="appliesToDepartmentId" id="reqDept" class="form-select">
                                 <option value="">All departments</option>
-                                @foreach (var d in depts) { <option value="@d.Id">@d.Name</option> }
+                                @foreach (var d in depts)
+                                {
+                                    <option value="@d.Id">@d.Name</option>
+                                }
                             </select>
                         </div>
                         <div class="col-12">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="isMandatory" id="reqMandatory" value="true" checked />
-                                <label class="form-check-label" for="reqMandatory">Mandatory (counts toward completeness)</label>
+                                <label class="form-check-label" for="reqMandatory">
+                                    <i class="fas fa-asterisk text-danger me-1"></i> Mandatory (counts toward completeness)
+                                </label>
                             </div>
-                            <div class="form-check">
+                            <div class="form-check mt-1">
                                 <input class="form-check-input" type="checkbox" name="isActive" id="reqActive" value="true" checked />
-                                <label class="form-check-label" for="reqActive">Active</label>
+                                <label class="form-check-label" for="reqActive">
+                                    <i class="fas fa-check-circle text-success me-1"></i> Active
+                                </label>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                    <button type="button" class="btn-modal-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-modal-save">
+                        <i class="fas fa-save"></i> Save
+                    </button>
                 </div>
             </form>
         </div>
@@ -133,3 +220,492 @@
         bootstrap.Modal.getOrCreateInstance(document.getElementById('reqModal')).show();
     }
 </script>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.9rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .tickets-table tbody tr.inactive-row {
+                opacity: 0.6;
+            }
+
+                .tickets-table tbody tr.inactive-row:hover {
+                    opacity: 0.8;
+                }
+
+    /* ===== REQUIREMENT SPECIFIC ===== */
+    .requirement-category strong {
+        color: var(--gray-800);
+        font-size: 0.95rem;
+    }
+
+    /* ===== ROLE BADGES ===== */
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .role-all {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    .role-specific {
+        background: var(--gray-100);
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    /* ===== DEPARTMENT BADGES ===== */
+    .dept-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .dept-all {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    .dept-specific {
+        background: var(--gray-100);
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .status-mandatory {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .status-optional {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .status-active {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .status-inactive {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    /* ===== ACTION BUTTONS ===== */
+    .action-buttons {
+        display: flex;
+        gap: 0.25rem;
+        justify-content: flex-end;
+    }
+
+    .action-btn {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.8rem;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-edit {
+        background: var(--gray-100);
+        color: var(--warning);
+    }
+
+        .btn-edit:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-delete {
+        background: var(--gray-100);
+        color: var(--danger);
+    }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state-mini {
+        text-align: center;
+        padding: 2rem;
+        color: var(--gray-500);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+        .empty-state-mini i {
+            font-size: 2rem;
+            color: var(--gray-300);
+            margin-bottom: 0.25rem;
+        }
+
+        .empty-state-mini span {
+            font-size: 0.95rem;
+        }
+
+    /* ===== MODAL STYLES ===== */
+    .modal-content {
+        border-radius: 1rem;
+        border: 1px solid var(--gray-200);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .modal-header {
+        background: var(--gray-50);
+        border-bottom: 1px solid var(--gray-200);
+        padding: 1.25rem 1.5rem;
+        border-radius: 1rem 1rem 0 0;
+    }
+
+        .modal-header .modal-title {
+            font-weight: 700;
+            color: var(--gray-800);
+            font-size: 1.1rem;
+        }
+
+            .modal-header .modal-title i {
+                color: var(--primary);
+            }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        background: var(--gray-50);
+        border-top: 1px solid var(--gray-200);
+        padding: 1rem 1.5rem;
+        border-radius: 0 0 1rem 1rem;
+        gap: 0.5rem;
+    }
+
+        .modal-footer .btn-modal-cancel {
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.5rem;
+            background: white;
+            color: var(--gray-600);
+            border: 1.5px solid var(--gray-200);
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+            .modal-footer .btn-modal-cancel:hover {
+                background: var(--gray-50);
+                border-color: var(--gray-300);
+            }
+
+        .modal-footer .btn-modal-save {
+            padding: 0.5rem 1.25rem;
+            border-radius: 0.5rem;
+            background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+            color: white;
+            border: none;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+            .modal-footer .btn-modal-save:hover {
+                transform: translateY(-1px);
+                box-shadow: var(--shadow-md);
+            }
+
+    .modal-body .form-label {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        margin-bottom: 0.25rem;
+    }
+
+    .modal-body .form-control,
+    .modal-body .form-select {
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .modal-body .form-control:focus,
+        .modal-body .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+    .modal-body .form-check-input {
+        accent-color: var(--primary);
+        width: 1.1rem;
+        height: 1.1rem;
+        margin-top: 0.1rem;
+    }
+
+    .modal-body .form-check-label {
+        font-size: 0.875rem;
+        color: var(--gray-700);
+        cursor: pointer;
+    }
+
+    .modal-body .text-danger {
+        color: var(--danger) !important;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.6rem 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.8rem;
+        }
+
+        .action-btn {
+            width: 30px;
+            height: 30px;
+            font-size: 0.7rem;
+        }
+
+        .modal-dialog {
+            margin: 1rem;
+        }
+
+        .role-badge,
+        .dept-badge,
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.4rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .role-badge,
+        .dept-badge,
+        .status-badge {
+            font-size: 0.55rem;
+            padding: 0.05rem 0.3rem;
+        }
+
+        .modal-body {
+            padding: 1rem;
+        }
+
+        .empty-state-mini i {
+            font-size: 1.5rem;
+        }
+
+        .empty-state-mini span {
+            font-size: 0.85rem;
+        }
+    }
+</style>
