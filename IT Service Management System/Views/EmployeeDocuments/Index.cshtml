@@ -6,8 +6,9 @@
 }
 
 <div class="page-container">
+    <!-- PAGE HEADER -->
     <div class="page-header">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="page-title">
                     <i class="fas fa-folder-tree me-2" style="color: var(--primary);"></i>
@@ -16,52 +17,188 @@
                 <p class="text-muted mt-2">Open an employee's digital personnel file to manage their documents</p>
             </div>
             <div class="d-flex gap-2 flex-wrap">
-                <a asp-action="Dashboard" class="btn btn-outline-primary"><i class="fas fa-chart-pie"></i> Dashboard</a>
-                <a asp-action="Notifications" class="btn btn-outline-primary"><i class="fas fa-bell"></i> Notifications</a>
-                <a asp-action="Audit" class="btn btn-outline-primary"><i class="fas fa-clipboard-list"></i> Audit</a>
-                <a asp-action="Search" class="btn btn-primary"><i class="fas fa-magnifying-glass"></i> Search</a>
+                <a asp-action="Dashboard" class="btn-create-ticket-sm" style="background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-200);">
+                    <i class="fas fa-chart-pie"></i> Dashboard
+                </a>
+                <a asp-action="Notifications" class="btn-create-ticket-sm" style="background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-200);">
+                    <i class="fas fa-bell"></i> Notifications
+                </a>
+                <a asp-action="Audit" class="btn-create-ticket-sm" style="background: var(--gray-100); color: var(--gray-700); border: 1px solid var(--gray-200);">
+                    <i class="fas fa-clipboard-list"></i> Audit
+                </a>
+                <a asp-action="Search" class="btn-create-ticket">
+                    <i class="fas fa-search"></i> Search
+                </a>
             </div>
         </div>
     </div>
 
+    <!-- STATISTICS CARDS -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--primary-light), var(--primary));">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count()</h3>
+                <p>Total Employees</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@counts.Values.Sum()</h3>
+                <p>Total Documents</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(Model.Count(u => u.IsActive))</h3>
+                <p>Active Employees</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(counts.Count(kvp => kvp.Value > 0))</h3>
+                <p>With Documents</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTERS CARD -->
+    <div class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Search Employees</span>
+        </div>
+        <form method="get" asp-action="Index" class="filters-body">
+            <div class="filter-group" style="flex: 2;">
+                <label>Search</label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" value="@q" placeholder="Search by name or email..." class="search-input">
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Department</label>
+                <select name="departmentId" class="filter-select">
+                    <option value="">All Departments</option>
+                    @if (ViewBag.Departments != null)
+                    {
+                        foreach (var dept in (SelectList)ViewBag.Departments)
+                        {
+                            <option value="@dept.Value">@dept.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Has Documents</label>
+                <select name="hasDocs" class="filter-select">
+                    <option value="">All Employees</option>
+                    <option value="true">With Documents</option>
+                    <option value="false">Without Documents</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary,#3b82f6);color:#fff;border:none;">
+                <i class="fas fa-search"></i>
+                Search
+            </button>
+            <a asp-action="Index" class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+                <i class="fas fa-undo-alt"></i>
+                Clear
+            </a>
+        </form>
+    </div>
+
+    <!-- MAIN DATA CARD -->
     <div class="data-card">
         <div class="card-header-custom">
-            <div><i class="fas fa-users me-2"></i><span>Employees</span></div>
-            <form method="get" asp-action="Index" class="d-flex align-items-center gap-2 m-0">
-                <div style="position:relative;">
-                    <i class="fas fa-search" style="position:absolute;left:0.75rem;top:50%;transform:translateY(-50%);color:var(--gray-400);"></i>
-                    <input type="text" name="q" value="@q" placeholder="Search name or email..." class="form-control" style="padding-left:2.25rem;min-width:240px;" />
-                </div>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i></button>
-                @if (!string.IsNullOrEmpty(q)) { <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-times"></i></a> }
-            </form>
+            <div>
+                <i class="fas fa-users me-2"></i>
+                <span>Employee Directory</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span id="visibleCount">@Model.Count()</span> employees shown
+            </div>
         </div>
+
         <div class="table-responsive">
             @if (Model.Any())
             {
-                <table class="data-table">
-                    <thead><tr>
-                        <th><i class="fas fa-user me-1"></i> Employee</th><th><i class="fas fa-envelope me-1"></i> Email</th>
-                        <th><i class="fas fa-building me-1"></i> Department</th><th><i class="fas fa-user-tag me-1"></i> Role</th>
-                        <th style="text-align:center;"><i class="fas fa-file me-1"></i> Documents</th><th style="text-align:right;"><i class="fas fa-cog me-1"></i> Action</th>
-                    </tr></thead>
+                <table class="data-table tickets-table" id="employeesTable">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user me-1"></i> Employee</th>
+                            <th><i class="fas fa-envelope me-1"></i> Email</th>
+                            <th><i class="fas fa-building me-1"></i> Department</th>
+                            <th><i class="fas fa-user-tag me-1"></i> Role</th>
+                            <th style="text-align:center;"><i class="fas fa-file me-1"></i> Documents</th>
+                            <th style="text-align:right;"><i class="fas fa-folder-open me-1"></i> Action</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         @foreach (var u in Model)
                         {
                             var n = counts.TryGetValue(u.Id, out var c) ? c : 0;
-                            <tr>
-                                <td class="creator-cell">
-                                    <div class="list-avatar-cell">
-                                        <div class="list-avatar">@((u.FirstName.Substring(0,1) + (u.LastName.Length>0 ? u.LastName.Substring(0,1) : "")))</div>
-                                        <strong>@u.FullName</strong>
+                            <tr data-name="@u.FullName" data-email="@u.Email" data-department="@(u.Department?.Name ?? "")">
+                                <td>
+                                    <div class="employee-info">
+                                        <div class="employee-avatar">
+                                            @((u.FirstName.Substring(0, 1) + (u.LastName.Length > 0 ? u.LastName.Substring(0, 1) : "")))
+                                        </div>
+                                        <div>
+                                            <span class="employee-name">@u.FullName</span>
+                                            @if (!u.IsActive)
+                                            {
+                                                <span class="inactive-badge">Inactive</span>
+                                            }
+                                        </div>
                                     </div>
                                 </td>
-                                <td>@u.Email</td>
-                                <td>@(u.Department?.Name ?? "—")</td>
-                                <td>@u.Role</td>
-                                <td style="text-align:center;"><span class="status-badge @(n>0 ? "badge-blue" : "badge-gray")"><i class="fas fa-file"></i> @n</span></td>
+                                <td class="email-cell">@u.Email</td>
+                                <td>
+                                    <span class="department-chip">@(u.Department?.Name ?? "—")</span>
+                                </td>
+                                <td>
+                                    @{
+                                        var role = u.Role.ToString();
+                                        if (role == "Admin")
+                                        {
+                                            <span class="role-badge role-admin">Admin</span>
+                                        }
+                                        else if (role == "Manager")
+                                        {
+                                            <span class="role-badge role-manager">Manager</span>
+                                        }
+                                        else if (role == "Staff")
+                                        {
+                                            <span class="role-badge role-staff">Staff</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="role-badge role-user">User</span>
+                                        }
+                                    }
+                                </td>
+                                <td style="text-align:center;">
+                                    <span class="doc-count-badge @(n > 0 ? "has-docs" : "")">
+                                        <i class="fas fa-file"></i> @n
+                                    </span>
+                                </td>
                                 <td style="text-align:right;">
-                                    <a asp-action="File" asp-route-id="@u.Id" class="btn-create btn-create-sm"><i class="fas fa-folder-open"></i> Open File</a>
+                                    <a asp-action="File" asp-route-id="@u.Id" class="action-btn btn-open-file">
+                                        <i class="fas fa-folder-open"></i>
+                                    </a>
                                 </td>
                             </tr>
                         }
@@ -70,8 +207,644 @@
             }
             else
             {
-                <div class="empty-state"><i class="fas fa-user-slash"></i><h3>No employees found</h3><p>Try a different search.</p></div>
+                <div class="empty-state">
+                    <i class="fas fa-user-slash"></i>
+                    <h3>No employees found</h3>
+                    <p>@(string.IsNullOrEmpty(q) ? "Get started by adding your first employee." : $"No employees matching \"{q}\" were found.")</p>
+                    <a asp-action="Create" class="btn-create-ticket-sm">
+                        <i class="fas fa-user-plus"></i> Add Employee
+                    </a>
+                </div>
             }
         </div>
     </div>
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BUTTONS (from Dashboard) ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-create-ticket-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-create-ticket-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== STATISTICS CARDS ===== */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* ===== FILTERS CARD ===== */
+    .filters-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .filters-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filters-body {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 180px;
+    }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        cursor: pointer;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .search-wrapper {
+        position: relative;
+    }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+        }
+
+    .search-input {
+        width: 100%;
+        padding: 0.625rem 0.75rem 0.625rem 2rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .btn-clear-filters {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-clear-filters:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .data-table.tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .data-table.tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .data-table.tickets-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table.tickets-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .data-table.tickets-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .data-table.tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+    /* ===== EMPLOYEE INFO ===== */
+    .employee-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .employee-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+        font-weight: 700;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+        flex-shrink: 0;
+    }
+
+    .employee-name {
+        font-weight: 500;
+        color: var(--gray-800);
+    }
+
+    .inactive-badge {
+        display: inline-block;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray-500);
+        background: var(--gray-100);
+        padding: 0.1rem 0.4rem;
+        border-radius: 1rem;
+        margin-left: 0.4rem;
+    }
+
+    .email-cell {
+        color: var(--gray-600);
+    }
+
+    /* ===== DEPARTMENT CHIP ===== */
+    .department-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: #eff6ff;
+        color: var(--primary-dark);
+        border: 1px solid #cce4ff;
+        padding: 0.2rem 0.6rem;
+        border-radius: 2rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+
+    /* ===== ROLE BADGES ===== */
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .role-admin {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .role-manager {
+        background: #fff5e6;
+        color: var(--warning);
+        border: 1px solid #ffe0b3;
+    }
+
+    .role-staff {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    .role-user {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    /* ===== DOCUMENT COUNT BADGE ===== */
+    .doc-count-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 0.15rem 0.6rem;
+        border-radius: 1rem;
+        background: var(--gray-100);
+        color: var(--gray-500);
+    }
+
+        .doc-count-badge.has-docs {
+            background: #dbeafe;
+            color: var(--primary-dark);
+            border: 1px solid #bfdbfe;
+        }
+
+        .doc-count-badge i {
+            font-size: 0.65rem;
+        }
+
+    /* ===== ACTION BUTTONS ===== */
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-open-file {
+        background: var(--gray-100);
+        color: var(--primary);
+    }
+
+        .btn-open-file:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .stats-cards {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .filters-body {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-group {
+            min-width: 100%;
+        }
+
+        .data-table.tickets-table th,
+        .data-table.tickets-table td {
+            padding: 0.75rem 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .page-header .d-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+
+            .page-header .d-flex .d-flex {
+                width: 100%;
+                flex-wrap: wrap;
+            }
+    }
+
+    @@media (max-width: 576px) {
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            font-size: 0.75rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Client-side filtering
+        const searchInput = document.querySelector('input[name="q"]');
+        const departmentFilter = document.querySelector('select[name="departmentId"]');
+        const hasDocsFilter = document.querySelector('select[name="hasDocs"]');
+        const table = document.getElementById('employeesTable');
+        const rows = table ? table.querySelectorAll('tbody tr') : [];
+        const visibleCountSpan = document.getElementById('visibleCount');
+
+        function filterEmployees() {
+            const searchValue = searchInput ? searchInput.value.toLowerCase() : '';
+            const departmentValue = departmentFilter ? departmentFilter.value : '';
+            const hasDocsValue = hasDocsFilter ? hasDocsFilter.value : '';
+
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name')?.toLowerCase() || '';
+                const email = row.getAttribute('data-email')?.toLowerCase() || '';
+                const department = row.getAttribute('data-department') || '';
+
+                // Get document count from the badge
+                const docBadge = row.querySelector('.doc-count-badge');
+                const docCount = docBadge ? parseInt(docBadge.textContent.trim()) : 0;
+
+                let show = true;
+
+                if (searchValue && !name.includes(searchValue) && !email.includes(searchValue)) {
+                    show = false;
+                }
+
+                if (departmentValue && department !== departmentValue) {
+                    show = false;
+                }
+
+                if (hasDocsValue === 'true' && docCount === 0) {
+                    show = false;
+                }
+                if (hasDocsValue === 'false' && docCount > 0) {
+                    show = false;
+                }
+
+                if (show) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (visibleCountSpan) {
+                visibleCountSpan.textContent = visibleCount;
+            }
+
+            // Show no results message
+            const emptyState = document.querySelector('.empty-state:not(.original)');
+            const tbody = table ? table.querySelector('tbody') : null;
+
+            if (visibleCount === 0 && rows.length > 0) {
+                if (!emptyState && tbody) {
+                    const noResultsDiv = document.createElement('div');
+                    noResultsDiv.className = 'empty-state';
+                    noResultsDiv.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <h3>No matching employees found</h3>
+                        <p>Try adjusting your filters or search terms</p>
+                    `;
+                    tbody.parentNode.appendChild(noResultsDiv);
+                    if (table) table.style.display = 'none';
+                }
+            } else {
+                if (emptyState) emptyState.remove();
+                if (table) table.style.display = '';
+            }
+        }
+
+        // Attach event listeners
+        if (searchInput) {
+            searchInput.addEventListener('keyup', filterEmployees);
+        }
+        if (departmentFilter) {
+            departmentFilter.addEventListener('change', filterEmployees);
+        }
+        if (hasDocsFilter) {
+            hasDocsFilter.addEventListener('change', filterEmployees);
+        }
+
+        // Initialize
+        filterEmployees();
+    });
+</script>

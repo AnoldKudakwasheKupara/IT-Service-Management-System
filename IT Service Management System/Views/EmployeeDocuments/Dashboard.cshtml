@@ -6,116 +6,853 @@
 }
 
 <div class="page-container">
+    <!-- PAGE HEADER -->
     <div class="page-header">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
             <div>
-                <h1 class="page-title"><i class="fas fa-chart-pie me-2" style="color:var(--primary);"></i>Employee Files Dashboard</h1>
-                <p class="text-muted mt-2">Document analytics &amp; compliance · @Model.GeneratedAt.ToString("dddd, MMM dd yyyy 'at' h:mm tt")</p>
+                <h1 class="page-title">
+                    <i class="fas fa-chart-pie me-2" style="color: var(--primary);"></i>
+                    Employee Files Dashboard
+                </h1>
+                <p class="text-muted mt-2">
+                    <i class="fas fa-calendar-alt me-1"></i>
+                    Document analytics &amp; compliance · @Model.GeneratedAt.ToString("dddd, MMM dd yyyy 'at' h:mm tt")
+                </p>
             </div>
             <div class="d-flex gap-2 flex-wrap">
-                <a class="btn btn-outline-primary" asp-action="Compliance"><i class="fas fa-clipboard-check"></i> Compliance</a>
-                <a class="btn btn-outline-primary" asp-action="Notifications"><i class="fas fa-bell"></i> Notifications</a>
-                <a class="btn-create" asp-action="Index"><i class="fas fa-folder-tree me-1"></i> Files</a>
+                <a asp-action="Compliance" class="btn-outline-action">
+                    <i class="fas fa-clipboard-check"></i>
+                    Compliance
+                </a>
+                <a asp-action="Notifications" class="btn-outline-action">
+                    <i class="fas fa-bell"></i>
+                    Notifications
+                    @if (Model.UnreadNotifications > 0)
+                    {
+                        <span class="notification-badge">@Model.UnreadNotifications</span>
+                    }
+                </a>
+                <a asp-action="Index" class="btn-create-ticket">
+                    <i class="fas fa-folder-tree me-1"></i>
+                    Files
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- KPI stat cards -->
+    <!-- KPI STAT CARDS -->
     <div class="stats-cards mb-4">
-        <div class="stat-card"><div class="stat-icon"><i class="fas fa-file-lines"></i></div><div class="stat-info"><h3>@Model.TotalDocuments</h3><p>Total Documents</p></div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#f5b042,#e6a017);"><i class="fas fa-hourglass-half"></i></div><div class="stat-info"><h3>@Model.ExpiringSoon</h3><p>Expiring ≤30 days</p></div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#e53e3e,#c53030);"><i class="fas fa-triangle-exclamation"></i></div><div class="stat-info"><h3>@Model.Expired</h3><p>Expired</p></div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#f5b042,#e6a017);"><i class="fas fa-user-check"></i></div><div class="stat-info"><h3>@Model.PendingApproval</h3><p>Pending Approval</p></div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#64748b,#475569);"><i class="fas fa-box-archive"></i></div><div class="stat-info"><h3>@Model.Archived</h3><p>Archived</p></div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);"><i class="fas fa-code-branch"></i></div><div class="stat-info"><h3>@Model.TotalVersions</h3><p>Versions</p></div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#2c9e6e,#227a55);"><i class="fas fa-hard-drive"></i></div><div class="stat-info"><h3>@Storage(Model.StorageBytes)</h3><p>Storage Used</p></div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);"><i class="fas fa-bell"></i></div><div class="stat-info"><h3>@Model.UnreadNotifications</h3><p>Unread Alerts</p></div></div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-file-lines"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.TotalDocuments</h3>
+                <p>Total Documents</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.ExpiringSoon</h3>
+                <p>Expiring ≤30 days</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #e53e3e, #c53030);">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Expired</h3>
+                <p>Expired</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.PendingApproval</h3>
+                <p>Pending Approval</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #64748b, #475569);">
+                <i class="fas fa-box-archive"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Archived</h3>
+                <p>Archived</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                <i class="fas fa-code-branch"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.TotalVersions</h3>
+                <p>Versions</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-hard-drive"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Storage(Model.StorageBytes)</h3>
+                <p>Storage Used</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <i class="fas fa-bell"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.UnreadNotifications</h3>
+                <p>Unread Alerts</p>
+            </div>
+        </div>
     </div>
 
-    <!-- Distribution bars -->
+    <!-- DISTRIBUTION BARS -->
     <div class="dash-grid mb-4">
         <div class="data-card">
-            <div class="card-header-custom"><div><i class="fas fa-folder me-2"></i><span>Documents by Folder</span></div></div>
-            <div style="padding:1.25rem;">
+            <div class="card-header-custom">
+                <div>
+                    <i class="fas fa-folder me-2"></i>
+                    <span>Documents by Folder</span>
+                </div>
+                <div class="ticket-count">
+                    <i class="fas fa-chart-simple"></i>
+                    <span>@Model.ByFolder.Count()</span> folders
+                </div>
+            </div>
+            <div class="card-body-custom">
                 @if (Model.ByFolder.Any())
                 {
                     var m = Max(Model.ByFolder);
                     <div class="bars">
-                        @foreach (var s in Model.ByFolder)
+                        @foreach (var s in Model.ByFolder.OrderByDescending(x => x.Count))
                         {
-                            <div class="bar-row"><div class="bar-label" title="@s.Name">@s.Name</div><div class="bar-track"><div class="bar-fill" style="width:@(s.Count * 100 / m)%"></div></div><div class="bar-value">@s.Count</div></div>
+                            <div class="bar-row">
+                                <div class="bar-label" title="@s.Name">@s.Name</div>
+                                <div class="bar-track">
+                                    <div class="bar-fill" style="width: @(s.Count * 100 / m)%"></div>
+                                </div>
+                                <div class="bar-value">@s.Count</div>
+                            </div>
                         }
                     </div>
                 }
-                else { <div class="text-muted text-center p-3">No documents yet</div> }
+                else
+                {
+                    <div class="empty-state-sm">
+                        <i class="fas fa-folder-open"></i>
+                        <p>No documents yet</p>
+                    </div>
+                }
             </div>
         </div>
+
         <div class="data-card">
-            <div class="card-header-custom"><div><i class="fas fa-tags me-2"></i><span>Documents by Category</span></div></div>
-            <div style="padding:1.25rem;">
+            <div class="card-header-custom">
+                <div>
+                    <i class="fas fa-tags me-2"></i>
+                    <span>Documents by Category</span>
+                </div>
+                <div class="ticket-count">
+                    <i class="fas fa-chart-simple"></i>
+                    <span>@Model.ByCategory.Count()</span> categories
+                </div>
+            </div>
+            <div class="card-body-custom">
                 @if (Model.ByCategory.Any())
                 {
                     var m = Max(Model.ByCategory);
                     <div class="bars">
-                        @foreach (var s in Model.ByCategory)
+                        @foreach (var s in Model.ByCategory.OrderByDescending(x => x.Count))
                         {
-                            <div class="bar-row"><div class="bar-label" title="@s.Name">@s.Name</div><div class="bar-track"><div class="bar-fill green" style="width:@(s.Count * 100 / m)%"></div></div><div class="bar-value">@s.Count</div></div>
+                            <div class="bar-row">
+                                <div class="bar-label" title="@s.Name">@s.Name</div>
+                                <div class="bar-track">
+                                    <div class="bar-fill green" style="width: @(s.Count * 100 / m)%"></div>
+                                </div>
+                                <div class="bar-value">@s.Count</div>
+                            </div>
                         }
                     </div>
                 }
-                else { <div class="text-muted text-center p-3">No documents yet</div> }
+                else
+                {
+                    <div class="empty-state-sm">
+                        <i class="fas fa-tags"></i>
+                        <p>No categories assigned</p>
+                    </div>
+                }
             </div>
         </div>
     </div>
 
-    <!-- Recent + Most viewed -->
+    <!-- RECENTLY UPLOADED + MOST VIEWED -->
     <div class="dash-grid">
         <div class="data-card">
-            <div class="card-header-custom"><div><i class="fas fa-clock-rotate-left me-2"></i><span>Recently Uploaded</span></div></div>
+            <div class="card-header-custom">
+                <div>
+                    <i class="fas fa-clock-rotate-left me-2"></i>
+                    <span>Recently Uploaded</span>
+                </div>
+                <div class="ticket-count">
+                    <i class="fas fa-file"></i>
+                    <span>@Model.RecentlyUploaded.Count()</span> recent
+                </div>
+            </div>
             <div class="table-responsive">
                 @if (Model.RecentlyUploaded.Any())
                 {
-                    <table class="data-table">
-                        <thead><tr><th><i class="fas fa-file me-1"></i> Document</th><th><i class="fas fa-user me-1"></i> Employee</th><th><i class="fas fa-tag me-1"></i> Category</th><th><i class="fas fa-calendar me-1"></i> When</th></tr></thead>
+                    <table class="data-table tickets-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-file me-1"></i> Document</th>
+                                <th><i class="fas fa-user me-1"></i> Employee</th>
+                                <th><i class="fas fa-tag me-1"></i> Category</th>
+                                <th><i class="fas fa-calendar me-1"></i> When</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             @foreach (var d in Model.RecentlyUploaded)
                             {
-                                <tr><td><a asp-action="Details" asp-route-id="@d.Id" style="text-decoration:none;color:var(--gray-800);font-weight:600;">@d.Title</a></td><td>@d.Employee?.FullName</td><td>@d.Category?.Name</td><td class="date-cell">@d.CreatedAt.ToString("MMM dd")</td></tr>
+                                <tr>
+                                    <td>
+                                        <a asp-action="Details" asp-route-id="@d.Id" class="doc-link">
+                                            <i class="fas fa-file-alt file-icon-sm"></i>
+                                            @d.Title
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <div class="employee-chip">
+                                            <div class="avatar-xs">@((d.Employee?.FirstName?.Substring(0, 1) ?? "U") + (d.Employee?.LastName?.Substring(0, 1) ?? "S"))</div>
+                                            <span>@d.Employee?.FullName</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(d.Category?.Name))
+                                        {
+                                            <span class="category-badge">@d.Category.Name</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="category-badge none">—</span>
+                                        }
+                                    </td>
+                                    <td class="date-cell">
+                                        <i class="far fa-calendar-alt"></i>
+                                        @d.CreatedAt.ToString("MMM dd, yyyy")
+                                    </td>
+                                </tr>
                             }
                         </tbody>
                     </table>
                 }
-                else { <div class="empty-state"><i class="fas fa-clock-rotate-left"></i><h3>Nothing yet</h3><p>No documents have been uploaded.</p></div> }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="fas fa-clock-rotate-left"></i>
+                        <h3>Nothing yet</h3>
+                        <p>No documents have been uploaded.</p>
+                    </div>
+                }
             </div>
         </div>
+
         <div class="data-card">
-            <div class="card-header-custom"><div><i class="fas fa-eye me-2"></i><span>Most Viewed</span></div></div>
+            <div class="card-header-custom">
+                <div>
+                    <i class="fas fa-eye me-2"></i>
+                    <span>Most Viewed</span>
+                </div>
+                <div class="ticket-count">
+                    <i class="fas fa-eye"></i>
+                    <span>@Model.MostViewed.Count()</span> documents
+                </div>
+            </div>
             <div class="table-responsive">
                 @if (Model.MostViewed.Any())
                 {
-                    <table class="data-table">
-                        <thead><tr><th><i class="fas fa-file me-1"></i> Document</th><th><i class="fas fa-user me-1"></i> Employee</th><th style="text-align:right;"><i class="fas fa-eye me-1"></i> Views</th></tr></thead>
+                    <table class="data-table tickets-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-file me-1"></i> Document</th>
+                                <th><i class="fas fa-user me-1"></i> Employee</th>
+                                <th style="text-align:right;"><i class="fas fa-eye me-1"></i> Views</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             @foreach (var d in Model.MostViewed)
                             {
-                                <tr><td><a asp-action="Details" asp-route-id="@d.Id" style="text-decoration:none;color:var(--gray-800);font-weight:600;">@d.Title</a></td><td>@d.Employee?.FullName</td><td style="text-align:right;"><span class="status-badge badge-blue">@d.ViewCount</span></td></tr>
+                                <tr>
+                                    <td>
+                                        <a asp-action="Details" asp-route-id="@d.Id" class="doc-link">
+                                            <i class="fas fa-file-alt file-icon-sm"></i>
+                                            @d.Title
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <div class="employee-chip">
+                                            <div class="avatar-xs">@((d.Employee?.FirstName?.Substring(0, 1) ?? "U") + (d.Employee?.LastName?.Substring(0, 1) ?? "S"))</div>
+                                            <span>@d.Employee?.FullName</span>
+                                        </div>
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <span class="view-count-badge">
+                                            <i class="fas fa-eye"></i>
+                                            @d.ViewCount
+                                        </span>
+                                    </td>
+                                </tr>
                             }
                         </tbody>
                     </table>
                 }
-                else { <div class="empty-state"><i class="fas fa-eye"></i><h3>No views yet</h3><p>Document views will show up here.</p></div> }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="fas fa-eye"></i>
+                        <h3>No views yet</h3>
+                        <p>Document views will show up here.</p>
+                    </div>
+                }
             </div>
         </div>
     </div>
 </div>
 
 <style>
-    .dash-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:1.5rem; }
-    .bars { display:flex; flex-direction:column; gap:0.6rem; }
-    .bar-row { display:grid; grid-template-columns:130px 1fr 36px; align-items:center; gap:0.75rem; }
-    .bar-label { font-size:0.8rem; color:var(--gray-600); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .bar-track { height:9px; background:var(--gray-100); border-radius:1rem; overflow:hidden; }
-    .bar-fill { height:100%; border-radius:1rem; background:linear-gradient(90deg,var(--primary),var(--primary-light)); }
-    .bar-fill.green { background:linear-gradient(90deg,#2c9e6e,#48bb78); }
-    .bar-value { font-size:0.8rem; font-weight:700; color:var(--gray-700); text-align:right; }
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .text-muted {
+        color: var(--gray-500) !important;
+    }
+
+    /* ===== STATISTICS CARDS ===== */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        font-size: 0.875rem;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-outline-action {
+        background: white;
+        color: var(--gray-700);
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        border: 1.5px solid var(--gray-200);
+        font-size: 0.875rem;
+        position: relative;
+    }
+
+        .btn-outline-action:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            color: var(--gray-800);
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+    .notification-badge {
+        background: var(--danger);
+        color: white;
+        font-size: 0.6rem;
+        font-weight: 700;
+        padding: 0.1rem 0.4rem;
+        border-radius: 1rem;
+        margin-left: 0.1rem;
+    }
+
+    /* ===== DASHBOARD GRID ===== */
+    .dash-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+        gap: 1.5rem;
+    }
+
+    /* ===== CARDS ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .card-body-custom {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .ticket-count {
+        font-size: 0.75rem;
+        font-weight: normal;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+        .ticket-count i {
+            font-size: 0.65rem;
+        }
+
+    /* ===== BARS ===== */
+    .bars {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .bar-row {
+        display: grid;
+        grid-template-columns: 130px 1fr 36px;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .bar-label {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 500;
+    }
+
+    .bar-track {
+        height: 9px;
+        background: var(--gray-100);
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        height: 100%;
+        border-radius: 1rem;
+        background: linear-gradient(90deg, var(--primary), var(--primary-light));
+        transition: width 0.8s ease;
+    }
+
+        .bar-fill.green {
+            background: linear-gradient(90deg, #2c9e6e, #48bb78);
+        }
+
+    .bar-value {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--gray-700);
+        text-align: right;
+    }
+
+    /* ===== TABLE ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .data-table.tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .data-table.tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .data-table.tickets-table th {
+            padding: 0.75rem 1.25rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table.tickets-table td {
+            padding: 0.75rem 1.25rem;
+            border-bottom: 1px solid var(--gray-100);
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+
+        .data-table.tickets-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .data-table.tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+    /* ===== DOCUMENT LINK ===== */
+    .doc-link {
+        color: var(--gray-800);
+        text-decoration: none;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: color 0.2s;
+    }
+
+        .doc-link:hover {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+    .file-icon-sm {
+        color: var(--primary);
+        font-size: 0.85rem;
+    }
+
+    /* ===== EMPLOYEE CHIP ===== */
+    .employee-chip {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .avatar-xs {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+        font-weight: 600;
+        font-size: 0.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+        flex-shrink: 0;
+    }
+
+    /* ===== CATEGORY BADGE ===== */
+    .category-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: #eff6ff;
+        color: var(--primary-dark);
+        border: 1px solid #cce4ff;
+        padding: 0.15rem 0.55rem;
+        border-radius: 2rem;
+        font-size: 0.68rem;
+        font-weight: 600;
+    }
+
+        .category-badge.none {
+            background: var(--gray-100);
+            color: var(--gray-400);
+            border-color: var(--gray-200);
+        }
+
+    /* ===== DATE CELL ===== */
+    .date-cell {
+        color: var(--gray-500);
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+        .date-cell i {
+            margin-right: 0.3rem;
+            color: var(--gray-400);
+        }
+
+    /* ===== VIEW COUNT BADGE ===== */
+    .view-count-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: var(--gray-100);
+        color: var(--gray-600);
+        padding: 0.15rem 0.6rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+        .view-count-badge i {
+            font-size: 0.65rem;
+            color: var(--primary);
+        }
+
+    /* ===== EMPTY STATES ===== */
+    .empty-state {
+        text-align: center;
+        padding: 2.5rem 1.5rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--gray-300);
+            margin-bottom: 0.75rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+    .empty-state-sm {
+        text-align: center;
+        padding: 1.5rem;
+        color: var(--gray-400);
+        font-size: 0.875rem;
+    }
+
+        .empty-state-sm i {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--gray-300);
+        }
+
+        .empty-state-sm p {
+            margin: 0;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 1200px) {
+        .stats-cards {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+    }
+
+    @@media (max-width: 992px) {
+        .dash-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .stats-cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .bar-row {
+            grid-template-columns: 100px 1fr 32px;
+            gap: 0.5rem;
+        }
+
+        .bar-label {
+            font-size: 0.7rem;
+        }
+
+        .data-table.tickets-table th,
+        .data-table.tickets-table td {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-create-ticket,
+        .btn-outline-action {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header .d-flex {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+            .page-header .d-flex .d-flex {
+                width: 100%;
+                justify-content: stretch;
+            }
+
+        .btn-create-ticket,
+        .btn-outline-action {
+            flex: 1;
+            justify-content: center;
+        }
+
+        .bar-row {
+            grid-template-columns: 80px 1fr 28px;
+            gap: 0.4rem;
+        }
+
+        .bar-label {
+            font-size: 0.65rem;
+        }
+
+        .bar-value {
+            font-size: 0.7rem;
+        }
+    }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate bar fills on load
+        const barFills = document.querySelectorAll('.bar-fill');
+        barFills.forEach(function(bar, index) {
+            const targetWidth = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(function() {
+                bar.style.width = targetWidth;
+            }, 100 + (index * 50));
+        });
+
+        // Auto-refresh notification badge animation
+        const badge = document.querySelector('.notification-badge');
+        if (badge) {
+            setInterval(function() {
+                badge.style.transform = 'scale(1.2)';
+                setTimeout(function() {
+                    badge.style.transform = 'scale(1)';
+                }, 200);
+            }, 5000);
+        }
+    });
+</script>

@@ -5,89 +5,1032 @@
     var paging = ViewBag.Paging as IT_Service_Management_System.Helpers.PagingInfo;
     var emps = ViewBag.Employees as Dictionary<int, string> ?? new();
     int unread = ViewBag.UnreadCount ?? 0;
-    (string icon, string cls) Meta(DocumentNotificationType t) => t switch {
-        DocumentNotificationType.DocumentExpired => ("fa-triangle-exclamation", "red"),
-        DocumentNotificationType.DocumentExpiring => ("fa-hourglass-half", "amber"),
-        DocumentNotificationType.MissingDocument => ("fa-folder-minus", "slate"),
-        DocumentNotificationType.ApprovalNeeded => ("fa-user-check", "amber"),
-        DocumentNotificationType.DocumentRejected => ("fa-ban", "red"),
-        DocumentNotificationType.DocumentApproved => ("fa-check", "green"),
-        _ => ("fa-bell", "slate") };
+    (string icon, string cls, string label) Meta(DocumentNotificationType t) => t switch
+    {
+        DocumentNotificationType.DocumentExpired => ("fa-triangle-exclamation", "danger", "Expired"),
+        DocumentNotificationType.DocumentExpiring => ("fa-hourglass-half", "warning", "Expiring"),
+        DocumentNotificationType.MissingDocument => ("fa-folder-minus", "info", "Missing"),
+        DocumentNotificationType.ApprovalNeeded => ("fa-user-check", "warning", "Approval Needed"),
+        DocumentNotificationType.DocumentRejected => ("fa-ban", "danger", "Rejected"),
+        DocumentNotificationType.DocumentApproved => ("fa-check", "success", "Approved"),
+        _ => ("fa-bell", "secondary", "Notification")
+    };
 }
 
 <div class="page-container">
+    <!-- PAGE HEADER -->
     <div class="page-header">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1 class="page-title"><i class="fas fa-bell me-2" style="color:var(--primary);"></i>Document Notifications</h1>
-                <p class="text-muted mt-2">Expiry alerts, retention and approvals @(unread > 0 ? $"· {unread} unread" : "")</p>
+                <h1 class="page-title">
+                    <i class="fas fa-bell me-2" style="color: var(--primary);"></i>
+                    Document Notifications
+                </h1>
+                <p class="text-muted mt-2">
+                    Expiry alerts, retention reminders, and approval requests
+                    @if (unread > 0)
+                    {
+                        <span class="unread-badge">
+                            <i class="fas fa-circle" style="color: var(--danger); font-size: 0.5rem;"></i>
+                            @unread unread
+                        </span>
+                    }
+                </p>
             </div>
             <div class="d-flex gap-2">
                 <form asp-action="RunMaintenance" method="post" class="m-0">
                     @Html.AntiForgeryToken()
-                    <button class="btn btn-outline-primary" title="Run expiry + retention scans now"><i class="fas fa-rotate"></i> Run Maintenance</button>
+                    <button class="btn-maintenance" title="Run expiry + retention scans now">
+                        <i class="fas fa-rotate"></i>
+                        Run Maintenance
+                    </button>
                 </form>
                 @if (unread > 0)
                 {
                     <form asp-action="MarkNotificationsRead" method="post" class="m-0">
                         @Html.AntiForgeryToken()
-                        <button class="btn btn-primary"><i class="fas fa-check-double"></i> Mark all read</button>
+                        <button class="btn-mark-read">
+                            <i class="fas fa-check-double"></i>
+                            Mark All Read
+                        </button>
                     </form>
                 }
-                <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+                <a asp-action="Index" class="btn-back" title="Back to Dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
             </div>
         </div>
     </div>
 
+    <!-- STATISTICS CARDS -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--primary-light), var(--primary));">
+                <i class="fas fa-bell"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(paging?.TotalCount ?? Model.Count())</h3>
+                <p>Total Notifications</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(Model.Count(n => n.IsRead))</h3>
+                <p>Read</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@unread</h3>
+                <p>Unread</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(Model.Any() ? Model.Max(n => n.CreatedAt).ToString("MMM dd") : "—")</h3>
+                <p>Latest Notification</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTERS CARD -->
+    <div class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Filter Notifications</span>
+        </div>
+        <form method="get" asp-action="Notifications" class="filters-body">
+            <div class="filter-group" style="flex: 1.5;">
+                <label>Search</label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" value="@ViewBag.Search" placeholder="Search by title, message, or employee..." class="search-input">
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Type</label>
+                <select name="type" class="filter-select">
+                    <option value="">All Types</option>
+                    <option value="DocumentExpired" selected="@(ViewBag.Type == "DocumentExpired")">Expired</option>
+                    <option value="DocumentExpiring" selected="@(ViewBag.Type == "DocumentExpiring")">Expiring</option>
+                    <option value="MissingDocument" selected="@(ViewBag.Type == "MissingDocument")">Missing</option>
+                    <option value="ApprovalNeeded" selected="@(ViewBag.Type == "ApprovalNeeded")">Approval Needed</option>
+                    <option value="DocumentRejected" selected="@(ViewBag.Type == "DocumentRejected")">Rejected</option>
+                    <option value="DocumentApproved" selected="@(ViewBag.Type == "DocumentApproved")">Approved</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status" class="filter-select">
+                    <option value="">All Status</option>
+                    <option value="unread" selected="@(ViewBag.Status == "unread")">Unread</option>
+                    <option value="read" selected="@(ViewBag.Status == "read")">Read</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary,#3b82f6);color:#fff;border:none;">
+                <i class="fas fa-search"></i>
+                Apply
+            </button>
+            <a asp-action="Notifications" class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+                <i class="fas fa-undo-alt"></i>
+                Clear
+            </a>
+        </form>
+    </div>
+
+    <!-- NOTIFICATIONS CARD -->
     <div class="data-card">
         <div class="card-header-custom">
-            <div><i class="fas fa-list me-2"></i><span>Notifications</span></div>
-            <span class="record-count">@(paging?.TotalCount ?? Model.Count())</span>
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Notifications</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span id="visibleCount">@(paging?.TotalCount ?? Model.Count())</span>
+                notification(s)
+            </div>
         </div>
+
         @if (Model.Any())
         {
-            <ul class="notif-list">
-                @foreach (var n in Model)
-                {
-                    var m = Meta(n.Type);
-                    <li class="notif @(n.IsRead ? "" : "unread")">
-                        <div class="notif-icon @m.cls"><i class="fas @m.icon"></i></div>
-                        <div class="notif-body">
-                            <div class="notif-title">
-                                @n.Title
-                                @if (n.EmployeeId != null && emps.TryGetValue(n.EmployeeId.Value, out var en)) { <span class="text-muted" style="font-weight:400;">· @en</span> }
+            <div class="notifications-container" id="notificationsContainer">
+                <ul class="notif-list">
+                    @foreach (var n in Model)
+                    {
+                        var m = Meta(n.Type);
+                        var isUnread = !n.IsRead;
+                        <li class="notif-item @(isUnread ? "unread" : "")"
+                            data-title="@n.Title"
+                            data-message="@n.Message"
+                            data-type="@n.Type"
+                            data-read="@n.IsRead">
+                            <div class="notif-indicator">
+                                @if (isUnread)
+                                {
+                                    <span class="unread-dot"></span>
+                                }
                             </div>
-                            <div class="notif-msg">@n.Message</div>
-                            <div class="notif-time">@n.CreatedAt.ToString("MMM dd, yyyy HH:mm")</div>
-                        </div>
-                        @if (n.EmployeeDocumentId != null)
-                        {
-                            <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@n.EmployeeDocumentId">Open</a>
-                        }
-                    </li>
-                }
-            </ul>
+                            <div class="notif-icon @m.cls">
+                                <i class="fas @m.icon"></i>
+                            </div>
+                            <div class="notif-body">
+                                <div class="notif-header">
+                                    <span class="notif-title">@n.Title</span>
+                                    <span class="notif-type-badge @m.cls">@m.label</span>
+                                </div>
+                                <div class="notif-message">@n.Message</div>
+                                <div class="notif-footer">
+                                    <span class="notif-time">
+                                        <i class="far fa-clock"></i>
+                                        @n.CreatedAt.ToString("MMM dd, yyyy HH:mm")
+                                    </span>
+                                    @if (n.EmployeeId != null && emps.TryGetValue(n.EmployeeId.Value, out var en))
+                                    {
+                                        <span class="notif-employee">
+                                            <i class="fas fa-user"></i>
+                                            @en
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="notif-actions">
+                                @if (n.EmployeeDocumentId != null)
+                                {
+                                    <a class="action-btn btn-view" asp-action="Details" asp-route-id="@n.EmployeeDocumentId" title="View Document">
+                                        <i class="fas fa-folder-open"></i>
+                                    </a>
+                                }
+                                @if (isUnread)
+                                {
+                                    <form asp-action="MarkNotificationRead" method="post" class="inline-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@n.Id" />
+                                        <button type="submit" class="action-btn btn-mark" title="Mark as Read">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <!-- Pagination -->
+            @if (paging != null)
+            {
+                <div class="pagination-wrapper">
+                    @await Html.PartialAsync("_Pagination", paging)
+                </div>
+            }
         }
         else
         {
             <div class="empty-state">
                 <i class="fas fa-bell-slash"></i>
-                <h3>All clear</h3>
+                <h3>All Clear</h3>
                 <p>There are no notifications right now.</p>
+                <a asp-action="RunMaintenance" class="btn-create-ticket-sm">
+                    <i class="fas fa-rotate"></i> Run Maintenance
+                </a>
             </div>
         }
-        @if (paging != null) { <partial name="_Pagination" model="paging" /> }
     </div>
 </div>
 
 <style>
-    .notif-list { list-style:none; margin:0; padding:0; }
-    .notif { display:flex; align-items:flex-start; gap:0.9rem; padding:0.9rem 1.25rem; border-bottom:1px solid var(--gray-100); }
-    .notif.unread { background:var(--primary-light); }
-    .notif-icon { width:38px; height:38px; flex-shrink:0; border-radius:0.6rem; display:flex; align-items:center; justify-content:center; background:var(--gray-100); color:var(--gray-500); }
-    .notif-icon.amber { background:#fffbeb; color:#92400e; } .notif-icon.red { background:#fef2f2; color:#b91c1c; } .notif-icon.green { background:#f0fdf4; color:#166534; }
-    .notif-body { flex:1; }
-    .notif-title { font-weight:600; color:var(--gray-800); font-size:0.9rem; }
-    .notif-msg { color:var(--gray-600); font-size:0.82rem; margin-top:0.15rem; }
-    .notif-time { color:var(--gray-400); font-size:0.72rem; margin-top:0.2rem; }
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== UNREAD BADGE ===== */
+    .unread-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: #fee;
+        color: var(--danger);
+        padding: 0.15rem 0.6rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-left: 0.5rem;
+    }
+
+    /* ===== STATISTICS CARDS ===== */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-maintenance {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: 'Inter', sans-serif;
+    }
+
+        .btn-maintenance:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+        }
+
+    .btn-mark-read {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.75rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: 'Inter', sans-serif;
+        box-shadow: var(--shadow-sm);
+    }
+
+        .btn-mark-read:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== FILTERS CARD ===== */
+    .filters-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .filters-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filters-body {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 180px;
+    }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        cursor: pointer;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .search-wrapper {
+        position: relative;
+    }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+        }
+
+    .search-input {
+        width: 100%;
+        padding: 0.625rem 0.75rem 0.625rem 2rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .btn-clear-filters {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+    }
+
+        .btn-clear-filters:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== NOTIFICATIONS LIST ===== */
+    .notifications-container {
+        padding: 0.5rem 0;
+    }
+
+    .notif-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .notif-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-100);
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+        .notif-item:hover {
+            background-color: var(--gray-50);
+        }
+
+        .notif-item.unread {
+            background: #eff6ff;
+            border-left: 3px solid var(--primary);
+        }
+
+            .notif-item.unread:hover {
+                background: #dbeafe;
+            }
+
+    /* ===== NOTIFICATION INDICATOR ===== */
+    .notif-indicator {
+        width: 20px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-top: 0.3rem;
+    }
+
+    .unread-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--primary);
+        animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @@keyframes pulse-dot {
+        0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 0.5;
+            transform: scale(0.8);
+        }
+    }
+
+    /* ===== NOTIFICATION ICON ===== */
+    .notif-icon {
+        width: 42px;
+        height: 42px;
+        flex-shrink: 0;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        transition: all 0.2s;
+    }
+
+        .notif-icon.secondary {
+            background: var(--gray-100);
+            color: var(--gray-500);
+        }
+
+        .notif-icon.warning {
+            background: #fffbeb;
+            color: #92400e;
+        }
+
+        .notif-icon.danger {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .notif-icon.success {
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .notif-icon.info {
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+    /* ===== NOTIFICATION BODY ===== */
+    .notif-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .notif-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.25rem;
+    }
+
+    .notif-title {
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 0.95rem;
+    }
+
+    .notif-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        padding: 0.1rem 0.5rem;
+        border-radius: 1rem;
+    }
+
+        .notif-type-badge.secondary {
+            background: var(--gray-100);
+            color: var(--gray-500);
+        }
+
+        .notif-type-badge.warning {
+            background: #fffbeb;
+            color: #92400e;
+        }
+
+        .notif-type-badge.danger {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .notif-type-badge.success {
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        .notif-type-badge.info {
+            background: #eff6ff;
+            color: #1e40af;
+        }
+
+    .notif-message {
+        color: var(--gray-600);
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin-bottom: 0.35rem;
+    }
+
+    .notif-footer {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        font-size: 0.72rem;
+        color: var(--gray-400);
+    }
+
+    .notif-time {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .notif-employee {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        color: var(--gray-500);
+    }
+
+    /* ===== NOTIFICATION ACTIONS ===== */
+    .notif-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-shrink: 0;
+        padding-top: 0.3rem;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        background: var(--gray-100);
+        color: var(--gray-500);
+    }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .btn-view {
+        background: var(--gray-100);
+        color: var(--info);
+    }
+
+        .btn-view:hover {
+            background: var(--info);
+            color: white;
+        }
+
+    .btn-mark {
+        background: var(--gray-100);
+        color: var(--success);
+    }
+
+        .btn-mark:hover {
+            background: var(--success);
+            color: white;
+        }
+
+    .inline-form {
+        display: inline;
+        margin: 0;
+    }
+
+    /* ===== PAGINATION ===== */
+    .pagination-wrapper {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        background: var(--gray-50);
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    .btn-create-ticket-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-create-ticket-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 1024px) {
+        .page-header .d-flex {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .btn-back {
+            align-self: flex-start;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .stats-cards {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .filters-body {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-group {
+            min-width: 100%;
+        }
+
+        .notif-item {
+            flex-wrap: wrap;
+            padding: 1rem;
+        }
+
+        .notif-indicator {
+            display: none;
+        }
+
+        .notif-actions {
+            width: 100%;
+            justify-content: flex-end;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--gray-100);
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .notif-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .btn-maintenance,
+        .btn-mark-read {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .notif-item {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .notif-icon {
+            width: 36px;
+            height: 36px;
+            font-size: 0.9rem;
+        }
+
+        .notif-footer {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.25rem;
+        }
+    }
 </style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Client-side filtering
+        const searchInput = document.querySelector('input[name="q"]');
+        const typeFilter = document.querySelector('select[name="type"]');
+        const statusFilter = document.querySelector('select[name="status"]');
+        const items = document.querySelectorAll('.notif-item');
+        const visibleCountSpan = document.getElementById('visibleCount');
+
+        function filterNotifications() {
+            const searchValue = searchInput ? searchInput.value.toLowerCase() : '';
+            const typeValue = typeFilter ? typeFilter.value : '';
+            const statusValue = statusFilter ? statusFilter.value : '';
+
+            let visibleCount = 0;
+
+            items.forEach(item => {
+                const title = item.getAttribute('data-title')?.toLowerCase() || '';
+                const message = item.getAttribute('data-message')?.toLowerCase() || '';
+                const type = item.getAttribute('data-type') || '';
+                const isRead = item.getAttribute('data-read') === 'True';
+
+                let show = true;
+
+                if (searchValue && !title.includes(searchValue) && !message.includes(searchValue)) {
+                    show = false;
+                }
+
+                if (typeValue && type !== typeValue) {
+                    show = false;
+                }
+
+                if (statusValue) {
+                    if (statusValue === 'unread' && isRead) show = false;
+                    if (statusValue === 'read' && !isRead) show = false;
+                }
+
+                if (show) {
+                    item.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            if (visibleCountSpan) {
+                visibleCountSpan.textContent = visibleCount;
+            }
+
+            // Show no results message
+            const container = document.querySelector('.notifications-container');
+            const emptyState = container ? container.querySelector('.empty-state:not(.original)') : null;
+
+            if (visibleCount === 0 && items.length > 0) {
+                if (!emptyState && container) {
+                    const noResultsDiv = document.createElement('div');
+                    noResultsDiv.className = 'empty-state';
+                    noResultsDiv.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <h3>No matching notifications found</h3>
+                        <p>Try adjusting your filters or search terms</p>
+                    `;
+                    container.appendChild(noResultsDiv);
+                }
+            } else {
+                if (emptyState) emptyState.remove();
+            }
+        }
+
+        // Attach event listeners
+        if (searchInput) {
+            searchInput.addEventListener('keyup', filterNotifications);
+        }
+        if (typeFilter) {
+            typeFilter.addEventListener('change', filterNotifications);
+        }
+        if (statusFilter) {
+            statusFilter.addEventListener('change', filterNotifications);
+        }
+
+        // Initialize
+        filterNotifications();
+
+        // Auto-hide unread dot animation for better performance
+        const dots = document.querySelectorAll('.unread-dot');
+        if (dots.length > 20) {
+            dots.forEach(dot => {
+                dot.style.animation = 'none';
+                dot.style.opacity = '1';
+            });
+        }
+    });
+</script>
