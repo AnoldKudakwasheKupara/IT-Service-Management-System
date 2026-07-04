@@ -4,6 +4,7 @@ using IT_Service_Management_System.Helpers.Efm;
 using IT_Service_Management_System.Models.Efm;
 using IT_Service_Management_System.Services.Efm;
 using IT_Service_Management_System.ViewModels.Efm;
+using IT_Service_Management_System.ViewModels.Reports;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -208,6 +209,174 @@ namespace IT_Service_Management_System.Controllers
                 : v;
         }
 
+        // ── analytics dashboard ────────────────────────────────────────────────────────
+        public async Task<IActionResult> Dashboard()
+        {
+            var today = DateTime.Today;
+            var docs = _db.EmployeeDocuments.AsNoTracking();
+
+            var folderNames = await _db.DocumentFolders.ToDictionaryAsync(f => f.Id, f => f.Name);
+            var categoryNames = await _db.DocumentCategories.ToDictionaryAsync(c => c.Id, c => c.Name);
+
+            // Group by scalar FK (translatable + scale-friendly), then map names in memory.
+            var byFolder = await docs.Where(d => !d.IsArchived).GroupBy(d => d.FolderId)
+                .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+            var byCategory = await docs.Where(d => !d.IsArchived).GroupBy(d => d.CategoryId)
+                .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+            var byStatus = await docs.GroupBy(d => d.Status)
+                .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+
+            var vm = new EfmDashboardVm
+            {
+                GeneratedAt = DateTime.Now,
+                TotalDocuments = await docs.CountAsync(d => !d.IsArchived),
+                Expired = await docs.CountAsync(d => !d.IsArchived && d.ExpiryDate != null && d.ExpiryDate < today),
+                ExpiringSoon = await docs.CountAsync(d => !d.IsArchived && d.ExpiryDate != null && d.ExpiryDate >= today && d.ExpiryDate <= today.AddDays(30)),
+                PendingApproval = await docs.CountAsync(d => d.Status == DocumentStatus.PendingApproval),
+                Archived = await docs.CountAsync(d => d.IsArchived),
+                TotalVersions = await _db.DocumentVersions.CountAsync(),
+                StorageBytes = await _db.DocumentVersions.SumAsync(v => (long?)v.FileSizeBytes) ?? 0,
+                UnreadNotifications = await _db.DocumentNotifications.CountAsync(n => !n.IsRead),
+                ByFolder = byFolder.OrderByDescending(x => x.Count).Take(10)
+                    .Select(x => new NameCount(folderNames.GetValueOrDefault(x.Key, "?"), x.Count)).ToList(),
+                ByCategory = byCategory.OrderByDescending(x => x.Count).Take(10)
+                    .Select(x => new NameCount(categoryNames.GetValueOrDefault(x.Key, "?"), x.Count)).ToList(),
+                ByStatus = byStatus.OrderByDescending(x => x.Count)
+                    .Select(x => new NameCount(x.Key.ToString(), x.Count)).ToList(),
+                RecentlyUploaded = await docs.Include(d => d.Employee).Include(d => d.Category)
+                    .Where(d => !d.IsArchived).OrderByDescending(d => d.CreatedAt).Take(8).ToListAsync(),
+                MostViewed = await docs.Include(d => d.Employee).Include(d => d.Category)
+                    .Where(d => !d.IsArchived && d.ViewCount > 0).OrderByDescending(d => d.ViewCount).Take(8).ToListAsync()
+            };
+            return View(vm);
+        }
+
+        // ── employee document timeline ─────────────────────────────────────────────────
+        public async Task<IActionResult> Timeline(int id)
+        {
+            var employee = await _db.Users.Include(u => u.Department).FirstOrDefaultAsync(u => u.Id == id);
+            if (employee == null) return NotFound();
+            ViewBag.Employee = employee;
+            var docs = await _db.EmployeeDocuments.Include(d => d.Category).Include(d => d.Folder)
+                .Where(d => d.EmployeeId == id)
+                .OrderByDescending(d => d.IssueDate ?? d.CreatedAt).ToListAsync();
+            return View(docs);
+        }
+
+        // ── compliance report (file completeness across employees) ─────────────────────
+        public async Task<IActionResult> Compliance() => View(await BuildComplianceAsync());
+
+        public async Task<IActionResult> ComplianceExport()
+        {
+            var rows = await BuildComplianceAsync();
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Employee,Department,Present,Required,Percent,Missing");
+            foreach (var r in rows)
+                sb.AppendLine(string.Join(",", new[] {
+                    r.EmployeeName, r.Department, r.PresentCount.ToString(), r.RequiredCount.ToString(),
+                    r.Percent + "%", r.Missing }.Select(Csv)));
+            return File(System.Text.Encoding.UTF8.GetBytes(sb.ToString()), "text/csv",
+                $"file-completeness-{DateTime.Now:yyyyMMdd}.csv");
+        }
+
+        private async Task<List<ComplianceRow>> BuildComplianceAsync()
+        {
+            var employees = await _db.Users.Include(u => u.Department)
+                .OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
+            var rows = new List<ComplianceRow>();
+            foreach (var e in employees)
+            {
+                var c = await _maint.GetCompletenessAsync(e.Id);
+                rows.Add(new ComplianceRow
+                {
+                    EmployeeId = e.Id, EmployeeName = e.FullName, Department = e.Department?.Name,
+                    RequiredCount = c.RequiredCount, PresentCount = c.PresentCount, Percent = c.Percent,
+                    Missing = string.Join("; ", c.MissingCategories)
+                });
+            }
+            return rows;
+        }
+
+        // ── secure share links ─────────────────────────────────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateShare(int id, int? expiresDays, string? password, int? maxDownloads)
+        {
+            var doc = await _db.EmployeeDocuments.FindAsync(id);
+            if (doc == null) return NotFound();
+
+            var share = new DocumentShare
+            {
+                EmployeeDocumentId = id,
+                Token = Guid.NewGuid().ToString("N"),
+                CreatedById = Uid,
+                CreatedByName = HttpContext.Session.GetString("UserName"),
+                CreatedAt = DateTime.Now,
+                ExpiresAt = expiresDays.HasValue ? DateTime.Now.AddDays(expiresDays.Value) : null,
+                PasswordHash = string.IsNullOrWhiteSpace(password) ? null : PasswordHasher.HashPassword(password),
+                MaxDownloads = maxDownloads,
+                IsReadOnly = true
+            };
+            _db.DocumentShares.Add(share);
+            await _db.SaveChangesAsync();
+            await _docs.LogAsync(DocumentAuditAction.Shared, id, doc.EmployeeId,
+                $"Created share link (expires {(share.ExpiresAt?.ToString("MMM dd, yyyy") ?? "never")})");
+
+            TempData["ShareLink"] = Url.Action("Shared", "EmployeeDocuments", new { token = share.Token }, Request.Scheme);
+            TempData["Success"] = "Secure share link created.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RevokeShare(int shareId, int documentId)
+        {
+            var share = await _db.DocumentShares.FindAsync(shareId);
+            if (share != null && share.RevokedAt == null) { share.RevokedAt = DateTime.Now; await _db.SaveChangesAsync(); }
+            TempData["Success"] = "Share link revoked.";
+            return RedirectToAction(nameof(Details), new { id = documentId });
+        }
+
+        // Public, read-only share access — no login required.
+        [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+        public async Task<IActionResult> Shared(string token, string? password, bool inline = false, bool dl = false)
+        {
+            var share = await _db.DocumentShares.Include(s => s.Document).ThenInclude(d => d!.CurrentVersion)
+                .FirstOrDefaultAsync(s => s.Token == token);
+
+            if (share == null || share.RevokedAt != null) { ViewBag.Error = "This link is invalid or has been revoked."; return View("SharedError"); }
+            if (share.ExpiresAt != null && share.ExpiresAt < DateTime.Now) { ViewBag.Error = "This link has expired."; return View("SharedError"); }
+            if (share.MaxDownloads != null && share.DownloadCount >= share.MaxDownloads) { ViewBag.Error = "This link has reached its download limit."; return View("SharedError"); }
+
+            if (share.PasswordHash != null &&
+                (string.IsNullOrEmpty(password) || !PasswordHasher.VerifyPassword(password, share.PasswordHash)))
+            {
+                ViewBag.NeedPassword = true;
+                ViewBag.Token = token;
+                if (!string.IsNullOrEmpty(password)) ViewBag.Error = "Incorrect password.";
+                return View("Shared", share);
+            }
+
+            if (inline || dl)
+            {
+                var result = await _docs.OpenCurrentAsync(share.EmployeeDocumentId);
+                if (result == null) return NotFound();
+                if (dl)
+                {
+                    share.DownloadCount++;
+                    await _db.SaveChangesAsync();
+                    await _docs.LogAsync(DocumentAuditAction.Downloaded, share.EmployeeDocumentId, share.Document?.EmployeeId, "Downloaded via share link");
+                    return File(result.Value.Stream, result.Value.Version.ContentType, result.Value.Version.FileName);
+                }
+                Response.Headers.ContentDisposition = "inline";
+                return File(result.Value.Stream, result.Value.Version.ContentType);
+            }
+
+            ViewBag.Token = token;
+            ViewBag.Password = password;
+            return View("Shared", share);
+        }
+
         // ── notifications + maintenance ────────────────────────────────────────────────
         public async Task<IActionResult> Notifications(int page = 1)
         {
@@ -359,6 +528,11 @@ namespace IT_Service_Management_System.Controllers
             if (!CanOpen(doc)) return Denied();
 
             ViewBag.IsStaff = EfmAccess.IsStaff(Role);
+            if (EfmAccess.IsStaff(Role))
+                ViewBag.Shares = await _db.DocumentShares
+                    .Where(s => s.EmployeeDocumentId == id && s.RevokedAt == null)
+                    .OrderByDescending(s => s.CreatedAt).ToListAsync();
+
             doc.ViewCount++;
             await _db.SaveChangesAsync();
             await _docs.LogAsync(DocumentAuditAction.Viewed, doc.Id, doc.EmployeeId, $"Viewed '{doc.Title}'");

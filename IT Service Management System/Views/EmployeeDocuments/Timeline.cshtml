@@ -1,0 +1,53 @@
+@model List<IT_Service_Management_System.Models.Efm.EmployeeDocument>
+@{
+    var emp = ViewBag.Employee as IT_Service_Management_System.Models.User;
+    ViewData["Title"] = $"{emp?.FullName} — Timeline";
+    var byYear = Model.GroupBy(d => (d.IssueDate ?? d.CreatedAt).Year).OrderByDescending(g => g.Key);
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <a asp-action="File" asp-route-id="@emp?.Id" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+            <div>
+                <h1 class="page-title" style="font-size:1.5rem;"><i class="fas fa-timeline me-2" style="color:var(--primary);"></i>@emp?.FullName — Document Timeline</h1>
+                <p class="text-muted mt-1" style="font-size:0.85rem;">@Model.Count document(s) in chronological order</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div style="padding:1.5rem;">
+            @if (Model.Any())
+            {
+                @foreach (var year in byYear)
+                {
+                    <div class="tl-year">@year.Key</div>
+                    <div class="tl-group">
+                        @foreach (var d in year.OrderByDescending(x => x.IssueDate ?? x.CreatedAt))
+                        {
+                            <div class="tl-item">
+                                <div class="tl-dot"><i class="fas @(d.Folder?.Icon ?? "fa-file")"></i></div>
+                                <div class="tl-body">
+                                    <a asp-action="Details" asp-route-id="@d.Id" class="tl-title">@d.Title</a>
+                                    <div class="tl-meta">@d.Category?.Name · @d.Folder?.Name · @((d.IssueDate ?? d.CreatedAt).ToString("MMM dd, yyyy"))</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+            else { <div class="text-center p-5 text-muted"><i class="fas fa-timeline fa-2x mb-3"></i><p>No documents on file.</p></div> }
+        </div>
+    </div>
+</div>
+
+<style>
+    .tl-year { font-weight:800; font-size:1.1rem; color:var(--primary-dark); margin:1rem 0 0.5rem; }
+    .tl-group { border-left:2px solid var(--gray-200); margin-left:0.75rem; padding-left:1.25rem; }
+    .tl-item { position:relative; padding:0.6rem 0; }
+    .tl-dot { position:absolute; left:-2.05rem; width:28px; height:28px; border-radius:50%; background:var(--primary-light); color:var(--primary-dark); display:flex; align-items:center; justify-content:center; font-size:0.7rem; }
+    .tl-title { font-weight:600; color:var(--gray-800); text-decoration:none; }
+    .tl-title:hover { color:var(--primary); }
+    .tl-meta { font-size:0.76rem; color:var(--gray-500); }
+</style>

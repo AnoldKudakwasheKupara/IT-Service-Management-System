@@ -153,6 +153,7 @@ builder.Services.AddScoped<IDocumentStorage>(sp =>
     };
 });
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<IOcrService, PlainTextOcrService>();
 builder.Services.AddScoped<DocumentMaintenanceService>();
 builder.Services.AddHostedService<DocumentMaintenanceHostedService>();
 

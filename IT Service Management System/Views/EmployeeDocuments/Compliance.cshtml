@@ -1,0 +1,46 @@
+@model List<IT_Service_Management_System.ViewModels.Efm.ComplianceRow>
+@{
+    ViewData["Title"] = "File Completeness - Axis IT Operations";
+    var avg = Model.Any() ? (int)Math.Round(Model.Average(r => r.Percent)) : 100;
+    var incomplete = Model.Count(r => r.Percent < 100);
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="page-title"><i class="fas fa-clipboard-check me-2" style="color:var(--primary);"></i>File Completeness</h1>
+                <p class="text-muted mt-2">Required-document compliance across all employees · avg <strong>@avg%</strong> · @incomplete incomplete</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-primary" asp-action="ComplianceExport"><i class="fas fa-file-csv"></i> Export CSV</a>
+                <a asp-action="Dashboard" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead><tr><th>Employee</th><th>Department</th><th style="width:220px;">Completeness</th><th>Missing</th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model)
+                    {
+                        var cls = r.Percent == 100 ? "bg-success" : r.Percent >= 75 ? "bg-warning" : "bg-danger";
+                        <tr>
+                            <td><a asp-action="File" asp-route-id="@r.EmployeeId" style="text-decoration:none;font-weight:600;">@r.EmployeeName</a></td>
+                            <td>@(r.Department ?? "—")</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height:7px;"><div class="progress-bar @cls" style="width:@r.Percent%"></div></div>
+                                    <span style="font-size:0.78rem;font-weight:600;min-width:34px;">@r.Percent%</span>
+                                </div>
+                            </td>
+                            <td style="font-size:0.8rem;color:var(--gray-600);">@(string.IsNullOrEmpty(r.Missing) ? "—" : r.Missing)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

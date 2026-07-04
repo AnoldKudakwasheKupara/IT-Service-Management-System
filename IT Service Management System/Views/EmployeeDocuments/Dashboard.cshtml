@@ -1,0 +1,103 @@
+@model IT_Service_Management_System.ViewModels.Efm.EfmDashboardVm
+@{
+    ViewData["Title"] = "Employee Files Dashboard - Axis IT Operations";
+    int Max(IEnumerable<IT_Service_Management_System.ViewModels.Reports.NameCount> l) => l.Any() ? l.Max(x => x.Count) : 1;
+    string Storage(long b) => b >= 1073741824 ? $"{b / 1073741824.0:0.##} GB" : b >= 1048576 ? $"{b / 1048576.0:0.#} MB" : $"{b / 1024.0:0.#} KB";
+}
+
+@await Html.PartialAsync("~/Views/Reports/_ReportStyles.cshtml")
+
+<div class="report-container">
+    <div class="report-header d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div>
+            <h1 class="report-title"><i class="fas fa-chart-pie"></i> Employee Files Dashboard</h1>
+            <p class="report-subtitle">Document analytics &amp; compliance &middot; @Model.GeneratedAt.ToString("dddd, MMM dd yyyy 'at' h:mm tt")</p>
+        </div>
+        <div class="report-actions">
+            <a class="report-btn" asp-action="Compliance"><i class="fas fa-clipboard-check"></i> Compliance</a>
+            <a class="report-btn" asp-action="Notifications"><i class="fas fa-bell"></i> Notifications</a>
+            <a class="report-btn primary" asp-action="Index"><i class="fas fa-folder-tree"></i> Files</a>
+        </div>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon"><i class="fas fa-file-lines"></i></div><div class="kpi-body"><div class="kpi-value">@Model.TotalDocuments</div><div class="kpi-label">Total Documents</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon amber"><i class="fas fa-hourglass-half"></i></div><div class="kpi-body"><div class="kpi-value">@Model.ExpiringSoon</div><div class="kpi-label">Expiring ≤30 days</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon red"><i class="fas fa-triangle-exclamation"></i></div><div class="kpi-body"><div class="kpi-value">@Model.Expired</div><div class="kpi-label">Expired</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon amber"><i class="fas fa-user-check"></i></div><div class="kpi-body"><div class="kpi-value">@Model.PendingApproval</div><div class="kpi-label">Pending Approval</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon slate"><i class="fas fa-box-archive"></i></div><div class="kpi-body"><div class="kpi-value">@Model.Archived</div><div class="kpi-label">Archived</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon violet"><i class="fas fa-code-branch"></i></div><div class="kpi-body"><div class="kpi-value">@Model.TotalVersions</div><div class="kpi-label">Versions</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon green"><i class="fas fa-hard-drive"></i></div><div class="kpi-body"><div class="kpi-value">@Storage(Model.StorageBytes)</div><div class="kpi-label">Storage Used</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon"><i class="fas fa-bell"></i></div><div class="kpi-body"><div class="kpi-value">@Model.UnreadNotifications</div><div class="kpi-label">Unread Alerts</div></div></div>
+    </div>
+
+    <div class="report-grid">
+        <div class="report-card">
+            <div class="report-card-header"><span><i class="fas fa-folder"></i> Documents by Folder</span></div>
+            <div class="report-card-body">
+                @if (Model.ByFolder.Any())
+                {
+                    var m = Max(Model.ByFolder);
+                    <div class="bars">
+                        @foreach (var s in Model.ByFolder)
+                        {
+                            <div class="bar-row"><div class="bar-label" title="@s.Name">@s.Name</div><div class="bar-track"><div class="bar-fill" style="width:@(s.Count * 100 / m)%"></div></div><div class="bar-value">@s.Count</div></div>
+                        }
+                    </div>
+                }
+                else { <div class="empty-mini">No documents yet</div> }
+            </div>
+        </div>
+        <div class="report-card">
+            <div class="report-card-header"><span><i class="fas fa-tags"></i> Documents by Category</span></div>
+            <div class="report-card-body">
+                @if (Model.ByCategory.Any())
+                {
+                    var m = Max(Model.ByCategory);
+                    <div class="bars">
+                        @foreach (var s in Model.ByCategory)
+                        {
+                            <div class="bar-row"><div class="bar-label" title="@s.Name">@s.Name</div><div class="bar-track"><div class="bar-fill green" style="width:@(s.Count * 100 / m)%"></div></div><div class="bar-value">@s.Count</div></div>
+                        }
+                    </div>
+                }
+                else { <div class="empty-mini">No documents yet</div> }
+            </div>
+        </div>
+    </div>
+
+    <div class="report-grid">
+        <div class="report-card">
+            <div class="report-card-header"><span><i class="fas fa-clock-rotate-left"></i> Recently Uploaded</span></div>
+            <div class="report-card-body" style="padding:0;">
+                @if (Model.RecentlyUploaded.Any())
+                {
+                    <table class="report-table"><thead><tr><th>Document</th><th>Employee</th><th>Category</th><th>When</th></tr></thead>
+                    <tbody>
+                        @foreach (var d in Model.RecentlyUploaded)
+                        {
+                            <tr><td><a asp-action="Details" asp-route-id="@d.Id" style="text-decoration:none;">@d.Title</a></td><td>@d.Employee?.FullName</td><td>@d.Category?.Name</td><td>@d.CreatedAt.ToString("MMM dd")</td></tr>
+                        }
+                    </tbody></table>
+                }
+                else { <div class="empty-mini">Nothing yet</div> }
+            </div>
+        </div>
+        <div class="report-card">
+            <div class="report-card-header"><span><i class="fas fa-eye"></i> Most Viewed</span></div>
+            <div class="report-card-body" style="padding:0;">
+                @if (Model.MostViewed.Any())
+                {
+                    <table class="report-table"><thead><tr><th>Document</th><th>Employee</th><th style="text-align:right;">Views</th></tr></thead>
+                    <tbody>
+                        @foreach (var d in Model.MostViewed)
+                        {
+                            <tr><td><a asp-action="Details" asp-route-id="@d.Id" style="text-decoration:none;">@d.Title</a></td><td>@d.Employee?.FullName</td><td style="text-align:right;">@d.ViewCount</td></tr>
+                        }
+                    </tbody></table>
+                }
+                else { <div class="empty-mini">No views yet</div> }
+            </div>
+        </div>
+    </div>
+</div>

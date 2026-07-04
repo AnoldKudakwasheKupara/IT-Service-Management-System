@@ -1,0 +1,67 @@
+@model IT_Service_Management_System.Models.Efm.DocumentShare
+@{
+    Layout = null;
+    var needPw = ViewBag.NeedPassword == true;
+    var token = ViewBag.Token as string;
+    var pw = ViewBag.Password as string;
+    var ct = Model.Document?.CurrentVersion?.ContentType ?? "";
+    var canFrame = ct.StartsWith("application/pdf") || ct.StartsWith("image/") || ct.StartsWith("text/");
+    string qp = Uri.EscapeDataString(pw ?? "");
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shared Document — Axis IT Operations</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        body { background:#f1f5f9; font-family:'Segoe UI',Arial,sans-serif; }
+        .brand { color:#1d4ed8; font-weight:700; }
+        .wrap { max-width:960px; margin:2.5rem auto; padding:0 1rem; }
+        .card-shell { background:#fff; border-radius:1rem; box-shadow:0 10px 30px rgba(0,0,0,.08); overflow:hidden; }
+        .card-head { background:linear-gradient(135deg,#1d4ed8,#3b82f6); color:#fff; padding:1.25rem 1.75rem; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="text-center mb-3"><span class="brand"><i class="fas fa-shield-halved"></i> Axis IT Operations</span></div>
+        <div class="card-shell">
+            <div class="card-head">
+                <h5 class="mb-0"><i class="fas fa-file-shield me-2"></i>@(Model.Document?.Title ?? "Shared document")</h5>
+                <small style="opacity:.85;">Shared securely · read only@(Model.ExpiresAt != null ? $" · expires {Model.ExpiresAt:MMM dd, yyyy}" : "")</small>
+            </div>
+            <div class="p-4">
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert alert-danger py-2"><i class="fas fa-circle-exclamation me-1"></i> @ViewBag.Error</div>
+                }
+                @if (needPw)
+                {
+                    <p class="text-muted">This document is password protected.</p>
+                    <form method="get" asp-action="Shared" class="row g-2" style="max-width:420px;">
+                        <input type="hidden" name="token" value="@token" />
+                        <div class="col-8"><input type="password" name="password" class="form-control" placeholder="Enter password" required autofocus /></div>
+                        <div class="col-4"><button class="btn btn-primary w-100"><i class="fas fa-unlock"></i> Open</button></div>
+                    </form>
+                }
+                else
+                {
+                    <div class="d-flex justify-content-end mb-3">
+                        <a class="btn btn-primary" href="@Url.Action("Shared", new { token, password = pw, dl = true })"><i class="fas fa-download"></i> Download</a>
+                    </div>
+                    @if (canFrame)
+                    {
+                        <iframe src="@Url.Action("Shared", new { token, password = pw, inline = true })" style="width:100%;height:70vh;border:1px solid #e2e8f0;border-radius:.5rem;"></iframe>
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-5"><i class="fas fa-file fa-2x mb-2"></i><p>Preview isn't available for this file type — use Download.</p></div>
+                    }
+                }
+            </div>
+        </div>
+        <p class="text-center text-muted mt-3" style="font-size:.8rem;">This is a secure, access-logged share link.</p>
+    </div>
+</body>
+</html>

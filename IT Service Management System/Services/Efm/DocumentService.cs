@@ -29,15 +29,38 @@ namespace IT_Service_Management_System.Services.Efm
         private readonly ApplicationDbContext _db;
         private readonly IDocumentStorage _storage;
         private readonly IHttpContextAccessor _http;
+        private readonly IBackgroundTaskQueue _queue;
         private readonly ILogger<DocumentService> _logger;
 
         public DocumentService(ApplicationDbContext db, IDocumentStorage storage,
-            IHttpContextAccessor http, ILogger<DocumentService> logger)
+            IHttpContextAccessor http, IBackgroundTaskQueue queue, ILogger<DocumentService> logger)
         {
             _db = db;
             _storage = storage;
             _http = http;
+            _queue = queue;
             _logger = logger;
+        }
+
+        // Runs OCR on the background queue and stores the extracted text for full-text search.
+        private void EnqueueOcr(int versionId, string storedKey, string contentType)
+        {
+            _queue.Enqueue(async (sp, ct) =>
+            {
+                var ocr = sp.GetRequiredService<IOcrService>();
+                if (!ocr.CanHandle(contentType)) return;
+                var storage = sp.GetRequiredService<IDocumentStorage>();
+                if (!await storage.ExistsAsync(storedKey, ct)) return;
+
+                string? text;
+                await using (var stream = await storage.OpenReadAsync(storedKey, ct))
+                    text = await ocr.ExtractTextAsync(stream, contentType, ct);
+                if (string.IsNullOrEmpty(text)) return;
+
+                var db = sp.GetRequiredService<ApplicationDbContext>();
+                var v = await db.DocumentVersions.FindAsync(new object[] { versionId }, ct);
+                if (v != null) { v.OcrText = text; await db.SaveChangesAsync(ct); }
+            });
         }
 
         /// <summary>Creates a new document and its first version from an uploaded file.</summary>
@@ -97,6 +120,7 @@ namespace IT_Service_Management_System.Services.Efm
             await LogAsync(DocumentAuditAction.Uploaded, doc.Id, doc.EmployeeId,
                 $"Uploaded '{doc.Title}' ({version.FileName}, {stored.SizeBytes} bytes)");
 
+            EnqueueOcr(version.Id, stored.StoredKey, stored.ContentType);
             return doc;
         }
 
@@ -148,6 +172,8 @@ namespace IT_Service_Management_System.Services.Efm
 
             await LogAsync(DocumentAuditAction.VersionUploaded, documentId, doc.EmployeeId,
                 $"Uploaded v{version.VersionNumber} ({version.FileName})");
+
+            EnqueueOcr(version.Id, stored.StoredKey, stored.ContentType);
             return version;
         }
 
