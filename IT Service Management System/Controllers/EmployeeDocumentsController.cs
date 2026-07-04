@@ -1,4 +1,5 @@
 using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models.Efm;
 using IT_Service_Management_System.Services.Efm;
 using IT_Service_Management_System.ViewModels.Efm;
@@ -39,6 +40,58 @@ namespace IT_Service_Management_System.Controllers
                 .ToDictionaryAsync(x => x.Key, x => x.Count);
             ViewBag.Search = q;
             return View(employees);
+        }
+
+        // ── cross-employee document search ─────────────────────────────────────────────
+        public async Task<IActionResult> Search(string? q, int? folderId, int? categoryId,
+            DocumentStatus? status, string? expiry, DateTime? from, DateTime? to, int page = 1)
+        {
+            IQueryable<EmployeeDocument> query = _db.EmployeeDocuments
+                .Include(d => d.Employee).ThenInclude(u => u!.Department)
+                .Include(d => d.Category)
+                .Include(d => d.Folder)
+                .Include(d => d.CurrentVersion)
+                .Include(d => d.Tags).ThenInclude(t => t.Tag)
+                .Where(d => !d.IsArchived);
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(d =>
+                    d.Title.Contains(term)
+                    || (d.DocumentNumber != null && d.DocumentNumber.Contains(term))
+                    || (d.Keywords != null && d.Keywords.Contains(term))
+                    || d.Employee!.FirstName.Contains(term)
+                    || d.Employee!.LastName.Contains(term)
+                    || d.Employee!.Email.Contains(term)
+                    || (d.Employee!.Department != null && d.Employee.Department.Name.Contains(term))
+                    || d.Category!.Name.Contains(term)
+                    || d.Tags.Any(t => t.Tag!.Name.Contains(term))
+                    || (d.CurrentVersion != null && d.CurrentVersion.OcrText != null && d.CurrentVersion.OcrText.Contains(term)));
+            }
+
+            if (folderId.HasValue) query = query.Where(d => d.FolderId == folderId.Value);
+            if (categoryId.HasValue) query = query.Where(d => d.CategoryId == categoryId.Value);
+            if (status.HasValue) query = query.Where(d => d.Status == status.Value);
+
+            var today = DateTime.Today;
+            if (expiry == "expired") query = query.Where(d => d.ExpiryDate != null && d.ExpiryDate < today);
+            else if (expiry == "expiring") query = query.Where(d => d.ExpiryDate != null && d.ExpiryDate >= today && d.ExpiryDate <= today.AddDays(30));
+
+            if (from.HasValue) query = query.Where(d => d.CreatedAt >= from.Value);
+            if (to.HasValue) query = query.Where(d => d.CreatedAt <= to.Value.AddDays(1));
+
+            query = query.OrderByDescending(d => d.CreatedAt);
+            var (items, paging) = await query.PageAsync(page, 20);
+            ViewBag.Paging = paging;
+
+            return View(new DocumentSearchVm
+            {
+                Results = items,
+                Folders = await _db.DocumentFolders.Where(f => f.IsActive).OrderBy(f => f.SortOrder).ToListAsync(),
+                Categories = await _db.DocumentCategories.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync(),
+                Q = q, FolderId = folderId, CategoryId = categoryId, Status = status, Expiry = expiry, From = from, To = to
+            });
         }
 
         // ── digital file browser ───────────────────────────────────────────────────────

@@ -1,0 +1,130 @@
+@model IT_Service_Management_System.ViewModels.Efm.DocumentSearchVm
+@using IT_Service_Management_System.Models.Efm
+@{
+    ViewData["Title"] = "Search Documents - Axis IT Operations";
+    var paging = ViewBag.Paging as IT_Service_Management_System.Helpers.PagingInfo;
+    string Size(long b) => b >= 1048576 ? $"{b / 1048576.0:0.#} MB" : b >= 1024 ? $"{b / 1024.0:0.#} KB" : $"{b} B";
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="page-title"><i class="fas fa-magnifying-glass me-2" style="color:var(--primary);"></i>Search Documents</h1>
+                <p class="text-muted mt-2">Full-text search across every employee file — name, number, department, category, tags, keywords, OCR content</p>
+            </div>
+            <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-users"></i> Employee Files</a>
+        </div>
+    </div>
+
+    <div class="data-card" style="margin-bottom:1.25rem;">
+        <div style="padding:1.25rem;">
+            <form method="get" asp-action="Search">
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" name="q" value="@Model.Q" class="form-control form-control-lg"
+                           placeholder="Search documents, employees, tags, content…" autofocus />
+                    <button type="submit" class="btn btn-primary px-4">Search</button>
+                </div>
+                <div class="row g-2">
+                    <div class="col-md-3 col-6">
+                        <select name="folderId" class="form-select form-select-sm">
+                            <option value="">All folders</option>
+                            @foreach (var f in Model.Folders)
+                            {
+                                <option value="@f.Id" selected="@(Model.FolderId == f.Id)">@f.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-6">
+                        <select name="categoryId" class="form-select form-select-sm">
+                            <option value="">All categories</option>
+                            @foreach (var c in Model.Categories)
+                            {
+                                <option value="@c.Id" selected="@(Model.CategoryId == c.Id)">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="">Any status</option>
+                            @foreach (var st in Enum.GetValues<DocumentStatus>())
+                            {
+                                <option value="@st" selected="@(Model.Status == st)">@st</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-6">
+                        <select name="expiry" class="form-select form-select-sm">
+                            <option value="">Any expiry</option>
+                            <option value="expiring" selected="@(Model.Expiry == "expiring")">Expiring ≤30d</option>
+                            <option value="expired" selected="@(Model.Expiry == "expired")">Expired</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 col-6 d-flex gap-1">
+                        <input type="date" name="from" value="@(Model.From?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" title="From date" />
+                        <input type="date" name="to" value="@(Model.To?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" title="To date" />
+                    </div>
+                </div>
+                <div class="mt-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-filter"></i> Apply filters</button>
+                    <a asp-action="Search" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times"></i> Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-file-lines me-2"></i><span>Results</span></div>
+            <span class="record-count">@(paging?.TotalCount ?? Model.Results.Count) match(es)</span>
+        </div>
+        <div class="table-responsive">
+            @if (Model.Results.Any())
+            {
+                <table class="data-table">
+                    <thead><tr><th>Employee</th><th>Document</th><th>Category</th><th>Folder</th><th>Status</th><th>Expiry</th><th>Uploaded</th><th style="text-align:right;">Actions</th></tr></thead>
+                    <tbody>
+                        @foreach (var d in Model.Results)
+                        {
+                            <tr>
+                                <td>@d.Employee?.FullName</td>
+                                <td><a asp-action="Details" asp-route-id="@d.Id" class="fw-semibold" style="text-decoration:none;">@d.Title</a></td>
+                                <td>@d.Category?.Name</td>
+                                <td>@d.Folder?.Name</td>
+                                <td><span class="pill">@d.Status</span></td>
+                                <td>
+                                    @if (d.ExpiryDate == null) { <text>—</text> }
+                                    else if (d.IsExpired) { <span class="pill red">Expired</span> }
+                                    else if (d.DaysUntilExpiry <= 30) { <span class="pill amber">@d.ExpiryDate?.ToString("MMM dd")</span> }
+                                    else { @d.ExpiryDate?.ToString("MMM dd, yyyy") }
+                                </td>
+                                <td>@d.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                <td style="text-align:right;white-space:nowrap;">
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Preview" asp-route-id="@d.Id" target="_blank" title="Preview"><i class="fas fa-eye"></i></a>
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Download" asp-route-id="@d.Id" title="Download"><i class="fas fa-download"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="text-center p-5 text-muted">
+                    <i class="fas fa-magnifying-glass fa-2x mb-3"></i>
+                    <p>No documents match your search.</p>
+                </div>
+            }
+        </div>
+        @if (paging != null)
+        {
+            <partial name="_Pagination" model="paging" />
+        }
+    </div>
+</div>
+
+<style>
+    .pill { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.7rem; font-weight:600; padding:0.1rem 0.5rem; border-radius:1rem; background:var(--gray-100); color:var(--gray-600); }
+    .pill.amber { background:#fffbeb; color:#92400e; } .pill.red { background:#fef2f2; color:#b91c1c; }
+</style>
