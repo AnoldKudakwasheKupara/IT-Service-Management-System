@@ -46,7 +46,7 @@
                         <div class="flex-grow-1">
                             <div class="fw-semibold">
                                 @n.Title
-                                @if (!n.IsRead) { <span class="pill" style="background:var(--primary);color:#fff;">new</span> }
+                                @if (!n.IsRead) { <span class="status-badge badge-blue" style="padding:0.05rem 0.5rem;font-size:0.62rem;">NEW</span> }
                             </div>
                             <div class="text-muted" style="font-size:0.85rem;">@n.Message</div>
                             <div class="text-muted" style="font-size:0.72rem;">@n.CreatedAt.ToString("MMM dd, yyyy HH:mm")</div>
@@ -61,15 +61,12 @@
         }
         else
         {
-            <div class="text-center p-5 text-muted">
-                <i class="fas fa-bell-slash fa-2x mb-3"></i>
-                <p>You have no notifications.</p>
+            <div class="empty-state">
+                <i class="fas fa-bell-slash"></i>
+                <h3>No notifications</h3>
+                <p>Updates about your documents will show up here.</p>
             </div>
         }
         @if (paging != null) { <partial name="_Pagination" model="paging" /> }
     </div>
 </div>
-
-<style>
-    .pill { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.62rem; font-weight:700; padding:0.05rem 0.45rem; border-radius:1rem; margin-left:0.35rem; }
-</style>

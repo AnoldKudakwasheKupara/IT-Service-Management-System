@@ -5,36 +5,38 @@
     string Storage(long b) => b >= 1073741824 ? $"{b / 1073741824.0:0.##} GB" : b >= 1048576 ? $"{b / 1048576.0:0.#} MB" : $"{b / 1024.0:0.#} KB";
 }
 
-@await Html.PartialAsync("~/Views/Reports/_ReportStyles.cshtml")
-
-<div class="report-container">
-    <div class="report-header d-flex justify-content-between align-items-start flex-wrap gap-2">
-        <div>
-            <h1 class="report-title"><i class="fas fa-chart-pie"></i> Employee Files Dashboard</h1>
-            <p class="report-subtitle">Document analytics &amp; compliance &middot; @Model.GeneratedAt.ToString("dddd, MMM dd yyyy 'at' h:mm tt")</p>
-        </div>
-        <div class="report-actions">
-            <a class="report-btn" asp-action="Compliance"><i class="fas fa-clipboard-check"></i> Compliance</a>
-            <a class="report-btn" asp-action="Notifications"><i class="fas fa-bell"></i> Notifications</a>
-            <a class="report-btn primary" asp-action="Index"><i class="fas fa-folder-tree"></i> Files</a>
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h1 class="page-title"><i class="fas fa-chart-pie me-2" style="color:var(--primary);"></i>Employee Files Dashboard</h1>
+                <p class="text-muted mt-2">Document analytics &amp; compliance · @Model.GeneratedAt.ToString("dddd, MMM dd yyyy 'at' h:mm tt")</p>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <a class="btn btn-outline-primary" asp-action="Compliance"><i class="fas fa-clipboard-check"></i> Compliance</a>
+                <a class="btn btn-outline-primary" asp-action="Notifications"><i class="fas fa-bell"></i> Notifications</a>
+                <a class="btn-create" asp-action="Index"><i class="fas fa-folder-tree me-1"></i> Files</a>
+            </div>
         </div>
     </div>
 
-    <div class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-icon"><i class="fas fa-file-lines"></i></div><div class="kpi-body"><div class="kpi-value">@Model.TotalDocuments</div><div class="kpi-label">Total Documents</div></div></div>
-        <div class="kpi-card"><div class="kpi-icon amber"><i class="fas fa-hourglass-half"></i></div><div class="kpi-body"><div class="kpi-value">@Model.ExpiringSoon</div><div class="kpi-label">Expiring ≤30 days</div></div></div>
-        <div class="kpi-card"><div class="kpi-icon red"><i class="fas fa-triangle-exclamation"></i></div><div class="kpi-body"><div class="kpi-value">@Model.Expired</div><div class="kpi-label">Expired</div></div></div>
-        <div class="kpi-card"><div class="kpi-icon amber"><i class="fas fa-user-check"></i></div><div class="kpi-body"><div class="kpi-value">@Model.PendingApproval</div><div class="kpi-label">Pending Approval</div></div></div>
-        <div class="kpi-card"><div class="kpi-icon slate"><i class="fas fa-box-archive"></i></div><div class="kpi-body"><div class="kpi-value">@Model.Archived</div><div class="kpi-label">Archived</div></div></div>
-        <div class="kpi-card"><div class="kpi-icon violet"><i class="fas fa-code-branch"></i></div><div class="kpi-body"><div class="kpi-value">@Model.TotalVersions</div><div class="kpi-label">Versions</div></div></div>
-        <div class="kpi-card"><div class="kpi-icon green"><i class="fas fa-hard-drive"></i></div><div class="kpi-body"><div class="kpi-value">@Storage(Model.StorageBytes)</div><div class="kpi-label">Storage Used</div></div></div>
-        <div class="kpi-card"><div class="kpi-icon"><i class="fas fa-bell"></i></div><div class="kpi-body"><div class="kpi-value">@Model.UnreadNotifications</div><div class="kpi-label">Unread Alerts</div></div></div>
+    <!-- KPI stat cards -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card"><div class="stat-icon"><i class="fas fa-file-lines"></i></div><div class="stat-info"><h3>@Model.TotalDocuments</h3><p>Total Documents</p></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#f5b042,#e6a017);"><i class="fas fa-hourglass-half"></i></div><div class="stat-info"><h3>@Model.ExpiringSoon</h3><p>Expiring ≤30 days</p></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#e53e3e,#c53030);"><i class="fas fa-triangle-exclamation"></i></div><div class="stat-info"><h3>@Model.Expired</h3><p>Expired</p></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#f5b042,#e6a017);"><i class="fas fa-user-check"></i></div><div class="stat-info"><h3>@Model.PendingApproval</h3><p>Pending Approval</p></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#64748b,#475569);"><i class="fas fa-box-archive"></i></div><div class="stat-info"><h3>@Model.Archived</h3><p>Archived</p></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);"><i class="fas fa-code-branch"></i></div><div class="stat-info"><h3>@Model.TotalVersions</h3><p>Versions</p></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#2c9e6e,#227a55);"><i class="fas fa-hard-drive"></i></div><div class="stat-info"><h3>@Storage(Model.StorageBytes)</h3><p>Storage Used</p></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:linear-gradient(135deg,#3b82f6,#2563eb);"><i class="fas fa-bell"></i></div><div class="stat-info"><h3>@Model.UnreadNotifications</h3><p>Unread Alerts</p></div></div>
     </div>
 
-    <div class="report-grid">
-        <div class="report-card">
-            <div class="report-card-header"><span><i class="fas fa-folder"></i> Documents by Folder</span></div>
-            <div class="report-card-body">
+    <!-- Distribution bars -->
+    <div class="dash-grid mb-4">
+        <div class="data-card">
+            <div class="card-header-custom"><div><i class="fas fa-folder me-2"></i><span>Documents by Folder</span></div></div>
+            <div style="padding:1.25rem;">
                 @if (Model.ByFolder.Any())
                 {
                     var m = Max(Model.ByFolder);
@@ -45,12 +47,12 @@
                         }
                     </div>
                 }
-                else { <div class="empty-mini">No documents yet</div> }
+                else { <div class="text-muted text-center p-3">No documents yet</div> }
             </div>
         </div>
-        <div class="report-card">
-            <div class="report-card-header"><span><i class="fas fa-tags"></i> Documents by Category</span></div>
-            <div class="report-card-body">
+        <div class="data-card">
+            <div class="card-header-custom"><div><i class="fas fa-tags me-2"></i><span>Documents by Category</span></div></div>
+            <div style="padding:1.25rem;">
                 @if (Model.ByCategory.Any())
                 {
                     var m = Max(Model.ByCategory);
@@ -61,43 +63,59 @@
                         }
                     </div>
                 }
-                else { <div class="empty-mini">No documents yet</div> }
+                else { <div class="text-muted text-center p-3">No documents yet</div> }
             </div>
         </div>
     </div>
 
-    <div class="report-grid">
-        <div class="report-card">
-            <div class="report-card-header"><span><i class="fas fa-clock-rotate-left"></i> Recently Uploaded</span></div>
-            <div class="report-card-body" style="padding:0;">
+    <!-- Recent + Most viewed -->
+    <div class="dash-grid">
+        <div class="data-card">
+            <div class="card-header-custom"><div><i class="fas fa-clock-rotate-left me-2"></i><span>Recently Uploaded</span></div></div>
+            <div class="table-responsive">
                 @if (Model.RecentlyUploaded.Any())
                 {
-                    <table class="report-table"><thead><tr><th>Document</th><th>Employee</th><th>Category</th><th>When</th></tr></thead>
-                    <tbody>
-                        @foreach (var d in Model.RecentlyUploaded)
-                        {
-                            <tr><td><a asp-action="Details" asp-route-id="@d.Id" style="text-decoration:none;">@d.Title</a></td><td>@d.Employee?.FullName</td><td>@d.Category?.Name</td><td>@d.CreatedAt.ToString("MMM dd")</td></tr>
-                        }
-                    </tbody></table>
+                    <table class="data-table">
+                        <thead><tr><th><i class="fas fa-file me-1"></i> Document</th><th><i class="fas fa-user me-1"></i> Employee</th><th><i class="fas fa-tag me-1"></i> Category</th><th><i class="fas fa-calendar me-1"></i> When</th></tr></thead>
+                        <tbody>
+                            @foreach (var d in Model.RecentlyUploaded)
+                            {
+                                <tr><td><a asp-action="Details" asp-route-id="@d.Id" style="text-decoration:none;color:var(--gray-800);font-weight:600;">@d.Title</a></td><td>@d.Employee?.FullName</td><td>@d.Category?.Name</td><td class="date-cell">@d.CreatedAt.ToString("MMM dd")</td></tr>
+                            }
+                        </tbody>
+                    </table>
                 }
-                else { <div class="empty-mini">Nothing yet</div> }
+                else { <div class="empty-state"><i class="fas fa-clock-rotate-left"></i><h3>Nothing yet</h3><p>No documents have been uploaded.</p></div> }
             </div>
         </div>
-        <div class="report-card">
-            <div class="report-card-header"><span><i class="fas fa-eye"></i> Most Viewed</span></div>
-            <div class="report-card-body" style="padding:0;">
+        <div class="data-card">
+            <div class="card-header-custom"><div><i class="fas fa-eye me-2"></i><span>Most Viewed</span></div></div>
+            <div class="table-responsive">
                 @if (Model.MostViewed.Any())
                 {
-                    <table class="report-table"><thead><tr><th>Document</th><th>Employee</th><th style="text-align:right;">Views</th></tr></thead>
-                    <tbody>
-                        @foreach (var d in Model.MostViewed)
-                        {
-                            <tr><td><a asp-action="Details" asp-route-id="@d.Id" style="text-decoration:none;">@d.Title</a></td><td>@d.Employee?.FullName</td><td style="text-align:right;">@d.ViewCount</td></tr>
-                        }
-                    </tbody></table>
+                    <table class="data-table">
+                        <thead><tr><th><i class="fas fa-file me-1"></i> Document</th><th><i class="fas fa-user me-1"></i> Employee</th><th style="text-align:right;"><i class="fas fa-eye me-1"></i> Views</th></tr></thead>
+                        <tbody>
+                            @foreach (var d in Model.MostViewed)
+                            {
+                                <tr><td><a asp-action="Details" asp-route-id="@d.Id" style="text-decoration:none;color:var(--gray-800);font-weight:600;">@d.Title</a></td><td>@d.Employee?.FullName</td><td style="text-align:right;"><span class="status-badge badge-blue">@d.ViewCount</span></td></tr>
+                            }
+                        </tbody>
+                    </table>
                 }
-                else { <div class="empty-mini">No views yet</div> }
+                else { <div class="empty-state"><i class="fas fa-eye"></i><h3>No views yet</h3><p>Document views will show up here.</p></div> }
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .dash-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:1.5rem; }
+    .bars { display:flex; flex-direction:column; gap:0.6rem; }
+    .bar-row { display:grid; grid-template-columns:130px 1fr 36px; align-items:center; gap:0.75rem; }
+    .bar-label { font-size:0.8rem; color:var(--gray-600); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bar-track { height:9px; background:var(--gray-100); border-radius:1rem; overflow:hidden; }
+    .bar-fill { height:100%; border-radius:1rem; background:linear-gradient(90deg,var(--primary),var(--primary-light)); }
+    .bar-fill.green { background:linear-gradient(90deg,#2c9e6e,#48bb78); }
+    .bar-value { font-size:0.8rem; font-weight:700; color:var(--gray-700); text-align:right; }
+</style>

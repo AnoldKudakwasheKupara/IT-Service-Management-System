@@ -4,8 +4,8 @@
     ViewData["Title"] = "My Documents - Axis IT Operations";
     string Size(long b) => b >= 1048576 ? $"{b / 1048576.0:0.#} MB" : b >= 1024 ? $"{b / 1024.0:0.#} KB" : $"{b} B";
     string StatusPill(DocumentStatus s) => s switch {
-        DocumentStatus.PendingApproval => "amber", DocumentStatus.Rejected => "red",
-        DocumentStatus.Approved or DocumentStatus.Active => "green", _ => "" };
+        DocumentStatus.PendingApproval => "badge-amber", DocumentStatus.Rejected or DocumentStatus.Expired => "badge-red",
+        DocumentStatus.Approved or DocumentStatus.Active => "badge-green", _ => "badge-gray" };
 }
 
 <div class="page-container">
@@ -15,7 +15,7 @@
                 <h1 class="page-title"><i class="fas fa-folder me-2" style="color:var(--primary);"></i>My Documents</h1>
                 <p class="text-muted mt-2">Your personal documents. New uploads are sent to HR for approval.</p>
             </div>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#myUploadModal"><i class="fas fa-cloud-arrow-up"></i> Upload Document</button>
+            <button class="btn-create" data-bs-toggle="modal" data-bs-target="#myUploadModal"><i class="fas fa-cloud-arrow-up"></i> Upload Document</button>
         </div>
     </div>
 
@@ -28,7 +28,11 @@
             @if (Model.Documents.Any())
             {
                 <table class="data-table">
-                    <thead><tr><th>Document</th><th>Category</th><th>Folder</th><th>Status</th><th>Uploaded</th><th style="text-align:right;">Actions</th></tr></thead>
+                    <thead><tr>
+                        <th><i class="fas fa-file me-1"></i> Document</th><th><i class="fas fa-tag me-1"></i> Category</th>
+                        <th><i class="fas fa-folder me-1"></i> Folder</th><th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                        <th><i class="fas fa-calendar me-1"></i> Uploaded</th><th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
+                    </tr></thead>
                     <tbody>
                         @foreach (var d in Model.Documents)
                         {
@@ -36,11 +40,13 @@
                                 <td><strong>@d.Title</strong> <span class="text-muted" style="font-size:0.72rem;">@Size(d.CurrentVersion?.FileSizeBytes ?? 0)</span></td>
                                 <td>@d.Category?.Name</td>
                                 <td>@d.Folder?.Name</td>
-                                <td><span class="pill @StatusPill(d.Status)">@(d.Status == DocumentStatus.PendingApproval ? "Pending Approval" : d.Status.ToString())</span></td>
-                                <td>@d.CreatedAt.ToString("MMM dd, yyyy")</td>
-                                <td style="text-align:right;white-space:nowrap;">
-                                    <a class="btn btn-sm btn-outline-primary" asp-action="Preview" asp-route-id="@d.Id" target="_blank" title="Preview"><i class="fas fa-eye"></i></a>
-                                    <a class="btn btn-sm btn-outline-primary" asp-action="Download" asp-route-id="@d.Id" title="Download"><i class="fas fa-download"></i></a>
+                                <td><span class="status-badge @StatusPill(d.Status)">@(d.Status == DocumentStatus.PendingApproval ? "Pending Approval" : d.Status.ToString())</span></td>
+                                <td class="date-cell"><i class="far fa-calendar-alt"></i> @d.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                <td>
+                                    <div class="action-buttons" style="justify-content:flex-end;">
+                                        <a class="action-btn btn-view" asp-action="Preview" asp-route-id="@d.Id" target="_blank" title="Preview"><i class="fas fa-eye"></i></a>
+                                        <a class="action-btn btn-download" asp-action="Download" asp-route-id="@d.Id" title="Download"><i class="fas fa-download"></i></a>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -49,10 +55,11 @@
             }
             else
             {
-                <div class="text-center p-5 text-muted">
-                    <i class="fas fa-folder-open fa-2x mb-3"></i>
-                    <p>You have no documents yet.</p>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#myUploadModal"><i class="fas fa-cloud-arrow-up"></i> Upload your first document</button>
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <h3>No documents yet</h3>
+                    <p>Upload a document — it will be sent to HR for approval.</p>
+                    <button class="btn-create btn-create-sm" data-bs-toggle="modal" data-bs-target="#myUploadModal"><i class="fas fa-cloud-arrow-up"></i> Upload your first document</button>
                 </div>
             }
         </div>
@@ -101,8 +108,3 @@
         </div>
     </div>
 </div>
-
-<style>
-    .pill { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.7rem; font-weight:600; padding:0.1rem 0.55rem; border-radius:1rem; background:var(--gray-100); color:var(--gray-600); }
-    .pill.amber { background:#fffbeb; color:#92400e; } .pill.red { background:#fef2f2; color:#b91c1c; } .pill.green { background:#f0fdf4; color:#166534; }
-</style>

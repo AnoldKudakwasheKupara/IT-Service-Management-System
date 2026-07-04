@@ -13,7 +13,7 @@
                 <h1 class="page-title"><i class="fas fa-sliders me-2" style="color:var(--primary);"></i>File Settings</h1>
                 <p class="text-muted mt-2">Add and manage document categories — no code changes needed.</p>
             </div>
-            <button class="btn btn-primary" onclick="openCat()"><i class="fas fa-plus"></i> New Category</button>
+            <button class="btn-create" onclick="openCat()"><i class="fas fa-plus"></i> New Category</button>
         </div>
         <partial name="_Nav" />
     </div>
@@ -25,7 +25,12 @@
         </div>
         <div class="table-responsive">
             <table class="data-table">
-                <thead><tr><th>Name</th><th>Default folder</th><th>Expiry-tracked</th><th>Retention</th><th>Documents</th><th>Status</th><th style="text-align:right;">Actions</th></tr></thead>
+                <thead><tr>
+                    <th><i class="fas fa-tag me-1"></i> Name</th><th><i class="fas fa-folder me-1"></i> Default folder</th>
+                    <th><i class="fas fa-hourglass-half me-1"></i> Expiry-tracked</th><th><i class="fas fa-clock-rotate-left me-1"></i> Retention</th>
+                    <th><i class="fas fa-file me-1"></i> Documents</th><th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                    <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
+                </tr></thead>
                 <tbody>
                     @foreach (var c in Model.OrderBy(c => c.Name))
                     {
@@ -39,20 +44,22 @@
                             <td>@(c.DefaultRetentionYears.HasValue ? $"{c.DefaultRetentionYears} yr" : "Permanent")</td>
                             <td>@(counts.TryGetValue(c.Id, out var n) ? n : 0)</td>
                             <td>
-                                @if (c.IsActive) { <span class="pill green">Active</span> } else { <span class="pill">Inactive</span> }
+                                @if (c.IsActive) { <span class="status-badge badge-green">Active</span> } else { <span class="status-badge badge-gray">Inactive</span> }
                             </td>
-                            <td style="text-align:right;white-space:nowrap;">
-                                <button class="btn btn-sm btn-outline-primary" title="Edit"
-                                        onclick="openCat(@c.Id, '@Html.Raw(Encode(c.Name))', '@Html.Raw(Encode(c.Description))', @(c.DefaultFolderId?.ToString() ?? "null"), @c.IsExpiryTracked.ToString().ToLower(), @(c.DefaultRetentionYears?.ToString() ?? "null"), @c.IsActive.ToString().ToLower())">
-                                    <i class="fas fa-pen"></i>
-                                </button>
-                                <form asp-action="ToggleCategory" method="post" style="display:inline;">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@c.Id" />
-                                    <button class="btn btn-sm btn-outline-secondary" title="@(c.IsActive ? "Deactivate" : "Activate")">
-                                        <i class="fas @(c.IsActive ? "fa-toggle-on" : "fa-toggle-off")"></i>
+                            <td>
+                                <div class="action-buttons" style="justify-content:flex-end;">
+                                    <button class="action-btn btn-edit" title="Edit"
+                                            onclick="openCat(@c.Id, '@Html.Raw(Encode(c.Name))', '@Html.Raw(Encode(c.Description))', @(c.DefaultFolderId?.ToString() ?? "null"), @c.IsExpiryTracked.ToString().ToLower(), @(c.DefaultRetentionYears?.ToString() ?? "null"), @c.IsActive.ToString().ToLower())">
+                                        <i class="fas fa-pen"></i>
                                     </button>
-                                </form>
+                                    <form asp-action="ToggleCategory" method="post" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@c.Id" />
+                                        <button class="action-btn btn-view" title="@(c.IsActive ? "Deactivate" : "Activate")">
+                                            <i class="fas @(c.IsActive ? "fa-toggle-on" : "fa-toggle-off")"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -119,10 +126,6 @@
         System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(s ?? "");
 }
 
-<style>
-    .pill { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.7rem; font-weight:600; padding:0.1rem 0.55rem; border-radius:1rem; background:var(--gray-100); color:var(--gray-600); }
-    .pill.green { background:#f0fdf4; color:#166534; }
-</style>
 <script>
     const catModal = new bootstrap.Modal(document.getElementById('catModal'));
     function openCat(id, name, desc, folderId, expiry, retention, active) {
