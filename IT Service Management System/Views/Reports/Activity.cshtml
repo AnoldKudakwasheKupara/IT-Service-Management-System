@@ -4,74 +4,678 @@
     decimal MaxA(IEnumerable<IT_Service_Management_System.ViewModels.Reports.NameAmount> l) => l.Any() ? l.Max(x => x.Amount) : 1m;
 }
 
-@await Html.PartialAsync("_ReportStyles")
-
-<div class="report-container">
-    <div class="report-header d-flex justify-content-between align-items-start flex-wrap gap-2">
-        <div>
-            <h1 class="report-title"><i class="fas fa-tasks"></i> Activity Report</h1>
-            <p class="report-subtitle">Time logged across the team</p>
-        </div>
-        <div class="report-actions">
-            <a class="report-btn" asp-action="Index"><i class="fas fa-arrow-left"></i> All Reports</a>
-            <button class="report-btn primary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-tasks me-2" style="color: var(--primary);"></i>
+                    Activity Report
+                </h1>
+                <p class="text-muted mt-2">Time logged across the team</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn-create-ticket" asp-action="Index" style="background: var(--gray-100); color: var(--gray-700);">
+                    <i class="fas fa-arrow-left"></i>
+                    All Reports
+                </a>
+                <button class="btn-create-ticket" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                    Print
+                </button>
+            </div>
         </div>
     </div>
 
+    <!-- KPI CARDS -->
     <div class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-icon"><i class="fas fa-list-check"></i></div><div class="kpi-body"><div class="kpi-value">@Model.Total</div><div class="kpi-label">Total Activities</div></div></div>
-        <div class="kpi-card"><div class="kpi-icon green"><i class="fas fa-clock"></i></div><div class="kpi-body"><div class="kpi-value">@Model.TotalHours h</div><div class="kpi-label">Total Hours Logged</div></div></div>
-        <div class="kpi-card"><div class="kpi-icon amber"><i class="fas fa-play-circle"></i></div><div class="kpi-body"><div class="kpi-value">@Model.Ongoing</div><div class="kpi-label">Ongoing</div></div></div>
-        <div class="kpi-card"><div class="kpi-icon slate"><i class="fas fa-check-circle"></i></div><div class="kpi-body"><div class="kpi-value">@Model.Completed</div><div class="kpi-label">Completed</div></div></div>
+        <div class="kpi-card">
+            <div class="kpi-icon primary">
+                <i class="fas fa-list-check"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.Total</div>
+                <div class="kpi-label">Total Activities</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon success">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.TotalHours h</div>
+                <div class="kpi-label">Total Hours Logged</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon warning">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.Ongoing</div>
+                <div class="kpi-label">Ongoing</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon slate">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.Completed</div>
+                <div class="kpi-label">Completed</div>
+            </div>
+        </div>
     </div>
 
-    <div class="report-grid">
-        <div class="report-card">
-            <div class="report-card-header"><span><i class="fas fa-tags"></i> Hours by Category</span></div>
-            <div class="report-card-body">
+    <!-- TWO COLUMN GRID: Hours by Category & Activities by Category -->
+    <div class="two-col-grid">
+        <!-- Hours by Category -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-tags me-2"></i>
+                <span>Hours by Category</span>
+            </div>
+            <div class="card-body-custom">
                 @if (Model.HoursByCategory.Any())
                 {
                     var m1 = MaxA(Model.HoursByCategory);
                     <div class="bars">
-                        @foreach (var s in Model.HoursByCategory)
+                        @foreach (var s in Model.HoursByCategory.OrderByDescending(x => x.Amount))
                         {
-                            <div class="bar-row"><div class="bar-label">@s.Name</div><div class="bar-track"><div class="bar-fill" style="width:@(Math.Round(s.Amount * 100 / m1))%"></div></div><div class="bar-value">@s.Amount h</div></div>
+                            <div class="bar-row">
+                                <div class="bar-label" title="@s.Name">@s.Name</div>
+                                <div class="bar-track">
+                                    <div class="bar-fill primary" style="width:@(Math.Round(s.Amount * 100 / m1))%"></div>
+                                </div>
+                                <div class="bar-value">@s.Amount h</div>
+                            </div>
                         }
                     </div>
                 }
-                else { <div class="empty-mini">No completed activities yet</div> }
+                else
+                {
+                    <div class="empty-state-mini">
+                        <i class="fas fa-info-circle"></i>
+                        <span>No completed activities yet</span>
+                    </div>
+                }
             </div>
         </div>
 
-        <div class="report-card">
-            <div class="report-card-header"><span><i class="fas fa-folder"></i> Activities by Category</span></div>
-            <div class="report-card-body">
+        <!-- Activities by Category -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-folder me-2"></i>
+                <span>Activities by Category</span>
+            </div>
+            <div class="card-body-custom" style="padding:0;">
                 @if (Model.ByCategory.Any())
                 {
-                    <table class="report-table">
-                        <thead><tr><th>Category</th><th style="text-align:right;">Count</th></tr></thead>
-                        <tbody>@foreach (var c in Model.ByCategory) { <tr><td>@c.Name</td><td style="text-align:right;"><span class="pill">@c.Count</span></td></tr> }</tbody>
-                    </table>
+                    <div class="table-responsive">
+                        <table class="tickets-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-tag me-1"></i> Category</th>
+                                    <th style="text-align:right;"><i class="fas fa-list-check me-1"></i> Count</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in Model.ByCategory.OrderByDescending(x => x.Count))
+                                {
+                                    <tr>
+                                        <td><span class="category-name">@c.Name</span></td>
+                                        <td style="text-align:right;">
+                                            <span class="activity-count-badge">@c.Count</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 }
-                else { <div class="empty-mini">No data</div> }
+                else
+                {
+                    <div class="empty-state-mini">
+                        <i class="fas fa-info-circle"></i>
+                        <span>No data available</span>
+                    </div>
+                }
             </div>
         </div>
     </div>
 
-    <div class="report-card">
-        <div class="report-card-header"><span><i class="fas fa-user-clock"></i> Hours by User (top 10)</span></div>
-        <div class="report-card-body">
+    <!-- HOURS BY USER -->
+    <div class="data-card mt-4">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-user-clock me-2"></i>
+                <span>Hours by User</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.HoursByUser.Count</span> users (top 10)
+            </div>
+        </div>
+        <div class="card-body-custom">
             @if (Model.HoursByUser.Any())
             {
                 var m2 = MaxA(Model.HoursByUser);
                 <div class="bars">
-                    @foreach (var s in Model.HoursByUser)
+                    @foreach (var s in Model.HoursByUser.Take(10).OrderByDescending(x => x.Amount))
                     {
-                        <div class="bar-row"><div class="bar-label">@s.Name</div><div class="bar-track"><div class="bar-fill green" style="width:@(Math.Round(s.Amount * 100 / m2))%"></div></div><div class="bar-value">@s.Amount h</div></div>
+                        <div class="bar-row">
+                            <div class="bar-label" title="@s.Name">@s.Name</div>
+                            <div class="bar-track">
+                                <div class="bar-fill success" style="width:@(Math.Round(s.Amount * 100 / m2))%"></div>
+                            </div>
+                            <div class="bar-value">@s.Amount h</div>
+                        </div>
                     }
                 </div>
+                @if (Model.HoursByUser.Count > 10)
+                {
+                    <div class="activity-note">
+                        <i class="fas fa-info-circle"></i>
+                        Showing top 10 of @Model.HoursByUser.Count users
+                    </div>
+                }
             }
-            else { <div class="empty-mini">No completed activities yet</div> }
+            else
+            {
+                <div class="empty-state-mini">
+                    <i class="fas fa-info-circle"></i>
+                    <span>No completed activities yet</span>
+                </div>
+            }
         </div>
     </div>
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== KPI CARDS ===== */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .kpi-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+    }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+        .kpi-icon.primary {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        }
+
+        .kpi-icon.success {
+            background: linear-gradient(135deg, #2c9e6e, #227a55);
+        }
+
+        .kpi-icon.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .kpi-icon.warning {
+            background: linear-gradient(135deg, #f5b042, #e6a017);
+        }
+
+        .kpi-icon.violet {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        .kpi-icon.slate {
+            background: linear-gradient(135deg, var(--gray-500), var(--gray-600));
+        }
+
+    .kpi-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .kpi-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        line-height: 1.2;
+    }
+
+    .kpi-label {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-top: 0.05rem;
+    }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+        .data-card.mt-4 {
+            margin-top: 1.5rem;
+        }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .card-body-custom {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .ticket-count {
+        font-size: 0.8rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== TWO COLUMN GRID ===== */
+    .two-col-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    /* ===== BARS ===== */
+    .bars {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .bar-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .bar-label {
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: var(--gray-600);
+        min-width: 70px;
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .bar-track {
+        flex: 1;
+        height: 8px;
+        background: var(--gray-100);
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        height: 100%;
+        border-radius: 1rem;
+        transition: width 0.6s ease;
+        min-width: 4px;
+    }
+
+        .bar-fill.primary {
+            background: linear-gradient(90deg, var(--primary-light), var(--primary));
+        }
+
+        .bar-fill.success {
+            background: linear-gradient(90deg, #6ee7b7, var(--success));
+        }
+
+        .bar-fill.danger {
+            background: linear-gradient(90deg, #fca5a5, var(--danger));
+        }
+
+        .bar-fill.warning {
+            background: linear-gradient(90deg, #fcd34d, var(--warning));
+        }
+
+        .bar-fill.violet {
+            background: linear-gradient(90deg, #a78bfa, #7c3aed);
+        }
+
+        .bar-fill.slate {
+            background: linear-gradient(90deg, #94a3b8, var(--gray-600));
+        }
+
+    .bar-value {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        min-width: 40px;
+        text-align: right;
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 0.75rem 1.2rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.65rem 1.2rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+    /* ===== ACTIVITY SPECIFIC ===== */
+    .category-name {
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    /* ===== ACTIVITY COUNT BADGE ===== */
+    .activity-count-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        padding: 0.15rem 0.6rem;
+        border-radius: 2rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        background: #dbeafe;
+        border: 1px solid #bfdbfe;
+    }
+
+    /* ===== ACTIVITY NOTE ===== */
+    .activity-note {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+        .activity-note i {
+            color: var(--info);
+            font-size: 0.9rem;
+        }
+
+    /* ===== EMPTY STATE MINI ===== */
+    .empty-state-mini {
+        text-align: center;
+        padding: 1.5rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+        .empty-state-mini i {
+            font-size: 1.2rem;
+            color: var(--gray-400);
+        }
+
+    /* ===== PRINT STYLES ===== */
+    @@media print {
+        .btn-create-ticket {
+            display: none !important;
+        }
+
+        .data-card {
+            box-shadow: none !important;
+            border: 1px solid var(--gray-300) !important;
+            page-break-inside: avoid;
+        }
+
+        .kpi-card {
+            box-shadow: none !important;
+            border: 1px solid var(--gray-300) !important;
+        }
+
+        .bar-fill {
+            background: var(--gray-600) !important;
+        }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .two-col-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .kpi-card {
+            padding: 0.9rem 1rem;
+        }
+
+        .kpi-icon {
+            width: 38px;
+            height: 38px;
+            font-size: 0.9rem;
+        }
+
+        .kpi-value {
+            font-size: 1.1rem;
+        }
+
+        .page-header .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .tickets-table td,
+        .tickets-table th {
+            padding: 0.5rem 0.8rem;
+        }
+
+        .bar-label {
+            min-width: 50px;
+            max-width: 70px;
+            font-size: 0.7rem;
+        }
+
+        .bar-value {
+            font-size: 0.7rem;
+            min-width: 35px;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.75rem;
+        }
+
+            .tickets-table td,
+            .tickets-table th {
+                padding: 0.4rem 0.5rem;
+            }
+
+        .bar-label {
+            min-width: 40px;
+            max-width: 60px;
+            font-size: 0.65rem;
+        }
+
+        .bar-value {
+            font-size: 0.65rem;
+            min-width: 30px;
+        }
+
+        .activity-count-badge {
+            font-size: 0.7rem;
+            min-width: 28px;
+            padding: 0.1rem 0.4rem;
+        }
+
+        .activity-note {
+            font-size: 0.7rem;
+        }
+    }
+</style>

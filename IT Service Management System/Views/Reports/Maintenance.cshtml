@@ -124,9 +124,9 @@
                         <tbody>
                             @foreach (var r in Model.Recent)
                             {
-                                var typeClass = r.MaintenanceType == "Preventive" ? "type-preventive" :
-                                               r.MaintenanceType == "Corrective" ? "type-corrective" :
-                                               r.MaintenanceType == "Predictive" ? "type-predictive" : "type-default";
+                                var typeClass = r.MaintenanceType.ToString() == "Preventive" ? "type-preventive" :
+                                               r.MaintenanceType.ToString() == "Corrective" ? "type-corrective" :
+                                               r.MaintenanceType.ToString() == "Predictive" ? "type-predictive" : "type-default";
                                 <tr>
                                     <td class="maintenance-date">@r.MaintenanceDate.ToString("MMM dd, yyyy")</td>
                                     <td><span class="asset-name">@(r.AssetName ?? "—")</span></td>
@@ -177,10 +177,10 @@
                         <tbody>
                             @foreach (var r in Model.Upcoming.OrderBy(x => x.NextMaintenanceDate))
                             {
-                                var typeClass = r.MaintenanceType == "Preventive" ? "type-preventive" :
-                                               r.MaintenanceType == "Corrective" ? "type-corrective" :
-                                               r.MaintenanceType == "Predictive" ? "type-predictive" : "type-default";
-                                var daysUntil = (r.NextMaintenanceDate - DateTime.Now).Days;
+                                var typeClass = r.MaintenanceType.ToString() == "Preventive" ? "type-preventive" :
+                                               r.MaintenanceType.ToString() == "Corrective" ? "type-corrective" :
+                                               r.MaintenanceType.ToString() == "Predictive" ? "type-predictive" : "type-default";
+                                var daysUntil = (r.NextMaintenanceDate - DateTime.Now)?.Days ?? 0;
                                 var urgencyClass = daysUntil <= 7 ? "upcoming-urgent" :
                                                   daysUntil <= 30 ? "upcoming-soon" : "upcoming-normal";
                                 <tr class="@urgencyClass">

@@ -147,7 +147,7 @@
                                 <tr>
                                     <td><span class="user-name">@u.FullName</span></td>
                                     <td class="user-email">@u.Email</td>
-                                    <td><span class="role-badge role-@u.Role?.ToLower()">@u.Role</span></td>
+                                    <td><span class="role-badge role-@u.Role.ToString().ToLower()">@u.Role</span></td>
                                     <td><span class="status-badge status-danger">@u.LockoutEnd?.ToString("MMM dd, h:mm tt")</span></td>
                                     <td style="text-align:right;">
                                         <form asp-action="UnlockUser" method="post" style="display:inline;">
@@ -295,7 +295,7 @@
                                     <tr>
                                         <td><span class="user-name">@u.FullName</span></td>
                                         <td class="user-email">@u.Email</td>
-                                        <td><span class="role-badge role-@u.Role?.ToLower()">@u.Role</span></td>
+                                        <td><span class="role-badge role-@u.Role.ToString().ToLower()">@u.Role</span></td>
                                     </tr>
                                 }
                             </tbody>
