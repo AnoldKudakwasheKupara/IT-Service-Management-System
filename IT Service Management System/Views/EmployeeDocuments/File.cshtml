@@ -36,6 +36,24 @@
         </nav>
     </div>
 
+    @{ var comp = ViewBag.Completeness as IT_Service_Management_System.Services.Efm.CompletenessResult; }
+    @if (comp != null && comp.RequiredCount > 0)
+    {
+        <div class="efm-completeness">
+            <div class="d-flex align-items-center justify-content-between mb-1" style="font-size:0.85rem;">
+                <span><i class="fas fa-clipboard-check me-1" style="color:var(--primary);"></i> File completeness — <strong>@comp.PresentCount / @comp.RequiredCount</strong> required documents present</span>
+                <strong class="@(comp.Percent == 100 ? "text-success" : comp.Percent >= 75 ? "text-warning" : "text-danger")">@comp.Percent%</strong>
+            </div>
+            <div class="progress" style="height:8px;">
+                <div class="progress-bar @(comp.Percent == 100 ? "bg-success" : comp.Percent >= 75 ? "bg-warning" : "bg-danger")" style="width:@comp.Percent%"></div>
+            </div>
+            @if (comp.MissingCategories.Any())
+            {
+                <div class="mt-2" style="font-size:0.78rem;color:var(--gray-500);"><i class="fas fa-triangle-exclamation" style="color:#f59e0b;"></i> Missing: @string.Join(", ", comp.MissingCategories)</div>
+            }
+        </div>
+    }
+
     <div class="efm-grid">
         <!-- Folder rail -->
         <aside class="efm-folders">
@@ -205,6 +223,7 @@
 </div>
 
 <style>
+    .efm-completeness { background:#fff; border:1px solid var(--gray-200); border-radius:0.9rem; padding:1rem 1.25rem; margin-bottom:1.25rem; }
     .efm-grid { display:grid; grid-template-columns:260px 1fr; gap:1.25rem; align-items:start; }
     .efm-folders { background:#fff; border:1px solid var(--gray-200); border-radius:0.9rem; padding:0.5rem; position:sticky; top:1rem; max-height:calc(100vh - 2rem); overflow:auto; }
     .efm-folder { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.7rem; border-radius:0.6rem; color:var(--gray-700); text-decoration:none; font-size:0.85rem; font-weight:500; }

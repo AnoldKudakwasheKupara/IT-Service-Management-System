@@ -1,0 +1,89 @@
+@model IEnumerable<IT_Service_Management_System.Models.Efm.DocumentNotification>
+@using IT_Service_Management_System.Models.Efm
+@{
+    ViewData["Title"] = "Document Notifications - Axis IT Operations";
+    var paging = ViewBag.Paging as IT_Service_Management_System.Helpers.PagingInfo;
+    var emps = ViewBag.Employees as Dictionary<int, string> ?? new();
+    int unread = ViewBag.UnreadCount ?? 0;
+    (string icon, string cls) Meta(DocumentNotificationType t) => t switch {
+        DocumentNotificationType.DocumentExpired => ("fa-triangle-exclamation", "red"),
+        DocumentNotificationType.DocumentExpiring => ("fa-hourglass-half", "amber"),
+        DocumentNotificationType.MissingDocument => ("fa-folder-minus", "slate"),
+        DocumentNotificationType.ApprovalNeeded => ("fa-user-check", "amber"),
+        DocumentNotificationType.DocumentRejected => ("fa-ban", "red"),
+        DocumentNotificationType.DocumentApproved => ("fa-check", "green"),
+        _ => ("fa-bell", "slate") };
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="page-title"><i class="fas fa-bell me-2" style="color:var(--primary);"></i>Document Notifications</h1>
+                <p class="text-muted mt-2">Expiry alerts, retention and approvals @(unread > 0 ? $"· {unread} unread" : "")</p>
+            </div>
+            <div class="d-flex gap-2">
+                <form asp-action="RunMaintenance" method="post" class="m-0">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-outline-primary" title="Run expiry + retention scans now"><i class="fas fa-rotate"></i> Run Maintenance</button>
+                </form>
+                @if (unread > 0)
+                {
+                    <form asp-action="MarkNotificationsRead" method="post" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-primary"><i class="fas fa-check-double"></i> Mark all read</button>
+                    </form>
+                }
+                <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-list me-2"></i><span>Notifications</span></div>
+            <span class="record-count">@(paging?.TotalCount ?? Model.Count())</span>
+        </div>
+        @if (Model.Any())
+        {
+            <ul class="notif-list">
+                @foreach (var n in Model)
+                {
+                    var m = Meta(n.Type);
+                    <li class="notif @(n.IsRead ? "" : "unread")">
+                        <div class="notif-icon @m.cls"><i class="fas @m.icon"></i></div>
+                        <div class="notif-body">
+                            <div class="notif-title">
+                                @n.Title
+                                @if (n.EmployeeId != null && emps.TryGetValue(n.EmployeeId.Value, out var en)) { <span class="text-muted" style="font-weight:400;">· @en</span> }
+                            </div>
+                            <div class="notif-msg">@n.Message</div>
+                            <div class="notif-time">@n.CreatedAt.ToString("MMM dd, yyyy HH:mm")</div>
+                        </div>
+                        @if (n.EmployeeDocumentId != null)
+                        {
+                            <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@n.EmployeeDocumentId">Open</a>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <div class="text-center p-5 text-muted"><i class="fas fa-bell-slash fa-2x mb-3"></i><p>No notifications.</p></div>
+        }
+        @if (paging != null) { <partial name="_Pagination" model="paging" /> }
+    </div>
+</div>
+
+<style>
+    .notif-list { list-style:none; margin:0; padding:0; }
+    .notif { display:flex; align-items:flex-start; gap:0.9rem; padding:0.9rem 1.25rem; border-bottom:1px solid var(--gray-100); }
+    .notif.unread { background:var(--primary-light); }
+    .notif-icon { width:38px; height:38px; flex-shrink:0; border-radius:0.6rem; display:flex; align-items:center; justify-content:center; background:var(--gray-100); color:var(--gray-500); }
+    .notif-icon.amber { background:#fffbeb; color:#92400e; } .notif-icon.red { background:#fef2f2; color:#b91c1c; } .notif-icon.green { background:#f0fdf4; color:#166534; }
+    .notif-body { flex:1; }
+    .notif-title { font-weight:600; color:var(--gray-800); font-size:0.9rem; }
+    .notif-msg { color:var(--gray-600); font-size:0.82rem; margin-top:0.15rem; }
+    .notif-time { color:var(--gray-400); font-size:0.72rem; margin-top:0.2rem; }
+</style>

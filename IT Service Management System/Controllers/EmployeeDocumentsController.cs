@@ -15,15 +15,17 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly DocumentService _docs;
+        private readonly DocumentMaintenanceService _maint;
 
         private const long MaxFileBytes = 50L * 1024 * 1024; // 50 MB/file
         private static readonly string[] BlockedExtensions =
             { ".exe", ".dll", ".bat", ".cmd", ".com", ".scr", ".msi", ".ps1", ".sh", ".vbs", ".jar" };
 
-        public EmployeeDocumentsController(ApplicationDbContext db, DocumentService docs)
+        public EmployeeDocumentsController(ApplicationDbContext db, DocumentService docs, DocumentMaintenanceService maint)
         {
             _db = db;
             _docs = docs;
+            _maint = maint;
         }
 
         private string? Role => HttpContext.Session.GetString("UserRole");
@@ -206,6 +208,46 @@ namespace IT_Service_Management_System.Controllers
                 : v;
         }
 
+        // ── notifications + maintenance ────────────────────────────────────────────────
+        public async Task<IActionResult> Notifications(int page = 1)
+        {
+            var query = _db.DocumentNotifications
+                .OrderByDescending(n => !n.IsRead).ThenByDescending(n => n.CreatedAt);
+            var (items, paging) = await query.PageAsync(page, 30);
+            ViewBag.Paging = paging;
+            ViewBag.UnreadCount = await _db.DocumentNotifications.CountAsync(n => !n.IsRead);
+
+            var empIds = items.Where(n => n.EmployeeId != null).Select(n => n.EmployeeId!.Value).Distinct().ToList();
+            ViewBag.Employees = await _db.Users.Where(u => empIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.FirstName + " " + u.LastName);
+            return View(items);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkNotificationsRead()
+        {
+            var unread = await _db.DocumentNotifications.Where(n => !n.IsRead).ToListAsync();
+            foreach (var n in unread) { n.IsRead = true; n.ReadAt = DateTime.Now; }
+            await _db.SaveChangesAsync();
+            TempData["Success"] = $"{unread.Count} notification(s) marked as read.";
+            return RedirectToAction(nameof(Notifications));
+        }
+
+        // Manually trigger the expiry/retention scans (also runs automatically every 6 hours).
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RunMaintenance()
+        {
+            await _maint.SeedRequiredDocumentsAsync();
+            var (alerts, expired) = await _maint.RunExpiryScanAsync();
+            var (archived, deleted, flagged) = await _maint.RunRetentionScanAsync();
+            TempData["Success"] =
+                $"Maintenance complete — {alerts} expiry alert(s), {expired} marked expired, " +
+                $"{archived} archived, {deleted} deleted, {flagged} flagged.";
+            return RedirectToAction(nameof(Notifications));
+        }
+
         // ── digital file browser ───────────────────────────────────────────────────────
         public async Task<IActionResult> File(int id, int? folderId)
         {
@@ -245,6 +287,7 @@ namespace IT_Service_Management_System.Controllers
                 Categories = await _db.DocumentCategories.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync(),
                 TotalDocuments = counts.Values.Sum()
             };
+            ViewBag.Completeness = await _maint.GetCompletenessAsync(id);
             return View(vm);
         }
 

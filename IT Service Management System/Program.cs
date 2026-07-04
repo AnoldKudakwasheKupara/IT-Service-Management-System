@@ -153,6 +153,8 @@ builder.Services.AddScoped<IDocumentStorage>(sp =>
     };
 });
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<DocumentMaintenanceService>();
+builder.Services.AddHostedService<DocumentMaintenanceHostedService>();
 
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database");
