@@ -1,0 +1,313 @@
+@model IT_Service_Management_System.ViewModels.Efm.EmployeeFileBrowserVm
+@using IT_Service_Management_System.Models.Efm
+@{
+    ViewData["Title"] = $"{Model.Employee.FullName} - Digital File";
+    var sel = Model.SelectedFolderId;
+    string Size(long b) => b >= 1048576 ? $"{b / 1048576.0:0.#} MB" : b >= 1024 ? $"{b / 1024.0:0.#} KB" : $"{b} B";
+    string Icon(string? name)
+    {
+        var e = System.IO.Path.GetExtension(name ?? "").ToLowerInvariant();
+        return e switch {
+            ".pdf" => "fa-file-pdf", ".doc" or ".docx" => "fa-file-word",
+            ".xls" or ".xlsx" or ".csv" => "fa-file-excel", ".ppt" or ".pptx" => "fa-file-powerpoint",
+            ".png" or ".jpg" or ".jpeg" or ".gif" or ".bmp" or ".tif" or ".tiff" or ".webp" => "fa-file-image",
+            ".zip" or ".rar" or ".7z" => "fa-file-zipper", ".txt" => "fa-file-lines", _ => "fa-file" };
+    }
+}
+
+<div class="page-container efm-browser">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <h1 class="page-title" style="font-size:1.5rem;"><i class="fas fa-folder-tree me-2" style="color:var(--primary);"></i>@Model.Employee.FullName</h1>
+                    <p class="text-muted mt-1" style="font-size:0.85rem;">@Model.Employee.Email · @(Model.Employee.Department?.Name ?? "No department") · @Model.Employee.Role · <strong>@Model.TotalDocuments</strong> document(s)</p>
+                </div>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal"><i class="fas fa-cloud-arrow-up"></i> Upload Documents</button>
+        </div>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb" style="font-size:0.85rem;">
+                <li class="breadcrumb-item"><a asp-action="Index">Employees</a></li>
+                <li class="breadcrumb-item"><a asp-action="File" asp-route-id="@Model.Employee.Id">@Model.Employee.FullName</a></li>
+                <li class="breadcrumb-item active">@(sel == null ? "All Documents" : Model.Folders.FirstOrDefault(f => f.Id == sel)?.Name)</li>
+            </ol>
+        </nav>
+    </div>
+
+    <div class="efm-grid">
+        <!-- Folder rail -->
+        <aside class="efm-folders">
+            <a asp-action="File" asp-route-id="@Model.Employee.Id" class="efm-folder @(sel == null ? "active" : "")">
+                <i class="fas fa-layer-group"></i> <span>All Documents</span>
+                <span class="efm-count">@Model.TotalDocuments</span>
+            </a>
+            @foreach (var f in Model.Folders)
+            {
+                var n = Model.FolderCounts.TryGetValue(f.Id, out var c) ? c : 0;
+                <a asp-action="File" asp-route-id="@Model.Employee.Id" asp-route-folderId="@f.Id" class="efm-folder @(sel == f.Id ? "active" : "")">
+                    <i class="fas @(f.Icon ?? "fa-folder")"></i> <span>@f.Name</span>
+                    <span class="efm-count @(n > 0 ? "on" : "")">@n</span>
+                </a>
+            }
+        </aside>
+
+        <!-- Documents -->
+        <section class="efm-docs">
+            @if (Model.Documents.Any())
+            {
+                <div class="efm-cards">
+                    @foreach (var d in Model.Documents)
+                    {
+                        var expTracked = d.Category?.IsExpiryTracked ?? false;
+                        <div class="efm-card">
+                            <div class="efm-card-icon"><i class="fas @Icon(d.CurrentVersion?.FileName)"></i></div>
+                            <div class="efm-card-body">
+                                <a asp-action="Details" asp-route-id="@d.Id" class="efm-card-title" title="@d.Title">@d.Title</a>
+                                <div class="efm-card-meta">
+                                    <span class="pill">@d.Category?.Name</span>
+                                    @if (d.ConfidentialityLevel >= ConfidentialityLevel.Confidential)
+                                    {
+                                        <span class="pill amber"><i class="fas fa-lock"></i> @d.ConfidentialityLevel</span>
+                                    }
+                                    @if (d.ExpiryDate != null)
+                                    {
+                                        var overdue = d.IsExpired;
+                                        var soon = !overdue && d.DaysUntilExpiry <= 30;
+                                        <span class="pill @(overdue ? "red" : soon ? "amber" : "")"><i class="fas fa-hourglass-half"></i> @(overdue ? "Expired" : $"Exp {d.ExpiryDate:MMM dd, yyyy}")</span>
+                                    }
+                                </div>
+                                <div class="efm-card-sub">@Size(d.CurrentVersion?.FileSizeBytes ?? 0) · @d.CreatedAt.ToString("MMM dd, yyyy")</div>
+                            </div>
+                            <div class="efm-card-actions">
+                                <button class="efm-act" title="Preview" onclick="efmPreview(@d.Id, '@d.CurrentVersion?.ContentType')"><i class="fas fa-eye"></i></button>
+                                <a class="efm-act" title="Download" asp-action="Download" asp-route-id="@d.Id"><i class="fas fa-download"></i></a>
+                                <form asp-action="Delete" asp-route-id="@d.Id" method="post" style="display:inline;" onsubmit="return confirm('Delete this document?');">
+                                    @Html.AntiForgeryToken()
+                                    <button class="efm-act danger" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="efm-empty">
+                    <i class="fas fa-folder-open"></i>
+                    <p>No documents in this folder yet.</p>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal"><i class="fas fa-cloud-arrow-up"></i> Upload</button>
+                </div>
+            }
+        </section>
+    </div>
+</div>
+
+<!-- Upload modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-cloud-arrow-up me-2"></i>Upload Documents — @Model.Employee.FullName</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="efmUploadForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="EmployeeId" value="@Model.Employee.Id" />
+                    <div id="efmDrop" class="efm-drop">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                        <p><strong>Drag &amp; drop files here</strong> or <span class="efm-browse">browse</span></p>
+                        <small class="text-muted">PDF, Word, Excel, PowerPoint, images, TXT, ZIP — up to 50&nbsp;MB each</small>
+                        <input type="file" id="efmFiles" name="files" multiple hidden />
+                    </div>
+                    <ul id="efmQueue" class="efm-queue"></ul>
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Folder</label>
+                            <select name="FolderId" class="form-select" required>
+                                @foreach (var f in Model.Folders)
+                                {
+                                    <option value="@f.Id" selected="@(sel == f.Id)">@f.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Category</label>
+                            <select name="CategoryId" class="form-select" required>
+                                @foreach (var c in Model.Categories)
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Confidentiality</label>
+                            <select name="Confidentiality" class="form-select">
+                                <option value="0">Public</option>
+                                <option value="1">Internal</option>
+                                <option value="2" selected>Confidential</option>
+                                <option value="3">Restricted</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Document Number</label>
+                            <input type="text" name="DocumentNumber" class="form-control" placeholder="Optional" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Issue Date</label>
+                            <input type="date" name="IssueDate" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Expiry Date</label>
+                            <input type="date" name="ExpiryDate" class="form-control" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Tags <span class="text-muted fw-normal">(comma separated)</span></label>
+                            <input type="text" name="TagsCsv" class="form-control" placeholder="e.g. 2026, signed, original" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Description</label>
+                            <textarea name="Description" class="form-control" rows="2" placeholder="Optional notes"></textarea>
+                        </div>
+                    </div>
+
+                    <div id="efmProgressWrap" class="mt-3" style="display:none;">
+                        <div class="progress" style="height:10px;"><div id="efmProgress" class="progress-bar" style="width:0%"></div></div>
+                        <small id="efmProgressText" class="text-muted"></small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="efmUploadBtn" class="btn btn-primary"><i class="fas fa-upload"></i> Upload</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content" style="height:85vh;">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Preview</h5>
+                <a id="previewOpen" href="#" target="_blank" class="btn btn-sm btn-outline-primary ms-auto me-2"><i class="fas fa-up-right-from-square"></i> Open in tab</a>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" style="overflow:hidden;">
+                <iframe id="previewFrame" src="" style="width:100%;height:100%;border:0;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .efm-grid { display:grid; grid-template-columns:260px 1fr; gap:1.25rem; align-items:start; }
+    .efm-folders { background:#fff; border:1px solid var(--gray-200); border-radius:0.9rem; padding:0.5rem; position:sticky; top:1rem; max-height:calc(100vh - 2rem); overflow:auto; }
+    .efm-folder { display:flex; align-items:center; gap:0.6rem; padding:0.55rem 0.7rem; border-radius:0.6rem; color:var(--gray-700); text-decoration:none; font-size:0.85rem; font-weight:500; }
+    .efm-folder span:first-of-type { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .efm-folder i { width:18px; text-align:center; color:var(--gray-400); }
+    .efm-folder:hover { background:var(--gray-50); color:var(--primary-dark); }
+    .efm-folder.active { background:var(--primary-light); color:var(--primary-dark); font-weight:600; }
+    .efm-folder.active i { color:var(--primary); }
+    .efm-count { font-size:0.7rem; font-weight:700; color:var(--gray-400); background:var(--gray-100); border-radius:1rem; padding:0.05rem 0.45rem; }
+    .efm-count.on { background:var(--primary); color:#fff; }
+    .efm-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
+    .efm-card { background:#fff; border:1px solid var(--gray-200); border-radius:0.9rem; padding:1rem; display:flex; flex-direction:column; gap:0.6rem; transition:box-shadow .15s,transform .15s; }
+    .efm-card:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); }
+    .efm-card-icon { font-size:1.6rem; color:var(--primary); }
+    .efm-card-title { font-weight:600; color:var(--gray-800); text-decoration:none; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .efm-card-title:hover { color:var(--primary); }
+    .efm-card-meta { display:flex; flex-wrap:wrap; gap:0.3rem; }
+    .efm-card-sub { font-size:0.72rem; color:var(--gray-500); }
+    .efm-card-actions { display:flex; gap:0.4rem; border-top:1px solid var(--gray-100); padding-top:0.6rem; }
+    .efm-act { background:var(--gray-50); border:1px solid var(--gray-200); border-radius:0.5rem; width:32px; height:30px; color:var(--gray-600); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+    .efm-act:hover { background:var(--primary-light); color:var(--primary-dark); }
+    .efm-act.danger:hover { background:#fee2e2; color:#b91c1c; border-color:#fecaca; }
+    .pill { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.68rem; font-weight:600; padding:0.1rem 0.5rem; border-radius:1rem; background:var(--gray-100); color:var(--gray-600); }
+    .pill.amber { background:#fffbeb; color:#92400e; } .pill.red { background:#fef2f2; color:#b91c1c; }
+    .efm-empty { text-align:center; padding:3rem; color:var(--gray-400); background:#fff; border:1px dashed var(--gray-300); border-radius:0.9rem; }
+    .efm-empty i { font-size:2.2rem; margin-bottom:0.6rem; }
+    .efm-drop { border:2px dashed var(--gray-300); border-radius:0.9rem; padding:1.75rem; text-align:center; color:var(--gray-500); cursor:pointer; transition:all .15s; }
+    .efm-drop.drag { border-color:var(--primary); background:var(--primary-light); color:var(--primary-dark); }
+    .efm-drop i { font-size:1.8rem; margin-bottom:0.4rem; }
+    .efm-browse { color:var(--primary); text-decoration:underline; cursor:pointer; }
+    .efm-queue { list-style:none; padding:0; margin:0.75rem 0 0; display:flex; flex-direction:column; gap:0.35rem; }
+    .efm-queue li { display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; background:var(--gray-50); border:1px solid var(--gray-200); border-radius:0.5rem; padding:0.4rem 0.6rem; }
+    .efm-queue li .rm { margin-left:auto; color:var(--gray-400); cursor:pointer; }
+    @@media (max-width:820px){ .efm-grid { grid-template-columns:1fr; } .efm-folders { position:static; max-height:none; } }
+</style>
+
+<script>
+(function () {
+    const drop = document.getElementById('efmDrop');
+    const input = document.getElementById('efmFiles');
+    const queue = document.getElementById('efmQueue');
+    const form = document.getElementById('efmUploadForm');
+    const btn = document.getElementById('efmUploadBtn');
+    let files = [];
+
+    function render() {
+        queue.innerHTML = '';
+        files.forEach((f, i) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<i class="fas fa-file"></i><span>${f.name}</span><span class="text-muted">${(f.size/1024).toFixed(0)} KB</span><i class="fas fa-times rm" data-i="${i}"></i>`;
+            queue.appendChild(li);
+        });
+        queue.querySelectorAll('.rm').forEach(x => x.addEventListener('click', e => { files.splice(+e.target.dataset.i,1); render(); }));
+    }
+    function add(list){ for (const f of list) files.push(f); render(); }
+
+    drop.addEventListener('click', () => input.click());
+    document.querySelector('.efm-browse')?.addEventListener('click', e => { e.stopPropagation(); input.click(); });
+    input.addEventListener('change', () => add(input.files));
+    ['dragover','dragenter'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('drag'); }));
+    drop.addEventListener('drop', e => { if (e.dataTransfer.files.length) add(e.dataTransfer.files); });
+
+    btn.addEventListener('click', function () {
+        if (!files.length) { toastr.warning('Add at least one file.'); return; }
+        const fd = new FormData(form);
+        files.forEach(f => fd.append('files', f));
+        const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
+
+        const wrap = document.getElementById('efmProgressWrap');
+        const bar = document.getElementById('efmProgress');
+        const txt = document.getElementById('efmProgressText');
+        wrap.style.display = 'block'; btn.disabled = true;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '@Url.Action("Upload")', true);
+        xhr.setRequestHeader('RequestVerificationToken', token);
+        xhr.upload.onprogress = e => {
+            if (e.lengthComputable) {
+                const pct = Math.round(e.loaded / e.total * 100);
+                bar.style.width = pct + '%'; txt.textContent = 'Uploading… ' + pct + '%';
+            }
+        };
+        xhr.onload = function () {
+            btn.disabled = false;
+            if (xhr.status >= 200 && xhr.status < 300) {
+                txt.textContent = 'Done. Refreshing…';
+                setTimeout(() => window.location.reload(), 600);
+            } else {
+                let m = 'Upload failed.';
+                try { m = JSON.parse(xhr.responseText).message || m; } catch {}
+                toastr.error(m); wrap.style.display = 'none';
+            }
+        };
+        xhr.onerror = function () { btn.disabled = false; toastr.error('Network error during upload.'); };
+        xhr.send(fd);
+    });
+})();
+
+function efmPreview(id, ctype) {
+    const url = '@Url.Action("Preview")/' + id;
+    document.getElementById('previewFrame').src = url;
+    document.getElementById('previewOpen').href = url;
+    new bootstrap.Modal(document.getElementById('previewModal')).show();
+}
+</script>

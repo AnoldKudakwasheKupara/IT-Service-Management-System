@@ -152,6 +152,7 @@ builder.Services.AddScoped<IDocumentStorage>(sp =>
         _ => sp.GetRequiredService<LocalDiskDocumentStorage>()
     };
 });
+builder.Services.AddScoped<DocumentService>();
 
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database");
