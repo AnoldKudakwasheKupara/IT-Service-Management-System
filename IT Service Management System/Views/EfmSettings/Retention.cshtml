@@ -144,7 +144,6 @@
 </div>
 
 <script>
-    const polModal = new bootstrap.Modal(document.getElementById('polModal'));
     function openPol(id, name, catId, folderId, years, action, active) {
         document.getElementById('polId').value = id || 0;
         document.getElementById('polName').value = name || '';
@@ -154,6 +153,6 @@
         document.getElementById('polAction').value = (action ?? 1);
         document.getElementById('polActive').checked = id ? !!active : true;
         document.getElementById('polModalTitle').textContent = id ? 'Edit Policy' : 'New Policy';
-        polModal.show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('polModal')).show();
     }
 </script>

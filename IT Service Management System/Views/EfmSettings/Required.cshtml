@@ -122,7 +122,6 @@
 </div>
 
 <script>
-    const reqModal = new bootstrap.Modal(document.getElementById('reqModal'));
     function openReq(id, catId, role, deptId, mandatory, active) {
         document.getElementById('reqId').value = id || 0;
         document.getElementById('reqCategory').value = catId || (document.getElementById('reqCategory').options[0]?.value ?? '');
@@ -131,6 +130,6 @@
         document.getElementById('reqMandatory').checked = id ? !!mandatory : true;
         document.getElementById('reqActive').checked = id ? !!active : true;
         document.getElementById('reqModalTitle').textContent = id ? 'Edit Requirement' : 'New Requirement';
-        reqModal.show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('reqModal')).show();
     }
 </script>

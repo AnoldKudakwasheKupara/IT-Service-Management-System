@@ -59,6 +59,12 @@
                                             <i class="fas @(c.IsActive ? "fa-toggle-on" : "fa-toggle-off")"></i>
                                         </button>
                                     </form>
+                                    <form asp-action="DeleteCategory" method="post" style="display:inline;"
+                                          onsubmit="return confirm('Delete the category &quot;@c.Name&quot;? This cannot be undone.');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@c.Id" />
+                                        <button class="action-btn btn-delete" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                                    </form>
                                 </div>
                             </td>
                         </tr>
@@ -127,7 +133,6 @@
 }
 
 <script>
-    const catModal = new bootstrap.Modal(document.getElementById('catModal'));
     function openCat(id, name, desc, folderId, expiry, retention, active) {
         document.getElementById('catId').value = id || 0;
         document.getElementById('catName').value = name || '';
@@ -137,6 +142,6 @@
         document.getElementById('catExpiry').checked = !!expiry;
         document.getElementById('catActive').checked = id ? !!active : true;
         document.getElementById('catModalTitle').textContent = id ? 'Edit Category' : 'New Category';
-        catModal.show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('catModal')).show();
     }
 </script>

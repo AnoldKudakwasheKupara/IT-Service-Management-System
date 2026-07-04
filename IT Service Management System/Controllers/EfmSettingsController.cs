@@ -76,6 +76,33 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction(nameof(Categories));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteCategory(int id)
+        {
+            var cat = await _db.DocumentCategories.FindAsync(id);
+            if (cat == null) return NotFound();
+
+            // Documents (incl. soft-deleted) keep the FK, and it's Restrict — block rather than crash.
+            var docCount = await _db.EmployeeDocuments.IgnoreQueryFilters().CountAsync(d => d.CategoryId == id);
+            if (docCount > 0)
+            {
+                TempData["Error"] = $"Cannot delete '{cat.Name}' — {docCount} document(s) still use it. Deactivate it instead, or reassign those documents first.";
+                return RedirectToAction(nameof(Categories));
+            }
+            if (await _db.RetentionPolicies.AnyAsync(p => p.CategoryId == id))
+            {
+                TempData["Error"] = $"Cannot delete '{cat.Name}' — a retention policy targets it. Update or remove that policy first.";
+                return RedirectToAction(nameof(Categories));
+            }
+
+            // RequiredDocument rules for this category cascade-delete with it.
+            _db.DocumentCategories.Remove(cat);
+            await _db.SaveChangesAsync();
+            TempData["Success"] = $"Category '{cat.Name}' deleted.";
+            return RedirectToAction(nameof(Categories));
+        }
+
         // ── required documents ───────────────────────────────────────────────────────────
         public async Task<IActionResult> Required()
         {
