@@ -1,0 +1,120 @@
+@model IT_Service_Management_System.ViewModels.Efm.DocumentAuditVm
+@using IT_Service_Management_System.Models.Efm
+@{
+    ViewData["Title"] = "Document Audit Trail - Axis IT Operations";
+    var paging = ViewBag.Paging as IT_Service_Management_System.Helpers.PagingInfo;
+    string Browser(string? ua)
+    {
+        if (string.IsNullOrEmpty(ua)) return "—";
+        return ua.Contains("Edg") ? "Edge" : ua.Contains("Chrome") ? "Chrome" : ua.Contains("Firefox") ? "Firefox"
+            : ua.Contains("Safari") ? "Safari" : "Other";
+    }
+    string ActionClass(DocumentAuditAction a) => a switch {
+        DocumentAuditAction.Uploaded or DocumentAuditAction.VersionUploaded or DocumentAuditAction.Approved or DocumentAuditAction.Restored => "green",
+        DocumentAuditAction.Deleted or DocumentAuditAction.Rejected => "red",
+        DocumentAuditAction.VersionRestored or DocumentAuditAction.Archived => "amber",
+        _ => "slate" };
+    // preserve current filters for the export link
+    var exportRoute = new Dictionary<string, string?> {
+        ["q"] = Model.Q, ["action"] = Model.Action?.ToString(),
+        ["employeeId"] = Model.EmployeeId?.ToString(), ["documentId"] = Model.DocumentId?.ToString(),
+        ["from"] = Model.From?.ToString("yyyy-MM-dd"), ["to"] = Model.To?.ToString("yyyy-MM-dd")
+    };
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="page-title"><i class="fas fa-clipboard-list me-2" style="color:var(--primary);"></i>Document Audit Trail</h1>
+                <p class="text-muted mt-2">
+                    Every view, download, upload, version and delete — with user, IP and browser
+                    @if (Model.EmployeeName != null) { <text>· <strong>@Model.EmployeeName</strong></text> }
+                    @if (Model.DocumentTitle != null) { <text>· <strong>@Model.DocumentTitle</strong></text> }
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-primary" asp-action="AuditExport" asp-all-route-data="exportRoute"><i class="fas fa-file-csv"></i> Export CSV</a>
+                <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card" style="margin-bottom:1.25rem;">
+        <div style="padding:1rem 1.25rem;">
+            <form method="get" asp-action="Audit" class="row g-2 align-items-end">
+                @if (Model.EmployeeId.HasValue) { <input type="hidden" name="employeeId" value="@Model.EmployeeId" /> }
+                @if (Model.DocumentId.HasValue) { <input type="hidden" name="documentId" value="@Model.DocumentId" /> }
+                <div class="col-md-4 col-12">
+                    <label class="form-label fw-semibold" style="font-size:0.8rem;">Search</label>
+                    <input type="text" name="q" value="@Model.Q" class="form-control form-control-sm" placeholder="User, details, IP…" />
+                </div>
+                <div class="col-md-3 col-6">
+                    <label class="form-label fw-semibold" style="font-size:0.8rem;">Action</label>
+                    <select name="action" class="form-select form-select-sm">
+                        <option value="">Any action</option>
+                        @foreach (var a in Enum.GetValues<DocumentAuditAction>())
+                        {
+                            <option value="@a" selected="@(Model.Action == a)">@a</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 col-6">
+                    <label class="form-label fw-semibold" style="font-size:0.8rem;">From</label>
+                    <input type="date" name="from" value="@(Model.From?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-2 col-6">
+                    <label class="form-label fw-semibold" style="font-size:0.8rem;">To</label>
+                    <input type="date" name="to" value="@(Model.To?.ToString("yyyy-MM-dd"))" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-1 col-6 d-flex gap-1">
+                    <button type="submit" class="btn btn-sm btn-primary w-100"><i class="fas fa-filter"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-list me-2"></i><span>Activity</span></div>
+            <span class="record-count">@(paging?.TotalCount ?? Model.Rows.Count) event(s)</span>
+        </div>
+        <div class="table-responsive">
+            @if (Model.Rows.Any())
+            {
+                <table class="data-table">
+                    <thead><tr><th>When</th><th>Action</th><th>By</th><th>Employee</th><th>Document</th><th>IP</th><th>Browser</th><th>Details</th></tr></thead>
+                    <tbody>
+                        @foreach (var r in Model.Rows)
+                        {
+                            <tr>
+                                <td style="white-space:nowrap;">@r.Timestamp.ToString("MMM dd, yyyy HH:mm")</td>
+                                <td><span class="pill @ActionClass(r.Action)">@r.Action</span></td>
+                                <td>@(r.PerformedByName ?? "—")</td>
+                                <td>@(r.EmployeeName ?? "—")</td>
+                                <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                    @if (r.EmployeeDocumentId != null) { <a asp-action="Details" asp-route-id="@r.EmployeeDocumentId" style="text-decoration:none;">@(r.DocumentTitle ?? $"#{r.EmployeeDocumentId}")</a> }
+                                    else { <text>—</text> }
+                                </td>
+                                <td>@(r.IpAddress ?? "—")</td>
+                                <td>@Browser(r.UserAgent)</td>
+                                <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="@r.Details">@r.Details</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="text-center p-5 text-muted"><i class="fas fa-clipboard-list fa-2x mb-3"></i><p>No audit events match your filters.</p></div>
+            }
+        </div>
+        @if (paging != null) { <partial name="_Pagination" model="paging" /> }
+    </div>
+</div>
+
+<style>
+    .pill { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.68rem; font-weight:600; padding:0.1rem 0.5rem; border-radius:1rem; background:var(--gray-100); color:var(--gray-600); }
+    .pill.green { background:#f0fdf4; color:#166534; } .pill.red { background:#fef2f2; color:#b91c1c; }
+    .pill.amber { background:#fffbeb; color:#92400e; } .pill.slate { background:var(--gray-100); color:var(--gray-600); }
+</style>

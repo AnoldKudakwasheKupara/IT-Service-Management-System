@@ -113,6 +113,99 @@ namespace IT_Service_Management_System.Controllers
             });
         }
 
+        // ── audit trail ────────────────────────────────────────────────────────────────
+        public async Task<IActionResult> Audit(string? q, DocumentAuditAction? action, int? employeeId,
+            int? documentId, DateTime? from, DateTime? to, int page = 1)
+        {
+            var (logs, paging) = await BuildAuditQuery(q, action, employeeId, documentId, from, to)
+                .OrderByDescending(a => a.Timestamp).PageAsync(page, 30);
+            ViewBag.Paging = paging;
+
+            var vm = new DocumentAuditVm
+            {
+                Rows = await ResolveRowsAsync(logs),
+                Q = q, Action = action, EmployeeId = employeeId, DocumentId = documentId, From = from, To = to
+            };
+            if (employeeId.HasValue)
+                vm.EmployeeName = (await _db.Users.FindAsync(employeeId.Value))?.FullName;
+            if (documentId.HasValue)
+                vm.DocumentTitle = await _db.EmployeeDocuments.IgnoreQueryFilters()
+                    .Where(d => d.Id == documentId.Value).Select(d => d.Title).FirstOrDefaultAsync();
+            return View(vm);
+        }
+
+        public async Task<IActionResult> AuditExport(string? q, DocumentAuditAction? action, int? employeeId,
+            int? documentId, DateTime? from, DateTime? to)
+        {
+            var logs = await BuildAuditQuery(q, action, employeeId, documentId, from, to)
+                .OrderByDescending(a => a.Timestamp).Take(10000).ToListAsync();
+            var rows = await ResolveRowsAsync(logs);
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Timestamp,Action,PerformedBy,Employee,Document,IPAddress,UserAgent,Details");
+            foreach (var r in rows)
+                sb.AppendLine(string.Join(",", new[] {
+                    r.Timestamp.ToString("yyyy-MM-dd HH:mm:ss"), r.Action.ToString(), r.PerformedByName,
+                    r.EmployeeName, r.DocumentTitle, r.IpAddress, r.UserAgent, r.Details
+                }.Select(Csv)));
+
+            return File(System.Text.Encoding.UTF8.GetBytes(sb.ToString()), "text/csv",
+                $"document-audit-{DateTime.Now:yyyyMMdd-HHmm}.csv");
+        }
+
+        private IQueryable<DocumentAuditLog> BuildAuditQuery(string? q, DocumentAuditAction? action,
+            int? employeeId, int? documentId, DateTime? from, DateTime? to)
+        {
+            var query = _db.DocumentAuditLogs.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(a =>
+                    (a.PerformedByName != null && a.PerformedByName.Contains(term))
+                    || (a.Details != null && a.Details.Contains(term))
+                    || (a.IpAddress != null && a.IpAddress.Contains(term)));
+            }
+            if (action.HasValue) query = query.Where(a => a.Action == action.Value);
+            if (employeeId.HasValue) query = query.Where(a => a.EmployeeId == employeeId.Value);
+            if (documentId.HasValue) query = query.Where(a => a.EmployeeDocumentId == documentId.Value);
+            if (from.HasValue) query = query.Where(a => a.Timestamp >= from.Value);
+            if (to.HasValue) query = query.Where(a => a.Timestamp <= to.Value.AddDays(1));
+            return query;
+        }
+
+        private async Task<List<DocumentAuditRow>> ResolveRowsAsync(List<DocumentAuditLog> logs)
+        {
+            var empIds = logs.Where(l => l.EmployeeId != null).Select(l => l.EmployeeId!.Value).Distinct().ToList();
+            var emps = await _db.Users.Where(u => empIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.FirstName + " " + u.LastName);
+            var docIds = logs.Where(l => l.EmployeeDocumentId != null).Select(l => l.EmployeeDocumentId!.Value).Distinct().ToList();
+            var docs = await _db.EmployeeDocuments.IgnoreQueryFilters().Where(d => docIds.Contains(d.Id))
+                .ToDictionaryAsync(d => d.Id, d => d.Title);
+
+            return logs.Select(l => new DocumentAuditRow
+            {
+                Id = l.Id,
+                Timestamp = l.Timestamp,
+                Action = l.Action,
+                PerformedByName = l.PerformedByName,
+                IpAddress = l.IpAddress,
+                UserAgent = l.UserAgent,
+                EmployeeId = l.EmployeeId,
+                EmployeeName = l.EmployeeId != null && emps.TryGetValue(l.EmployeeId.Value, out var en) ? en : null,
+                EmployeeDocumentId = l.EmployeeDocumentId,
+                DocumentTitle = l.EmployeeDocumentId != null && docs.TryGetValue(l.EmployeeDocumentId.Value, out var dt) ? dt : null,
+                Details = l.Details
+            }).ToList();
+        }
+
+        private static string Csv(string? v)
+        {
+            v ??= "";
+            return v.Contains(',') || v.Contains('"') || v.Contains('\n')
+                ? "\"" + v.Replace("\"", "\"\"") + "\""
+                : v;
+        }
+
         // ── digital file browser ───────────────────────────────────────────────────────
         public async Task<IActionResult> File(int id, int? folderId)
         {

@@ -17,8 +17,13 @@
                     @Model.Employee?.FullName · @Model.Folder?.Name · @Model.Category?.Name
                 </p>
             </div>
+            @{ var isStaff = ViewBag.IsStaff == true; }
             <div class="ms-auto d-flex gap-2">
-                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#versionModal"><i class="fas fa-upload"></i> New Version</button>
+                @if (isStaff)
+                {
+                    <a class="btn btn-outline-secondary btn-sm" asp-action="Audit" asp-route-documentId="@Model.Id"><i class="fas fa-clipboard-list"></i> History</a>
+                    <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#versionModal"><i class="fas fa-upload"></i> New Version</button>
+                }
                 <a class="btn btn-outline-primary btn-sm" asp-action="Preview" asp-route-id="@Model.Id" target="_blank"><i class="fas fa-eye"></i> Preview</a>
                 <a class="btn btn-primary btn-sm" asp-action="Download" asp-route-id="@Model.Id"><i class="fas fa-download"></i> Download</a>
             </div>
@@ -90,16 +95,20 @@
                                     <td>@v.UploadedAt.ToString("MMM dd, yyyy")<div class="text-muted" style="font-size:0.7rem;">@v.UploadedByName</div></td>
                                     <td style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="@v.ChangeNote">@(v.ChangeNote ?? "—")</td>
                                     <td style="text-align:right;white-space:nowrap;">
-                                        <a class="btn btn-sm btn-outline-primary" asp-action="DownloadVersion" asp-route-versionId="@v.Id" title="Download this version"><i class="fas fa-download"></i></a>
-                                        @if (!v.IsCurrent)
+                                        @if (isStaff)
                                         {
-                                            <form asp-action="RestoreVersion" method="post" style="display:inline;" onsubmit="return confirm('Restore v@(v.VersionNumber) as the current version?');">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="documentId" value="@Model.Id" />
-                                                <input type="hidden" name="versionId" value="@v.Id" />
-                                                <button class="btn btn-sm btn-outline-secondary" title="Restore this version"><i class="fas fa-rotate-left"></i></button>
-                                            </form>
+                                            <a class="btn btn-sm btn-outline-primary" asp-action="DownloadVersion" asp-route-versionId="@v.Id" title="Download this version"><i class="fas fa-download"></i></a>
+                                            @if (!v.IsCurrent)
+                                            {
+                                                <form asp-action="RestoreVersion" method="post" style="display:inline;" onsubmit="return confirm('Restore v@(v.VersionNumber) as the current version?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="documentId" value="@Model.Id" />
+                                                    <input type="hidden" name="versionId" value="@v.Id" />
+                                                    <button class="btn btn-sm btn-outline-secondary" title="Restore this version"><i class="fas fa-rotate-left"></i></button>
+                                                </form>
+                                            }
                                         }
+                                        else { <text>—</text> }
                                     </td>
                                 </tr>
                             }
