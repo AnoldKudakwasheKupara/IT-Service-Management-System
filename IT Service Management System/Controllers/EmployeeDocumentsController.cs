@@ -1,5 +1,6 @@
 using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Helpers;
+using IT_Service_Management_System.Helpers.Efm;
 using IT_Service_Management_System.Models.Efm;
 using IT_Service_Management_System.Services.Efm;
 using IT_Service_Management_System.ViewModels.Efm;
@@ -24,6 +25,20 @@ namespace IT_Service_Management_System.Controllers
             _db = db;
             _docs = docs;
         }
+
+        private string? Role => HttpContext.Session.GetString("UserRole");
+        private int? Uid => HttpContext.Session.GetInt32("UserId");
+
+        // Can the current user open (view/preview/download) this document?
+        // Staff see per confidentiality; everyone else only their own documents (self-service).
+        private bool CanOpen(EmployeeDocument doc)
+        {
+            if (EfmAccess.IsFullAccess(Role)) return true;
+            if (EfmAccess.IsStaff(Role)) return EfmAccess.CanSeeConfidentiality(Role, doc.ConfidentialityLevel);
+            return doc.EmployeeId == Uid;
+        }
+
+        private IActionResult Denied() => RedirectToAction("AccessDenied", "Home");
 
         // ── employee picker ────────────────────────────────────────────────────────────
         public async Task<IActionResult> Index(string? q)
@@ -53,6 +68,10 @@ namespace IT_Service_Management_System.Controllers
                 .Include(d => d.CurrentVersion)
                 .Include(d => d.Tags).ThenInclude(t => t.Tag)
                 .Where(d => !d.IsArchived);
+
+            // HR officers / auditors cannot see Restricted documents in search.
+            if (!EfmAccess.IsFullAccess(Role))
+                query = query.Where(d => d.ConfidentialityLevel < ConfidentialityLevel.Restricted);
 
             if (!string.IsNullOrWhiteSpace(q))
             {
@@ -103,8 +122,12 @@ namespace IT_Service_Management_System.Controllers
             var folders = await _db.DocumentFolders.Where(f => f.IsActive)
                 .OrderBy(f => f.SortOrder).ToListAsync();
 
-            var counts = await _db.EmployeeDocuments
-                .Where(d => d.EmployeeId == id && !d.IsArchived)
+            // Non-admin staff (HR officers) cannot see Restricted documents.
+            bool restrictConf = !EfmAccess.IsFullAccess(Role);
+
+            var countsQuery = _db.EmployeeDocuments.Where(d => d.EmployeeId == id && !d.IsArchived);
+            if (restrictConf) countsQuery = countsQuery.Where(d => d.ConfidentialityLevel < ConfidentialityLevel.Restricted);
+            var counts = await countsQuery
                 .GroupBy(d => d.FolderId)
                 .Select(g => new { g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Key, x => x.Count);
@@ -113,6 +136,7 @@ namespace IT_Service_Management_System.Controllers
                 .Include(d => d.Category)
                 .Include(d => d.CurrentVersion)
                 .Where(d => d.EmployeeId == id && !d.IsArchived);
+            if (restrictConf) docsQuery = docsQuery.Where(d => d.ConfidentialityLevel < ConfidentialityLevel.Restricted);
             if (folderId.HasValue)
                 docsQuery = docsQuery.Where(d => d.FolderId == folderId.Value);
 
@@ -183,6 +207,7 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ── document detail ────────────────────────────────────────────────────────────
+        [IT_Service_Management_System.Filters.AllowAnyRole]
         public async Task<IActionResult> Details(int id)
         {
             var doc = await _db.EmployeeDocuments
@@ -195,7 +220,9 @@ namespace IT_Service_Management_System.Controllers
                 .FirstOrDefaultAsync(d => d.Id == id);
 
             if (doc == null) return NotFound();
+            if (!CanOpen(doc)) return Denied();
 
+            ViewBag.IsStaff = EfmAccess.IsStaff(Role);
             doc.ViewCount++;
             await _db.SaveChangesAsync();
             await _docs.LogAsync(DocumentAuditAction.Viewed, doc.Id, doc.EmployeeId, $"Viewed '{doc.Title}'");
@@ -203,21 +230,31 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // Inline preview (browser renders PDF/image).
+        [IT_Service_Management_System.Filters.AllowAnyRole]
         public async Task<IActionResult> Preview(int id)
         {
+            var doc = await _db.EmployeeDocuments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == id);
+            if (doc == null) return NotFound();
+            if (!CanOpen(doc)) return Denied();
+
             var result = await _docs.OpenCurrentAsync(id);
             if (result == null) return NotFound();
-            await _docs.LogAsync(DocumentAuditAction.Previewed, id, null, "Previewed document");
+            await _docs.LogAsync(DocumentAuditAction.Previewed, id, doc.EmployeeId, "Previewed document");
             Response.Headers.ContentDisposition = "inline";
             return File(result.Value.Stream, result.Value.Version.ContentType);
         }
 
         // Force download (attachment).
+        [IT_Service_Management_System.Filters.AllowAnyRole]
         public async Task<IActionResult> Download(int id)
         {
+            var doc = await _db.EmployeeDocuments.AsNoTracking().FirstOrDefaultAsync(d => d.Id == id);
+            if (doc == null) return NotFound();
+            if (!CanOpen(doc)) return Denied();
+
             var result = await _docs.OpenCurrentAsync(id);
             if (result == null) return NotFound();
-            await _docs.LogAsync(DocumentAuditAction.Downloaded, id, null, $"Downloaded '{result.Value.Version.FileName}'");
+            await _docs.LogAsync(DocumentAuditAction.Downloaded, id, doc.EmployeeId, $"Downloaded '{result.Value.Version.FileName}'");
             return File(result.Value.Stream, result.Value.Version.ContentType, result.Value.Version.FileName);
         }
 
@@ -279,6 +316,72 @@ namespace IT_Service_Management_System.Controllers
 
             TempData["Success"] = "Document deleted.";
             return RedirectToAction(nameof(File), new { id = doc.EmployeeId, folderId = doc.FolderId });
+        }
+
+        // ── employee self-service (any signed-in user, scoped to their own file) ────────
+        [IT_Service_Management_System.Filters.AllowAnyRole]
+        public async Task<IActionResult> MyDocuments()
+        {
+            var uid = Uid;
+            if (uid == null) return RedirectToAction("Login", "Account");
+
+            var employee = await _db.Users.Include(u => u.Department).FirstOrDefaultAsync(u => u.Id == uid.Value);
+            if (employee == null) return NotFound();
+
+            var vm = new EmployeeFileBrowserVm
+            {
+                Employee = employee,
+                Documents = await _db.EmployeeDocuments
+                    .Include(d => d.Category).Include(d => d.Folder).Include(d => d.CurrentVersion)
+                    .Where(d => d.EmployeeId == uid.Value)
+                    .OrderByDescending(d => d.CreatedAt).ToListAsync(),
+                Folders = await _db.DocumentFolders.Where(f => f.IsActive).OrderBy(f => f.SortOrder).ToListAsync(),
+                Categories = await _db.DocumentCategories.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync()
+            };
+            vm.TotalDocuments = vm.Documents.Count;
+            return View(vm);
+        }
+
+        [HttpPost]
+        [IT_Service_Management_System.Filters.AllowAnyRole]
+        [RequestSizeLimit(long.MaxValue)]
+        public async Task<IActionResult> MyUpload(int folderId, int categoryId, List<IFormFile> files, string? description)
+        {
+            var uid = Uid;
+            if (uid == null) return RedirectToAction("Login", "Account");
+
+            if (files == null || files.Count == 0 || files.All(f => f.Length == 0))
+            { TempData["Error"] = "Please choose a file."; return RedirectToAction(nameof(MyDocuments)); }
+            if (!await _db.DocumentFolders.AnyAsync(f => f.Id == folderId) ||
+                !await _db.DocumentCategories.AnyAsync(c => c.Id == categoryId))
+            { TempData["Error"] = "Invalid folder or category."; return RedirectToAction(nameof(MyDocuments)); }
+
+            var userName = HttpContext.Session.GetString("UserName");
+            int saved = 0;
+            foreach (var file in files)
+            {
+                if (file.Length == 0 || file.Length > MaxFileBytes) continue;
+                if (BlockedExtensions.Contains(Path.GetExtension(file.FileName).ToLowerInvariant())) continue;
+
+                var doc = await _docs.CreateFromUploadAsync(new DocumentUploadInput
+                {
+                    EmployeeId = uid.Value,
+                    FolderId = folderId,
+                    CategoryId = categoryId,
+                    Confidentiality = ConfidentialityLevel.Confidential,
+                    Description = description
+                }, file, uid, userName);
+
+                // Employee self-uploads await HR approval.
+                doc.Status = DocumentStatus.PendingApproval;
+                await _db.SaveChangesAsync();
+                saved++;
+            }
+
+            TempData["Success"] = saved > 0
+                ? $"{saved} document(s) uploaded and sent for HR approval."
+                : "No files were uploaded.";
+            return RedirectToAction(nameof(MyDocuments));
         }
     }
 }

@@ -576,6 +576,11 @@
                     <i class="fas fa-file-signature"></i> My Exit Clearance
                 </a>
 
+                <a class="nav-item @(currentController == "EmployeeDocuments" && currentAction == "MyDocuments" ? "active" : "")"
+                   asp-controller="EmployeeDocuments" asp-action="MyDocuments">
+                    <i class="fas fa-folder"></i> My Documents
+                </a>
+
                 @if (navFull)
                 {
                     <div class="nav-group">Reports</div>

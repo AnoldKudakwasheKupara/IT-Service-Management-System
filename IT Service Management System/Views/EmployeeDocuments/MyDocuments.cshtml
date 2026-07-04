@@ -1,0 +1,108 @@
+@model IT_Service_Management_System.ViewModels.Efm.EmployeeFileBrowserVm
+@using IT_Service_Management_System.Models.Efm
+@{
+    ViewData["Title"] = "My Documents - Axis IT Operations";
+    string Size(long b) => b >= 1048576 ? $"{b / 1048576.0:0.#} MB" : b >= 1024 ? $"{b / 1024.0:0.#} KB" : $"{b} B";
+    string StatusPill(DocumentStatus s) => s switch {
+        DocumentStatus.PendingApproval => "amber", DocumentStatus.Rejected => "red",
+        DocumentStatus.Approved or DocumentStatus.Active => "green", _ => "" };
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+            <div>
+                <h1 class="page-title"><i class="fas fa-folder me-2" style="color:var(--primary);"></i>My Documents</h1>
+                <p class="text-muted mt-2">Your personal documents. New uploads are sent to HR for approval.</p>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#myUploadModal"><i class="fas fa-cloud-arrow-up"></i> Upload Document</button>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-file-lines me-2"></i><span>Documents</span></div>
+            <span class="record-count">@Model.TotalDocuments</span>
+        </div>
+        <div class="table-responsive">
+            @if (Model.Documents.Any())
+            {
+                <table class="data-table">
+                    <thead><tr><th>Document</th><th>Category</th><th>Folder</th><th>Status</th><th>Uploaded</th><th style="text-align:right;">Actions</th></tr></thead>
+                    <tbody>
+                        @foreach (var d in Model.Documents)
+                        {
+                            <tr>
+                                <td><strong>@d.Title</strong> <span class="text-muted" style="font-size:0.72rem;">@Size(d.CurrentVersion?.FileSizeBytes ?? 0)</span></td>
+                                <td>@d.Category?.Name</td>
+                                <td>@d.Folder?.Name</td>
+                                <td><span class="pill @StatusPill(d.Status)">@(d.Status == DocumentStatus.PendingApproval ? "Pending Approval" : d.Status.ToString())</span></td>
+                                <td>@d.CreatedAt.ToString("MMM dd, yyyy")</td>
+                                <td style="text-align:right;white-space:nowrap;">
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Preview" asp-route-id="@d.Id" target="_blank" title="Preview"><i class="fas fa-eye"></i></a>
+                                    <a class="btn btn-sm btn-outline-primary" asp-action="Download" asp-route-id="@d.Id" title="Download"><i class="fas fa-download"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="text-center p-5 text-muted">
+                    <i class="fas fa-folder-open fa-2x mb-3"></i>
+                    <p>You have no documents yet.</p>
+                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#myUploadModal"><i class="fas fa-cloud-arrow-up"></i> Upload your first document</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="myUploadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="MyUpload" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-cloud-arrow-up me-2"></i>Upload Document</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Folder</label>
+                            <select name="folderId" class="form-select" required>
+                                @foreach (var f in Model.Folders) { <option value="@f.Id">@f.Name</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Category</label>
+                            <select name="categoryId" class="form-select" required>
+                                @foreach (var c in Model.Categories) { <option value="@c.Id">@c.Name</option> }
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Description</label>
+                            <input type="text" name="description" class="form-control" maxlength="500" placeholder="Optional" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Files</label>
+                            <input type="file" name="files" class="form-control" multiple required />
+                            <div class="form-text">Up to 50&nbsp;MB per file. Uploads are reviewed by HR before approval.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Upload</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pill { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.7rem; font-weight:600; padding:0.1rem 0.55rem; border-radius:1rem; background:var(--gray-100); color:var(--gray-600); }
+    .pill.amber { background:#fffbeb; color:#92400e; } .pill.red { background:#fef2f2; color:#b91c1c; } .pill.green { background:#f0fdf4; color:#166534; }
+</style>
