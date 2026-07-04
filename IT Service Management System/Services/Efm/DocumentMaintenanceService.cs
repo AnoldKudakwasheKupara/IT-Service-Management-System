@@ -57,6 +57,11 @@ namespace IT_Service_Management_System.Services.Efm
                     .Select(a => new { a.EmployeeDocumentId, a.ThresholdDays }).ToListAsync())
                 .Select(e => (e.EmployeeDocumentId, e.ThresholdDays)).ToHashSet();
 
+            // Employee contacts, so we can remind owners about their own expiring documents.
+            var empIds = docs.Select(d => d.EmployeeId).Distinct().ToList();
+            var employees = await _db.Users.Where(u => empIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u);
+
             var digest = new List<string>();
 
             foreach (var d in docs)
@@ -79,15 +84,37 @@ namespace IT_Service_Management_System.Services.Efm
                 var msg = days < 0
                     ? $"'{d.Title}' has expired ({d.ExpiryDate:MMM dd, yyyy})."
                     : $"'{d.Title}' expires on {d.ExpiryDate:MMM dd, yyyy} ({days} days).";
+                var type = days < 0 ? DocumentNotificationType.DocumentExpired : DocumentNotificationType.DocumentExpiring;
                 _db.DocumentNotifications.Add(new DocumentNotification
                 {
-                    Type = days < 0 ? DocumentNotificationType.DocumentExpired : DocumentNotificationType.DocumentExpiring,
+                    Type = type,
                     EmployeeDocumentId = d.Id,
                     EmployeeId = d.EmployeeId,
                     Title = title,
                     Message = msg,
                     CreatedAt = DateTime.Now
                 });
+
+                // Also remind the owning employee directly (own bell + email) about their document.
+                _db.DocumentNotifications.Add(new DocumentNotification
+                {
+                    Type = type,
+                    EmployeeDocumentId = d.Id,
+                    EmployeeId = d.EmployeeId,
+                    RecipientUserId = d.EmployeeId,
+                    Title = title,
+                    Message = msg,
+                    CreatedAt = DateTime.Now
+                });
+                if (employees.TryGetValue(d.EmployeeId, out var emp) && !string.IsNullOrWhiteSpace(emp.Email))
+                {
+                    var body = $"<p>Hi {System.Net.WebUtility.HtmlEncode(emp.FirstName)},</p>" +
+                               $"<p>{System.Net.WebUtility.HtmlEncode(msg)}</p>" +
+                               "<p>Please provide an up-to-date copy to HR.</p>" +
+                               "<p style='color:#6b7280;font-size:0.85rem;'>Axis IT — Employee File Management</p>";
+                    _email.Queue(emp.Email, emp.FullName, $"[Axis IT] {title}: {d.Title}", body);
+                }
+
                 digest.Add(msg);
                 alerts++;
             }

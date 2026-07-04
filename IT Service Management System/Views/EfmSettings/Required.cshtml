@@ -1,0 +1,134 @@
+@model List<IT_Service_Management_System.Models.Efm.RequiredDocument>
+@using IT_Service_Management_System.Models.Efm
+@{
+    ViewData["Title"] = "Required Documents - File Settings";
+    var cats = ViewBag.Categories as List<DocumentCategory> ?? new();
+    var depts = ViewBag.Departments as List<IT_Service_Management_System.Models.Department> ?? new();
+    var roles = Enum.GetNames(typeof(IT_Service_Management_System.Models.Ticket.UserRole));
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="page-title"><i class="fas fa-sliders me-2" style="color:var(--primary);"></i>File Settings</h1>
+                <p class="text-muted mt-2">Define which categories are required — overall or scoped to a role/department. Drives file completeness.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openReq()"><i class="fas fa-plus"></i> New Requirement</button>
+        </div>
+        <partial name="_Nav" />
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-list-check me-2"></i><span>Required Documents</span></div>
+            <span class="record-count">@Model.Count</span>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead><tr><th>Category</th><th>Applies to role</th><th>Applies to department</th><th>Mandatory</th><th>Status</th><th style="text-align:right;">Actions</th></tr></thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        @foreach (var r in Model)
+                        {
+                            <tr style="@(r.IsActive ? "" : "opacity:0.55;")">
+                                <td><strong>@r.Category?.Name</strong></td>
+                                <td>@(r.AppliesToRole ?? "All roles")</td>
+                                <td>@(r.AppliesToDepartment?.Name ?? "All departments")</td>
+                                <td>@(r.IsMandatory ? Html.Raw("<span class='pill amber'>Mandatory</span>") : Html.Raw("<span class='pill'>Optional</span>"))</td>
+                                <td>@(r.IsActive ? Html.Raw("<span class='pill green'>Active</span>") : Html.Raw("<span class='pill'>Inactive</span>"))</td>
+                                <td style="text-align:right;white-space:nowrap;">
+                                    <button class="btn btn-sm btn-outline-primary" title="Edit"
+                                            onclick="openReq(@r.Id, @r.CategoryId, '@(r.AppliesToRole)', @(r.AppliesToDepartmentId?.ToString() ?? "null"), @r.IsMandatory.ToString().ToLower(), @r.IsActive.ToString().ToLower())">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                    <form asp-action="DeleteRequired" method="post" style="display:inline;" onsubmit="return confirm('Remove this requirement?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@r.Id" />
+                                        <button class="btn btn-sm btn-outline-danger" title="Remove"><i class="fas fa-trash-alt"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6" class="text-center text-muted p-4">No requirements defined yet.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="reqModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="SaveRequired" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="reqId" value="0" />
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-list-check me-2"></i><span id="reqModalTitle">New Requirement</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                            <select name="categoryId" id="reqCategory" class="form-select" required>
+                                @foreach (var c in cats) { <option value="@c.Id">@c.Name</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Applies to role</label>
+                            <select name="appliesToRole" id="reqRole" class="form-select">
+                                <option value="">All roles</option>
+                                @foreach (var r in roles) { <option value="@r">@r</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Applies to department</label>
+                            <select name="appliesToDepartmentId" id="reqDept" class="form-select">
+                                <option value="">All departments</option>
+                                @foreach (var d in depts) { <option value="@d.Id">@d.Name</option> }
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="isMandatory" id="reqMandatory" value="true" checked />
+                                <label class="form-check-label" for="reqMandatory">Mandatory (counts toward completeness)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="isActive" id="reqActive" value="true" checked />
+                                <label class="form-check-label" for="reqActive">Active</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pill { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.7rem; font-weight:600; padding:0.1rem 0.55rem; border-radius:1rem; background:var(--gray-100); color:var(--gray-600); }
+    .pill.green { background:#f0fdf4; color:#166534; } .pill.amber { background:#fffbeb; color:#92400e; }
+</style>
+<script>
+    const reqModal = new bootstrap.Modal(document.getElementById('reqModal'));
+    function openReq(id, catId, role, deptId, mandatory, active) {
+        document.getElementById('reqId').value = id || 0;
+        document.getElementById('reqCategory').value = catId || (document.getElementById('reqCategory').options[0]?.value ?? '');
+        document.getElementById('reqRole').value = role || '';
+        document.getElementById('reqDept').value = deptId ?? '';
+        document.getElementById('reqMandatory').checked = id ? !!mandatory : true;
+        document.getElementById('reqActive').checked = id ? !!active : true;
+        document.getElementById('reqModalTitle').textContent = id ? 'Edit Requirement' : 'New Requirement';
+        reqModal.show();
+    }
+</script>

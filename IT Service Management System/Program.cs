@@ -31,6 +31,8 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add<RoleAuthorizationFilter>();
     // Validate the anti-forgery token on every unsafe (POST/PUT/DELETE) request.
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+    // Populate the nav notification-bell count for every rendered page.
+    options.Filters.Add<NotificationBadgeFilter>();
 });
 
 // Allow the anti-forgery token to be supplied via a request header (used by AJAX calls).
@@ -153,9 +155,18 @@ builder.Services.AddScoped<IDocumentStorage>(sp =>
     };
 });
 builder.Services.AddScoped<DocumentService>();
-builder.Services.AddScoped<IOcrService, PlainTextOcrService>();
+builder.Services.AddScoped<DocumentApprovalService>();
+// OCR engine (pluggable). PlainText baseline by default; set EFM:Ocr:Provider = "tesseract"
+// to OCR images + scanned PDFs (requires a tessdata folder — see EFM:Ocr:TessDataPath).
+if (string.Equals(builder.Configuration["EFM:Ocr:Provider"], "tesseract", StringComparison.OrdinalIgnoreCase))
+    builder.Services.AddScoped<IOcrService, TesseractOcrService>();
+else
+    builder.Services.AddScoped<IOcrService, PlainTextOcrService>();
 builder.Services.AddScoped<DocumentMaintenanceService>();
 builder.Services.AddHostedService<DocumentMaintenanceHostedService>();
+
+// QuestPDF community licence (free for this use); required before any PDF is generated.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database");

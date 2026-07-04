@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = $"{Model.Employee.FullName} - Digital File";
     var sel = Model.SelectedFolderId;
+    var currentUrl = Url.Action("File", new { id = Model.Employee.Id, folderId = sel });
     string Size(long b) => b >= 1048576 ? $"{b / 1048576.0:0.#} MB" : b >= 1024 ? $"{b / 1024.0:0.#} KB" : $"{b} B";
     string Icon(string? name)
     {
@@ -75,11 +76,18 @@
         <section class="efm-docs">
             @if (Model.Documents.Any())
             {
+                <div class="d-flex align-items-center gap-2 mb-2" style="font-size:0.82rem;">
+                    <label class="d-inline-flex align-items-center gap-1" style="cursor:pointer;color:var(--gray-600);">
+                        <input type="checkbox" id="bulkSelectAll" onchange="bulkToggleAll(this)" /> Select all
+                    </label>
+                    <span id="bulkSelectedText" class="text-muted"></span>
+                </div>
                 <div class="efm-cards">
                     @foreach (var d in Model.Documents)
                     {
                         var expTracked = d.Category?.IsExpiryTracked ?? false;
                         <div class="efm-card">
+                            <input type="checkbox" class="bulk-check" value="@d.Id" onchange="bulkSync()" title="Select" />
                             <div class="efm-card-icon"><i class="fas @Icon(d.CurrentVersion?.FileName)"></i></div>
                             <div class="efm-card-body">
                                 <a asp-action="Details" asp-route-id="@d.Id" class="efm-card-title" title="@d.Title">@d.Title</a>
@@ -101,6 +109,12 @@
                             <div class="efm-card-actions">
                                 <button class="efm-act" title="Preview" onclick="efmPreview(@d.Id, '@d.CurrentVersion?.ContentType')"><i class="fas fa-eye"></i></button>
                                 <a class="efm-act" title="Download" asp-action="Download" asp-route-id="@d.Id"><i class="fas fa-download"></i></a>
+                                <form asp-action="Archive" method="post" style="display:inline;" onsubmit="return confirm('Archive this document?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@d.Id" />
+                                    <input type="hidden" name="returnUrl" value="@currentUrl" />
+                                    <button class="efm-act" title="Archive"><i class="fas fa-box-archive"></i></button>
+                                </form>
                                 <form asp-action="Delete" asp-route-id="@d.Id" method="post" style="display:inline;" onsubmit="return confirm('Delete this document?');">
                                     @Html.AntiForgeryToken()
                                     <button class="efm-act danger" title="Delete"><i class="fas fa-trash-alt"></i></button>
@@ -122,6 +136,32 @@
     </div>
 </div>
 
+<!-- Bulk action bar + backing form -->
+<form id="bulkForm" asp-action="Bulk" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="employeeId" value="@Model.Employee.Id" />
+    <input type="hidden" name="returnUrl" value="@currentUrl" />
+    <input type="hidden" name="op" id="bulkOp" />
+    <div id="bulkIds"></div>
+    <div id="bulkBar" class="bulk-bar">
+        <span class="bulk-count"><strong id="bulkCount">0</strong> selected</span>
+        <button type="button" class="btn btn-sm btn-light" onclick="bulkSubmit('download')"><i class="fas fa-download"></i> Download</button>
+        <div class="bulk-inline">
+            <select name="targetFolderId" class="form-select form-select-sm" style="width:auto;">
+                @foreach (var f in Model.Folders) { <option value="@f.Id">@f.Name</option> }
+            </select>
+            <button type="button" class="btn btn-sm btn-light" onclick="bulkSubmit('move')"><i class="fas fa-folder-tree"></i> Move</button>
+        </div>
+        <div class="bulk-inline">
+            <input type="text" name="tags" class="form-control form-control-sm" style="width:160px;" placeholder="tag1, tag2" />
+            <button type="button" class="btn btn-sm btn-light" onclick="bulkSubmit('tag')"><i class="fas fa-tags"></i> Tag</button>
+        </div>
+        <button type="button" class="btn btn-sm btn-light" onclick="bulkSubmit('archive', 'Archive the selected documents?')"><i class="fas fa-box-archive"></i> Archive</button>
+        <button type="button" class="btn btn-sm btn-danger" onclick="bulkSubmit('delete', 'Delete the selected documents?')"><i class="fas fa-trash-alt"></i> Delete</button>
+        <button type="button" class="btn btn-sm btn-outline-light ms-auto" onclick="bulkClear()"><i class="fas fa-xmark"></i></button>
+    </div>
+</form>
+
 <!-- Upload modal -->
 <div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -141,6 +181,7 @@
                         <input type="file" id="efmFiles" name="files" multiple hidden />
                     </div>
                     <ul id="efmQueue" class="efm-queue"></ul>
+                    <div id="efmScanStatus" class="mt-2" style="display:none;font-size:0.8rem;"></div>
 
                     <div class="row g-3 mt-1">
                         <div class="col-md-6">
@@ -235,7 +276,12 @@
     .efm-count { font-size:0.7rem; font-weight:700; color:var(--gray-400); background:var(--gray-100); border-radius:1rem; padding:0.05rem 0.45rem; }
     .efm-count.on { background:var(--primary); color:#fff; }
     .efm-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
-    .efm-card { background:#fff; border:1px solid var(--gray-200); border-radius:0.9rem; padding:1rem; display:flex; flex-direction:column; gap:0.6rem; transition:box-shadow .15s,transform .15s; }
+    .efm-card { position:relative; background:#fff; border:1px solid var(--gray-200); border-radius:0.9rem; padding:1rem; display:flex; flex-direction:column; gap:0.6rem; transition:box-shadow .15s,transform .15s; }
+    .bulk-check { position:absolute; top:0.7rem; right:0.7rem; width:18px; height:18px; cursor:pointer; }
+    .bulk-bar { position:fixed; left:50%; bottom:1.25rem; transform:translateX(-50%); z-index:1040; display:none; align-items:center; gap:0.6rem; flex-wrap:wrap; max-width:calc(100vw - 2rem); background:var(--gray-800,#1f2937); color:#fff; padding:0.6rem 0.9rem; border-radius:0.8rem; box-shadow:var(--shadow-lg,0 10px 30px rgba(0,0,0,.25)); }
+    .bulk-bar.show { display:flex; }
+    .bulk-bar .bulk-count { font-size:0.85rem; margin-right:0.25rem; }
+    .bulk-bar .bulk-inline { display:flex; align-items:center; gap:0.3rem; }
     .efm-card:hover { box-shadow:var(--shadow-md); transform:translateY(-2px); }
     .efm-card-icon { font-size:1.6rem; color:var(--primary); }
     .efm-card-title { font-weight:600; color:var(--gray-800); text-decoration:none; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -276,9 +322,49 @@
             li.innerHTML = `<i class="fas fa-file"></i><span>${f.name}</span><span class="text-muted">${(f.size/1024).toFixed(0)} KB</span><i class="fas fa-times rm" data-i="${i}"></i>`;
             queue.appendChild(li);
         });
-        queue.querySelectorAll('.rm').forEach(x => x.addEventListener('click', e => { files.splice(+e.target.dataset.i,1); render(); }));
+        queue.querySelectorAll('.rm').forEach(x => x.addEventListener('click', e => { files.splice(+e.target.dataset.i,1); scannedFor = null; render(); maybeScan(); }));
     }
-    function add(list){ for (const f of list) files.push(f); render(); }
+    function add(list){ for (const f of list) files.push(f); render(); maybeScan(); }
+
+    // OCR pre-scan: when a single image/PDF is queued, extract metadata to pre-fill the form.
+    const scanStatus = document.getElementById('efmScanStatus');
+    let scannedFor = null;
+    function maybeScan() {
+        if (files.length !== 1) { scanStatus.style.display = 'none'; return; }
+        const f = files[0];
+        const ok = f.type.startsWith('image/') || f.type === 'application/pdf';
+        if (!ok || scannedFor === f) return;
+        scannedFor = f;
+
+        scanStatus.style.display = 'block';
+        scanStatus.className = 'mt-2 text-muted';
+        scanStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning document for details…';
+
+        const fd = new FormData();
+        fd.append('file', f);
+        const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
+        fetch('@Url.Action("ScanDocument")', { method: 'POST', headers: { 'RequestVerificationToken': token }, body: fd })
+            .then(r => r.json())
+            .then(d => {
+                if (!d.ok) {
+                    scanStatus.style.display = d.enabled === false ? 'none' : 'block';
+                    scanStatus.className = 'mt-2 text-muted';
+                    scanStatus.innerHTML = d.enabled === false ? '' : '<i class="fas fa-circle-info"></i> ' + (d.message || 'No details found.');
+                    return;
+                }
+                const set = (name, val) => { const el = form.querySelector(`[name="${name}"]`); if (el && val && !el.value) el.value = val; };
+                let filled = [];
+                if (d.documentNumber) { set('DocumentNumber', d.documentNumber); filled.push('document #'); }
+                else if (d.idNumber) { set('DocumentNumber', d.idNumber); filled.push('ID #'); }
+                if (d.issueDate) { set('IssueDate', d.issueDate); filled.push('issue date'); }
+                if (d.expiryDate) { set('ExpiryDate', d.expiryDate); filled.push('expiry date'); }
+                scanStatus.className = 'mt-2 text-success';
+                scanStatus.innerHTML = filled.length
+                    ? '<i class="fas fa-wand-magic-sparkles"></i> Pre-filled: ' + filled.join(', ') + '. Please review.'
+                    : '<i class="fas fa-circle-info"></i> Scanned — no matching fields detected.';
+            })
+            .catch(() => { scanStatus.style.display = 'none'; });
+    }
 
     drop.addEventListener('click', () => input.click());
     document.querySelector('.efm-browse')?.addEventListener('click', e => { e.stopPropagation(); input.click(); });
@@ -328,5 +414,36 @@ function efmPreview(id, ctype) {
     document.getElementById('previewFrame').src = url;
     document.getElementById('previewOpen').href = url;
     new bootstrap.Modal(document.getElementById('previewModal')).show();
+}
+
+// ── bulk selection ──────────────────────────────────────────────────────────
+function bulkChecks() { return Array.from(document.querySelectorAll('.bulk-check')); }
+function bulkSelected() { return bulkChecks().filter(c => c.checked); }
+
+function bulkSync() {
+    const sel = bulkSelected();
+    const bar = document.getElementById('bulkBar');
+    document.getElementById('bulkCount').textContent = sel.length;
+    document.getElementById('bulkSelectedText').textContent = sel.length ? `(${sel.length} selected)` : '';
+    bar.classList.toggle('show', sel.length > 0);
+    const all = document.getElementById('bulkSelectAll');
+    if (all) all.checked = sel.length > 0 && sel.length === bulkChecks().length;
+}
+function bulkToggleAll(cb) { bulkChecks().forEach(c => c.checked = cb.checked); bulkSync(); }
+function bulkClear() { bulkChecks().forEach(c => c.checked = false); const a = document.getElementById('bulkSelectAll'); if (a) a.checked = false; bulkSync(); }
+
+function bulkSubmit(op, confirmMsg) {
+    const sel = bulkSelected();
+    if (!sel.length) { toastr.warning('Select at least one document.'); return; }
+    if (confirmMsg && !confirm(confirmMsg)) return;
+    const container = document.getElementById('bulkIds');
+    container.innerHTML = '';
+    sel.forEach(c => {
+        const i = document.createElement('input');
+        i.type = 'hidden'; i.name = 'ids'; i.value = c.value;
+        container.appendChild(i);
+    });
+    document.getElementById('bulkOp').value = op;
+    document.getElementById('bulkForm').submit();
 }
 </script>

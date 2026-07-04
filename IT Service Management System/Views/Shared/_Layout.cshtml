@@ -701,10 +701,21 @@
                         <i class="fas fa-user-tie"></i>
                         Talent Identification
                     </a>
-                    <a class="nav-item @(currentController == "EmployeeDocuments" ? "active" : "")"
+                    <a class="nav-item @(currentController == "EmployeeDocuments" && currentAction != "Approvals" ? "active" : "")"
                        asp-controller="EmployeeDocuments" asp-action="Index">
                         <i class="fas fa-folder-tree"></i>
                         Employee Files
+                    </a>
+                    <a class="nav-item @(currentController == "EmployeeDocuments" && currentAction == "Approvals" ? "active" : "")"
+                       asp-controller="EmployeeDocuments" asp-action="Approvals">
+                        <i class="fas fa-clipboard-check"></i>
+                        Document Approvals
+                        <span class="nav-badge">@(ViewData["EfmPendingApprovals"] as int? ?? 0)</span>
+                    </a>
+                    <a class="nav-item @(currentController == "EfmSettings" ? "active" : "")"
+                       asp-controller="EfmSettings" asp-action="Categories">
+                        <i class="fas fa-sliders"></i>
+                        File Settings
                     </a>
                 }
             </aside>
@@ -723,6 +734,22 @@
                             <small>Axis IT Operations</small>
                         </h5>
                     </div>
+
+                    <!-- Notification bell -->
+                    @{
+                        var efmUnread = ViewData["EfmUnread"] as int? ?? 0;
+                        var efmStaff = ViewData["EfmUnreadStaff"] as bool? ?? false;
+                        var bellAction = efmStaff ? "Notifications" : "MyNotifications";
+                    }
+                    <a asp-controller="EmployeeDocuments" asp-action="@bellAction" class="topbar-bell" title="Document notifications" aria-label="Document notifications"
+                       style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;color:var(--gray-600);text-decoration:none;margin-right:0.75rem;transition:background .15s;">
+                        <i class="fas fa-bell" style="font-size:1.1rem;"></i>
+                        @if (efmUnread > 0)
+                        {
+                            <span aria-label="@efmUnread unread"
+                                  style="position:absolute;top:4px;right:4px;background:#ef4444;color:#fff;font-size:0.6rem;font-weight:700;min-width:16px;height:16px;padding:0 4px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;line-height:1;">@(efmUnread > 99 ? "99+" : efmUnread.ToString())</span>
+                        }
+                    </a>
 
                     <!-- User Profile -->
                     <div class="user-profile">

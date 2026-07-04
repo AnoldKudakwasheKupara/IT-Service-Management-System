@@ -1,0 +1,139 @@
+@model List<IT_Service_Management_System.Models.Efm.DocumentCategory>
+@using IT_Service_Management_System.Models.Efm
+@{
+    ViewData["Title"] = "Document Categories - File Settings";
+    var folders = ViewBag.Folders as List<DocumentFolder> ?? new();
+    var counts = ViewBag.Counts as Dictionary<int, int> ?? new();
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="page-title"><i class="fas fa-sliders me-2" style="color:var(--primary);"></i>File Settings</h1>
+                <p class="text-muted mt-2">Add and manage document categories — no code changes needed.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openCat()"><i class="fas fa-plus"></i> New Category</button>
+        </div>
+        <partial name="_Nav" />
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-tags me-2"></i><span>Categories</span></div>
+            <span class="record-count">@Model.Count</span>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead><tr><th>Name</th><th>Default folder</th><th>Expiry-tracked</th><th>Retention</th><th>Documents</th><th>Status</th><th style="text-align:right;">Actions</th></tr></thead>
+                <tbody>
+                    @foreach (var c in Model.OrderBy(c => c.Name))
+                    {
+                        <tr style="@(c.IsActive ? "" : "opacity:0.55;")">
+                            <td>
+                                <strong>@c.Name</strong>
+                                @if (!string.IsNullOrWhiteSpace(c.Description)) { <div class="text-muted" style="font-size:0.72rem;">@c.Description</div> }
+                            </td>
+                            <td>@(c.DefaultFolder?.Name ?? "—")</td>
+                            <td>@(c.IsExpiryTracked ? Html.Raw("<i class='fas fa-check text-success'></i>") : Html.Raw("<span class='text-muted'>—</span>"))</td>
+                            <td>@(c.DefaultRetentionYears.HasValue ? $"{c.DefaultRetentionYears} yr" : "Permanent")</td>
+                            <td>@(counts.TryGetValue(c.Id, out var n) ? n : 0)</td>
+                            <td>
+                                @if (c.IsActive) { <span class="pill green">Active</span> } else { <span class="pill">Inactive</span> }
+                            </td>
+                            <td style="text-align:right;white-space:nowrap;">
+                                <button class="btn btn-sm btn-outline-primary" title="Edit"
+                                        onclick="openCat(@c.Id, '@Html.Raw(Encode(c.Name))', '@Html.Raw(Encode(c.Description))', @(c.DefaultFolderId?.ToString() ?? "null"), @c.IsExpiryTracked.ToString().ToLower(), @(c.DefaultRetentionYears?.ToString() ?? "null"), @c.IsActive.ToString().ToLower())">
+                                    <i class="fas fa-pen"></i>
+                                </button>
+                                <form asp-action="ToggleCategory" method="post" style="display:inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@c.Id" />
+                                    <button class="btn btn-sm btn-outline-secondary" title="@(c.IsActive ? "Deactivate" : "Activate")">
+                                        <i class="fas @(c.IsActive ? "fa-toggle-on" : "fa-toggle-off")"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="catModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="SaveCategory" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="catId" value="0" />
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-tags me-2"></i><span id="catModalTitle">New Category</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" id="catName" class="form-control" required maxlength="120" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Description</label>
+                            <input type="text" name="description" id="catDesc" class="form-control" maxlength="300" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Default folder</label>
+                            <select name="defaultFolderId" id="catFolder" class="form-select">
+                                <option value="">— None —</option>
+                                @foreach (var f in folders) { <option value="@f.Id">@f.Name</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Default retention (years)</label>
+                            <input type="number" name="defaultRetentionYears" id="catRetention" class="form-control" min="0" max="100" placeholder="Permanent" />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="isExpiryTracked" id="catExpiry" value="true" />
+                                <label class="form-check-label" for="catExpiry">Track expiry dates &amp; raise alerts</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="isActive" id="catActive" value="true" checked />
+                                <label class="form-check-label" for="catActive">Active (available for new uploads)</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@functions {
+    static string Encode(string? s) =>
+        System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(s ?? "");
+}
+
+<style>
+    .pill { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.7rem; font-weight:600; padding:0.1rem 0.55rem; border-radius:1rem; background:var(--gray-100); color:var(--gray-600); }
+    .pill.green { background:#f0fdf4; color:#166534; }
+</style>
+<script>
+    const catModal = new bootstrap.Modal(document.getElementById('catModal'));
+    function openCat(id, name, desc, folderId, expiry, retention, active) {
+        document.getElementById('catId').value = id || 0;
+        document.getElementById('catName').value = name || '';
+        document.getElementById('catDesc').value = desc || '';
+        document.getElementById('catFolder').value = folderId ?? '';
+        document.getElementById('catRetention').value = (retention ?? '') === null ? '' : (retention ?? '');
+        document.getElementById('catExpiry').checked = !!expiry;
+        document.getElementById('catActive').checked = id ? !!active : true;
+        document.getElementById('catModalTitle').textContent = id ? 'Edit Category' : 'New Category';
+        catModal.show();
+    }
+</script>

@@ -1,0 +1,157 @@
+@model List<IT_Service_Management_System.Models.Efm.RetentionPolicy>
+@using IT_Service_Management_System.Models.Efm
+@{
+    ViewData["Title"] = "Retention Policies - File Settings";
+    var cats = ViewBag.Categories as List<DocumentCategory> ?? new();
+    var folders = ViewBag.Folders as List<DocumentFolder> ?? new();
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="page-title"><i class="fas fa-sliders me-2" style="color:var(--primary);"></i>File Settings</h1>
+                <p class="text-muted mt-2">Retention rules decide when documents are archived, deleted or flagged after their retention period.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openPol()"><i class="fas fa-plus"></i> New Policy</button>
+        </div>
+        <partial name="_Nav" />
+    </div>
+
+    <div class="alert alert-info d-flex align-items-center gap-2" style="font-size:0.85rem;">
+        <i class="fas fa-circle-info"></i>
+        <span>Retention is measured from a document's issue date (or upload date). The 6-hourly maintenance job applies these rules; you can also run it from <a asp-controller="EmployeeDocuments" asp-action="Notifications">Notifications</a>.</span>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-clock-rotate-left me-2"></i><span>Retention Policies</span></div>
+            <span class="record-count">@Model.Count</span>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead><tr><th>Name</th><th>Scope</th><th>Retain for</th><th>Action</th><th>Status</th><th style="text-align:right;">Actions</th></tr></thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        @foreach (var p in Model)
+                        {
+                            <tr style="@(p.IsActive ? "" : "opacity:0.55;")">
+                                <td><strong>@p.Name</strong></td>
+                                <td>
+                                    @if (p.Category != null) { <span class="pill">Category: @p.Category.Name</span> }
+                                    else if (p.Folder != null) { <span class="pill">Folder: @p.Folder.Name</span> }
+                                    else { <span class="text-muted">All documents</span> }
+                                </td>
+                                <td>@(p.RetentionYears.HasValue ? $"{p.RetentionYears} year(s)" : "Permanent")</td>
+                                <td>
+                                    @switch (p.Action)
+                                    {
+                                        case RetentionAction.Archive: <span class="pill amber"><i class="fas fa-box-archive"></i> Archive</span> break;
+                                        case RetentionAction.Delete: <span class="pill red"><i class="fas fa-trash"></i> Delete</span> break;
+                                        default: <span class="pill"><i class="fas fa-flag"></i> Flag</span> break;
+                                    }
+                                </td>
+                                <td>@(p.IsActive ? Html.Raw("<span class='pill green'>Active</span>") : Html.Raw("<span class='pill'>Inactive</span>"))</td>
+                                <td style="text-align:right;white-space:nowrap;">
+                                    <button class="btn btn-sm btn-outline-primary" title="Edit"
+                                            onclick="openPol(@p.Id, '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(p.Name))', @(p.CategoryId?.ToString() ?? "null"), @(p.FolderId?.ToString() ?? "null"), @(p.RetentionYears?.ToString() ?? "null"), @((int)p.Action), @p.IsActive.ToString().ToLower())">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                    <form asp-action="ToggleRetention" method="post" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@p.Id" />
+                                        <button class="btn btn-sm btn-outline-secondary" title="@(p.IsActive ? "Deactivate" : "Activate")"><i class="fas @(p.IsActive ? "fa-toggle-on" : "fa-toggle-off")"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6" class="text-center text-muted p-4">No retention policies defined — documents are kept permanently.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="polModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="SaveRetention" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="polId" value="0" />
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-clock-rotate-left me-2"></i><span id="polModalTitle">New Policy</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Policy name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" id="polName" class="form-control" required maxlength="150" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Category scope</label>
+                            <select name="categoryId" id="polCategory" class="form-select">
+                                <option value="">— Any —</option>
+                                @foreach (var c in cats) { <option value="@c.Id">@c.Name</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Folder scope</label>
+                            <select name="folderId" id="polFolder" class="form-select">
+                                <option value="">— Any —</option>
+                                @foreach (var f in folders) { <option value="@f.Id">@f.Name</option> }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Retain for (years)</label>
+                            <input type="number" name="retentionYears" id="polYears" class="form-control" min="0" max="100" placeholder="Permanent" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Action when reached</label>
+                            <select name="action" id="polAction" class="form-select">
+                                <option value="1">Archive</option>
+                                <option value="0">Flag only</option>
+                                <option value="2">Delete</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="isActive" id="polActive" value="true" checked />
+                                <label class="form-check-label" for="polActive">Active</label>
+                            </div>
+                            <small class="text-muted">Category scope takes precedence over folder scope. Leave both empty to apply to all documents.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pill { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.7rem; font-weight:600; padding:0.1rem 0.55rem; border-radius:1rem; background:var(--gray-100); color:var(--gray-600); }
+    .pill.green { background:#f0fdf4; color:#166534; } .pill.amber { background:#fffbeb; color:#92400e; } .pill.red { background:#fef2f2; color:#b91c1c; }
+</style>
+<script>
+    const polModal = new bootstrap.Modal(document.getElementById('polModal'));
+    function openPol(id, name, catId, folderId, years, action, active) {
+        document.getElementById('polId').value = id || 0;
+        document.getElementById('polName').value = name || '';
+        document.getElementById('polCategory').value = catId ?? '';
+        document.getElementById('polFolder').value = folderId ?? '';
+        document.getElementById('polYears').value = (years ?? '') === null ? '' : (years ?? '');
+        document.getElementById('polAction').value = (action ?? 1);
+        document.getElementById('polActive').checked = id ? !!active : true;
+        document.getElementById('polModalTitle').textContent = id ? 'Edit Policy' : 'New Policy';
+        polModal.show();
+    }
+</script>

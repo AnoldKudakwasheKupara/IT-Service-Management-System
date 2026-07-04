@@ -285,5 +285,37 @@ namespace IT_Service_Management_System.Services.Efm
                 _db.DocumentTagMaps.Add(new DocumentTagMap { EmployeeDocumentId = doc.Id, DocumentTagId = tag.Id });
             }
         }
+
+        /// <summary>
+        /// Adds tags to an existing document, skipping any it already carries. Used by bulk tagging.
+        /// Returns the number of new tag associations created.
+        /// </summary>
+        public async Task<int> AddTagsAsync(int documentId, string? tagsCsv, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(tagsCsv)) return 0;
+
+            var names = tagsCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(t => t.Length > 60 ? t[..60] : t)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var existing = await _db.DocumentTagMaps
+                .Where(m => m.EmployeeDocumentId == documentId)
+                .Select(m => m.DocumentTagId).ToListAsync(ct);
+
+            int added = 0;
+            foreach (var name in names)
+            {
+                var tag = await _db.DocumentTags.FirstOrDefaultAsync(t => t.Name == name, ct)
+                          ?? _db.DocumentTags.Add(new DocumentTag { Name = name }).Entity;
+                if (tag.Id == 0) await _db.SaveChangesAsync(ct);
+                if (existing.Contains(tag.Id)) continue;
+                _db.DocumentTagMaps.Add(new DocumentTagMap { EmployeeDocumentId = documentId, DocumentTagId = tag.Id });
+                existing.Add(tag.Id);
+                added++;
+            }
+            await _db.SaveChangesAsync(ct);
+            return added;
+        }
     }
 }

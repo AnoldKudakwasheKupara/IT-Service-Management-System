@@ -4,6 +4,7 @@
     ViewData["Title"] = "Search Documents - Axis IT Operations";
     var paging = ViewBag.Paging as IT_Service_Management_System.Helpers.PagingInfo;
     string Size(long b) => b >= 1048576 ? $"{b / 1048576.0:0.#} MB" : b >= 1024 ? $"{b / 1024.0:0.#} KB" : $"{b} B";
+    var returnUrl = Url.Action("Search", new { q = Model.Q, folderId = Model.FolderId, categoryId = Model.CategoryId, status = Model.Status, expiry = Model.Expiry, archived = Model.Archived });
 }
 
 <div class="page-container">
@@ -15,11 +16,18 @@
             </div>
             <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-users"></i> Employee Files</a>
         </div>
+        <div class="btn-group mt-2">
+            <a asp-action="Search" asp-route-q="@Model.Q" asp-route-folderId="@Model.FolderId" asp-route-categoryId="@Model.CategoryId"
+               class="btn btn-sm @(Model.Archived ? "btn-outline-primary" : "btn-primary")"><i class="fas fa-folder-open"></i> Active files</a>
+            <a asp-action="Search" asp-route-archived="true" asp-route-q="@Model.Q" asp-route-folderId="@Model.FolderId" asp-route-categoryId="@Model.CategoryId"
+               class="btn btn-sm @(Model.Archived ? "btn-primary" : "btn-outline-primary")"><i class="fas fa-box-archive"></i> Archived</a>
+        </div>
     </div>
 
     <div class="data-card" style="margin-bottom:1.25rem;">
         <div style="padding:1.25rem;">
             <form method="get" asp-action="Search">
+                <input type="hidden" name="archived" value="@Model.Archived.ToString().ToLower()" />
                 <div class="input-group mb-3">
                     <span class="input-group-text"><i class="fas fa-search"></i></span>
                     <input type="text" name="q" value="@Model.Q" class="form-control form-control-lg"
@@ -68,7 +76,7 @@
                 </div>
                 <div class="mt-2 d-flex gap-2">
                     <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-filter"></i> Apply filters</button>
-                    <a asp-action="Search" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times"></i> Clear</a>
+                    <a asp-action="Search" asp-route-archived="@Model.Archived.ToString().ToLower()" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times"></i> Clear</a>
                 </div>
             </form>
         </div>
@@ -103,6 +111,24 @@
                                 <td style="text-align:right;white-space:nowrap;">
                                     <a class="btn btn-sm btn-outline-primary" asp-action="Preview" asp-route-id="@d.Id" target="_blank" title="Preview"><i class="fas fa-eye"></i></a>
                                     <a class="btn btn-sm btn-outline-primary" asp-action="Download" asp-route-id="@d.Id" title="Download"><i class="fas fa-download"></i></a>
+                                    @if (Model.Archived)
+                                    {
+                                        <form asp-action="Restore" method="post" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@d.Id" />
+                                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                            <button class="btn btn-sm btn-outline-success" title="Restore from archive"><i class="fas fa-box-open"></i></button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Archive" method="post" style="display:inline;" onsubmit="return confirm('Archive this document?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@d.Id" />
+                                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                            <button class="btn btn-sm btn-outline-secondary" title="Archive"><i class="fas fa-box-archive"></i></button>
+                                        </form>
+                                    }
                                 </td>
                             </tr>
                         }

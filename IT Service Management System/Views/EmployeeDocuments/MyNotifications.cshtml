@@ -1,0 +1,75 @@
+@model List<IT_Service_Management_System.Models.Efm.DocumentNotification>
+@using IT_Service_Management_System.Models.Efm
+@{
+    ViewData["Title"] = "My Notifications - Axis IT Operations";
+    var paging = ViewBag.Paging as IT_Service_Management_System.Helpers.PagingInfo;
+    var unread = ViewBag.UnreadCount as int? ?? 0;
+    string Icon(DocumentNotificationType t) => t switch
+    {
+        DocumentNotificationType.DocumentApproved => "fa-circle-check text-success",
+        DocumentNotificationType.DocumentRejected => "fa-circle-xmark text-danger",
+        DocumentNotificationType.DocumentExpiring => "fa-hourglass-half text-warning",
+        DocumentNotificationType.DocumentExpired => "fa-triangle-exclamation text-danger",
+        _ => "fa-circle-info text-primary"
+    };
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="page-title"><i class="fas fa-bell me-2" style="color:var(--primary);"></i>My Notifications</h1>
+                <p class="text-muted mt-2">Updates about your documents — approvals, rejections and expiry reminders.</p>
+            </div>
+            @if (unread > 0)
+            {
+                <form asp-action="MarkMyNotificationsRead" method="post">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-outline-primary"><i class="fas fa-check-double"></i> Mark all read (@unread)</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-inbox me-2"></i><span>Notifications</span></div>
+            <span class="record-count">@(paging?.TotalCount ?? Model.Count)</span>
+        </div>
+        @if (Model.Any())
+        {
+            <div>
+                @foreach (var n in Model)
+                {
+                    <div class="d-flex align-items-start gap-3 px-3 py-3" style="border-bottom:1px solid var(--gray-100);@(n.IsRead ? "" : "background:var(--primary-light);")">
+                        <i class="fas @Icon(n.Type)" style="font-size:1.1rem;margin-top:2px;"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">
+                                @n.Title
+                                @if (!n.IsRead) { <span class="pill" style="background:var(--primary);color:#fff;">new</span> }
+                            </div>
+                            <div class="text-muted" style="font-size:0.85rem;">@n.Message</div>
+                            <div class="text-muted" style="font-size:0.72rem;">@n.CreatedAt.ToString("MMM dd, yyyy HH:mm")</div>
+                        </div>
+                        @if (n.EmployeeDocumentId != null)
+                        {
+                            <a class="btn btn-sm btn-outline-primary" asp-action="Details" asp-route-id="@n.EmployeeDocumentId">Open</a>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center p-5 text-muted">
+                <i class="fas fa-bell-slash fa-2x mb-3"></i>
+                <p>You have no notifications.</p>
+            </div>
+        }
+        @if (paging != null) { <partial name="_Pagination" model="paging" /> }
+    </div>
+</div>
+
+<style>
+    .pill { display:inline-flex; align-items:center; gap:0.25rem; font-size:0.62rem; font-weight:700; padding:0.05rem 0.45rem; border-radius:1rem; margin-left:0.35rem; }
+</style>

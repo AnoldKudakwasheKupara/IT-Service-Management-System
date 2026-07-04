@@ -1,0 +1,6 @@
+@{ var active = ViewContext.RouteData.Values["action"]?.ToString(); }
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <a asp-action="Categories" class="btn btn-sm @(active == "Categories" ? "btn-primary" : "btn-outline-secondary")"><i class="fas fa-tags"></i> Categories</a>
+    <a asp-action="Required" class="btn btn-sm @(active == "Required" ? "btn-primary" : "btn-outline-secondary")"><i class="fas fa-list-check"></i> Required Documents</a>
+    <a asp-action="Retention" class="btn btn-sm @(active == "Retention" ? "btn-primary" : "btn-outline-secondary")"><i class="fas fa-clock-rotate-left"></i> Retention Policies</a>
+</div>

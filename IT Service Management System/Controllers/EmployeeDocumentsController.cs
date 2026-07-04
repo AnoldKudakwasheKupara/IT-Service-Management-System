@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Helpers.Efm;
@@ -17,16 +18,21 @@ namespace IT_Service_Management_System.Controllers
         private readonly ApplicationDbContext _db;
         private readonly DocumentService _docs;
         private readonly DocumentMaintenanceService _maint;
+        private readonly DocumentApprovalService _approvals;
+        private readonly IOcrService _ocr;
 
         private const long MaxFileBytes = 50L * 1024 * 1024; // 50 MB/file
         private static readonly string[] BlockedExtensions =
             { ".exe", ".dll", ".bat", ".cmd", ".com", ".scr", ".msi", ".ps1", ".sh", ".vbs", ".jar" };
 
-        public EmployeeDocumentsController(ApplicationDbContext db, DocumentService docs, DocumentMaintenanceService maint)
+        public EmployeeDocumentsController(ApplicationDbContext db, DocumentService docs,
+            DocumentMaintenanceService maint, DocumentApprovalService approvals, IOcrService ocr)
         {
             _db = db;
             _docs = docs;
             _maint = maint;
+            _approvals = approvals;
+            _ocr = ocr;
         }
 
         private string? Role => HttpContext.Session.GetString("UserRole");
@@ -62,7 +68,7 @@ namespace IT_Service_Management_System.Controllers
 
         // ── cross-employee document search ─────────────────────────────────────────────
         public async Task<IActionResult> Search(string? q, int? folderId, int? categoryId,
-            DocumentStatus? status, string? expiry, DateTime? from, DateTime? to, int page = 1)
+            DocumentStatus? status, string? expiry, DateTime? from, DateTime? to, bool archived = false, int page = 1)
         {
             IQueryable<EmployeeDocument> query = _db.EmployeeDocuments
                 .Include(d => d.Employee).ThenInclude(u => u!.Department)
@@ -70,7 +76,7 @@ namespace IT_Service_Management_System.Controllers
                 .Include(d => d.Folder)
                 .Include(d => d.CurrentVersion)
                 .Include(d => d.Tags).ThenInclude(t => t.Tag)
-                .Where(d => !d.IsArchived);
+                .Where(d => d.IsArchived == archived);
 
             // HR officers / auditors cannot see Restricted documents in search.
             if (!EfmAccess.IsFullAccess(Role))
@@ -112,7 +118,8 @@ namespace IT_Service_Management_System.Controllers
                 Results = items,
                 Folders = await _db.DocumentFolders.Where(f => f.IsActive).OrderBy(f => f.SortOrder).ToListAsync(),
                 Categories = await _db.DocumentCategories.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync(),
-                Q = q, FolderId = folderId, CategoryId = categoryId, Status = status, Expiry = expiry, From = from, To = to
+                Q = q, FolderId = folderId, CategoryId = categoryId, Status = status, Expiry = expiry,
+                From = from, To = to, Archived = archived
             });
         }
 
@@ -522,6 +529,8 @@ namespace IT_Service_Management_System.Controllers
                 .Include(d => d.CurrentVersion)
                 .Include(d => d.Versions)
                 .Include(d => d.Tags).ThenInclude(t => t.Tag)
+                .Include(d => d.Comments)
+                .Include(d => d.Approvals)
                 .FirstOrDefaultAsync(d => d.Id == id);
 
             if (doc == null) return NotFound();
@@ -682,9 +691,8 @@ namespace IT_Service_Management_System.Controllers
                     Description = description
                 }, file, uid, userName);
 
-                // Employee self-uploads await HR approval.
-                doc.Status = DocumentStatus.PendingApproval;
-                await _db.SaveChangesAsync();
+                // Employee self-uploads await HR approval — record the approval step + notify HR.
+                await _approvals.SubmitForApprovalAsync(doc);
                 saved++;
             }
 
@@ -692,6 +700,342 @@ namespace IT_Service_Management_System.Controllers
                 ? $"{saved} document(s) uploaded and sent for HR approval."
                 : "No files were uploaded.";
             return RedirectToAction(nameof(MyDocuments));
+        }
+
+        // ── approval workflow (HR queue + approve/reject) ──────────────────────────────
+        public async Task<IActionResult> Approvals(bool history = false, int page = 1)
+        {
+            IQueryable<DocumentApproval> query = _db.DocumentApprovals
+                .Include(a => a.Document).ThenInclude(d => d!.Employee)
+                .Include(a => a.Document).ThenInclude(d => d!.Category)
+                .Include(a => a.Document).ThenInclude(d => d!.Folder)
+                .Include(a => a.Document).ThenInclude(d => d!.CurrentVersion);
+
+            // Non-admin staff never see approval steps for Restricted documents.
+            if (!EfmAccess.IsFullAccess(Role))
+                query = query.Where(a => a.Document!.ConfidentialityLevel < ConfidentialityLevel.Restricted);
+
+            query = history
+                ? query.Where(a => a.Status != ApprovalStatus.Pending).OrderByDescending(a => a.DecidedAt)
+                : query.Where(a => a.Status == ApprovalStatus.Pending).OrderBy(a => a.CreatedAt);
+
+            var (items, paging) = await query.PageAsync(page, 20);
+            ViewBag.Paging = paging;
+            ViewBag.History = history;
+            ViewBag.PendingCount = await _approvals.PendingCountAsync();
+            return View(items);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Approve(int approvalId, string? comments)
+        {
+            if (!EfmAccess.Can(Role, EfmPermission.Approve)) return Denied();
+            var r = await _approvals.DecideAsync(approvalId, approve: true, comments,
+                Uid, HttpContext.Session.GetString("UserName"));
+            TempData[r.Ok ? "Success" : "Error"] = r.Message;
+            return RedirectToAction(nameof(Approvals));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reject(int approvalId, string? comments)
+        {
+            if (!EfmAccess.Can(Role, EfmPermission.Reject)) return Denied();
+            if (string.IsNullOrWhiteSpace(comments))
+            { TempData["Error"] = "A reason is required to reject a document."; return RedirectToAction(nameof(Approvals)); }
+
+            var r = await _approvals.DecideAsync(approvalId, approve: false, comments,
+                Uid, HttpContext.Session.GetString("UserName"));
+            TempData[r.Ok ? "Success" : "Error"] = r.Message;
+            return RedirectToAction(nameof(Approvals));
+        }
+
+        // ── manual archive / restore ───────────────────────────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Archive(int id, string? returnUrl)
+        {
+            if (!EfmAccess.Can(Role, EfmPermission.Archive)) return Denied();
+            var doc = await _db.EmployeeDocuments.FirstOrDefaultAsync(d => d.Id == id);
+            if (doc == null) return NotFound();
+            if (!CanOpen(doc)) return Denied();
+
+            if (!doc.IsArchived)
+            {
+                doc.IsArchived = true;
+                doc.ArchivedAt = DateTime.Now;
+                doc.Status = DocumentStatus.Archived;
+                doc.UpdatedAt = DateTime.Now;
+                await _db.SaveChangesAsync();
+                await _docs.LogAsync(DocumentAuditAction.Archived, doc.Id, doc.EmployeeId, $"Archived '{doc.Title}'");
+            }
+            TempData["Success"] = "Document archived.";
+            return SafeRedirect(returnUrl) ?? RedirectToAction(nameof(File), new { id = doc.EmployeeId, folderId = doc.FolderId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Restore(int id, string? returnUrl)
+        {
+            if (!EfmAccess.Can(Role, EfmPermission.Restore)) return Denied();
+            var doc = await _db.EmployeeDocuments.FirstOrDefaultAsync(d => d.Id == id);
+            if (doc == null) return NotFound();
+            if (!CanOpen(doc)) return Denied();
+
+            if (doc.IsArchived)
+            {
+                doc.IsArchived = false;
+                doc.ArchivedAt = null;
+                // Recompute a sensible live status: expired if past expiry, else active.
+                doc.Status = doc.IsExpired ? DocumentStatus.Expired : DocumentStatus.Active;
+                doc.UpdatedAt = DateTime.Now;
+                await _db.SaveChangesAsync();
+                await _docs.LogAsync(DocumentAuditAction.Restored, doc.Id, doc.EmployeeId, $"Restored '{doc.Title}' from archive");
+            }
+            TempData["Success"] = "Document restored from archive.";
+            return SafeRedirect(returnUrl) ?? RedirectToAction(nameof(Details), new { id = doc.Id });
+        }
+
+        // ── bulk operations (download / delete / archive / move / tag) ──────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Bulk(string op, int[] ids, int? targetFolderId, string? tags,
+            int? employeeId, string? returnUrl)
+        {
+            if (ids == null || ids.Length == 0)
+            { TempData["Error"] = "No documents were selected."; return BulkReturn(returnUrl, employeeId); }
+
+            // Only act on documents the current user is allowed to open (confidentiality-aware).
+            var docs = await _db.EmployeeDocuments.Where(d => ids.Contains(d.Id)).ToListAsync();
+            docs = docs.Where(CanOpen).ToList();
+            if (docs.Count == 0) return Denied();
+
+            switch ((op ?? "").ToLowerInvariant())
+            {
+                case "download":
+                    return await BulkDownloadAsync(docs);
+
+                case "delete":
+                    if (!EfmAccess.Can(Role, EfmPermission.Delete)) return Denied();
+                    foreach (var d in docs)
+                    {
+                        d.IsDeleted = true; d.UpdatedAt = DateTime.Now;
+                        await _docs.LogAsync(DocumentAuditAction.Deleted, d.Id, d.EmployeeId, $"Bulk-deleted '{d.Title}'");
+                    }
+                    await _db.SaveChangesAsync();
+                    TempData["Success"] = $"{docs.Count} document(s) deleted.";
+                    break;
+
+                case "archive":
+                    if (!EfmAccess.Can(Role, EfmPermission.Archive)) return Denied();
+                    foreach (var d in docs.Where(d => !d.IsArchived))
+                    {
+                        d.IsArchived = true; d.ArchivedAt = DateTime.Now; d.Status = DocumentStatus.Archived; d.UpdatedAt = DateTime.Now;
+                        await _docs.LogAsync(DocumentAuditAction.Archived, d.Id, d.EmployeeId, $"Bulk-archived '{d.Title}'");
+                    }
+                    await _db.SaveChangesAsync();
+                    TempData["Success"] = $"{docs.Count} document(s) archived.";
+                    break;
+
+                case "restore":
+                    if (!EfmAccess.Can(Role, EfmPermission.Restore)) return Denied();
+                    foreach (var d in docs.Where(d => d.IsArchived))
+                    {
+                        d.IsArchived = false; d.ArchivedAt = null;
+                        d.Status = d.IsExpired ? DocumentStatus.Expired : DocumentStatus.Active; d.UpdatedAt = DateTime.Now;
+                        await _docs.LogAsync(DocumentAuditAction.Restored, d.Id, d.EmployeeId, $"Bulk-restored '{d.Title}'");
+                    }
+                    await _db.SaveChangesAsync();
+                    TempData["Success"] = $"{docs.Count} document(s) restored.";
+                    break;
+
+                case "move":
+                    if (targetFolderId == null || !await _db.DocumentFolders.AnyAsync(f => f.Id == targetFolderId))
+                    { TempData["Error"] = "Choose a destination folder."; break; }
+                    foreach (var d in docs)
+                    {
+                        d.FolderId = targetFolderId.Value; d.UpdatedAt = DateTime.Now;
+                        await _docs.LogAsync(DocumentAuditAction.Moved, d.Id, d.EmployeeId, $"Bulk-moved '{d.Title}'");
+                    }
+                    await _db.SaveChangesAsync();
+                    TempData["Success"] = $"{docs.Count} document(s) moved.";
+                    break;
+
+                case "tag":
+                    if (string.IsNullOrWhiteSpace(tags))
+                    { TempData["Error"] = "Enter one or more tags."; break; }
+                    int tagged = 0;
+                    foreach (var d in docs) tagged += await _docs.AddTagsAsync(d.Id, tags);
+                    TempData["Success"] = $"Added {tagged} tag association(s) across {docs.Count} document(s).";
+                    break;
+
+                default:
+                    TempData["Error"] = "Unknown bulk action.";
+                    break;
+            }
+            return BulkReturn(returnUrl, employeeId);
+        }
+
+        private async Task<IActionResult> BulkDownloadAsync(List<EmployeeDocument> docs)
+        {
+            var ms = new MemoryStream();
+            using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var d in docs)
+                {
+                    var opened = await _docs.OpenCurrentAsync(d.Id);
+                    if (opened == null) continue;
+                    var name = MakeUniqueEntryName(opened.Value.Version.FileName, used);
+                    var entry = zip.CreateEntry(name, CompressionLevel.Fastest);
+                    await using var es = entry.Open();
+                    await using (opened.Value.Stream) await opened.Value.Stream.CopyToAsync(es);
+                    await _docs.LogAsync(DocumentAuditAction.Downloaded, d.Id, d.EmployeeId, "Downloaded via bulk export");
+                }
+            }
+            ms.Position = 0;
+            return File(ms, "application/zip", $"documents-{DateTime.Now:yyyyMMdd-HHmm}.zip");
+        }
+
+        private static string MakeUniqueEntryName(string fileName, HashSet<string> used)
+        {
+            var name = Path.GetFileName(fileName);
+            if (used.Add(name)) return name;
+            var stem = Path.GetFileNameWithoutExtension(name);
+            var ext = Path.GetExtension(name);
+            for (int i = 2; ; i++)
+            {
+                var candidate = $"{stem} ({i}){ext}";
+                if (used.Add(candidate)) return candidate;
+            }
+        }
+
+        private IActionResult BulkReturn(string? returnUrl, int? employeeId) =>
+            SafeRedirect(returnUrl)
+            ?? (employeeId.HasValue
+                ? RedirectToAction(nameof(File), new { id = employeeId.Value })
+                : RedirectToAction(nameof(Search)));
+
+        private IActionResult? SafeRedirect(string? returnUrl) =>
+            !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? Redirect(returnUrl) : null;
+
+        // ── document comments (HR collaboration) ────────────────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddComment(int documentId, string body)
+        {
+            var doc = await _db.EmployeeDocuments.FirstOrDefaultAsync(d => d.Id == documentId);
+            if (doc == null) return NotFound();
+            if (!CanOpen(doc)) return Denied();
+            if (string.IsNullOrWhiteSpace(body))
+            { TempData["Error"] = "Comment cannot be empty."; return RedirectToAction(nameof(Details), new { id = documentId }); }
+
+            _db.DocumentComments.Add(new DocumentComment
+            {
+                EmployeeDocumentId = documentId,
+                AuthorId = Uid,
+                AuthorName = HttpContext.Session.GetString("UserName"),
+                Body = body.Length > 2000 ? body[..2000] : body,
+                CreatedAt = DateTime.Now
+            });
+            await _db.SaveChangesAsync();
+            TempData["Success"] = "Comment added.";
+            return RedirectToAction(nameof(Details), new { id = documentId });
+        }
+
+        // ── OCR pre-scan: extract text + suggest metadata for the upload form ───────────
+        [HttpPost]
+        [RequestSizeLimit(MaxFileBytes + 1024)]
+        public async Task<IActionResult> ScanDocument(IFormFile? file)
+        {
+            if (file == null || file.Length == 0) return Json(new { ok = false, message = "No file." });
+            if (file.Length > MaxFileBytes) return Json(new { ok = false, message = "File too large." });
+            if (BlockedExtensions.Contains(Path.GetExtension(file.FileName).ToLowerInvariant()))
+                return Json(new { ok = false, message = "Blocked file type." });
+            if (!_ocr.CanHandle(file.ContentType))
+                return Json(new { ok = false, enabled = false, message = "OCR is not available for this file type." });
+
+            string? text;
+            await using (var s = file.OpenReadStream())
+                text = await _ocr.ExtractTextAsync(s, file.ContentType);
+
+            if (string.IsNullOrWhiteSpace(text))
+                return Json(new { ok = false, enabled = true, message = "No readable text was found." });
+
+            var meta = DocumentMetadataExtractor.Extract(text);
+            return Json(new
+            {
+                ok = true,
+                issueDate = meta.IssueDate?.ToString("yyyy-MM-dd"),
+                expiryDate = meta.ExpiryDate?.ToString("yyyy-MM-dd"),
+                documentNumber = meta.DocumentNumber,
+                idNumber = meta.IdNumber
+            });
+        }
+
+        // ── richer report exports (Excel + branded PDF) ────────────────────────────────
+        public async Task<IActionResult> AuditExportExcel(string? q, DocumentAuditAction? action, int? employeeId,
+            int? documentId, DateTime? from, DateTime? to)
+        {
+            var rows = await ResolveRowsAsync(await BuildAuditQuery(q, action, employeeId, documentId, from, to)
+                .OrderByDescending(a => a.Timestamp).Take(10000).ToListAsync());
+            return File(EfmExport.AuditXlsx(rows), EfmExport.XlsxContentType,
+                $"document-audit-{DateTime.Now:yyyyMMdd-HHmm}.xlsx");
+        }
+
+        public async Task<IActionResult> AuditExportPdf(string? q, DocumentAuditAction? action, int? employeeId,
+            int? documentId, DateTime? from, DateTime? to)
+        {
+            var rows = await ResolveRowsAsync(await BuildAuditQuery(q, action, employeeId, documentId, from, to)
+                .OrderByDescending(a => a.Timestamp).Take(5000).ToListAsync());
+            var scope = employeeId.HasValue ? (await _db.Users.FindAsync(employeeId.Value))?.FullName : null;
+            return File(EfmExport.AuditPdf(rows, scope), "application/pdf",
+                $"document-audit-{DateTime.Now:yyyyMMdd-HHmm}.pdf");
+        }
+
+        public async Task<IActionResult> ComplianceExportExcel()
+        {
+            var rows = await BuildComplianceAsync();
+            return File(EfmExport.ComplianceXlsx(rows), EfmExport.XlsxContentType,
+                $"file-completeness-{DateTime.Now:yyyyMMdd}.xlsx");
+        }
+
+        public async Task<IActionResult> ComplianceExportPdf()
+        {
+            var rows = await BuildComplianceAsync();
+            return File(EfmExport.CompliancePdf(rows), "application/pdf",
+                $"file-completeness-{DateTime.Now:yyyyMMdd}.pdf");
+        }
+
+        // ── employee self-service notifications + bell ─────────────────────────────────
+        [IT_Service_Management_System.Filters.AllowAnyRole]
+        public async Task<IActionResult> MyNotifications(int page = 1)
+        {
+            var uid = Uid;
+            if (uid == null) return RedirectToAction("Login", "Account");
+
+            var query = _db.DocumentNotifications
+                .Where(n => n.RecipientUserId == uid)
+                .OrderByDescending(n => !n.IsRead).ThenByDescending(n => n.CreatedAt);
+            var (items, paging) = await query.PageAsync(page, 30);
+            ViewBag.Paging = paging;
+            ViewBag.UnreadCount = await _db.DocumentNotifications.CountAsync(n => n.RecipientUserId == uid && !n.IsRead);
+            return View(items);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [IT_Service_Management_System.Filters.AllowAnyRole]
+        public async Task<IActionResult> MarkMyNotificationsRead()
+        {
+            var uid = Uid;
+            if (uid == null) return RedirectToAction("Login", "Account");
+            var unread = await _db.DocumentNotifications.Where(n => n.RecipientUserId == uid && !n.IsRead).ToListAsync();
+            foreach (var n in unread) { n.IsRead = true; n.ReadAt = DateTime.Now; }
+            await _db.SaveChangesAsync();
+            TempData["Success"] = $"{unread.Count} notification(s) marked as read.";
+            return RedirectToAction(nameof(MyNotifications));
         }
     }
 }

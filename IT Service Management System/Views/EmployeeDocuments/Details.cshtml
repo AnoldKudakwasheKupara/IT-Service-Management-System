@@ -25,6 +25,22 @@
                     <a class="btn btn-outline-secondary btn-sm" asp-action="Audit" asp-route-documentId="@Model.Id"><i class="fas fa-clipboard-list"></i> History</a>
                     <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#shareModal"><i class="fas fa-share-nodes"></i> Share</button>
                     <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#versionModal"><i class="fas fa-upload"></i> New Version</button>
+                    @if (Model.IsArchived)
+                    {
+                        <form asp-action="Restore" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button class="btn btn-outline-success btn-sm"><i class="fas fa-box-open"></i> Restore</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-action="Archive" method="post" style="display:inline;" onsubmit="return confirm('Archive this document?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button class="btn btn-outline-secondary btn-sm"><i class="fas fa-box-archive"></i> Archive</button>
+                        </form>
+                    }
                 }
                 <a class="btn btn-outline-primary btn-sm" asp-action="Preview" asp-route-id="@Model.Id" target="_blank"><i class="fas fa-eye"></i> Preview</a>
                 <a class="btn btn-primary btn-sm" asp-action="Download" asp-route-id="@Model.Id"><i class="fas fa-download"></i> Download</a>
@@ -38,6 +54,14 @@
             <i class="fas fa-link"></i>
             <input type="text" class="form-control form-control-sm" readonly value="@TempData["ShareLink"]" onclick="this.select()" style="max-width:520px;" />
             <button class="btn btn-sm btn-outline-primary" onclick="navigator.clipboard.writeText('@TempData["ShareLink"]');toastr.success('Link copied');return false;"><i class="fas fa-copy"></i> Copy</button>
+        </div>
+    }
+
+    @if (Model.IsArchived)
+    {
+        <div class="alert alert-secondary d-flex align-items-center gap-2">
+            <i class="fas fa-box-archive"></i>
+            <span>This document is <strong>archived</strong>@(Model.ArchivedAt != null ? $" since {Model.ArchivedAt:MMM dd, yyyy}" : "").</span>
         </div>
     }
 
@@ -158,6 +182,64 @@
                     </table>
                 </div>
             </div>
+
+            @if (Model.Approvals.Any())
+            {
+                <div class="data-card" style="margin-top:1rem;">
+                    <div class="card-header-custom"><div><i class="fas fa-clipboard-check me-2"></i><span>Approval</span></div></div>
+                    <div style="padding:0.25rem 0;">
+                        @foreach (var a in Model.Approvals.OrderBy(a => a.Level))
+                        {
+                            <div class="d-flex align-items-center gap-2 px-3 py-2" style="border-bottom:1px solid var(--gray-100);font-size:0.82rem;">
+                                <span class="pill">Level @a.Level</span>
+                                @if (a.Status == ApprovalStatus.Approved) { <span class="pill" style="background:#f0fdf4;color:#166534;"><i class="fas fa-check"></i> Approved</span> }
+                                else if (a.Status == ApprovalStatus.Rejected) { <span class="pill red"><i class="fas fa-xmark"></i> Rejected</span> }
+                                else { <span class="pill amber"><i class="fas fa-hourglass-half"></i> Pending</span> }
+                                <div class="text-muted ms-auto text-end" style="font-size:0.72rem;">
+                                    @if (a.DecidedAt != null) { <text>@a.DecidedByName · @a.DecidedAt?.ToString("MMM dd, yyyy")</text> }
+                                    @if (!string.IsNullOrWhiteSpace(a.Comments)) { <div>“@a.Comments”</div> }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (isStaff)
+            {
+                <div class="data-card" style="margin-top:1rem;">
+                    <div class="card-header-custom"><div><i class="fas fa-comments me-2"></i><span>Comments</span></div><span class="record-count">@Model.Comments.Count</span></div>
+                    <div style="padding:0.5rem 0;max-height:320px;overflow:auto;">
+                        @if (Model.Comments.Any())
+                        {
+                            foreach (var c in Model.Comments.OrderByDescending(c => c.CreatedAt))
+                            {
+                                <div class="px-3 py-2" style="border-bottom:1px solid var(--gray-100);">
+                                    <div class="d-flex justify-content-between" style="font-size:0.78rem;">
+                                        <strong>@(c.AuthorName ?? "Unknown")</strong>
+                                        <span class="text-muted">@c.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
+                                    </div>
+                                    <div style="font-size:0.85rem;white-space:pre-wrap;">@c.Body</div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-muted px-3 py-2" style="font-size:0.82rem;">No comments yet. Start the conversation below.</div>
+                        }
+                    </div>
+                    <div style="padding:0.75rem 1rem;border-top:1px solid var(--gray-100);">
+                        <form asp-action="AddComment" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="documentId" value="@Model.Id" />
+                            <div class="input-group">
+                                <textarea name="body" class="form-control" rows="2" maxlength="2000" required placeholder="Add a comment for HR colleagues…"></textarea>
+                                <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 </div>

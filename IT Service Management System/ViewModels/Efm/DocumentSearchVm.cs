@@ -17,5 +17,6 @@ namespace IT_Service_Management_System.ViewModels.Efm
         public string? Expiry { get; set; }         // "", "expired", "expiring"
         public DateTime? From { get; set; }
         public DateTime? To { get; set; }
+        public bool Archived { get; set; }           // browse the archive instead of active files
     }
 }
