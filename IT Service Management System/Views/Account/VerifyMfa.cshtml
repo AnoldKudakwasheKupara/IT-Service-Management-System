@@ -2,6 +2,9 @@
     Layout = null;
     ViewData["Title"] = "Verify Sign-In - Axis IT Helpdesk";
     var masked = ViewBag.MaskedEmail as string ?? "your email";
+    var method = ViewBag.Method as string ?? "Email";
+    var isAuth = method == "Authenticator";
+    var hasRecovery = ViewBag.HasRecovery as bool? ?? false;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -67,23 +70,45 @@
                 {
                     <div class="alert success"><i class="fas fa-check-circle"></i><span>@TempData["Success"]</span></div>
                 }
+                @if (ViewBag.DevOtp != null)
+                {
+                    <div class="alert" style="background:#fffbeb;border-left:4px solid #f5b042;color:#92400e;">
+                        <i class="fas fa-flask"></i>
+                        <span>Development mode — email delivery is bypassed. Your code is <strong style="letter-spacing:2px;">@ViewBag.DevOtp</strong></span>
+                    </div>
+                }
 
-                <p class="lead">We sent a 6-digit verification code to <strong>@masked</strong>. Enter it below to finish signing in.</p>
+                @if (isAuth)
+                {
+                    <p class="lead">Open your authenticator app and enter the current 6-digit code for <strong>@masked</strong>.</p>
+                }
+                else
+                {
+                    <p class="lead">We sent a 6-digit verification code to <strong>@masked</strong>. Enter it below to finish signing in.</p>
+                }
 
                 <form method="post" asp-action="VerifyMfa">
                     @Html.AntiForgeryToken()
-                    <input type="text" name="code" class="code-input" maxlength="6" inputmode="numeric"
-                           pattern="[0-9]*" autocomplete="one-time-code" placeholder="••••••" autofocus required />
+                    <input type="text" name="code" class="code-input" maxlength="9"
+                           autocomplete="one-time-code" placeholder="••••••" autofocus required />
                     <button type="submit" class="btn-verify"><i class="fas fa-check"></i> Verify &amp; Sign In</button>
                 </form>
 
                 <div class="mfa-foot">
-                    Didn't get a code?
-                    <form method="post" asp-action="ResendMfa" class="resend-form">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="resend-btn">Resend code</button>
-                    </form>
-                    &middot; <a asp-action="Login">Cancel</a>
+                    @if (!isAuth)
+                    {
+                        <text>Didn't get a code?
+                        <form method="post" asp-action="ResendMfa" class="resend-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="resend-btn">Resend code</button>
+                        </form>
+                        &middot; </text>
+                    }
+                    @if (hasRecovery)
+                    {
+                        <div style="margin-bottom:0.5rem;color:#64748b;">Lost your device? Enter one of your recovery codes above.</div>
+                    }
+                    <a asp-action="Login">Cancel</a>
                 </div>
             </div>
         </div>

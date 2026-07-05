@@ -1,0 +1,47 @@
+@model List<string>
+@{
+    ViewData["Title"] = "Recovery Codes - Axis IT Operations";
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="mb-3">
+            <h1 class="page-title"><i class="fas fa-life-ring me-2" style="color:var(--primary);"></i>Your recovery codes</h1>
+            <p class="text-muted mt-2">Save these now — each code works once if you lose access to your second factor. This is the only time they're shown.</p>
+        </div>
+    </div>
+
+    <div class="alert alert-warning d-flex align-items-center gap-2">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span>Store them in a password manager or print them. Anyone with a code can sign in as you.</span>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-key me-2"></i><span>Recovery codes</span></div>
+            <span class="record-count">@Model.Count</span>
+        </div>
+        <div style="padding:1.5rem;">
+            <div id="codes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.6rem;">
+                @foreach (var c in Model)
+                {
+                    <code style="background:var(--gray-100);padding:0.5rem 0.75rem;border-radius:0.5rem;font-size:1rem;letter-spacing:1px;text-align:center;">@c</code>
+                }
+            </div>
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <button class="btn btn-outline-primary btn-sm" onclick="copyCodes()"><i class="fas fa-copy"></i> Copy all</button>
+                <button class="btn btn-outline-primary btn-sm" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                <a asp-action="Index" class="btn-create btn-create-sm ms-auto"><i class="fas fa-check"></i> I've saved them</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyCodes() {
+        var text = Array.from(document.querySelectorAll('#codes code')).map(function (c) { return c.textContent.trim(); }).join('\n');
+        navigator.clipboard.writeText(text).then(function () {
+            if (window.toastr) toastr.success('Recovery codes copied.');
+        });
+    }
+</script>

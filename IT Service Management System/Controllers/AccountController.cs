@@ -22,6 +22,7 @@ namespace IT_Service_Management_System.Controllers
         private readonly GeoLocationService _geo;
         private readonly ILogger<AccountController> _logger;
         private readonly IMemoryCache _cache;
+        private readonly IWebHostEnvironment _env;
 
         // Coarse per-IP backstop against scripted brute force (per-user lockout is the primary,
         // configurable mechanism). Generous so the configurable account lockout governs UX.
@@ -39,7 +40,8 @@ namespace IT_Service_Management_System.Controllers
             AlertService alerts,
             GeoLocationService geo,
             ILogger<AccountController> logger,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            IWebHostEnvironment env)
         {
             _context = context;
             _email = email;
@@ -50,6 +52,7 @@ namespace IT_Service_Management_System.Controllers
             _geo = geo;
             _logger = logger;
             _cache = cache;
+            _env = env;
         }
 
         // ── rate limiting ────────────────────────────────────────────────────────────
@@ -172,22 +175,35 @@ namespace IT_Service_Management_System.Controllers
             if (string.IsNullOrEmpty(user.SecurityStamp))
                 user.SecurityStamp = Guid.NewGuid().ToString("N");
 
-            // MFA gate (email OTP) — challenge before completing the login.
+            // MFA gate — challenge with the user's enrolled method before completing the login.
             if (MfaApplies(user, config))
             {
-                var code = GenerateOtp();
-                user.MfaOtpCodeHash = PasswordHasher.HashPassword(code);
-                user.MfaOtpExpiry = DateTime.Now.AddMinutes(config.MfaOtpValidityMinutes);
-                await _context.SaveChangesAsync();
-
                 HttpContext.Session.SetInt32(MfaPendingKey, user.Id);
 
-                await TrySendEmailAsync(user.Email, user.FirstName,
-                    "Your sign-in verification code — Axis IT Operations",
-                    EmailTemplates.MfaCode(user.FirstName, code, config.MfaOtpValidityMinutes));
+                // Enrolled method wins; admins forced by policy but not yet enrolled fall back to email.
+                var method = user.MfaMethod != MfaMethod.None ? user.MfaMethod : MfaMethod.Email;
 
-                await _auditService.LogAsync("MFA Challenge", "User", user.Id,
-                    $"OTP issued to {user.Email}");
+                if (method == MfaMethod.Authenticator)
+                {
+                    // Nothing to send — the code comes from the user's authenticator app.
+                    await _auditService.LogAsync("MFA Challenge", "User", user.Id,
+                        $"Authenticator challenge for {user.Email}");
+                }
+                else
+                {
+                    var code = GenerateOtp();
+                    user.MfaOtpCodeHash = PasswordHasher.HashPassword(code);
+                    user.MfaOtpExpiry = DateTime.Now.AddMinutes(config.MfaOtpValidityMinutes);
+                    await _context.SaveChangesAsync();
+
+                    await TrySendEmailAsync(user.Email, user.FirstName,
+                        "Your sign-in verification code — Axis IT Operations",
+                        EmailTemplates.MfaCode(user.FirstName, code, config.MfaOtpValidityMinutes));
+                    SurfaceDevOtp(user.Email, code, config.MfaOtpValidityMinutes);
+
+                    await _auditService.LogAsync("MFA Challenge", "User", user.Id,
+                        $"OTP issued to {user.Email}");
+                }
 
                 return RedirectToAction(nameof(VerifyMfa));
             }
@@ -211,7 +227,12 @@ namespace IT_Service_Management_System.Controllers
             var user = await _context.Users.FindAsync(pendingId.Value);
             if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
 
+            var method = user.MfaMethod != MfaMethod.None ? user.MfaMethod : MfaMethod.Email;
             ViewBag.MaskedEmail = MaskEmail(user.Email);
+            ViewBag.Method = method.ToString();
+            ViewBag.HasRecovery = !string.IsNullOrEmpty(user.MfaRecoveryCodes);
+            if (method == MfaMethod.Email && _env.IsDevelopment())
+                ViewBag.DevOtp = TempData.Peek("DevOtp") as string;
             return View();
         }
 
@@ -224,43 +245,51 @@ namespace IT_Service_Management_System.Controllers
             var user = await _context.Users.FindAsync(pendingId.Value);
             if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
 
+            var method = user.MfaMethod != MfaMethod.None ? user.MfaMethod : MfaMethod.Email;
             ViewBag.MaskedEmail = MaskEmail(user.Email);
+            ViewBag.Method = method.ToString();
+            ViewBag.HasRecovery = !string.IsNullOrEmpty(user.MfaRecoveryCodes);
+            if (method == MfaMethod.Email && _env.IsDevelopment())
+                ViewBag.DevOtp = TempData.Peek("DevOtp") as string;
 
-            if (user.MfaOtpExpiry == null || user.MfaOtpExpiry < DateTime.Now)
-            {
-                ViewBag.Error = "That code has expired. Please request a new one.";
-                return View();
-            }
+            // Verify against the enrolled method; a recovery code works for either method.
+            bool ok = method == MfaMethod.Authenticator
+                ? TotpAuthenticator.Verify(user.TotpSecret, code)
+                : (user.MfaOtpExpiry != null && user.MfaOtpExpiry >= DateTime.Now
+                   && !string.IsNullOrWhiteSpace(code)
+                   && PasswordHasher.VerifyPassword(code.Trim(), user.MfaOtpCodeHash));
 
-            if (string.IsNullOrWhiteSpace(code) || !PasswordHasher.VerifyPassword(code.Trim(), user.MfaOtpCodeHash))
+            bool usedRecovery = false;
+            if (!ok && MfaRecovery.TryConsume(user, code)) { ok = true; usedRecovery = true; }
+
+            if (!ok)
             {
-                // Cap failed OTP attempts to defeat brute force of the 6-digit code.
+                // Cap failed attempts to defeat brute force of the 6-digit code.
                 var attemptKey = $"mfa-attempts:{user.Id}";
                 var attempts = (_cache.TryGetValue(attemptKey, out int a) ? a : 0) + 1;
                 _cache.Set(attemptKey, attempts, TimeSpan.FromMinutes(15));
 
                 if (attempts >= MaxMfaAttempts)
                 {
-                    // Invalidate the code and end the challenge — user must sign in again.
+                    // End the challenge — user must sign in again.
                     user.MfaOtpCodeHash = null;
                     user.MfaOtpExpiry = null;
                     await _context.SaveChangesAsync();
                     _cache.Remove(attemptKey);
                     HttpContext.Session.Remove(MfaPendingKey);
                     await _auditService.LogAsync("MFA Locked", "User", user.Id,
-                        $"Too many invalid OTP attempts for {user.Email}");
-                    TempData["Success"] = null;
-                    ViewBag.Error = null;
+                        $"Too many invalid MFA attempts for {user.Email}");
                     return RedirectToAction(nameof(Login), new { mfaFailed = true });
                 }
 
                 await _auditService.LogAsync("MFA Failed", "User", user.Id,
-                    $"Invalid OTP ({attempts}/{MaxMfaAttempts}) for {user.Email}");
+                    $"Invalid MFA code ({attempts}/{MaxMfaAttempts}) for {user.Email}");
                 ViewBag.Error = $"Incorrect code. {MaxMfaAttempts - attempts} attempt(s) left.";
                 return View();
             }
 
-            // OTP verified — clear it and complete the login.
+            // Verified — clear any pending email OTP and complete the login
+            // (recovery-code consumption already mutated the user; SaveChanges persists it).
             user.MfaOtpCodeHash = null;
             user.MfaOtpExpiry = null;
             user.LastLoginAt = DateTime.Now;
@@ -268,7 +297,8 @@ namespace IT_Service_Management_System.Controllers
 
             _cache.Remove($"mfa-attempts:{user.Id}");
             HttpContext.Session.Remove(MfaPendingKey);
-            await _auditService.LogAsync("MFA Verified", "User", user.Id, $"OTP verified for {user.Email}");
+            await _auditService.LogAsync(usedRecovery ? "MFA Recovery Used" : "MFA Verified", "User", user.Id,
+                usedRecovery ? $"Recovery code used for {user.Email}" : $"Code verified for {user.Email}");
 
             return await FinalizeLoginAsync(user);
         }
@@ -281,6 +311,13 @@ namespace IT_Service_Management_System.Controllers
 
             var user = await _context.Users.FindAsync(pendingId.Value);
             if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
+
+            // Authenticator users have no email to resend — their code is in the app.
+            if (user.MfaMethod == MfaMethod.Authenticator)
+            {
+                TempData["Success"] = "Open your authenticator app for the current 6-digit code.";
+                return RedirectToAction(nameof(VerifyMfa));
+            }
 
             // Throttle resends to prevent OTP flooding / window extension.
             var resendKey = $"mfa-resend:{user.Id}";
@@ -300,6 +337,7 @@ namespace IT_Service_Management_System.Controllers
             await TrySendEmailAsync(user.Email, user.FirstName,
                 "Your sign-in verification code — Axis IT Operations",
                 EmailTemplates.MfaCode(user.FirstName, newCode, config.MfaOtpValidityMinutes));
+            SurfaceDevOtp(user.Email, newCode, config.MfaOtpValidityMinutes);
 
             TempData["Success"] = "A new code has been sent to your email.";
             return RedirectToAction(nameof(VerifyMfa));
@@ -351,6 +389,18 @@ namespace IT_Service_Management_System.Controllers
 
         private static string GenerateOtp() =>
             System.Security.Cryptography.RandomNumberGenerator.GetInt32(0, 1_000_000).ToString("D6");
+
+        /// <summary>
+        /// In Development only, surface the OTP without relying on email delivery: log it and stash
+        /// it for a one-time on-screen hint. Guarded so production never exposes the code.
+        /// </summary>
+        private void SurfaceDevOtp(string email, string code, int validityMinutes)
+        {
+            if (!_env.IsDevelopment()) return;
+            _logger.LogWarning("DEV 2FA — verification code for {Email} is {Code} (valid {Minutes} min). " +
+                "Email delivery is not required in Development.", email, code, validityMinutes);
+            TempData["DevOtp"] = code;
+        }
 
         private static string MaskEmail(string email)
         {

@@ -1,0 +1,89 @@
+@model IT_Service_Management_System.Models.User
+@using IT_Service_Management_System.Models
+@{
+    ViewData["Title"] = "Two-Factor Authentication - Axis IT Operations";
+    var remaining = ViewBag.RecoveryRemaining as int? ?? 0;
+    var isAuth = Model.MfaMethod == MfaMethod.Authenticator;
+    var isEmail = Model.MfaMethod == MfaMethod.Email;
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h1 class="page-title"><i class="fas fa-shield-halved me-2" style="color:var(--primary);"></i>Two-Factor Authentication</h1>
+                <p class="text-muted mt-2">Add a second step at sign-in. Choose the method you prefer.</p>
+            </div>
+            @if (Model.MfaEnabled)
+            {
+                <span class="status-badge badge-green"><i class="fas fa-circle-check"></i> Enabled · @Model.MfaMethod</span>
+            }
+            else
+            {
+                <span class="status-badge badge-gray"><i class="fas fa-circle-xmark"></i> Not enabled</span>
+            }
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Authenticator app -->
+        <div class="col-lg-6">
+            <div class="data-card h-100">
+                <div class="card-header-custom">
+                    <div><i class="fas fa-mobile-screen-button me-2"></i><span>Authenticator app</span></div>
+                    @if (isAuth) { <span class="status-badge badge-green">Active</span> }
+                </div>
+                <div style="padding:1.25rem;">
+                    <p class="text-muted" style="font-size:0.88rem;">
+                        Use Google Authenticator, Microsoft Authenticator, Authy or any TOTP app to generate a
+                        6-digit code — no email needed. Recommended.
+                    </p>
+                    <a asp-action="SetupAuthenticator" class="btn-create">
+                        <i class="fas fa-qrcode"></i> @(isAuth ? "Reconfigure" : "Set up authenticator")
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email OTP -->
+        <div class="col-lg-6">
+            <div class="data-card h-100">
+                <div class="card-header-custom">
+                    <div><i class="fas fa-envelope me-2"></i><span>Email verification</span></div>
+                    @if (isEmail) { <span class="status-badge badge-green">Active</span> }
+                </div>
+                <div style="padding:1.25rem;">
+                    <p class="text-muted" style="font-size:0.88rem;">
+                        Receive a one-time code by email (@Model.Email) each time you sign in.
+                    </p>
+                    <form asp-action="EnableEmail" method="post">
+                        @Html.AntiForgeryToken()
+                        <button class="btn-create" @(isEmail ? "disabled" : "")>
+                            <i class="fas fa-envelope-circle-check"></i> @(isEmail ? "Currently active" : "Use email codes")
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.MfaEnabled)
+    {
+        <div class="data-card mt-3">
+            <div class="card-header-custom"><div><i class="fas fa-key me-2"></i><span>Recovery &amp; options</span></div></div>
+            <div style="padding:1.25rem;" class="d-flex flex-wrap align-items-center gap-3">
+                <span class="status-badge @(remaining > 2 ? "badge-blue" : "badge-amber")">
+                    <i class="fas fa-life-ring"></i> @remaining recovery code(s) left
+                </span>
+                <form asp-action="RegenerateRecoveryCodes" method="post" class="m-0" onsubmit="return confirm('Generate new recovery codes? Your existing codes will stop working.');">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-outline-primary btn-sm"><i class="fas fa-rotate"></i> Regenerate recovery codes</button>
+                </form>
+                <form asp-action="Disable" method="post" class="m-0 ms-auto" onsubmit="return confirm('Turn off two-factor authentication for your account?');">
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-outline-danger btn-sm"><i class="fas fa-shield-slash"></i> Turn off 2FA</button>
+                </form>
+            </div>
+        </div>
+    }
+</div>

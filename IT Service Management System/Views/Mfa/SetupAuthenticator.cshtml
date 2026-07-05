@@ -1,0 +1,71 @@
+@{
+    ViewData["Title"] = "Set up Authenticator - Axis IT Operations";
+    var secret = ViewBag.Secret as string ?? "";
+    var uri = ViewBag.OtpAuthUri as string ?? "";
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+            <div>
+                <h1 class="page-title" style="font-size:1.5rem;"><i class="fas fa-qrcode me-2" style="color:var(--primary);"></i>Set up authenticator app</h1>
+                <p class="text-muted mt-1" style="font-size:0.85rem;">Scan the code, then confirm to finish enrollment.</p>
+            </div>
+        </div>
+    </div>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-danger d-flex align-items-center gap-2"><i class="fas fa-circle-exclamation"></i><span>@ViewBag.Error</span></div>
+    }
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="data-card h-100">
+                <div class="card-header-custom"><div><i class="fas fa-1 me-2"></i><span>Step 1 — Scan</span></div></div>
+                <div style="padding:1.5rem;text-align:center;">
+                    <p class="text-muted" style="font-size:0.85rem;">Open your authenticator app and scan this QR code:</p>
+                    <div id="qr" style="display:inline-block;padding:0.75rem;background:#fff;border:1px solid var(--gray-200);border-radius:0.75rem;"></div>
+                    <input type="hidden" id="otpUri" value="@uri" />
+                    <p class="text-muted mt-3" style="font-size:0.8rem;">Can't scan? Enter this key manually:</p>
+                    <code style="display:inline-block;background:var(--gray-100);padding:0.4rem 0.7rem;border-radius:0.5rem;font-size:0.95rem;letter-spacing:1px;word-break:break-all;">@secret</code>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="data-card h-100">
+                <div class="card-header-custom"><div><i class="fas fa-2 me-2"></i><span>Step 2 — Confirm</span></div></div>
+                <div style="padding:1.5rem;">
+                    <p class="text-muted" style="font-size:0.85rem;">Enter the current 6-digit code from your app to activate:</p>
+                    <form asp-action="EnableAuthenticator" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="text" name="code" class="form-control form-control-lg text-center"
+                               style="letter-spacing:0.5rem;font-weight:700;" maxlength="6" inputmode="numeric"
+                               pattern="[0-9]*" autocomplete="one-time-code" placeholder="000000" autofocus required />
+                        <button type="submit" class="btn-create w-100 mt-3" style="justify-content:center;">
+                            <i class="fas fa-check"></i> Verify &amp; enable
+                        </button>
+                    </form>
+                    <p class="text-muted mt-3" style="font-size:0.78rem;">
+                        <i class="fas fa-circle-info"></i> You'll get one-time recovery codes after this — keep them somewhere safe in case you lose your device.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+    (function () {
+        var uri = document.getElementById('otpUri').value;
+        var holder = document.getElementById('qr');
+        if (window.QRCode && uri) {
+            new QRCode(holder, { text: uri, width: 190, height: 190, correctLevel: QRCode.CorrectLevel.M });
+        } else {
+            holder.innerHTML = '<span class="text-muted" style="font-size:0.8rem;">QR unavailable — use the manual key below.</span>';
+        }
+    })();
+</script>
