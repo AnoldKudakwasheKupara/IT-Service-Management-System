@@ -5,7 +5,7 @@ using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 using static IT_Service_Management_System.Models.Ticket;
 
 namespace IT_Service_Management_System.Controllers
@@ -21,7 +21,8 @@ namespace IT_Service_Management_System.Controllers
         private readonly AlertService _alerts;
         private readonly GeoLocationService _geo;
         private readonly ILogger<AccountController> _logger;
-        private readonly IMemoryCache _cache;
+        private readonly IDistributedCache _cache;
+        private readonly BreachedPasswordChecker _breachCheck;
         private readonly IWebHostEnvironment _env;
 
         // Coarse per-IP backstop against scripted brute force (per-user lockout is the primary,
@@ -29,7 +30,8 @@ namespace IT_Service_Management_System.Controllers
         private const int MaxIpAttempts = 15;
         private const int MaxMfaAttempts = 5;
         private static readonly TimeSpan AttemptWindow = TimeSpan.FromMinutes(15);
-        private static readonly TimeSpan TokenLifetime = TimeSpan.FromHours(24);
+        // Password-reset links are short-lived (OWASP): a reset is a high-value bearer credential.
+        private static readonly TimeSpan TokenLifetime = TimeSpan.FromHours(1);
 
         public AccountController(
             ApplicationDbContext context,
@@ -40,7 +42,8 @@ namespace IT_Service_Management_System.Controllers
             AlertService alerts,
             GeoLocationService geo,
             ILogger<AccountController> logger,
-            IMemoryCache cache,
+            IDistributedCache cache,
+            BreachedPasswordChecker breachCheck,
             IWebHostEnvironment env)
         {
             _context = context;
@@ -52,6 +55,7 @@ namespace IT_Service_Management_System.Controllers
             _geo = geo;
             _logger = logger;
             _cache = cache;
+            _breachCheck = breachCheck;
             _env = env;
         }
 
@@ -60,16 +64,25 @@ namespace IT_Service_Management_System.Controllers
         private string ClientKey(string scope) =>
             $"{scope}:{HttpContext.Connection.RemoteIpAddress}";
 
-        private bool IsRateLimited(string key) =>
-            _cache.TryGetValue(key, out int count) && count >= MaxIpAttempts;
-
-        private void RegisterAttempt(string key)
+        // Rate-limit counters live in the distributed cache (Redis when configured, in-memory
+        // otherwise) so limits hold across all instances behind a load balancer, not per-process.
+        private async Task<int> GetCountAsync(string key)
         {
-            var count = _cache.TryGetValue(key, out int c) ? c : 0;
-            _cache.Set(key, count + 1, AttemptWindow);
+            var v = await _cache.GetStringAsync(key);
+            return int.TryParse(v, out var c) ? c : 0;
         }
 
-        private void ResetAttempts(string key) => _cache.Remove(key);
+        private async Task<bool> IsRateLimitedAsync(string key) =>
+            await GetCountAsync(key) >= MaxIpAttempts;
+
+        private async Task RegisterAttemptAsync(string key)
+        {
+            var count = await GetCountAsync(key);
+            await _cache.SetStringAsync(key, (count + 1).ToString(),
+                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = AttemptWindow });
+        }
+
+        private Task ResetAttemptsAsync(string key) => _cache.RemoveAsync(key);
 
         // ── login ────────────────────────────────────────────────────────────────────
 
@@ -88,7 +101,7 @@ namespace IT_Service_Management_System.Controllers
             var throttleKey = ClientKey("login");
             var config = _configService.Get();
 
-            if (IsRateLimited(throttleKey))
+            if (await IsRateLimitedAsync(throttleKey))
             {
                 await _auditService.LogAsync("Login Blocked", "User", null,
                     $"Rate-limited login attempt for {email}");
@@ -101,7 +114,7 @@ namespace IT_Service_Management_System.Controllers
             // Account-locked check (per-user, configurable).
             if (user != null && user.IsLockedOut)
             {
-                RegisterAttempt(throttleKey);
+                await RegisterAttemptAsync(throttleKey);
                 await _auditService.LogAsync("Login Blocked", "User", user.Id,
                     $"Login attempt on locked account {user.Email}");
                 ViewBag.Error = $"This account is locked due to repeated failed sign-ins. Try again after {user.LockoutEnd:h:mm tt}.";
@@ -110,7 +123,7 @@ namespace IT_Service_Management_System.Controllers
 
             if (user == null || !user.IsActive || !PasswordHasher.VerifyPassword(password, user.PasswordHash))
             {
-                RegisterAttempt(throttleKey);
+                await RegisterAttemptAsync(throttleKey);
 
                 // Track per-user failed attempts and lock if the threshold is reached.
                 if (user != null)
@@ -163,11 +176,7 @@ namespace IT_Service_Management_System.Controllers
                 return View();
             }
 
-            ResetAttempts(throttleKey);
-
-            // Transparently upgrade legacy plaintext passwords.
-            if (!PasswordHasher.IsHashed(user.PasswordHash))
-                user.PasswordHash = PasswordHasher.HashPassword(password);
+            await ResetAttemptsAsync(throttleKey);
 
             // Successful auth — reset lockout counters, stamp last login.
             user.FailedLoginCount = 0;
@@ -266,8 +275,9 @@ namespace IT_Service_Management_System.Controllers
             {
                 // Cap failed attempts to defeat brute force of the 6-digit code.
                 var attemptKey = $"mfa-attempts:{user.Id}";
-                var attempts = (_cache.TryGetValue(attemptKey, out int a) ? a : 0) + 1;
-                _cache.Set(attemptKey, attempts, TimeSpan.FromMinutes(15));
+                var attempts = await GetCountAsync(attemptKey) + 1;
+                await _cache.SetStringAsync(attemptKey, attempts.ToString(),
+                    new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(15) });
 
                 if (attempts >= MaxMfaAttempts)
                 {
@@ -275,7 +285,7 @@ namespace IT_Service_Management_System.Controllers
                     user.MfaOtpCodeHash = null;
                     user.MfaOtpExpiry = null;
                     await _context.SaveChangesAsync();
-                    _cache.Remove(attemptKey);
+                    await _cache.RemoveAsync(attemptKey);
                     HttpContext.Session.Remove(MfaPendingKey);
                     await _auditService.LogAsync("MFA Locked", "User", user.Id,
                         $"Too many invalid MFA attempts for {user.Email}");
@@ -295,7 +305,7 @@ namespace IT_Service_Management_System.Controllers
             user.LastLoginAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            _cache.Remove($"mfa-attempts:{user.Id}");
+            await _cache.RemoveAsync($"mfa-attempts:{user.Id}");
             HttpContext.Session.Remove(MfaPendingKey);
             await _auditService.LogAsync(usedRecovery ? "MFA Recovery Used" : "MFA Verified", "User", user.Id,
                 usedRecovery ? $"Recovery code used for {user.Email}" : $"Code verified for {user.Email}");
@@ -321,12 +331,13 @@ namespace IT_Service_Management_System.Controllers
 
             // Throttle resends to prevent OTP flooding / window extension.
             var resendKey = $"mfa-resend:{user.Id}";
-            if (_cache.TryGetValue(resendKey, out _))
+            if (await _cache.GetStringAsync(resendKey) != null)
             {
                 TempData["Success"] = "A code was just sent. Please wait a moment before requesting another.";
                 return RedirectToAction(nameof(VerifyMfa));
             }
-            _cache.Set(resendKey, true, TimeSpan.FromSeconds(60));
+            await _cache.SetStringAsync(resendKey, "1",
+                new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60) });
 
             var config = _configService.Get();
             var newCode = GenerateOtp();
@@ -460,8 +471,10 @@ namespace IT_Service_Management_System.Controllers
                 return View();
             }
 
+            // The DB stores only the hash of the token; hash the incoming raw token to look it up.
+            var tokenHash = TokenHasher.Hash(token);
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.ResetToken == token);
+                .FirstOrDefaultAsync(u => u.ResetToken == tokenHash);
 
             if (user == null)
             {
@@ -487,8 +500,9 @@ namespace IT_Service_Management_System.Controllers
                 return View();
             }
 
+            var tokenHash = TokenHasher.Hash(token);
             var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.ResetToken == token);
+                .FirstOrDefaultAsync(u => u.ResetToken == tokenHash);
 
             if (user == null)
             {
@@ -511,6 +525,14 @@ namespace IT_Service_Management_System.Controllers
             if (password != confirmPassword)
             {
                 ViewBag.Error = "Passwords do not match.";
+                return View();
+            }
+
+            // Reject passwords known to have appeared in public breaches (fail-open if the
+            // service is unreachable, so this never blocks a legitimate reset offline).
+            if (await _breachCheck.IsBreachedAsync(password))
+            {
+                ViewBag.Error = "This password has appeared in a known data breach and isn't safe to use. Please choose a different one.";
                 return View();
             }
 
@@ -558,7 +580,7 @@ namespace IT_Service_Management_System.Controllers
         {
             var throttleKey = ClientKey("forgot");
 
-            if (IsRateLimited(throttleKey))
+            if (await IsRateLimitedAsync(throttleKey))
             {
                 ViewBag.Message = "If that email exists in our system, a reset link has been sent.";
                 return View();
@@ -569,20 +591,23 @@ namespace IT_Service_Management_System.Controllers
             // Always show the same message regardless of whether the email exists (prevents enumeration).
             if (user == null)
             {
-                RegisterAttempt(throttleKey);
+                await RegisterAttemptAsync(throttleKey);
                 ViewBag.Message = "If that email exists in our system, a reset link has been sent.";
                 return View();
             }
 
-            user.ResetToken = Guid.NewGuid().ToString("N");
-            user.TokenExpiry = DateTime.Now.Add(TokenLifetime);   // 24 hours
+            // Generate a raw token for the email link, but persist only its hash (bearer-credential
+            // hygiene: a DB leak must not yield usable reset links).
+            var rawToken = Guid.NewGuid().ToString("N");
+            user.ResetToken = TokenHasher.Hash(rawToken);
+            user.TokenExpiry = DateTime.Now.Add(TokenLifetime);   // 1 hour
             await _context.SaveChangesAsync();
 
-            RegisterAttempt(throttleKey);
+            await RegisterAttemptAsync(throttleKey);
             await _auditService.LogAsync("Forgot Password", "User", user.Id, "Password reset requested");
 
             var resetLink = Url.Action("SetPassword", "Account",
-                new { token = user.ResetToken }, Request.Scheme)!;
+                new { token = rawToken }, Request.Scheme)!;
 
             await TrySendEmailAsync(
                 user.Email, user.FirstName,

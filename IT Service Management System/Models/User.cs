@@ -21,6 +21,10 @@ namespace IT_Service_Management_System.Models
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
 
+        [Phone]
+        [StringLength(30)]
+        public string? Phone { get; set; }
+
         public string? PasswordHash { get; set; }
 
         public string? ResetToken { get; set; }

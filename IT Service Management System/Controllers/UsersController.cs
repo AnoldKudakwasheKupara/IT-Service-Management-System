@@ -15,14 +15,16 @@ namespace IT_Service_Management_System.Controllers
         private readonly EmailDispatcher _email;
         private readonly AuditService _auditService;
         private readonly AlertService _alerts;
+        private readonly SessionService _sessions;
         private readonly ILogger<UsersController> _logger;
 
-        public UsersController(ApplicationDbContext context, EmailDispatcher email, AuditService auditService, AlertService alerts, ILogger<UsersController> logger)
+        public UsersController(ApplicationDbContext context, EmailDispatcher email, AuditService auditService, AlertService alerts, SessionService sessions, ILogger<UsersController> logger)
         {
             _context = context;
             _email = email;
             _auditService = auditService;
             _alerts = alerts;
+            _sessions = sessions;
             _logger = logger;
         }
 
@@ -176,9 +178,12 @@ namespace IT_Service_Management_System.Controllers
                 return View(user);
             }
 
+            // Activation link: email the raw token, persist only its hash. Activation windows are
+            // longer than password resets (24h) since onboarding a new user isn't time-critical.
+            var activationToken = Guid.NewGuid().ToString("N");
             user.CreatedAt = DateTime.Now;
             user.IsActive = false;
-            user.ResetToken = Guid.NewGuid().ToString("N");
+            user.ResetToken = TokenHasher.Hash(activationToken);
             user.TokenExpiry = DateTime.Now.AddHours(24);
 
             _context.Users.Add(user);
@@ -194,7 +199,7 @@ namespace IT_Service_Management_System.Controllers
             }
 
             var activationLink = Url.Action("SetPassword", "Account",
-                new { token = user.ResetToken }, Request.Scheme)!;
+                new { token = activationToken }, Request.Scheme)!;
 
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
             await TrySendEmailAsync(
@@ -261,22 +266,21 @@ namespace IT_Service_Management_System.Controllers
 
             var oldEmail = existingUser.Email;
             var oldRole = existingUser.Role;
+            var oldPhone = existingUser.Phone;
 
             // Update fields
             existingUser.FirstName = user.FirstName;
             existingUser.LastName = user.LastName;
             existingUser.Email = user.Email;
+            existingUser.Phone = user.Phone;
             existingUser.Role = user.Role;
 
             existingUser.DepartmentId = user.DepartmentId;
             existingUser.SupervisorId = user.SupervisorId;
 
-            // Only update password if supplied
-            if (!string.IsNullOrWhiteSpace(user.PasswordHash))
-            {
-                existingUser.PasswordHash = PasswordHasher.HashPassword(user.PasswordHash);
-                existingUser.PasswordChangedAt = DateTime.Now;
-            }
+            // Passwords are never set by an admin — they're changed only by the user via the
+            // emailed reset link (see ResetPassword → Account/SetPassword). So we deliberately
+            // do NOT touch PasswordHash here.
 
             await _context.SaveChangesAsync();
 
@@ -296,11 +300,25 @@ namespace IT_Service_Management_System.Controllers
                 await TrySendEmailAsync(existingUser.Email, existingUser.FirstName, "Your account email was changed — Axis IT Operations", html);
             }
 
+            // Notify on phone change.
+            bool phoneChanged = !string.Equals(oldPhone ?? "", existingUser.Phone ?? "", StringComparison.Ordinal);
+            if (phoneChanged && !string.IsNullOrWhiteSpace(existingUser.Phone))
+            {
+                await TrySendEmailAsync(existingUser.Email, existingUser.FirstName,
+                    "Your account phone number was changed — Axis IT Operations",
+                    EmailTemplates.PhoneChanged(existingUser.FirstName, oldPhone, existingUser.Phone));
+            }
+
             // Audit a role change for the security/compliance trail.
             if (oldRole != existingUser.Role)
             {
                 await _auditService.LogAsync("Permission Changed", "User", existingUser.Id,
                     $"Role changed from {oldRole} to {existingUser.Role} for {existingUser.Email}");
+
+                // Let the affected user know their access level changed.
+                await TrySendEmailAsync(existingUser.Email, existingUser.FirstName,
+                    "Your account role was changed — Axis IT Operations",
+                    EmailTemplates.RoleChanged(existingUser.FirstName, oldRole.ToString(), existingUser.Role.ToString()));
 
                 // Admin alert when a non-privileged account is elevated to a privileged role.
                 if (!IsPrivileged(oldRole) && IsPrivileged(existingUser.Role))
@@ -309,6 +327,12 @@ namespace IT_Service_Management_System.Controllers
                     await _alerts.PrivilegeEscalationAsync(existingUser.Email,
                         oldRole.ToString(), existingUser.Role.ToString(), changedBy);
                 }
+
+                // A privilege change must not take effect only on next login: the session caches the
+                // role, so rotate the security stamp and revoke active sessions to force re-auth with
+                // the new role (OWASP ASVS 3.4.8 — invalidate sessions on privilege change).
+                existingUser.SecurityStamp = Guid.NewGuid().ToString("N");
+                await _sessions.RevokeAllAsync(existingUser.Id, "Role changed — re-authentication required");
             }
 
             return RedirectToAction(nameof(Index));
@@ -369,10 +393,12 @@ namespace IT_Service_Management_System.Controllers
                 return View(model);
 
             var oldEmail = user.Email;
+            var oldPhone = user.Phone;
 
             user.FirstName = model.FirstName;
             user.LastName = model.LastName;
             user.Email = model.Email;
+            user.Phone = model.Phone;
 
             await _context.SaveChangesAsync();
 
@@ -387,6 +413,14 @@ namespace IT_Service_Management_System.Controllers
                 var html = EmailTemplates.EmailChanged(user.FirstName, oldEmail, user.Email);
                 await TrySendEmailAsync(oldEmail, user.FirstName, "Your account email was changed — Axis IT Operations", html);
                 await TrySendEmailAsync(user.Email, user.FirstName, "Your account email was changed — Axis IT Operations", html);
+            }
+
+            bool phoneChanged = !string.Equals(oldPhone ?? "", user.Phone ?? "", StringComparison.Ordinal);
+            if (phoneChanged && !string.IsNullOrWhiteSpace(user.Phone))
+            {
+                await TrySendEmailAsync(user.Email, user.FirstName,
+                    "Your account phone number was changed — Axis IT Operations",
+                    EmailTemplates.PhoneChanged(user.FirstName, oldPhone, user.Phone));
             }
 
             // Reload sidebars/session list for the re-rendered view.
@@ -465,15 +499,17 @@ namespace IT_Service_Management_System.Controllers
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
 
-            user.ResetToken = Guid.NewGuid().ToString("N");
-            user.TokenExpiry = DateTime.Now.AddHours(24);
+            // Email the raw token, store only its hash; short 1h window like the self-service reset.
+            var resetToken = Guid.NewGuid().ToString("N");
+            user.ResetToken = TokenHasher.Hash(resetToken);
+            user.TokenExpiry = DateTime.Now.AddHours(1);
             await _context.SaveChangesAsync();
 
             await _auditService.LogAsync("Reset Password", "User", user.Id,
                 $"Admin-triggered password reset link sent to {user.Email}");
 
             var resetLink = Url.Action("SetPassword", "Account",
-                new { token = user.ResetToken }, Request.Scheme)!;
+                new { token = resetToken }, Request.Scheme)!;
 
             await TrySendEmailAsync(
                 user.Email, user.FirstName,
@@ -501,7 +537,8 @@ namespace IT_Service_Management_System.Controllers
                 return RedirectToAction("Details", new { id });
             }
 
-            user.ResetToken = Guid.NewGuid().ToString("N");
+            var activationToken = Guid.NewGuid().ToString("N");
+            user.ResetToken = TokenHasher.Hash(activationToken);
             user.TokenExpiry = DateTime.Now.AddHours(24);
             await _context.SaveChangesAsync();
 
@@ -509,7 +546,7 @@ namespace IT_Service_Management_System.Controllers
                 $"Activation email resent to {user.Email}");
 
             var activationLink = Url.Action("SetPassword", "Account",
-                new { token = user.ResetToken }, Request.Scheme)!;
+                new { token = activationToken }, Request.Scheme)!;
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
             await TrySendEmailAsync(

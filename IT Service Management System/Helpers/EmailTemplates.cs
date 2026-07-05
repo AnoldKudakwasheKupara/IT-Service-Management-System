@@ -187,6 +187,37 @@ namespace IT_Service_Management_System.Helpers
             return Wrap(firstName, body);
         }
 
+        /// <summary>Sent when a user's account role/permissions are changed by an admin.</summary>
+        public static string RoleChanged(string firstName, string oldRole, string newRole)
+        {
+            var body = $@"
+{SuccessBox("&#10003;&nbsp; The role on your account was changed.")}
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:16px 0;"">
+  Previous role: <strong>{oldRole}</strong><br/>
+  New role: <strong>{newRole}</strong>
+</p>
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:16px 0;"">
+  This may change what you can access in the system. The change takes effect the next time you sign in.
+</p>
+{WarningBox("&#128683;&nbsp; If you didn't expect this change, contact IT Support immediately.")}";
+
+            return Wrap(firstName, body);
+        }
+
+        /// <summary>Sent when a user's phone number is changed.</summary>
+        public static string PhoneChanged(string firstName, string? oldPhone, string newPhone)
+        {
+            var body = $@"
+{SuccessBox("&#10003;&nbsp; The phone number on your account was changed.")}
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:16px 0;"">
+  Old number: <strong>{(string.IsNullOrWhiteSpace(oldPhone) ? "(none)" : oldPhone)}</strong><br/>
+  New number: <strong>{newPhone}</strong>
+</p>
+{WarningBox("&#128683;&nbsp; If you didn't make this change, contact IT Support immediately.")}";
+
+            return Wrap(firstName, body);
+        }
+
         /// <summary>Sent when a sign-in occurs from a device/IP not seen before.</summary>
         public static string NewDeviceLogin(string firstName, string device, string ip, string when)
         {

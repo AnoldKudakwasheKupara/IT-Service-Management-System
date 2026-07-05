@@ -14,6 +14,10 @@ namespace IT_Service_Management_System.Services
         public const string SessionTokenKey = "SessionToken";
         public const string SecurityStampKey = "SecurityStamp";
 
+        // Hard ceiling on session age regardless of activity. Complements the (idle) timeout so a
+        // continuously-active session still forces periodic re-authentication (NIST 800-63B §7.2).
+        private static readonly TimeSpan AbsoluteLifetime = TimeSpan.FromHours(12);
+
         private readonly ApplicationDbContext _context;
         private readonly IHttpContextAccessor _http;
         private readonly GeoLocationService _geo;
@@ -79,6 +83,16 @@ namespace IT_Service_Management_System.Services
 
             if (session == null || session.RevokedAt != null)
                 return false;
+
+            // Absolute-lifetime check: expire (and revoke) any session older than the ceiling,
+            // even if it has been continuously active.
+            if (session.CreatedAt.Add(AbsoluteLifetime) < DateTime.Now)
+            {
+                session.RevokedAt = DateTime.Now;
+                session.RevokedReason = "Absolute session lifetime reached";
+                await _context.SaveChangesAsync();
+                return false;
+            }
 
             // Security-stamp check: rotated on password change / revoke-all. Fail closed —
             // a missing server-side stamp or any mismatch invalidates the session.

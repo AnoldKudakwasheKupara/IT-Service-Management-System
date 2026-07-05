@@ -29,22 +29,18 @@ namespace IT_Service_Management_System.Helpers
             !string.IsNullOrEmpty(stored) && stored.StartsWith(Prefix + "$", StringComparison.Ordinal);
 
         /// <summary>
-        /// Verifies a password against a stored value. Falls back to a plaintext
-        /// comparison for legacy (un-hashed) values so existing accounts keep working;
-        /// callers should re-hash on a successful legacy match.
+        /// Verifies a password against a stored PBKDF2 hash. Any value that is not in the
+        /// PBKDF2 format fails closed (returns false) — there is deliberately no plaintext
+        /// fallback, so a credential can never be stored or compared in the clear.
         /// </summary>
         public static bool VerifyPassword(string password, string? stored)
         {
             if (string.IsNullOrEmpty(password) || string.IsNullOrEmpty(stored))
                 return false;
 
+            // No legacy plaintext path: an un-hashed stored value is treated as invalid.
             if (!IsHashed(stored))
-            {
-                // Legacy plaintext value — constant-time compare.
-                return CryptographicOperations.FixedTimeEquals(
-                    System.Text.Encoding.UTF8.GetBytes(password),
-                    System.Text.Encoding.UTF8.GetBytes(stored));
-            }
+                return false;
 
             var parts = stored.Split('$', 4);
             if (parts.Length != 4 || !int.TryParse(parts[1], out var iterations))

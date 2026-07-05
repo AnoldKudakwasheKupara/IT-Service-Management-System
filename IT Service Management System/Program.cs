@@ -127,6 +127,14 @@ builder.Services.AddScoped<SessionService>();
 
 builder.Services.AddHttpClient();
 
+// Breached-password screening via the Have I Been Pwned range API (typed client with a short
+// timeout so a slow/unreachable service never stalls a password change — the checker fails open).
+builder.Services.AddHttpClient<BreachedPasswordChecker>(c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(3);
+    c.DefaultRequestHeaders.UserAgent.ParseAdd("AxisITSM-PasswordCheck");
+});
+
 builder.Services.AddScoped<GeoLocationService>();
 
 builder.Services.AddScoped<AlertService>();
@@ -198,6 +206,9 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Baseline security response headers (clickjacking, MIME-sniffing, referrer, CSP) on every response.
+app.UseMiddleware<IT_Service_Management_System.Middleware.SecurityHeadersMiddleware>();
 
 app.UseRouting();
 

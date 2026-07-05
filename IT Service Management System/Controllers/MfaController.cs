@@ -2,6 +2,7 @@ using System.Text.Json;
 using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
+using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,7 +20,12 @@ namespace IT_Service_Management_System.Controllers
         private const string PendingSecretKey = "PendingTotpSecret";
 
         private readonly ApplicationDbContext _db;
-        public MfaController(ApplicationDbContext db) => _db = db;
+        private readonly EmailDispatcher _email;
+        public MfaController(ApplicationDbContext db, EmailDispatcher email)
+        {
+            _db = db;
+            _email = email;
+        }
 
         private int? Uid => HttpContext.Session.GetInt32("UserId");
 
@@ -114,6 +120,10 @@ namespace IT_Service_Management_System.Controllers
             user.MfaOtpCodeHash = null;
             user.MfaOtpExpiry = null;
             await _db.SaveChangesAsync();
+
+            _email.Queue(user.Email, user.FirstName,
+                "Two-factor authentication disabled — Axis IT Operations",
+                EmailTemplates.MfaDisabled(user.FirstName));
 
             TempData["Success"] = "Two-factor authentication disabled for your account.";
             return RedirectToAction(nameof(Index));
