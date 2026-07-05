@@ -110,7 +110,7 @@ namespace IT_Service_Management_System.Controllers
             if (to.HasValue) query = query.Where(d => d.CreatedAt <= to.Value.AddDays(1));
 
             query = query.OrderByDescending(d => d.CreatedAt);
-            var (items, paging) = await query.PageAsync(page, 20);
+            var (items, paging) = await query.PageAsync(page, 10);
             ViewBag.Paging = paging;
 
             return View(new DocumentSearchVm
@@ -128,7 +128,7 @@ namespace IT_Service_Management_System.Controllers
             int? documentId, DateTime? from, DateTime? to, int page = 1)
         {
             var (logs, paging) = await BuildAuditQuery(q, action, employeeId, documentId, from, to)
-                .OrderByDescending(a => a.Timestamp).PageAsync(page, 30);
+                .OrderByDescending(a => a.Timestamp).PageAsync(page, 10);
             ViewBag.Paging = paging;
 
             var vm = new DocumentAuditVm
@@ -389,7 +389,7 @@ namespace IT_Service_Management_System.Controllers
         {
             var query = _db.DocumentNotifications
                 .OrderByDescending(n => !n.IsRead).ThenByDescending(n => n.CreatedAt);
-            var (items, paging) = await query.PageAsync(page, 30);
+            var (items, paging) = await query.PageAsync(page, 10);
             ViewBag.Paging = paging;
             ViewBag.UnreadCount = await _db.DocumentNotifications.CountAsync(n => !n.IsRead);
 
@@ -509,8 +509,12 @@ namespace IT_Service_Management_System.Controllers
                     TagsCsv = input.TagsCsv,
                     Keywords = input.Keywords
                 };
-                await _docs.CreateFromUploadAsync(perFile, file, userId, userName);
-                saved++;
+                try
+                {
+                    await _docs.CreateFromUploadAsync(perFile, file, userId, userName);
+                    saved++;
+                }
+                catch (UploadRejectedException ex) { skipped.Add(ex.Message); }
             }
 
             var msg = $"{saved} document(s) uploaded." + (skipped.Count > 0 ? $" Skipped: {string.Join(", ", skipped)}" : "");
@@ -593,8 +597,14 @@ namespace IT_Service_Management_System.Controllers
             if (BlockedExtensions.Contains(Path.GetExtension(file.FileName).ToLowerInvariant()))
             { TempData["Error"] = "That file type is not allowed."; return RedirectToAction(nameof(Details), new { id }); }
 
-            var v = await _docs.AddVersionAsync(id, file, changeNote,
-                HttpContext.Session.GetInt32("UserId"), HttpContext.Session.GetString("UserName"));
+            DocumentVersion v;
+            try
+            {
+                v = await _docs.AddVersionAsync(id, file, changeNote,
+                    HttpContext.Session.GetInt32("UserId"), HttpContext.Session.GetString("UserName"));
+            }
+            catch (UploadRejectedException ex)
+            { TempData["Error"] = ex.Message; return RedirectToAction(nameof(Details), new { id }); }
             TempData["Success"] = $"Version {v.VersionNumber} uploaded and set as current.";
             return RedirectToAction(nameof(Details), new { id });
         }
@@ -677,25 +687,32 @@ namespace IT_Service_Management_System.Controllers
 
             var userName = HttpContext.Session.GetString("UserName");
             int saved = 0;
+            var skipped = new List<string>();
             foreach (var file in files)
             {
                 if (file.Length == 0 || file.Length > MaxFileBytes) continue;
                 if (BlockedExtensions.Contains(Path.GetExtension(file.FileName).ToLowerInvariant())) continue;
 
-                var doc = await _docs.CreateFromUploadAsync(new DocumentUploadInput
+                try
                 {
-                    EmployeeId = uid.Value,
-                    FolderId = folderId,
-                    CategoryId = categoryId,
-                    Confidentiality = ConfidentialityLevel.Confidential,
-                    Description = description
-                }, file, uid, userName);
+                    var doc = await _docs.CreateFromUploadAsync(new DocumentUploadInput
+                    {
+                        EmployeeId = uid.Value,
+                        FolderId = folderId,
+                        CategoryId = categoryId,
+                        Confidentiality = ConfidentialityLevel.Confidential,
+                        Description = description
+                    }, file, uid, userName);
 
-                // Employee self-uploads await HR approval — record the approval step + notify HR.
-                await _approvals.SubmitForApprovalAsync(doc);
-                saved++;
+                    // Employee self-uploads await HR approval — record the approval step + notify HR.
+                    await _approvals.SubmitForApprovalAsync(doc);
+                    saved++;
+                }
+                catch (UploadRejectedException ex) { skipped.Add(ex.Message); }
             }
 
+            if (skipped.Count > 0)
+                TempData["Error"] = "Some files were rejected: " + string.Join("; ", skipped);
             TempData["Success"] = saved > 0
                 ? $"{saved} document(s) uploaded and sent for HR approval."
                 : "No files were uploaded.";
@@ -719,7 +736,7 @@ namespace IT_Service_Management_System.Controllers
                 ? query.Where(a => a.Status != ApprovalStatus.Pending).OrderByDescending(a => a.DecidedAt)
                 : query.Where(a => a.Status == ApprovalStatus.Pending).OrderBy(a => a.CreatedAt);
 
-            var (items, paging) = await query.PageAsync(page, 20);
+            var (items, paging) = await query.PageAsync(page, 10);
             ViewBag.Paging = paging;
             ViewBag.History = history;
             ViewBag.PendingCount = await _approvals.PendingCountAsync();
@@ -1018,7 +1035,7 @@ namespace IT_Service_Management_System.Controllers
             var query = _db.DocumentNotifications
                 .Where(n => n.RecipientUserId == uid)
                 .OrderByDescending(n => !n.IsRead).ThenByDescending(n => n.CreatedAt);
-            var (items, paging) = await query.PageAsync(page, 30);
+            var (items, paging) = await query.PageAsync(page, 10);
             ViewBag.Paging = paging;
             ViewBag.UnreadCount = await _db.DocumentNotifications.CountAsync(n => n.RecipientUserId == uid && !n.IsRead);
             return View(items);

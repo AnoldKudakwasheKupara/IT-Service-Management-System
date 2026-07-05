@@ -1,0 +1,137 @@
+@model IT_Service_Management_System.ViewModels.Reports.AgentPerformanceVM
+@{
+    ViewData["Title"] = "Agent Performance - Reports";
+
+    string Initials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0) return "?";
+        return parts.Length == 1 ? parts[0].Substring(0, 1) : (parts[0].Substring(0, 1) + parts[^1].Substring(0, 1));
+    }
+    string CsatBadge(double v) => v >= 4 ? "badge-green" : v >= 3 ? "badge-amber" : "badge-red";
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <a asp-controller="Reports" asp-action="Index" class="btn-back" title="Back to Reports">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-user-gear me-2" style="color: var(--primary);"></i>
+                        Agent Performance
+                    </h1>
+                    <p class="text-muted mt-2">Workload, throughput and satisfaction by assigned agent.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Agents.Count</h3>
+                <p>Active Agents</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.TotalResolved</h3>
+                <p>Total Resolved</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-user-slash"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Unassigned</h3>
+                <p>Unassigned Tickets</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- AGENTS TABLE -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-list me-2"></i><span>Agents</span></div>
+            <div class="record-count"><i class="fas fa-chart-simple"></i> <span>@Model.Agents.Count</span> agents</div>
+        </div>
+        <div class="table-responsive">
+            @if (Model.Agents.Any())
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user me-1"></i> Agent</th>
+                            <th><i class="fas fa-inbox me-1"></i> Assigned</th>
+                            <th><i class="fas fa-folder-open me-1"></i> Open</th>
+                            <th><i class="fas fa-check me-1"></i> Resolved</th>
+                            <th><i class="fas fa-hourglass-half me-1"></i> Avg Resolution</th>
+                            <th><i class="fas fa-triangle-exclamation me-1"></i> SLA Breaches</th>
+                            <th><i class="fas fa-star me-1"></i> CSAT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Model.Agents)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="agent-cell">
+                                        <div class="list-avatar">@Initials(a.Name)</div>
+                                        <span>@a.Name</span>
+                                    </div>
+                                </td>
+                                <td>@a.Assigned</td>
+                                <td>@a.Open</td>
+                                <td class="text-green">@a.Resolved</td>
+                                <td>@a.AvgResolutionHours h</td>
+                                <td>
+                                    @if (a.SlaBreaches > 0)
+                                    {
+                                        <span class="status-badge badge-red">@a.SlaBreaches</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge badge-green">0</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (a.AvgCsat.HasValue)
+                                    {
+                                        <span class="status-badge @CsatBadge(a.AvgCsat.Value)">
+                                            <i class="fas fa-star csat-star"></i> @a.AvgCsat.Value.ToString("0.0")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-user-gear"></i>
+                    <h3>No assigned tickets</h3>
+                    <p>Agent metrics appear once tickets are assigned.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_ReportExtras")

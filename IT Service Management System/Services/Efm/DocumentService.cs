@@ -1,5 +1,7 @@
+using System.Security.Cryptography;
 using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models.Efm;
+using IT_Service_Management_System.Services.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.Services.Efm
@@ -30,16 +32,61 @@ namespace IT_Service_Management_System.Services.Efm
         private readonly IDocumentStorage _storage;
         private readonly IHttpContextAccessor _http;
         private readonly IBackgroundTaskQueue _queue;
+        private readonly IMalwareScanner _scanner;
+        private readonly IConfiguration _config;
         private readonly ILogger<DocumentService> _logger;
 
         public DocumentService(ApplicationDbContext db, IDocumentStorage storage,
-            IHttpContextAccessor http, IBackgroundTaskQueue queue, ILogger<DocumentService> logger)
+            IHttpContextAccessor http, IBackgroundTaskQueue queue, IMalwareScanner scanner,
+            IConfiguration config, ILogger<DocumentService> logger)
         {
             _db = db;
             _storage = storage;
             _http = http;
             _queue = queue;
+            _scanner = scanner;
+            _config = config;
             _logger = logger;
+        }
+
+        /// <summary>
+        /// Buffers the upload, scans it for malware, and (optionally) rejects exact duplicates for the
+        /// same employee. Returns the vetted bytes + SHA-256 for storage. Throws
+        /// <see cref="UploadRejectedException"/> if the file is infected or a duplicate.
+        /// </summary>
+        private async Task<(byte[] Bytes, string Sha256)> VetUploadAsync(
+            IFormFile file, int? employeeId, CancellationToken ct)
+        {
+            byte[] bytes;
+            await using (var read = file.OpenReadStream())
+            using (var ms = new MemoryStream())
+            {
+                await read.CopyToAsync(ms, ct);
+                bytes = ms.ToArray();
+            }
+
+            var scan = await _scanner.ScanAsync(bytes, file.FileName, ct);
+            if (!scan.IsClean)
+            {
+                _logger.LogWarning("Blocked infected upload {File}: {Threat}", file.FileName, scan.Threat);
+                throw new UploadRejectedException($"{file.FileName} — malware detected ({scan.Threat})");
+            }
+
+            var sha = Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant();
+
+            if (employeeId.HasValue && _config.GetValue("EFM:Dedup:Enabled", true))
+            {
+                var dupTitle = await _db.DocumentVersions
+                    .Where(v => v.Sha256 == sha)
+                    .Join(_db.EmployeeDocuments, v => v.EmployeeDocumentId, d => d.Id, (v, d) => d)
+                    .Where(d => d.EmployeeId == employeeId.Value)
+                    .Select(d => d.Title)
+                    .FirstOrDefaultAsync(ct);
+                if (dupTitle != null)
+                    throw new UploadRejectedException($"{file.FileName} — identical file already on file (\"{dupTitle}\")");
+            }
+
+            return (bytes, sha);
         }
 
         // Runs OCR on the background queue and stores the extracted text for full-text search.
@@ -67,8 +114,10 @@ namespace IT_Service_Management_System.Services.Efm
         public async Task<EmployeeDocument> CreateFromUploadAsync(
             DocumentUploadInput input, IFormFile file, int? userId, string? userName, CancellationToken ct = default)
         {
+            var (bytes, _) = await VetUploadAsync(file, input.EmployeeId, ct);
+
             StoredFileResult stored;
-            await using (var read = file.OpenReadStream())
+            await using (var read = new MemoryStream(bytes))
                 stored = await _storage.SaveAsync(read, file.FileName, file.ContentType, ct);
 
             var title = string.IsNullOrWhiteSpace(input.Title)
@@ -134,8 +183,10 @@ namespace IT_Service_Management_System.Services.Efm
             var doc = await _db.EmployeeDocuments.FirstOrDefaultAsync(d => d.Id == documentId, ct)
                       ?? throw new InvalidOperationException("Document not found.");
 
+            var (bytes, _) = await VetUploadAsync(file, doc.EmployeeId, ct);
+
             StoredFileResult stored;
-            await using (var read = file.OpenReadStream())
+            await using (var read = new MemoryStream(bytes))
                 stored = await _storage.SaveAsync(read, file.FileName, file.ContentType, ct);
 
             var maxVer = await _db.DocumentVersions

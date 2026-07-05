@@ -31,8 +31,22 @@ namespace IT_Service_Management_System.Models
         public DateTime? ResolvedAt { get; set; }
         public DateTime? ClosedAt { get; set; }
 
-        /// <summary>SLA target resolution time, set from priority at creation.</summary>
+        /// <summary>SLA target resolution time, set from the applicable SLA policy at creation.</summary>
         public DateTime? DueAt { get; set; }
+
+        /// <summary>SLA target first-response time, set from the applicable SLA policy at creation.</summary>
+        public DateTime? ResponseDueAt { get; set; }
+
+        // ── ITIL links ──────────────────────────────────────────────────────────
+        /// <summary>Optional link to the Problem this incident is a symptom of.</summary>
+        public int? ProblemId { get; set; }
+        [ValidateNever]
+        public Itsm.Problem? Problem { get; set; }
+
+        /// <summary>Optional link to the affected Configuration Item (CMDB).</summary>
+        public int? ConfigurationItemId { get; set; }
+        [ValidateNever]
+        public Itsm.ConfigurationItem? ConfigurationItem { get; set; }
 
         // Customer satisfaction (CSAT), captured from the requester after resolution/closure.
         public int? SatisfactionRating { get; set; }   // 1–5
@@ -44,6 +58,11 @@ namespace IT_Service_Management_System.Models
         /// <summary>True when the SLA target has passed and the ticket is still open.</summary>
         [NotMapped]
         public bool IsSlaBreached => DueAt.HasValue && IsOpen && DueAt.Value < DateTime.Now;
+
+        /// <summary>True when the first-response target passed without a staff reply.</summary>
+        [NotMapped]
+        public bool IsResponseBreached => ResponseDueAt.HasValue && FirstRespondedAt == null
+            && IsOpen && ResponseDueAt.Value < DateTime.Now;
 
         public int CreatedById { get; set; }
         [ValidateNever]

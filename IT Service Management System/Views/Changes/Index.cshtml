@@ -1,0 +1,260 @@
+@model List<IT_Service_Management_System.Models.Itsm.ChangeRequest>
+@using IT_Service_Management_System.Models.Itsm
+
+@{
+    ViewData["Title"] = "Change Management";
+    var curStatus = ViewBag.Status as ChangeStatus?;
+    var curType = ViewBag.Type as ChangeType?;
+    var curQ = ViewBag.Q as string;
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-code-branch me-2" style="color: var(--primary);"></i>
+                    Change Management
+                </h1>
+                <p class="text-muted mt-2">Plan, approve, and track controlled changes</p>
+            </div>
+            <a asp-action="Create" class="btn-create">
+                <i class="fas fa-plus-circle me-2"></i>
+                New Change
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-code-branch"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(ViewBag.Total ?? 0)</h3>
+                <p>Total Changes</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(ViewBag.AwaitingApproval ?? 0)</h3>
+                <p>Awaiting Approval</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(ViewBag.Scheduled ?? 0)</h3>
+                <p>Scheduled</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(ViewBag.SuccessRate ?? 0)%</h3>
+                <p>Success Rate</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Filter Changes</span>
+        </div>
+        <form method="get" asp-action="Index" class="filters-body">
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status" class="filter-select">
+                    <option value="">All Status</option>
+                    @foreach (var s in Enum.GetValues<ChangeStatus>())
+                    {
+                        <option value="@s" selected="@(curStatus == s)">@s</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Type</label>
+                <select name="type" class="filter-select">
+                    <option value="">All Types</option>
+                    @foreach (var t in Enum.GetValues<ChangeType>())
+                    {
+                        <option value="@t" selected="@(curType == t)">@t</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Search</label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" value="@curQ" placeholder="Search by title or description..." class="search-input">
+                </div>
+            </div>
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary,#3b82f6);color:#fff;border:none;">
+                <i class="fas fa-search"></i>
+                Search
+            </button>
+            <a asp-action="Index" class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+                <i class="fas fa-undo-alt"></i>
+                Clear
+            </a>
+        </form>
+    </div>
+
+    <!-- Changes Table -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Change List</span>
+            </div>
+            <div class="record-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count</span> changes shown
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-hashtag me-1"></i> Ref</th>
+                        <th><i class="fas fa-tag me-1"></i> Type</th>
+                        <th><i class="fas fa-triangle-exclamation me-1"></i> Risk</th>
+                        <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                        <th><i class="fas fa-server me-1"></i> CI</th>
+                        <th><i class="fas fa-user-gear me-1"></i> Assignee</th>
+                        <th><i class="fas fa-calendar me-1"></i> Scheduled</th>
+                        <th><i class="fas fa-cog me-1"></i> Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="ticket-title" style="display:flex;align-items:center;gap:0.5rem;">
+                                    <i class="fas fa-code-branch" style="color:var(--primary);"></i>
+                                    <div>
+                                        <a asp-action="Details" asp-route-id="@c.Id" style="text-decoration:none;">
+                                            <span style="display:block;font-size:0.68rem;font-weight:700;color:var(--primary);letter-spacing:0.5px;">@c.ChangeRef</span>
+                                        </a>
+                                        <span>@c.Title</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @{
+                                    var typeBadge = c.Type switch
+                                    {
+                                        ChangeType.Emergency => "badge-red",
+                                        ChangeType.Normal => "badge-blue",
+                                        _ => "badge-gray"
+                                    };
+                                }
+                                <span class="status-badge @typeBadge">@c.Type</span>
+                            </td>
+                            <td>
+                                @{
+                                    var riskBadge = c.Risk switch
+                                    {
+                                        ChangeRisk.High => "badge-red",
+                                        ChangeRisk.Medium => "badge-amber",
+                                        _ => "badge-green"
+                                    };
+                                }
+                                <span class="status-badge @riskBadge">@c.Risk</span>
+                            </td>
+                            <td>
+                                @{
+                                    var statusBadge = c.Status switch
+                                    {
+                                        ChangeStatus.Draft => "badge-gray",
+                                        ChangeStatus.SubmittedForApproval => "badge-amber",
+                                        ChangeStatus.Approved => "badge-blue",
+                                        ChangeStatus.Scheduled => "badge-blue",
+                                        ChangeStatus.InProgress => "badge-amber",
+                                        ChangeStatus.Implemented => "badge-green",
+                                        ChangeStatus.Closed => "badge-green",
+                                        ChangeStatus.Rejected => "badge-red",
+                                        ChangeStatus.Failed => "badge-red",
+                                        ChangeStatus.Cancelled => "badge-red",
+                                        _ => "badge-gray"
+                                    };
+                                }
+                                <span class="status-badge @statusBadge">@c.Status</span>
+                            </td>
+                            <td>
+                                @if (c.ConfigurationItem != null)
+                                {
+                                    <span>@c.ConfigurationItem.Name</span>
+                                }
+                                else
+                                {
+                                    <span style="color:var(--gray-400);font-style:italic;">—</span>
+                                }
+                            </td>
+                            <td>
+                                @if (c.AssignedTo != null)
+                                {
+                                    <span class="status-badge badge-blue"><i class="fas fa-user-gear"></i> @c.AssignedTo.FirstName @c.AssignedTo.LastName</span>
+                                }
+                                else
+                                {
+                                    <span style="color:var(--gray-400);font-style:italic;">Unassigned</span>
+                                }
+                            </td>
+                            <td class="date-cell">
+                                @if (c.ScheduledStart != null)
+                                {
+                                    <i class="far fa-calendar-alt"></i>
+                                    @c.ScheduledStart.Value.ToString("MMM dd, yyyy")
+                                }
+                                else
+                                {
+                                    <span style="color:var(--gray-400);font-style:italic;">Not scheduled</span>
+                                }
+                            </td>
+                            <td class="action-buttons">
+                                <a asp-action="Details" asp-route-id="@c.Id" class="action-btn btn-view" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a asp-action="Edit" asp-route-id="@c.Id" class="action-btn btn-edit" title="Edit Change">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <form asp-action="Delete" asp-route-id="@c.Id" method="post" style="display:inline;margin:0;"
+                                      onsubmit="return confirm('Delete change @c.ChangeRef? This cannot be undone.');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="action-btn btn-delete" title="Delete Change" style="border:none;cursor:pointer;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-code-branch"></i>
+                <h3>No changes found</h3>
+                <p>Get started by raising your first change request</p>
+                <a asp-action="Create" class="btn-create btn-create-sm">
+                    <i class="fas fa-plus-circle"></i> New Change
+                </a>
+            </div>
+        }
+    </div>
+</div>

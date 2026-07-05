@@ -1,0 +1,293 @@
+@model IT_Service_Management_System.Models.Itsm.ChangeRequest
+@using IT_Service_Management_System.Models.Itsm
+
+@{
+    ViewData["Title"] = $"{Model.ChangeRef} - Change";
+
+    var typeBadge = Model.Type switch
+    {
+        ChangeType.Emergency => "badge-red",
+        ChangeType.Normal => "badge-blue",
+        _ => "badge-gray"
+    };
+    var riskBadge = Model.Risk switch
+    {
+        ChangeRisk.High => "badge-red",
+        ChangeRisk.Medium => "badge-amber",
+        _ => "badge-green"
+    };
+    var impactBadge = Model.Impact switch
+    {
+        ChangeImpact.High => "badge-red",
+        ChangeImpact.Medium => "badge-amber",
+        _ => "badge-green"
+    };
+    var statusBadge = Model.Status switch
+    {
+        ChangeStatus.Draft => "badge-gray",
+        ChangeStatus.SubmittedForApproval => "badge-amber",
+        ChangeStatus.Approved => "badge-blue",
+        ChangeStatus.Scheduled => "badge-blue",
+        ChangeStatus.InProgress => "badge-amber",
+        ChangeStatus.Implemented => "badge-green",
+        ChangeStatus.Closed => "badge-green",
+        ChangeStatus.Rejected => "badge-red",
+        ChangeStatus.Failed => "badge-red",
+        ChangeStatus.Cancelled => "badge-red",
+        _ => "badge-gray"
+    };
+    var isActionable = Model.Status is ChangeStatus.Approved or ChangeStatus.Scheduled or ChangeStatus.InProgress;
+    var isFinished = Model.Status is ChangeStatus.Closed or ChangeStatus.Failed or ChangeStatus.Rejected or ChangeStatus.Cancelled;
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div style="flex:1;">
+                <h1 class="page-title">
+                    <i class="fas fa-code-branch me-2" style="color: var(--primary);"></i>
+                    @Model.ChangeRef
+                </h1>
+                <p class="text-muted mt-2">@Model.Title</p>
+            </div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-create btn-create-sm">
+                <i class="fas fa-pencil-alt me-2"></i>
+                Edit
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div style="background:#f0fdf4;border-left:4px solid var(--success);color:#166534;padding:0.8rem 1rem;border-radius:0.6rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;font-size:0.875rem;font-weight:500;">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div style="background:#fff5f5;border-left:4px solid var(--danger);color:#b91c1c;padding:0.8rem 1rem;border-radius:0.6rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;font-size:0.875rem;font-weight:500;">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+        </div>
+    }
+
+    <!-- Badges strip -->
+    <div class="mb-4" style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <span class="status-badge @typeBadge"><i class="fas fa-tag"></i> @Model.Type</span>
+        <span class="status-badge @riskBadge"><i class="fas fa-triangle-exclamation"></i> Risk: @Model.Risk</span>
+        <span class="status-badge @impactBadge"><i class="fas fa-bolt"></i> Impact: @Model.Impact</span>
+        <span class="status-badge @statusBadge"><i class="fas fa-chart-simple"></i> @Model.Status</span>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left column: details -->
+        <div class="col-lg-7">
+            <div class="data-card">
+                <div class="card-header-custom">
+                    <div>
+                        <i class="fas fa-circle-info me-2"></i>
+                        <span>Change Details</span>
+                    </div>
+                </div>
+                <div style="padding:1.5rem;">
+                    <h3 style="font-size:0.95rem;font-weight:600;color:var(--gray-700);margin-bottom:0.5rem;">
+                        <i class="fas fa-align-left me-2" style="color:var(--primary);"></i>Description
+                    </h3>
+                    <div style="background:var(--gray-50);padding:1rem;border-radius:0.75rem;line-height:1.6;color:var(--gray-700);margin-bottom:1.5rem;white-space:pre-wrap;">@Model.Description</div>
+
+                    @foreach (var plan in new[] {
+                        ("Implementation Plan", "fa-list-check", Model.ImplementationPlan),
+                        ("Backout Plan", "fa-rotate-left", Model.BackoutPlan),
+                        ("Test Plan", "fa-vial", Model.TestPlan) })
+                    {
+                        <h3 style="font-size:0.95rem;font-weight:600;color:var(--gray-700);margin-bottom:0.5rem;">
+                            <i class="fas @plan.Item2 me-2" style="color:var(--primary);"></i>@plan.Item1
+                        </h3>
+                        <div style="background:var(--gray-50);padding:1rem;border-radius:0.75rem;line-height:1.6;color:var(--gray-700);margin-bottom:1.5rem;white-space:pre-wrap;">
+                            @if (!string.IsNullOrWhiteSpace(plan.Item3))
+                            {
+                                @plan.Item3
+                            }
+                            else
+                            {
+                                <span style="color:var(--gray-400);font-style:italic;">Not provided</span>
+                            }
+                        </div>
+                    }
+
+                    <div class="row g-3" style="border-top:1px solid var(--gray-200);padding-top:1.25rem;">
+                        <div class="col-sm-6">
+                            <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);display:block;margin-bottom:0.15rem;">Scheduled Window</label>
+                            <span style="font-weight:500;color:var(--gray-700);">
+                                @if (Model.ScheduledStart != null)
+                                {
+                                    @Model.ScheduledStart.Value.ToString("MMM dd, yyyy HH:mm")
+                                    <text> → </text>
+                                    @(Model.ScheduledEnd?.ToString("MMM dd, yyyy HH:mm") ?? "—")
+                                }
+                                else
+                                {
+                                    <span style="color:var(--gray-400);font-style:italic;">Not scheduled</span>
+                                }
+                            </span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);display:block;margin-bottom:0.15rem;">Configuration Item</label>
+                            <span style="font-weight:500;color:var(--gray-700);">@(Model.ConfigurationItem?.Name ?? "—")</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);display:block;margin-bottom:0.15rem;">Linked Problem</label>
+                            <span style="font-weight:500;color:var(--gray-700);">
+                                @if (Model.Problem != null)
+                                {
+                                    <a href="/Problems/Details/@Model.ProblemId" style="text-decoration:none;color:var(--primary);">@Model.Problem.Title</a>
+                                }
+                                else
+                                {
+                                    <text>—</text>
+                                }
+                            </span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);display:block;margin-bottom:0.15rem;">Assignee</label>
+                            <span style="font-weight:500;color:var(--gray-700);">@(Model.AssignedTo != null ? $"{Model.AssignedTo.FirstName} {Model.AssignedTo.LastName}" : "Unassigned")</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);display:block;margin-bottom:0.15rem;">Created By</label>
+                            <span style="font-weight:500;color:var(--gray-700);">@(Model.CreatedBy != null ? $"{Model.CreatedBy.FirstName} {Model.CreatedBy.LastName}" : "—") · @Model.CreatedAt.ToString("MMM dd, yyyy")</span>
+                        </div>
+                        @if (Model.ApprovedBy != null || Model.ApprovedAt != null)
+                        {
+                            <div class="col-sm-6">
+                                <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);display:block;margin-bottom:0.15rem;">Approver</label>
+                                <span style="font-weight:500;color:var(--gray-700);">
+                                    @(Model.ApprovedBy != null ? $"{Model.ApprovedBy.FirstName} {Model.ApprovedBy.LastName}" : "—")
+                                    @if (Model.ApprovedAt != null)
+                                    {
+                                        <text> · @Model.ApprovedAt.Value.ToString("MMM dd, yyyy")</text>
+                                    }
+                                </span>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ApprovalNotes))
+                    {
+                        <div style="margin-top:1.25rem;">
+                            <label style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--gray-500);display:block;margin-bottom:0.35rem;">Approval / Closure Notes</label>
+                            <div style="background:var(--gray-50);padding:1rem;border-radius:0.75rem;line-height:1.6;color:var(--gray-700);white-space:pre-wrap;">@Model.ApprovalNotes</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right column: workflow -->
+        <div class="col-lg-5">
+            <div class="data-card">
+                <div class="card-header-custom">
+                    <div>
+                        <i class="fas fa-diagram-project me-2"></i>
+                        <span>Workflow</span>
+                    </div>
+                </div>
+                <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;">
+
+                    @if (Model.Status == ChangeStatus.Draft)
+                    {
+                        <form asp-action="Submit" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <p style="font-size:0.85rem;color:var(--gray-600);margin-bottom:0.75rem;">This change is a draft. Submit it to request approval.</p>
+                            <button type="submit" class="btn-create" style="width:100%;justify-content:center;">
+                                <i class="fas fa-paper-plane me-2"></i> Submit for Approval
+                            </button>
+                        </form>
+                    }
+                    else if (Model.Status == ChangeStatus.SubmittedForApproval)
+                    {
+                        <p style="font-size:0.85rem;color:var(--gray-600);margin:0;">This change is awaiting approval.</p>
+
+                        <form asp-action="Approve" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="approve" value="true" />
+                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Approval Notes</label>
+                            <textarea name="notes" class="form-control mb-2" rows="2" placeholder="Optional notes for approval"></textarea>
+                            <button type="submit" class="btn-create" style="width:100%;justify-content:center;">
+                                <i class="fas fa-check me-2"></i> Approve
+                            </button>
+                        </form>
+
+                        <form asp-action="Approve" method="post" style="border-top:1px solid var(--gray-200);padding-top:1.25rem;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="approve" value="false" />
+                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Rejection Reason</label>
+                            <textarea name="notes" class="form-control mb-2" rows="2" placeholder="Why is this change rejected?"></textarea>
+                            <button type="submit" class="btn btn-danger" style="width:100%;">
+                                <i class="fas fa-xmark me-2"></i> Reject
+                            </button>
+                        </form>
+                    }
+                    else if (isActionable)
+                    {
+                        <form asp-action="SetStatus" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Update Status</label>
+                            <select name="status" class="form-select mb-2">
+                                <option value="@ChangeStatus.Scheduled" selected="@(Model.Status == ChangeStatus.Scheduled)">Scheduled</option>
+                                <option value="@ChangeStatus.InProgress" selected="@(Model.Status == ChangeStatus.InProgress)">In Progress</option>
+                                <option value="@ChangeStatus.Implemented">Implemented</option>
+                            </select>
+                            <button type="submit" class="btn-create" style="width:100%;justify-content:center;">
+                                <i class="fas fa-arrows-rotate me-2"></i> Update Status
+                            </button>
+                        </form>
+
+                        <form asp-action="Close" method="post" style="border-top:1px solid var(--gray-200);padding-top:1.25rem;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <label class="form-label fw-semibold" style="font-size:0.8rem;">Close Change</label>
+                            <select name="successful" class="form-select mb-2">
+                                <option value="true">Successful</option>
+                                <option value="false">Failed</option>
+                            </select>
+                            <textarea name="notes" class="form-control mb-2" rows="2" placeholder="Closure notes (optional)"></textarea>
+                            <button type="submit" class="btn-create" style="width:100%;justify-content:center;background:linear-gradient(100deg,var(--gray-700),var(--gray-600));">
+                                <i class="fas fa-lock me-2"></i> Close Change
+                            </button>
+                        </form>
+                    }
+                    else if (isFinished)
+                    {
+                        <div style="text-align:center;">
+                            <span class="status-badge @statusBadge" style="font-size:0.85rem;">
+                                <i class="fas fa-flag-checkered"></i> @Model.Status
+                            </span>
+                            <p style="font-size:0.85rem;color:var(--gray-600);margin-top:0.75rem;">This change is finalized. No further actions are available.</p>
+                            @if (Model.ImplementedSuccessfully != null)
+                            {
+                                <span class="status-badge @(Model.ImplementedSuccessfully == true ? "badge-green" : "badge-red")" style="margin-top:0.5rem;">
+                                    <i class="fas @(Model.ImplementedSuccessfully == true ? "fa-circle-check" : "fa-circle-xmark")"></i>
+                                    @(Model.ImplementedSuccessfully == true ? "Implemented Successfully" : "Implementation Failed")
+                                </span>
+                            }
+                            @if (Model.ClosedAt != null)
+                            {
+                                <p style="font-size:0.75rem;color:var(--gray-500);margin-top:0.5rem;">Closed @Model.ClosedAt.Value.ToString("MMM dd, yyyy HH:mm")</p>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p style="font-size:0.85rem;color:var(--gray-500);margin:0;">No workflow actions available for this status.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -156,6 +156,9 @@ builder.Services.AddScoped<IDocumentStorage>(sp =>
 });
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<DocumentApprovalService>();
+
+// Defensive, idempotent demo-data top-up seeder (gated by Demo:Seed, default ON).
+builder.Services.AddScoped<IT_Service_Management_System.Services.DemoDataSeeder>();
 // OCR engine (pluggable). PlainText baseline by default; set EFM:Ocr:Provider = "tesseract"
 // to OCR images + scanned PDFs (requires a tessdata folder — see EFM:Ocr:TessDataPath).
 if (string.Equals(builder.Configuration["EFM:Ocr:Provider"], "tesseract", StringComparison.OrdinalIgnoreCase))
@@ -164,6 +167,21 @@ else
     builder.Services.AddScoped<IOcrService, PlainTextOcrService>();
 builder.Services.AddScoped<DocumentMaintenanceService>();
 builder.Services.AddHostedService<DocumentMaintenanceHostedService>();
+
+// Malware scanning on uploads. Heuristic (content + magic-byte) by default; set
+// Security:Av:Provider = "clamav" (+ Security:Av:Host/Port) to scan via a ClamAV daemon.
+if (string.Equals(builder.Configuration["Security:Av:Provider"], "clamav", StringComparison.OrdinalIgnoreCase))
+    builder.Services.AddScoped<IT_Service_Management_System.Services.Security.IMalwareScanner,
+        IT_Service_Management_System.Services.Security.ClamAvMalwareScanner>();
+else
+    builder.Services.AddScoped<IT_Service_Management_System.Services.Security.IMalwareScanner,
+        IT_Service_Management_System.Services.Security.HeuristicMalwareScanner>();
+
+// Real-time notifications (SignalR) + configurable SLA engine.
+builder.Services.AddScoped<IT_Service_Management_System.Services.Realtime.IRealtimeNotifier,
+    IT_Service_Management_System.Services.Realtime.RealtimeNotifier>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Itsm.ISlaService,
+    IT_Service_Management_System.Services.Itsm.SlaService>();
 
 // QuestPDF community licence (free for this use); required before any PDF is generated.
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
@@ -195,6 +213,7 @@ app.UseAuthorization();
 app.MapStaticAssets();
 
 app.MapHub<ChatHub>("/chathub");
+app.MapHub<IT_Service_Management_System.Hubs.NotificationHub>("/hubs/notifications");
 
 // Liveness/readiness endpoint for load balancers and uptime monitors.
 app.MapHealthChecks("/health");
@@ -227,6 +246,13 @@ try
         });
 
         context.SaveChanges();
+    }
+
+    // Demo-data top-up seeding (idempotent; never crashes startup). Default ON; disable via Demo:Seed=false.
+    if (app.Configuration.GetValue("Demo:Seed", true))
+    {
+        try { await scope.ServiceProvider.GetRequiredService<IT_Service_Management_System.Services.DemoDataSeeder>().SeedAsync(); }
+        catch (Exception ex) { Log.Warning(ex, "Demo data seeding failed"); }
     }
 
     Log.Information("Database migrated and seeded; application starting.");

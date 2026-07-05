@@ -1,0 +1,183 @@
+@model IT_Service_Management_System.ViewModels.Reports.ItilOverviewVM
+@using IT_Service_Management_System.Models.Itsm
+@{
+    ViewData["Title"] = "ITIL Overview - Reports";
+    int Max(IEnumerable<IT_Service_Management_System.ViewModels.Reports.NameCount> l) => l.Any() ? l.Max(x => x.Count) : 1;
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <a asp-controller="Reports" asp-action="Index" class="btn-back" title="Back to Reports">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-diagram-project me-2" style="color: var(--primary);"></i>
+                        ITIL Overview
+                    </h1>
+                    <p class="text-muted mt-2">Problems, changes and the configuration management database at a glance.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #e53e3e, #c53030);">
+                <i class="fas fa-bug"></i>
+            </div>
+            <div class="stat-info"><h3>@Model.OpenProblems</h3><p>Open Problems</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div class="stat-info"><h3>@Model.KnownErrors</h3><p>Known Errors</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+            <div class="stat-info"><h3>@Model.ChangesAwaitingApproval</h3><p>Awaiting Approval</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-circle-check"></i>
+            </div>
+            <div class="stat-info"><h3>@Model.ChangeSuccessRate%</h3><p>Change Success Rate</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <i class="fas fa-server"></i>
+            </div>
+            <div class="stat-info"><h3>@Model.TotalCis</h3><p>Configuration Items</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #64748b, #475569);">
+                <i class="fas fa-fire"></i>
+            </div>
+            <div class="stat-info"><h3>@Model.CriticalCis</h3><p>Critical CIs</p></div>
+        </div>
+    </div>
+
+    <!-- DISTRIBUTION BARS -->
+    <div class="report-grid mb-4">
+        @{
+            void BarCard(string title, string icon, List<IT_Service_Management_System.ViewModels.Reports.NameCount> data, string colour)
+            {
+                <div class="data-card">
+                    <div class="card-header-custom">
+                        <div><i class="fas @icon me-2"></i><span>@title</span></div>
+                        <div class="record-count"><i class="fas fa-chart-simple"></i> <span>@data.Count</span></div>
+                    </div>
+                    <div class="card-body-custom">
+                        @if (data.Any())
+                        {
+                            var m = Max(data);
+                            <div class="bars">
+                                @foreach (var s in data)
+                                {
+                                    <div class="bar-row">
+                                        <div class="bar-label" title="@s.Name">@s.Name</div>
+                                        <div class="bar-track"><div class="bar-fill @colour" style="width: @(s.Count * 100 / m)%"></div></div>
+                                        <div class="bar-value">@s.Count</div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state-sm"><i class="fas fa-inbox"></i><p>No data</p></div>
+                        }
+                    </div>
+                </div>
+            }
+        }
+        @{ BarCard("Problems by Status", "fa-bug", Model.ProblemsByStatus, ""); }
+        @{ BarCard("Changes by Status", "fa-arrows-rotate", Model.ChangesByStatus, "violet"); }
+        @{ BarCard("Changes by Type", "fa-shapes", Model.ChangesByType, "green"); }
+        @{ BarCard("Changes by Risk", "fa-gauge-high", Model.ChangesByRisk, "amber"); }
+        @{ BarCard("CIs by Status", "fa-server", Model.CisByStatus, ""); }
+        @{ BarCard("CIs by Criticality", "fa-fire", Model.CisByCriticality, "red"); }
+    </div>
+
+    <!-- RECENT PROBLEMS + UPCOMING CHANGES -->
+    <div class="report-grid">
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div><i class="fas fa-bug me-2"></i><span>Recent Problems</span></div>
+                <div class="record-count"><i class="fas fa-chart-simple"></i> <span>@Model.RecentProblems.Count</span></div>
+            </div>
+            <div class="table-responsive">
+                @if (Model.RecentProblems.Any())
+                {
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-hashtag me-1"></i> Ref</th>
+                                <th><i class="fas fa-heading me-1"></i> Title</th>
+                                <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.RecentProblems)
+                            {
+                                <tr>
+                                    <td><a class="ref-link" href="/Problems/Details/@p.Id">PRB-@p.Id.ToString("D5")</a></td>
+                                    <td>@p.Title</td>
+                                    <td><span class="status-badge badge-blue">@p.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="empty-state"><i class="fas fa-bug"></i><h3>No problems logged</h3><p>Recorded problems will appear here.</p></div>
+                }
+            </div>
+        </div>
+
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div><i class="fas fa-calendar-check me-2"></i><span>Upcoming Changes</span></div>
+                <div class="record-count"><i class="fas fa-chart-simple"></i> <span>@Model.UpcomingChanges.Count</span></div>
+            </div>
+            <div class="table-responsive">
+                @if (Model.UpcomingChanges.Any())
+                {
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-hashtag me-1"></i> Ref</th>
+                                <th><i class="fas fa-heading me-1"></i> Title</th>
+                                <th><i class="fas fa-calendar me-1"></i> Scheduled</th>
+                                <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.UpcomingChanges)
+                            {
+                                <tr>
+                                    <td><a class="ref-link" href="/Changes/Details/@c.Id">CHG-@c.Id.ToString("D5")</a></td>
+                                    <td>@c.Title</td>
+                                    <td class="date-cell"><i class="far fa-calendar-alt"></i>@(c.ScheduledStart?.ToString("MMM dd, yyyy") ?? "—")</td>
+                                    <td><span class="status-badge badge-blue">@c.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="empty-state"><i class="fas fa-calendar-check"></i><h3>No upcoming changes</h3><p>Scheduled changes will appear here.</p></div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_ReportExtras")

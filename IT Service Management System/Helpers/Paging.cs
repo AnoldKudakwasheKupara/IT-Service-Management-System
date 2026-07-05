@@ -17,7 +17,7 @@ namespace IT_Service_Management_System.Helpers
 
     public static class PagingExtensions
     {
-        public const int DefaultPageSize = 15;
+        public const int DefaultPageSize = 10;
 
         /// <summary>Materializes one page of a query plus its paging metadata.</summary>
         public static async Task<(List<T> Items, PagingInfo Info)> PageAsync<T>(

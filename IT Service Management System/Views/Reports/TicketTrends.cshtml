@@ -1,0 +1,102 @@
+@model IT_Service_Management_System.ViewModels.Reports.TicketTrendsVM
+@{
+    ViewData["Title"] = "Ticket Trends - Reports";
+    var peak = Model.PeakValue <= 0 ? 1 : Model.PeakValue;
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div class="d-flex align-items-center gap-3">
+                <a asp-controller="Reports" asp-action="Index" class="btn-back" title="Back to Reports">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-chart-column me-2" style="color: var(--primary);"></i>
+                        Ticket Trends (12 months)
+                    </h1>
+                    <p class="text-muted mt-2">Created vs resolved tickets over the last twelve months.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                <i class="fas fa-ticket"></i>
+            </div>
+            <div class="stat-info"><h3>@Model.TotalCreated</h3><p>Total Created</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info"><h3>@Model.TotalResolved</h3><p>Total Resolved</p></div>
+        </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="data-card mb-4">
+        <div class="card-header-custom">
+            <div><i class="fas fa-chart-column me-2"></i><span>Monthly Volume</span></div>
+            <div class="record-count"><i class="fas fa-chart-simple"></i> <span>@Model.Months.Count</span> months</div>
+        </div>
+        @if (Model.Months.Any())
+        {
+            <div class="vbar-chart">
+                @foreach (var p in Model.Months)
+                {
+                    <div class="vbar-month">
+                        <div class="vbar-pair">
+                            <div class="vbar created" style="height: @(p.Created * 100 / peak)%" title="@p.Created created"></div>
+                            <div class="vbar resolved" style="height: @(p.Resolved * 100 / peak)%" title="@p.Resolved resolved"></div>
+                        </div>
+                        <div class="vbar-label">@p.Label</div>
+                    </div>
+                }
+            </div>
+            <div class="chart-legend">
+                <span class="legend-item"><span class="legend-swatch created"></span> Created</span>
+                <span class="legend-item"><span class="legend-swatch resolved"></span> Resolved</span>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state"><i class="fas fa-chart-column"></i><h3>No data</h3><p>Ticket trend data will appear here.</p></div>
+        }
+    </div>
+
+    <!-- DATA TABLE -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-table me-2"></i><span>Monthly Breakdown</span></div>
+            <div class="record-count"><i class="fas fa-chart-simple"></i> <span>@Model.Months.Count</span> months</div>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-calendar me-1"></i> Month</th>
+                        <th><i class="fas fa-ticket me-1"></i> Created</th>
+                        <th><i class="fas fa-check me-1"></i> Resolved</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Months)
+                    {
+                        <tr>
+                            <td><strong>@p.Label</strong></td>
+                            <td>@p.Created</td>
+                            <td class="text-green">@p.Resolved</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_ReportExtras")

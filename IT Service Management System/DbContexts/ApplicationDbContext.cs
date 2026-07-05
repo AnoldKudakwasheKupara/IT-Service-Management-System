@@ -1,5 +1,6 @@
 ﻿using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Models.Efm;
+using IT_Service_Management_System.Models.Itsm;
 using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.DbContexts
@@ -63,6 +64,12 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<StorageProvider> StorageProviders { get; set; }
         public DbSet<RetentionPolicy> RetentionPolicies { get; set; }
         public DbSet<ExpiryAlert> ExpiryAlerts { get; set; }
+
+        // ── ITSM / ITIL (CMDB, Problems, Changes) + SLA ────────────────────────────
+        public DbSet<ConfigurationItem> ConfigurationItems { get; set; }
+        public DbSet<Problem> Problems { get; set; }
+        public DbSet<ChangeRequest> ChangeRequests { get; set; }
+        public DbSet<SlaPolicy> SlaPolicies { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -276,6 +283,56 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<DocumentAuditLog>().HasIndex(a => a.EmployeeId);
             modelBuilder.Entity<DocumentAuditLog>().HasIndex(a => a.Timestamp);
             modelBuilder.Entity<DocumentNotification>().HasIndex(n => new { n.RecipientUserId, n.IsRead });
+
+            // ── ITSM / ITIL relationships (all nullable links use SetNull/NoAction to avoid
+            //     multiple-cascade-path errors on SQL Server) ─────────────────────────────
+            modelBuilder.Entity<Ticket>()
+                .HasOne(t => t.Problem).WithMany(p => p.Incidents).HasForeignKey(t => t.ProblemId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Ticket>()
+                .HasOne(t => t.ConfigurationItem).WithMany(c => c.Incidents).HasForeignKey(t => t.ConfigurationItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ConfigurationItem>()
+                .HasOne(c => c.Owner).WithMany().HasForeignKey(c => c.OwnerId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ConfigurationItem>()
+                .HasOne(c => c.Asset).WithMany().HasForeignKey(c => c.AssetId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ConfigurationItem>().HasIndex(c => c.Name);
+            modelBuilder.Entity<ConfigurationItem>().HasIndex(c => c.Status);
+
+            modelBuilder.Entity<Problem>()
+                .HasOne(p => p.ConfigurationItem).WithMany(c => c.Problems).HasForeignKey(p => p.ConfigurationItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Problem>()
+                .HasOne(p => p.AssignedTo).WithMany().HasForeignKey(p => p.AssignedToId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Problem>()
+                .HasOne(p => p.CreatedBy).WithMany().HasForeignKey(p => p.CreatedById).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Problem>().HasIndex(p => p.Status);
+
+            modelBuilder.Entity<ChangeRequest>()
+                .HasOne(c => c.ConfigurationItem).WithMany(ci => ci.Changes).HasForeignKey(c => c.ConfigurationItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ChangeRequest>()
+                .HasOne(c => c.Problem).WithMany(p => p.Changes).HasForeignKey(c => c.ProblemId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ChangeRequest>()
+                .HasOne(c => c.AssignedTo).WithMany().HasForeignKey(c => c.AssignedToId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ChangeRequest>()
+                .HasOne(c => c.ApprovedBy).WithMany().HasForeignKey(c => c.ApprovedById).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ChangeRequest>()
+                .HasOne(c => c.CreatedBy).WithMany().HasForeignKey(c => c.CreatedById).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ChangeRequest>().HasIndex(c => c.Status);
+
+            modelBuilder.Entity<SlaPolicy>().HasIndex(s => new { s.Priority, s.IsActive });
+
+            // Default SLA policies (mirror the previous hard-coded targets; HR/Admin can edit these).
+            var slaSeed = new DateTime(2026, 7, 1);
+            modelBuilder.Entity<SlaPolicy>().HasData(
+                new SlaPolicy { Id = 1, Name = "Critical Priority", Priority = Ticket.TicketPriority.Critical, ResponseMinutes = 30, ResolutionMinutes = 240, IsActive = true, CreatedAt = slaSeed },
+                new SlaPolicy { Id = 2, Name = "High Priority", Priority = Ticket.TicketPriority.High, ResponseMinutes = 60, ResolutionMinutes = 480, IsActive = true, CreatedAt = slaSeed },
+                new SlaPolicy { Id = 3, Name = "Medium Priority", Priority = Ticket.TicketPriority.Medium, ResponseMinutes = 240, ResolutionMinutes = 1440, IsActive = true, CreatedAt = slaSeed },
+                new SlaPolicy { Id = 4, Name = "Low Priority", Priority = Ticket.TicketPriority.Low, ResponseMinutes = 480, ResolutionMinutes = 4320, IsActive = true, CreatedAt = slaSeed }
+            );
 
             // ── Seed: system folders, starter categories, default storage provider ──
             var efmSeed = new DateTime(2026, 1, 1);

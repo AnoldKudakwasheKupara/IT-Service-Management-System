@@ -13,14 +13,19 @@ namespace IT_Service_Management_System.Controllers
         private readonly ApplicationDbContext _context;
         private readonly AuditService _auditService;
         private readonly EmailDispatcher _email;
+        private readonly IT_Service_Management_System.Services.Itsm.ISlaService _sla;
+        private readonly IT_Service_Management_System.Services.Realtime.IRealtimeNotifier _rt;
         private readonly ILogger<TicketsController> _logger;
 
         public TicketsController(ApplicationDbContext context, AuditService auditService,
-            EmailDispatcher email, ILogger<TicketsController> logger)
+            EmailDispatcher email, IT_Service_Management_System.Services.Itsm.ISlaService sla,
+            IT_Service_Management_System.Services.Realtime.IRealtimeNotifier rt, ILogger<TicketsController> logger)
         {
             _context = context;
             _auditService = auditService;
             _email = email;
+            _sla = sla;
+            _rt = rt;
             _logger = logger;
         }
 
@@ -121,12 +126,21 @@ namespace IT_Service_Management_System.Controllers
             ticket.Status = TicketStatus.Open;
             ticket.CreatedById = userId.Value;
             ticket.AssignedToId = null;
-            ticket.DueAt = TicketSla.DueFrom(ticket.CreatedAt, ticket.Priority);  // SLA target
+
+            // SLA targets from the configurable policy (response + resolution).
+            var targets = await _sla.ComputeAsync(ticket.Priority, ticket.Category, ticket.CreatedAt);
+            ticket.ResponseDueAt = targets.ResponseDueAt;
+            ticket.DueAt = targets.ResolutionDueAt ?? TicketSla.DueFrom(ticket.CreatedAt, ticket.Priority);
 
             _context.Tickets.Add(ticket);
             await _context.SaveChangesAsync();
 
             await _auditService.LogAsync("Created", "Ticket", ticket.Id, $"Ticket '{ticket.Title}' created");
+
+            // Live nudge to the IT/HR staff group.
+            await _rt.NotifyStaffAsync(new IT_Service_Management_System.Services.Realtime.RealtimeNotice(
+                $"New ticket {ticket.Reference}", ticket.Title, TicketLink(ticket.Id),
+                ticket.Priority == TicketPriority.Critical ? "error" : "info"));
 
             await SaveAttachments(files, ticketId: ticket.Id);
 
@@ -260,6 +274,9 @@ namespace IT_Service_Management_System.Controllers
                 assignedToId == null ? "Ticket unassigned" : $"Ticket assigned to user #{assignedToId}");
 
             await NotifyAssignmentAsync(ticket, oldAssignee);
+            if (assignedToId != null)
+                await _rt.NotifyUserAsync(assignedToId.Value, new IT_Service_Management_System.Services.Realtime.RealtimeNotice(
+                    $"Assigned to you: {ticket.Reference}", ticket.Title, TicketLink(ticket.Id), "info"));
 
             TempData["Success"] = assignedToId == null ? "Ticket unassigned." : "Ticket assigned.";
             return RedirectToAction("Details", new { id });
@@ -378,6 +395,19 @@ namespace IT_Service_Management_System.Controllers
             {
                 var link = TicketLink(ticket.Id);
                 await NotifyReplyAsync(ticket, isOwner, senderName, ticketMessage.Message, link);
+
+                // Live nudge to the other side of the conversation.
+                var notice = new IT_Service_Management_System.Services.Realtime.RealtimeNotice(
+                    $"Reply on {ticket.Reference}", $"{senderName}: {message.Trim()}", link, "info");
+                if (isOwner)
+                {
+                    await _rt.NotifyStaffAsync(notice);
+                    if (ticket.AssignedToId != null) await _rt.NotifyUserAsync(ticket.AssignedToId.Value, notice);
+                }
+                else
+                {
+                    await _rt.NotifyUserAsync(ticket.CreatedById, notice);
+                }
             }
 
             var time = ticketMessage.SentAt.ToString("MMM dd, yyyy HH:mm");

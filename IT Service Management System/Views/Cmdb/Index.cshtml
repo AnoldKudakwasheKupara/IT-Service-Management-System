@@ -1,0 +1,379 @@
+@model List<IT_Service_Management_System.Models.Itsm.ConfigurationItem>
+@using IT_Service_Management_System.Models.Itsm
+@{
+    ViewData["Title"] = "Configuration Items (CMDB)";
+    var owners = ViewBag.Owners as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var assets = ViewBag.Assets as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var curQ = ViewBag.Q as string;
+    var curType = ViewBag.Type as CiType?;
+    var curStatus = ViewBag.Status as CiStatus?;
+    var curCriticality = ViewBag.Criticality as CiCriticality?;
+
+    string CritBadge(CiCriticality c) => c switch
+    {
+        CiCriticality.Critical => "badge-red",
+        CiCriticality.High => "badge-amber",
+        CiCriticality.Medium => "badge-blue",
+        _ => "badge-gray"
+    };
+    string StatusBadge(CiStatus s) => s switch
+    {
+        CiStatus.Active => "badge-green",
+        CiStatus.UnderMaintenance => "badge-amber",
+        _ => "badge-gray"
+    };
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-sitemap me-2" style="color: var(--primary);"></i>
+                    Configuration Items (CMDB)
+                </h1>
+                <p class="text-muted mt-2">Servers, applications, services and databases referenced by incidents, problems and changes.</p>
+            </div>
+            <button class="btn-create" onclick="openCi()">
+                <i class="fas fa-plus-circle me-2"></i> New CI
+            </button>
+        </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#60a5fa,#3b82f6);">
+                <i class="fas fa-cubes"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(ViewBag.Total ?? 0)</h3>
+                <p>Total CIs</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#2c9e6e,#227a55);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(ViewBag.Active ?? 0)</h3>
+                <p>Active</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#ef4444,#dc2626);">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(ViewBag.Critical ?? 0)</h3>
+                <p>Critical</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#f5b042,#e6a017);">
+                <i class="fas fa-screwdriver-wrench"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@(ViewBag.Maintenance ?? 0)</h3>
+                <p>Under Maintenance</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Filter Configuration Items</span>
+        </div>
+        <form method="get" asp-action="Index" class="filters-body">
+            <div class="filter-group">
+                <label>Type</label>
+                <select name="type" class="filter-select">
+                    <option value="">All Types</option>
+                    @foreach (var v in Enum.GetValues<CiType>())
+                    {
+                        <option value="@v" selected="@(curType == v)">@v</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status" class="filter-select">
+                    <option value="">All Statuses</option>
+                    @foreach (var v in Enum.GetValues<CiStatus>())
+                    {
+                        <option value="@v" selected="@(curStatus == v)">@v</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Criticality</label>
+                <select name="criticality" class="filter-select">
+                    <option value="">All Criticality</option>
+                    @foreach (var v in Enum.GetValues<CiCriticality>())
+                    {
+                        <option value="@v" selected="@(curCriticality == v)">@v</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Search</label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" value="@curQ" placeholder="Name, vendor, host, location..." class="search-input">
+                </div>
+            </div>
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary,#3b82f6);color:#fff;border:none;">
+                <i class="fas fa-search"></i> Search
+            </button>
+            <a asp-action="Index" class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+                <i class="fas fa-undo-alt"></i> Clear
+            </a>
+        </form>
+    </div>
+
+    <!-- DATA TABLE -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Configuration Items</span>
+            </div>
+            <div class="record-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count</span> items
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-server me-1"></i> Name</th>
+                        <th><i class="fas fa-layer-group me-1"></i> Type</th>
+                        <th><i class="fas fa-globe me-1"></i> Environment</th>
+                        <th><i class="fas fa-gauge-high me-1"></i> Criticality</th>
+                        <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                        <th><i class="fas fa-user me-1"></i> Owner</th>
+                        <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model)
+                    {
+                        <tr>
+                            <td>
+                                <span class="ci-code">@c.CiCode</span>
+                                <a asp-action="Details" asp-route-id="@c.Id" class="ci-name">@c.Name</a>
+                            </td>
+                            <td><span class="chip">@c.Type</span></td>
+                            <td class="date-cell">@c.Environment</td>
+                            <td><span class="status-badge @CritBadge(c.Criticality)">@c.Criticality</span></td>
+                            <td><span class="status-badge @StatusBadge(c.Status)">@c.Status</span></td>
+                            <td>
+                                @if (c.Owner != null)
+                                {
+                                    <div class="list-avatar-cell">
+                                        <span class="list-avatar">@(((c.Owner.FirstName?.Substring(0, 1) ?? "") + (c.Owner.LastName?.Substring(0, 1) ?? "")).ToUpper())</span>
+                                        <span>@c.Owner.FullName</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a asp-action="Details" asp-route-id="@c.Id" class="action-btn btn-view" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button type="button" class="action-btn btn-edit" title="Edit CI"
+                                            onclick="openCi(@c.Id, '@Html.Raw(Encode(c.Name))', '@c.Type', '@c.Status', '@c.Criticality', '@c.Environment', '@Html.Raw(Encode(c.Description))', '@Html.Raw(Encode(c.Location))', '@Html.Raw(Encode(c.Vendor))', '@Html.Raw(Encode(c.Version))', '@Html.Raw(Encode(c.IpOrHostname))', @(c.OwnerId?.ToString() ?? "null"), @(c.AssetId?.ToString() ?? "null"))">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                    <form asp-action="Delete" method="post" style="display:inline;"
+                                          onsubmit="return confirm('Delete configuration item &quot;@c.Name&quot;? This cannot be undone.');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@c.Id" />
+                                        <button class="action-btn btn-delete" title="Delete CI">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-sitemap"></i>
+                <h3>No configuration items found</h3>
+                <p>Get started by registering your first CI in the CMDB.</p>
+                <button class="btn-create btn-create-sm" onclick="openCi()">
+                    <i class="fas fa-plus-circle"></i> New CI
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal fade" id="ciModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <form asp-action="Save" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="ciId" value="0" />
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-sitemap me-2" style="color: var(--primary);"></i>
+                        <span id="ciModalTitle">New Configuration Item</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" id="ciName" class="form-control" required maxlength="150" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Type</label>
+                            <select name="type" id="ciType" class="form-control form-select">
+                                @foreach (var v in Enum.GetValues<CiType>())
+                                {
+                                    <option value="@v">@v</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Status</label>
+                            <select name="status" id="ciStatus" class="form-control form-select">
+                                @foreach (var v in Enum.GetValues<CiStatus>())
+                                {
+                                    <option value="@v">@v</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Criticality</label>
+                            <select name="criticality" id="ciCriticality" class="form-control form-select">
+                                @foreach (var v in Enum.GetValues<CiCriticality>())
+                                {
+                                    <option value="@v">@v</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Environment</label>
+                            <select name="environment" id="ciEnvironment" class="form-control form-select">
+                                @foreach (var v in Enum.GetValues<CiEnvironment>())
+                                {
+                                    <option value="@v">@v</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Owner</label>
+                            <select name="ownerId" id="ciOwner" class="form-control form-select">
+                                <option value="">— None —</option>
+                                @foreach (var o in owners)
+                                {
+                                    <option value="@o.Id">@o.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Linked Asset</label>
+                            <select name="assetId" id="ciAsset" class="form-control form-select">
+                                <option value="">— None —</option>
+                                @foreach (var a in assets)
+                                {
+                                    <option value="@a.Id">@a.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Vendor</label>
+                            <input type="text" name="vendor" id="ciVendor" class="form-control" maxlength="150" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Version</label>
+                            <input type="text" name="version" id="ciVersion" class="form-control" maxlength="60" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Location</label>
+                            <input type="text" name="location" id="ciLocation" class="form-control" maxlength="150" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">IP / Hostname</label>
+                            <input type="text" name="ipOrHostname" id="ciIpOrHostname" class="form-control" maxlength="200" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Description</label>
+                            <textarea name="description" id="ciDescription" class="form-control" rows="3" maxlength="1000"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-create">
+                        <i class="fas fa-save me-1"></i> Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@functions {
+    static string Encode(string? s) =>
+        System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(s ?? "");
+}
+
+<script>
+    function openCi(id, name, type, status, criticality, environment, description, location, vendor, version, ipOrHostname, ownerId, assetId) {
+        document.getElementById('ciId').value = id || 0;
+        document.getElementById('ciName').value = name || '';
+        document.getElementById('ciType').value = type || 'Application';
+        document.getElementById('ciStatus').value = status || 'Active';
+        document.getElementById('ciCriticality').value = criticality || 'Medium';
+        document.getElementById('ciEnvironment').value = environment || 'Production';
+        document.getElementById('ciDescription').value = description || '';
+        document.getElementById('ciLocation').value = location || '';
+        document.getElementById('ciVendor').value = vendor || '';
+        document.getElementById('ciVersion').value = version || '';
+        document.getElementById('ciIpOrHostname').value = ipOrHostname || '';
+        document.getElementById('ciOwner').value = (ownerId ?? '') === null ? '' : (ownerId ?? '');
+        document.getElementById('ciAsset').value = (assetId ?? '') === null ? '' : (assetId ?? '');
+        document.getElementById('ciModalTitle').textContent = id ? 'Edit Configuration Item' : 'New Configuration Item';
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('ciModal')).show();
+    }
+</script>
+
+<style>
+    .ci-code {
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--primary, #3b82f6);
+        letter-spacing: 0.5px;
+    }
+
+    .ci-name {
+        font-weight: 600;
+        color: var(--gray-800, #1e293b);
+        text-decoration: none;
+    }
+
+        .ci-name:hover {
+            color: var(--primary, #3b82f6);
+            text-decoration: underline;
+        }
+</style>

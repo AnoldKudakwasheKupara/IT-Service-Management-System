@@ -1,0 +1,144 @@
+@model IT_Service_Management_System.Models.Itsm.ChangeRequest
+@using IT_Service_Management_System.Models.Itsm
+
+@{
+    var isEdit = Model.Id != 0;
+    ViewData["Title"] = isEdit ? "Edit Change" : "New Change";
+    var action = isEdit ? "Edit" : "Create";
+    var cis = ViewBag.Cis as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var problems = ViewBag.Problems as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var agents = ViewBag.Agents as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-code-branch me-2" style="color: var(--primary);"></i>
+                    @(isEdit ? "Edit Change" : "New Change")
+                </h1>
+                <p class="text-muted mt-2">@(isEdit ? "Update this change request" : "Raise a new controlled change")</p>
+            </div>
+        </div>
+    </div>
+
+    <form asp-action="@action" method="post">
+        @Html.AntiForgeryToken()
+        @if (isEdit)
+        {
+            <input type="hidden" asp-for="Id" />
+        }
+
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div>
+                    <i class="fas fa-clipboard-list me-2"></i>
+                    <span>Change Information</span>
+                </div>
+            </div>
+
+            <div style="padding:1.5rem;">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label asp-for="Title" class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+                        <input asp-for="Title" class="form-control" placeholder="Short summary of the change" />
+                        <span asp-validation-for="Title" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Description" class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+                        <textarea asp-for="Description" class="form-control" rows="4" placeholder="What is changing and why?"></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Type" class="form-label fw-semibold">Type</label>
+                        <select asp-for="Type" asp-items="Html.GetEnumSelectList<ChangeType>()" class="form-select"></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Risk" class="form-label fw-semibold">Risk</label>
+                        <select asp-for="Risk" asp-items="Html.GetEnumSelectList<ChangeRisk>()" class="form-select"></select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Impact" class="form-label fw-semibold">Impact</label>
+                        <select asp-for="Impact" asp-items="Html.GetEnumSelectList<ChangeImpact>()" class="form-select"></select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="ScheduledStart" class="form-label fw-semibold">Scheduled Start</label>
+                        <input type="datetime-local" asp-for="ScheduledStart" class="form-control" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="ScheduledEnd" class="form-label fw-semibold">Scheduled End</label>
+                        <input type="datetime-local" asp-for="ScheduledEnd" class="form-control" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="ConfigurationItemId" class="form-label fw-semibold">Configuration Item</label>
+                        <select asp-for="ConfigurationItemId" class="form-select">
+                            <option value="">— None —</option>
+                            @foreach (var ci in cis)
+                            {
+                                <option value="@ci.Id" selected="@(Model.ConfigurationItemId == (int?)ci.Id)">@ci.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="ProblemId" class="form-label fw-semibold">Linked Problem</label>
+                        <select asp-for="ProblemId" class="form-select">
+                            <option value="">— None —</option>
+                            @foreach (var p in problems)
+                            {
+                                <option value="@p.Id" selected="@(Model.ProblemId == (int?)p.Id)">@p.Label</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="AssignedToId" class="form-label fw-semibold">Assignee</label>
+                        <select asp-for="AssignedToId" class="form-select">
+                            <option value="">— Unassigned —</option>
+                            @foreach (var a in agents)
+                            {
+                                <option value="@a.Id" selected="@(Model.AssignedToId == (int?)a.Id)">@a.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="ImplementationPlan" class="form-label fw-semibold">Implementation Plan</label>
+                        <textarea asp-for="ImplementationPlan" class="form-control" rows="3" placeholder="Steps to implement the change"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="BackoutPlan" class="form-label fw-semibold">Backout Plan</label>
+                        <textarea asp-for="BackoutPlan" class="form-control" rows="3" placeholder="How to roll back if the change fails"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="TestPlan" class="form-label fw-semibold">Test Plan</label>
+                        <textarea asp-for="TestPlan" class="form-control" rows="3" placeholder="How the change will be validated"></textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4 pt-3" style="border-top:1px solid var(--gray-200);">
+                    <button type="submit" class="btn-create">
+                        <i class="fas fa-save me-2"></i>
+                        @(isEdit ? "Save Changes" : "Create Change")
+                    </button>
+                    <a asp-action="Index" class="btn-clear-filters" style="text-decoration:none;">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

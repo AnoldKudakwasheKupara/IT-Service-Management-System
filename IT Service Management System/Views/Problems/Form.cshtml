@@ -1,0 +1,207 @@
+@model IT_Service_Management_System.Models.Itsm.Problem
+
+@{
+    var isEdit = Model.Id != 0;
+    ViewData["Title"] = (isEdit ? "Edit Problem" : "New Problem") + " - Axis IT Operations";
+    var cis = ViewBag.Cis as IEnumerable<dynamic>;
+    var agents = ViewBag.Agents as IEnumerable<dynamic>;
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-@(isEdit ? "pen-to-square" : "plus-circle") me-2" style="color: var(--@(isEdit ? "primary" : "success"));"></i>
+                    @(isEdit ? "Edit Problem" : "New Problem")
+                </h1>
+                <p class="text-muted mt-2">@(isEdit ? "Update the root cause, workaround and details of this problem record" : "Log a new problem to investigate the root cause behind recurring incidents")</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-triangle-exclamation me-2"></i>
+                <span>Problem Details</span>
+            </div>
+        </div>
+
+        <form asp-action="@(isEdit ? "Edit" : "Create")" method="post" class="card-body-custom">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            @if (isEdit)
+            {
+                <input type="hidden" asp-for="Id" />
+            }
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <label asp-for="Title" class="form-label fw-semibold">
+                        <i class="fas fa-heading me-1"></i> Title <span class="text-danger">*</span>
+                    </label>
+                    <input asp-for="Title" class="form-control" placeholder="e.g. Repeated login failures on the payroll portal" required />
+                    <span asp-validation-for="Title" class="text-danger"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Description" class="form-label fw-semibold">
+                        <i class="fas fa-align-left me-1"></i> Description <span class="text-danger">*</span>
+                    </label>
+                    <textarea asp-for="Description" class="form-control" rows="4" placeholder="Describe the recurring issue, affected users and symptoms..." required></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="Priority" class="form-label fw-semibold">
+                        <i class="fas fa-flag me-1"></i> Priority
+                    </label>
+                    <select asp-for="Priority" class="form-select">
+                        @foreach (var v in Enum.GetValues<IT_Service_Management_System.Models.Ticket.TicketPriority>())
+                        {
+                            <option value="@v" selected="@(Model.Priority == v)">@v</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="ConfigurationItemId" class="form-label fw-semibold">
+                        <i class="fas fa-server me-1"></i> Configuration Item
+                    </label>
+                    <select asp-for="ConfigurationItemId" class="form-select">
+                        <option value="">— None —</option>
+                        @if (cis != null)
+                        {
+                            foreach (var c in cis)
+                            {
+                                <option value="@c.Id" selected="@(Model.ConfigurationItemId == (int)c.Id)">@c.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="AssignedToId" class="form-label fw-semibold">
+                        <i class="fas fa-user-gear me-1"></i> Assigned To
+                    </label>
+                    <select asp-for="AssignedToId" class="form-select">
+                        <option value="">— Unassigned —</option>
+                        @if (agents != null)
+                        {
+                            foreach (var a in agents)
+                            {
+                                <option value="@a.Id" selected="@(Model.AssignedToId == (int)a.Id)">@a.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="RootCause" class="form-label fw-semibold">
+                        <i class="fas fa-magnifying-glass me-1"></i> Root Cause
+                    </label>
+                    <textarea asp-for="RootCause" class="form-control" rows="4" placeholder="Once identified, record the underlying cause here..."></textarea>
+                    <span asp-validation-for="RootCause" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Workaround" class="form-label fw-semibold">
+                        <i class="fas fa-life-ring me-1"></i> Workaround
+                    </label>
+                    <textarea asp-for="Workaround" class="form-control" rows="4" placeholder="Temporary steps to mitigate the impact until fixed..."></textarea>
+                    <span asp-validation-for="Workaround" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-create">
+                    <i class="fas fa-@(isEdit ? "save" : "plus-circle") me-1"></i>
+                    @(isEdit ? "Save Changes" : "Create Problem")
+                </button>
+                <a asp-action="Index" class="btn-back-text">
+                    <i class="fas fa-times me-1"></i> Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+    }
+
+    .page-container { max-width: 1000px; margin: 0 auto; }
+
+    .card-body-custom { padding: 2rem; }
+
+    .card-body-custom .form-label { color: var(--gray-700); }
+    .card-body-custom .form-label i { color: var(--primary); }
+
+    .card-body-custom .form-control,
+    .card-body-custom .form-select {
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.75rem;
+        padding: 0.65rem 0.9rem;
+        font-size: 0.9rem;
+    }
+
+        .card-body-custom .form-control:focus,
+        .card-body-custom .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        align-items: center;
+    }
+
+    .btn-back-text {
+        color: var(--gray-600);
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        border: 1px solid var(--gray-300);
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-back-text:hover {
+            background: var(--gray-50);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+</style>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

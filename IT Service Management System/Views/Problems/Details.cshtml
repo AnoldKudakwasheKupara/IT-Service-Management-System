@@ -1,0 +1,363 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Itsm
+@model IT_Service_Management_System.Models.Itsm.Problem
+
+@{
+    ViewData["Title"] = $"{Model.ProblemRef} - Axis IT Operations";
+    var incidents = ViewBag.Incidents as List<Ticket> ?? new List<Ticket>();
+    var changes = ViewBag.Changes as List<ChangeRequest> ?? new List<ChangeRequest>();
+    var linkable = ViewBag.LinkableIncidents as IEnumerable<dynamic>;
+
+    var prio = Model.Priority.ToString();
+    var prioClass = prio switch
+    {
+        "Critical" => "badge-red",
+        "High" => "badge-amber",
+        "Medium" => "badge-blue",
+        _ => "badge-gray"
+    };
+    var stClass = Model.Status switch
+    {
+        ProblemStatus.New => "badge-blue",
+        ProblemStatus.Investigating => "badge-amber",
+        ProblemStatus.RootCauseIdentified => "badge-amber",
+        ProblemStatus.KnownError => "badge-amber",
+        ProblemStatus.Resolved => "badge-green",
+        ProblemStatus.Closed => "badge-green",
+        _ => "badge-gray"
+    };
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-start gap-3 mb-4 flex-wrap">
+            <div class="d-flex align-items-center gap-3">
+                <a asp-action="Index" class="btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-triangle-exclamation me-2" style="color: var(--primary);"></i>
+                        @Model.ProblemRef
+                    </h1>
+                    <p class="text-muted mt-2 mb-2">@Model.Title</p>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <span class="status-badge @prioClass">@prio</span>
+                        <span class="status-badge @stClass">@Model.Status</span>
+                    </div>
+                </div>
+            </div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-create btn-create-sm">
+                <i class="fas fa-pencil-alt me-1"></i> Edit
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="prb-flash success"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="prb-flash error"><i class="fas fa-exclamation-circle"></i> @TempData["Error"]</div>
+    }
+
+    <div class="row g-4">
+        <!-- LEFT COLUMN -->
+        <div class="col-lg-8">
+            <div class="data-card mb-4">
+                <div class="card-header-custom">
+                    <div><i class="fas fa-circle-info me-2"></i><span>Overview</span></div>
+                </div>
+                <div class="card-body-custom">
+                    <div class="detail-block">
+                        <h3 class="detail-label"><i class="fas fa-align-left"></i> Description</h3>
+                        <div class="detail-content">@Model.Description</div>
+                    </div>
+
+                    <div class="detail-block">
+                        <h3 class="detail-label"><i class="fas fa-magnifying-glass"></i> Root Cause</h3>
+                        <div class="detail-content @(string.IsNullOrWhiteSpace(Model.RootCause) ? "muted" : "")">
+                            @(string.IsNullOrWhiteSpace(Model.RootCause) ? "Not yet identified." : Model.RootCause)
+                        </div>
+                    </div>
+
+                    <div class="detail-block">
+                        <h3 class="detail-label"><i class="fas fa-life-ring"></i> Workaround</h3>
+                        <div class="detail-content @(string.IsNullOrWhiteSpace(Model.Workaround) ? "muted" : "")">
+                            @(string.IsNullOrWhiteSpace(Model.Workaround) ? "No workaround recorded." : Model.Workaround)
+                        </div>
+                    </div>
+
+                    <div class="detail-grid">
+                        <div class="detail-meta">
+                            <i class="fas fa-server"></i>
+                            <div>
+                                <label>Configuration Item</label>
+                                <span>@(Model.ConfigurationItem?.Name ?? "—")</span>
+                            </div>
+                        </div>
+                        <div class="detail-meta">
+                            <i class="fas fa-user-gear"></i>
+                            <div>
+                                <label>Assignee</label>
+                                <span>@(Model.AssignedTo != null ? $"{Model.AssignedTo.FirstName} {Model.AssignedTo.LastName}" : "Unassigned")</span>
+                            </div>
+                        </div>
+                        <div class="detail-meta">
+                            <i class="fas fa-user"></i>
+                            <div>
+                                <label>Created by</label>
+                                <span>@(Model.CreatedBy != null ? $"{Model.CreatedBy.FirstName} {Model.CreatedBy.LastName}" : "—")</span>
+                            </div>
+                        </div>
+                        <div class="detail-meta">
+                            <i class="fas fa-calendar"></i>
+                            <div>
+                                <label>Created</label>
+                                <span>@Model.CreatedAt.ToString("MMM dd, yyyy 'at' HH:mm")</span>
+                            </div>
+                        </div>
+                        @if (Model.UpdatedAt != null)
+                        {
+                            <div class="detail-meta">
+                                <i class="fas fa-clock-rotate-left"></i>
+                                <div>
+                                    <label>Last updated</label>
+                                    <span>@Model.UpdatedAt.Value.ToString("MMM dd, yyyy 'at' HH:mm")</span>
+                                </div>
+                            </div>
+                        }
+                        @if (Model.ResolvedAt != null)
+                        {
+                            <div class="detail-meta">
+                                <i class="fas fa-check-circle"></i>
+                                <div>
+                                    <label>Resolved</label>
+                                    <span>@Model.ResolvedAt.Value.ToString("MMM dd, yyyy 'at' HH:mm")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- LINKED INCIDENTS -->
+            <div class="data-card mb-4">
+                <div class="card-header-custom">
+                    <div><i class="fas fa-link me-2"></i><span>Linked Incidents</span></div>
+                    <div class="record-count"><i class="fas fa-ticket-alt me-1"></i> @incidents.Count linked</div>
+                </div>
+                <div class="table-responsive">
+                    @if (incidents.Any())
+                    {
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-hashtag me-1"></i> Ref</th>
+                                    <th><i class="fas fa-heading me-1"></i> Title</th>
+                                    <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                                    <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in incidents)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a href="/Tickets/Details/@t.Id" class="prb-ref">TKT-@t.Id.ToString("D5")</a>
+                                        </td>
+                                        <td>@t.Title</td>
+                                        <td><span class="status-badge badge-gray">@t.Status</span></td>
+                                        <td style="text-align:right;">
+                                            <form asp-action="UnlinkIncident" method="post" class="d-inline"
+                                                  onsubmit="return confirm('Unlink TKT-@t.Id.ToString("D5") from this problem?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@Model.Id" />
+                                                <input type="hidden" name="ticketId" value="@t.Id" />
+                                                <button type="submit" class="action-btn btn-delete" title="Unlink incident">
+                                                    <i class="fas fa-link-slash"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="empty-inline"><i class="fas fa-link-slash"></i> No incidents linked to this problem yet.</div>
+                    }
+                </div>
+
+                <div class="card-footer-custom">
+                    <form asp-action="LinkIncident" method="post" class="link-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <select name="ticketId" class="form-select link-select" required>
+                            <option value="">Select an incident to link…</option>
+                            @if (linkable != null)
+                            {
+                                foreach (var t in linkable)
+                                {
+                                    <option value="@t.Id">@t.Label</option>
+                                }
+                            }
+                        </select>
+                        <button type="submit" class="btn-create btn-create-sm">
+                            <i class="fas fa-link me-1"></i> Link Incident
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- RELATED CHANGES -->
+            <div class="data-card mb-4">
+                <div class="card-header-custom">
+                    <div><i class="fas fa-code-branch me-2"></i><span>Related Changes</span></div>
+                    <div class="record-count"><i class="fas fa-code-branch me-1"></i> @changes.Count changes</div>
+                </div>
+                <div class="table-responsive">
+                    @if (changes.Any())
+                    {
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-hashtag me-1"></i> Ref</th>
+                                    <th><i class="fas fa-heading me-1"></i> Title</th>
+                                    <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in changes)
+                                {
+                                    <tr>
+                                        <td><a href="/Changes/Details/@c.Id" class="prb-ref">CHG-@c.Id.ToString("D5")</a></td>
+                                        <td>@c.Title</td>
+                                        <td><span class="status-badge badge-gray">@c.Status</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="empty-inline"><i class="fas fa-code-branch"></i> No changes raised for this problem yet.</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN -->
+        <div class="col-lg-4">
+            <div class="data-card">
+                <div class="card-header-custom">
+                    <div><i class="fas fa-bolt me-2"></i><span>Update Status</span></div>
+                </div>
+                <div class="card-body-custom">
+                    <form asp-action="ChangeStatus" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <label class="form-label fw-semibold"><i class="fas fa-chart-simple me-1"></i> Status</label>
+                        <select name="status" class="form-select mb-3">
+                            @foreach (var s in Enum.GetValues<ProblemStatus>())
+                            {
+                                <option value="@s" selected="@(Model.Status == s)">@s</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn-create btn-create-sm w-100" style="justify-content:center;">
+                            <i class="fas fa-arrows-rotate me-1"></i> Update
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container { max-width: 1400px; margin: 0 auto; }
+    .table-responsive { overflow-x: auto; }
+    .card-body-custom { padding: 1.5rem; }
+
+    .prb-flash {
+        padding: 0.8rem 1rem; border-radius: 0.6rem; margin-bottom: 1rem;
+        display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; font-weight: 500;
+    }
+        .prb-flash.success { background: #f0fdf4; border-left: 4px solid var(--success); color: #166534; }
+        .prb-flash.error { background: #fff5f5; border-left: 4px solid var(--danger); color: #b91c1c; }
+
+    .prb-ref { font-weight: 700; font-size: 0.78rem; color: var(--primary); letter-spacing: 0.5px; text-decoration: none; }
+        .prb-ref:hover { text-decoration: underline; }
+
+    .detail-block { margin-bottom: 1.5rem; }
+
+    .detail-label {
+        font-size: 0.95rem; font-weight: 600; color: var(--gray-700);
+        margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+        .detail-label i { color: var(--primary); }
+
+    .detail-content {
+        background: var(--gray-50); padding: 1rem; border-radius: 0.75rem;
+        line-height: 1.6; color: var(--gray-700); white-space: pre-wrap;
+    }
+        .detail-content.muted { color: var(--gray-400); font-style: italic; }
+
+    .detail-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--gray-200);
+    }
+
+    .detail-meta { display: flex; align-items: flex-start; gap: 0.75rem; }
+        .detail-meta i { width: 22px; color: var(--primary); margin-top: 0.15rem; }
+        .detail-meta label {
+            font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--gray-500); display: block; margin-bottom: 0.15rem;
+        }
+        .detail-meta span { font-size: 0.875rem; font-weight: 500; color: var(--gray-700); }
+
+    .card-footer-custom {
+        padding: 1.25rem 1.5rem; border-top: 1px solid var(--gray-200); background: var(--gray-50);
+    }
+
+    .link-form { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .link-select {
+        flex: 1; min-width: 220px; border: 1.5px solid var(--gray-200); border-radius: 0.75rem;
+        padding: 0.6rem 0.9rem; font-size: 0.875rem;
+    }
+        .link-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); outline: none; }
+
+    .empty-inline {
+        padding: 2rem 1.5rem; text-align: center; color: var(--gray-400);
+        font-size: 0.875rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+    }
+
+    .card-body-custom .form-select {
+        border: 1.5px solid var(--gray-200); border-radius: 0.75rem; padding: 0.6rem 0.9rem; font-size: 0.9rem;
+    }
+        .card-body-custom .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); outline: none; }
+    .card-body-custom .form-label i { color: var(--primary); }
+</style>
