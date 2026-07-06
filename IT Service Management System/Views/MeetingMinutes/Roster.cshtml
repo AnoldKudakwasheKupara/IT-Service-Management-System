@@ -1,0 +1,74 @@
+@model IEnumerable<IT_Service_Management_System.Models.MeetingRosterMember>
+@using IT_Service_Management_System.Models
+@{
+    ViewData["Title"] = "Meeting Roster - Meeting Minutes";
+    var addable = (ViewBag.AddableUsers as List<User>) ?? new List<User>();
+    string Initials(string? name) => string.IsNullOrWhiteSpace(name) ? "?" : string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => p[0]));
+}
+
+<partial name="_MeetingStyles" />
+
+<div class="mm narrow">
+    <div class="page-container">
+        <div class="page-header head-row">
+            <div style="display:flex;align-items:center;gap:.9rem;">
+                <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <h1 class="page-title"><i class="fas fa-users-gear me-2" style="color:var(--primary);"></i> Standing Roster</h1>
+                    <p class="page-sub">These people are pre-loaded into every new meeting's attendance</p>
+                </div>
+            </div>
+        </div>
+
+        @if (addable.Any())
+        {
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-user-plus"></i> Add a member</span></div>
+                <div class="card-body">
+                    <form asp-action="AddRosterMember" method="post" style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+                        @Html.AntiForgeryToken()
+                        <select name="userId" class="inp" style="max-width:320px;">
+                            @foreach (var u in addable) { <option value="@u.Id">@u.FullName</option> }
+                        </select>
+                        <button type="submit" class="btn-primary-mm"><i class="fas fa-plus"></i> Add to roster</button>
+                    </form>
+                </div>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-users"></i> Roster (@Model.Count())</span></div>
+            @if (Model.Any())
+            {
+                <table class="tbl">
+                    <thead><tr><th>Member</th><th>Email</th><th>Added</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            <tr>
+                                <td><span class="with-avatar"><span class="avatar">@Initials(r.User?.FullName)</span> @r.User?.FullName</span></td>
+                                <td class="meta">@r.User?.Email</td>
+                                <td class="meta">@r.AddedAt.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    <form asp-action="RemoveRosterMember" method="post" onsubmit="return confirm('Remove this person from the standing roster?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@r.Id" />
+                                        <button type="submit" class="act del" title="Remove"><i class="fas fa-user-minus"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty">
+                    <i class="fas fa-users"></i>
+                    <h3>No roster members yet</h3>
+                    <p class="meta">Add your regular attendees above so they auto-fill each meeting.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

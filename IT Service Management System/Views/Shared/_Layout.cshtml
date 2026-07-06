@@ -657,9 +657,15 @@
                     </a>
                 }
 
+                @* Operations: the group header + Meeting Minutes are visible to all staff
+                   (everyone attends meetings); the remaining items stay Admin/SystemsAdmin-only. *@
+                <div class="nav-group">Operations</div>
+                <a class="nav-item @(currentController == "MeetingMinutes" ? "active" : "")"
+                   asp-controller="MeetingMinutes" asp-action="Index">
+                    <i class="fas fa-clipboard-list"></i> Meeting Minutes
+                </a>
                 @if (navFull)
                 {
-                    <div class="nav-group">Operations</div>
                     <a class="nav-item @(currentController == "ActivityCategories" ? "active" : "")"
                        asp-controller="ActivityCategories" asp-action="Index">
                         <i class="fas fa-tags"></i> Categories

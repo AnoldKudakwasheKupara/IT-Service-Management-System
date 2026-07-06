@@ -1,0 +1,93 @@
+@model IEnumerable<IT_Service_Management_System.Models.Meeting>
+@using IT_Service_Management_System.Enums
+@{
+    ViewData["Title"] = "Meeting Minutes - Axis IT Helpdesk";
+    var isManager = (Context.Session.GetString("UserRole") is "Admin" or "SystemsAdmin");
+}
+
+<partial name="_MeetingStyles" />
+
+<div class="mm">
+    <div class="page-container">
+        <div class="page-header head-row">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-clipboard-list me-2" style="color: var(--primary);"></i>
+                    Meeting Minutes
+                </h1>
+                <p class="page-sub">Weekly meetings — attendance and action-item tracking</p>
+            </div>
+            @if (isManager)
+            {
+                <div class="head-actions">
+                    <a asp-action="Roster" class="btn-ghost-mm"><i class="fas fa-users-gear"></i> Manage Roster</a>
+                    <a asp-action="Create" class="btn-primary-mm"><i class="fas fa-plus-circle"></i> New Meeting</a>
+                </div>
+            }
+            else
+            {
+                <div class="head-actions">
+                    <a asp-action="MyActionItems" class="btn-outline-mm"><i class="fas fa-list-check"></i> My Action Items</a>
+                </div>
+            }
+        </div>
+
+        <div class="stats">
+            <div class="stat"><div class="ic blue"><i class="fas fa-calendar-check"></i></div><div><h3>@ViewBag.TotalMeetings</h3><p>Meetings recorded</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-list-check"></i></div><div><h3>@ViewBag.OpenActionItems</h3><p>Open action items</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-users"></i></div><div><h3>@ViewBag.RosterCount</h3><p>On the roster</p></div></div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-calendar-days"></i> Meetings</span></div>
+            @if (Model.Any())
+            {
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>Date</th><th>Meeting</th><th>Facilitator</th>
+                            <th>Attendance</th><th>Open items</th><th>Status</th><th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var m in Model)
+                        {
+                            var present = m.Attendances.Count(a => a.Status == AttendanceStatus.Present || a.Status == AttendanceStatus.Late);
+                            var openItems = m.ActionItems.Count(a => a.Status != ActionItemStatus.Done);
+                            <tr>
+                                <td>@m.Date.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@m.Id" style="text-decoration:none;color:var(--gray-800);font-weight:600;">@m.DisplayTitle</a>
+                                    <span class="badge-mm b-day-@m.Day.ToString().ToLower()" style="margin-left:.4rem;">@m.Day</span>
+                                </td>
+                                <td>@(m.Facilitator?.FullName ?? "—")</td>
+                                <td><i class="fas fa-user-check" style="color:var(--success);"></i> @present / @m.Attendances.Count</td>
+                                <td>@(openItems > 0 ? $"{openItems} open" : "—")</td>
+                                <td><span class="badge-mm b-status-@m.Status.ToString().ToLower()">@m.Status</span></td>
+                                <td class="act-btns">
+                                    <a class="act view" asp-action="Details" asp-route-id="@m.Id" title="Open"><i class="fas fa-eye"></i></a>
+                                    @if (isManager)
+                                    {
+                                        <a class="act edit" asp-action="Edit" asp-route-id="@m.Id" title="Edit"><i class="fas fa-pen"></i></a>
+                                        <a class="act del" asp-action="Delete" asp-route-id="@m.Id" title="Delete"><i class="fas fa-trash"></i></a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty">
+                    <i class="fas fa-clipboard-list"></i>
+                    <h3>No meetings recorded yet</h3>
+                    @if (isManager)
+                    {
+                        <a asp-action="Create" class="btn-primary-mm"><i class="fas fa-plus-circle"></i> Record your first meeting</a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

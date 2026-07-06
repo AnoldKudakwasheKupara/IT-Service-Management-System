@@ -71,6 +71,13 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<ChangeRequest> ChangeRequests { get; set; }
         public DbSet<SlaPolicy> SlaPolicies { get; set; }
 
+        // ── Meeting Minutes (Operations) ───────────────────────────────────────────
+        public DbSet<Meeting> Meetings { get; set; }
+        public DbSet<MeetingRosterMember> MeetingRosterMembers { get; set; }
+        public DbSet<MeetingAttendance> MeetingAttendances { get; set; }
+        public DbSet<ActionItem> ActionItems { get; set; }
+        public DbSet<ActionItemUpdate> ActionItemUpdates { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -324,6 +331,57 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<ChangeRequest>().HasIndex(c => c.Status);
 
             modelBuilder.Entity<SlaPolicy>().HasIndex(s => new { s.Priority, s.IsActive });
+
+            // ── Meeting Minutes relationships ──────────────────────────────────────────
+            // Store enums as readable strings (matches the Ticket/User convention above).
+            modelBuilder.Entity<Meeting>().Property(m => m.Day).HasConversion<string>();
+            modelBuilder.Entity<Meeting>().Property(m => m.Status).HasConversion<string>();
+            modelBuilder.Entity<MeetingAttendance>().Property(a => a.Status).HasConversion<string>();
+            modelBuilder.Entity<ActionItem>().Property(a => a.Status).HasConversion<string>();
+            modelBuilder.Entity<ActionItem>().Property(a => a.Priority).HasConversion<string>();
+            modelBuilder.Entity<ActionItemUpdate>().Property(u => u.StatusAtUpdate).HasConversion<string>();
+
+            // All User FKs use Restrict (no cascade) so the many links from these tables to
+            // Users never create multiple-cascade-path errors on SQL Server.
+            modelBuilder.Entity<Meeting>()
+                .HasOne(m => m.Facilitator).WithMany().HasForeignKey(m => m.FacilitatorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<MeetingRosterMember>()
+                .HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<MeetingRosterMember>().HasIndex(r => r.UserId).IsUnique();
+
+            // Attendance: cascade from its meeting; Restrict on the user link.
+            modelBuilder.Entity<MeetingAttendance>()
+                .HasOne(a => a.Meeting).WithMany(m => m.Attendances).HasForeignKey(a => a.MeetingId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<MeetingAttendance>()
+                .HasOne(a => a.User).WithMany().HasForeignKey(a => a.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<MeetingAttendance>().HasIndex(a => new { a.MeetingId, a.UserId }).IsUnique();
+
+            // Action items belong to the meeting they were raised in (Restrict: don't lose
+            // tracked tasks by deleting a meeting) and to an assignee (Restrict).
+            modelBuilder.Entity<ActionItem>()
+                .HasOne(a => a.Meeting).WithMany(m => m.ActionItems).HasForeignKey(a => a.MeetingId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<ActionItem>()
+                .HasOne(a => a.AssignedTo).WithMany().HasForeignKey(a => a.AssignedToId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<ActionItem>().HasIndex(a => a.Status);
+
+            // Updates cascade from their action item; the optional meeting link is NoAction
+            // (avoids a second cascade path into ActionItemUpdate).
+            modelBuilder.Entity<ActionItemUpdate>()
+                .HasOne(u => u.ActionItem).WithMany(a => a.Updates).HasForeignKey(u => u.ActionItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<ActionItemUpdate>()
+                .HasOne(u => u.Meeting).WithMany().HasForeignKey(u => u.MeetingId)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ActionItemUpdate>()
+                .HasOne(u => u.UpdatedBy).WithMany().HasForeignKey(u => u.UpdatedById)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Default SLA policies (mirror the previous hard-coded targets; HR/Admin can edit these).
             var slaSeed = new DateTime(2026, 7, 1);

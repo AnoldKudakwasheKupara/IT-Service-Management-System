@@ -1,0 +1,109 @@
+@model IEnumerable<IT_Service_Management_System.Models.ActionItem>
+@using IT_Service_Management_System.Enums
+@{
+    ViewData["Title"] = "My Action Items - Meeting Minutes";
+    var open = Model.Where(a => a.Status != ActionItemStatus.Done).ToList();
+    var done = Model.Where(a => a.Status == ActionItemStatus.Done).ToList();
+}
+
+<partial name="_MeetingStyles" />
+
+<div class="mm">
+    <div class="page-container">
+        <div class="page-header head-row">
+            <div style="display:flex;align-items:center;gap:.9rem;">
+                <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <h1 class="page-title"><i class="fas fa-list-check me-2" style="color:var(--primary);"></i> My Action Items</h1>
+                    <p class="page-sub">Tasks assigned to you across all meetings</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat"><div class="ic amber"><i class="fas fa-hourglass-half"></i></div><div><h3>@open.Count</h3><p>Still open</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@done.Count</h3><p>Completed</p></div></div>
+            <div class="stat"><div class="ic blue"><i class="fas fa-triangle-exclamation"></i></div><div><h3>@open.Count(a => a.IsOverdue)</h3><p>Overdue</p></div></div>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="card"><div class="empty"><i class="fas fa-mug-hot"></i><h3>Nothing assigned to you</h3><p class="meta">Action items assigned to you in meetings will appear here.</p></div></div>
+        }
+        else
+        {
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-list-check"></i> Open (@open.Count)</span></div>
+                <div class="card-body">
+                    @if (!open.Any()) { <p class="meta">All caught up — no open items.</p> }
+                    @foreach (var item in open)
+                    {
+                        <div class="ai @(item.IsOverdue ? "overdue-b" : "")">
+                            <div class="ai-head">
+                                <div>
+                                    <p class="ai-title">@item.Title</p>
+                                    <div class="ai-meta">
+                                        <span class="badge-mm b-@item.Status.ToString().ToLower()">@(item.Status == ActionItemStatus.InProgress ? "In Progress" : item.Status.ToString())</span>
+                                        <span class="badge-mm b-pri-@item.Priority.ToString().ToLower()">@item.Priority</span>
+                                        <a class="meta" asp-action="Details" asp-route-id="@item.MeetingId" style="text-decoration:none;"><i class="fas fa-calendar"></i> @(item.Meeting?.DisplayTitle ?? "Meeting")</a>
+                                        @if (item.DueDate.HasValue)
+                                        {
+                                            <span class="meta @(item.IsOverdue ? "overdue" : "")"><i class="fas fa-calendar-day"></i> Due @item.DueDate.Value.ToString("dd MMM")</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="ai-body">
+                                @if (!string.IsNullOrWhiteSpace(item.Details)) { <p class="ai-desc">@item.Details</p> }
+                                @if (item.Updates.Any())
+                                {
+                                    <div class="timeline">
+                                        @foreach (var up in item.Updates.OrderByDescending(u => u.CreatedAt).Take(3))
+                                        {
+                                            <div class="tl-item"><div class="tl-note">@up.Note</div><div class="tl-meta">@up.StatusAtUpdate · @up.CreatedAt.ToString("dd MMM HH:mm")</div></div>
+                                        }
+                                    </div>
+                                }
+                                <form asp-action="PostUpdate" method="post" class="update-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="actionItemId" value="@item.Id" />
+                                    <input type="hidden" name="meetingId" value="0" />
+                                    <div class="fg" style="margin-bottom:.5rem;"><label class="lbl"><i class="fas fa-comment-dots"></i> Post progress update</label>
+                                        <textarea name="note" rows="2" class="inp" placeholder="What's the latest?" required></textarea></div>
+                                    <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+                                        <select name="status" class="inp" style="max-width:180px;">
+                                            @foreach (ActionItemStatus s in Enum.GetValues(typeof(ActionItemStatus))) { <option value="@s" selected="@(s == item.Status)">@s</option> }
+                                        </select>
+                                        <button type="submit" class="btn-outline-mm"><i class="fas fa-paper-plane"></i> Post update</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (done.Any())
+            {
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-circle-check"></i> Completed (@done.Count)</span></div>
+                    <div class="card-body">
+                        <table class="tbl">
+                            <thead><tr><th>Item</th><th>Meeting</th><th>Closed</th></tr></thead>
+                            <tbody>
+                                @foreach (var item in done)
+                                {
+                                    <tr>
+                                        <td>@item.Title</td>
+                                        <td><a asp-action="Details" asp-route-id="@item.MeetingId" style="text-decoration:none;color:var(--primary);">@(item.Meeting?.DisplayTitle ?? "Meeting")</a></td>
+                                        <td class="meta">@(item.ClosedAt?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>

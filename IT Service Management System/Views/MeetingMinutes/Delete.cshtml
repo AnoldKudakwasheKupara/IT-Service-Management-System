@@ -1,0 +1,56 @@
+@model IT_Service_Management_System.Models.Meeting
+@using IT_Service_Management_System.Enums
+@{
+    ViewData["Title"] = "Delete Meeting - Meeting Minutes";
+    var hasItems = Model.ActionItems.Any();
+}
+
+<partial name="_MeetingStyles" />
+
+<div class="mm narrow">
+    <div class="page-container">
+        <div class="page-header head-row">
+            <div style="display:flex;align-items:center;gap:.9rem;">
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <h1 class="page-title"><i class="fas fa-triangle-exclamation me-2" style="color:var(--danger);"></i> Delete Meeting</h1>
+                    <p class="page-sub">This cannot be undone</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-clipboard-list"></i> @Model.DisplayTitle</span></div>
+            <div class="card-body">
+                <p class="meta" style="margin:0 0 1rem;">
+                    <strong>Date:</strong> @Model.Date.ToString("dddd, dd MMM yyyy")<br />
+                    <strong>Attendees recorded:</strong> @Model.Attendances.Count<br />
+                    <strong>Action items:</strong> @Model.ActionItems.Count
+                </p>
+
+                @if (hasItems)
+                {
+                    <div style="background:#fdecea;border:1px solid #fecaca;border-radius:.7rem;padding:1rem;color:#b3261e;font-size:.875rem;">
+                        <i class="fas fa-circle-exclamation"></i>
+                        This meeting has <strong>@Model.ActionItems.Count action item(s)</strong>. To protect tracked work, reassign or close them before the meeting can be deleted.
+                    </div>
+                    <div class="form-actions">
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="btn-ghost-mm" style="flex:1;justify-content:center;"><i class="fas fa-arrow-left"></i> Back to meeting</a>
+                    </div>
+                }
+                else
+                {
+                    <p style="color:var(--gray-700);">Delete this meeting and its attendance records permanently?</p>
+                    <form asp-action="Delete" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <div class="form-actions">
+                            <button type="submit" class="btn-danger-mm" style="flex:1;justify-content:center;"><i class="fas fa-trash"></i> Delete meeting</button>
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn-ghost-mm" style="flex:1;justify-content:center;"><i class="fas fa-times"></i> Cancel</a>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>

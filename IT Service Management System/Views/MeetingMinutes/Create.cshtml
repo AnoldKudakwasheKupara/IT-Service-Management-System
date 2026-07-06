@@ -1,0 +1,67 @@
+@model IT_Service_Management_System.Models.Meeting
+@using IT_Service_Management_System.Enums
+@using IT_Service_Management_System.Models
+@{
+    ViewData["Title"] = "New Meeting - Meeting Minutes";
+    var users = (ViewBag.Users as List<User>) ?? new List<User>();
+}
+
+<partial name="_MeetingStyles" />
+
+<div class="mm narrow">
+    <div class="page-container">
+        <div class="page-header head-row">
+            <div style="display:flex;align-items:center;gap:.9rem;">
+                <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <h1 class="page-title"><i class="fas fa-plus-circle me-2" style="color:var(--success);"></i> New Meeting</h1>
+                    <p class="page-sub">Attendance pre-loads from your standing roster</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-clipboard-list"></i> Meeting details</span></div>
+            <div class="card-body">
+                <form asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="meta" style="color:var(--danger);"></div>
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label class="lbl" asp-for="Date"><i class="fas fa-calendar-day"></i> Meeting date <span class="req">*</span></label>
+                            <input asp-for="Date" type="date" class="inp" required />
+                            <span asp-validation-for="Date" class="meta" style="color:var(--danger);"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="FacilitatorId"><i class="fas fa-user-tie"></i> Facilitator</label>
+                            <select asp-for="FacilitatorId" class="inp">
+                                <option value="">— Select —</option>
+                                @foreach (var u in users) { <option value="@u.Id">@u.FullName</option> }
+                            </select>
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl" asp-for="Title"><i class="fas fa-heading"></i> Title <span class="meta">(optional — defaults to day + date)</span></label>
+                            <input asp-for="Title" class="inp" placeholder="e.g. Monday Ops Standup" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Status"><i class="fas fa-circle-check"></i> Status</label>
+                            <select asp-for="Status" class="inp">
+                                @foreach (MeetingStatus s in Enum.GetValues(typeof(MeetingStatus))) { <option value="@s" selected="@(s == MeetingStatus.Held)">@s</option> }
+                            </select>
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl" asp-for="Summary"><i class="fas fa-align-left"></i> Minutes / summary</label>
+                            <textarea asp-for="Summary" rows="5" class="inp" placeholder="Key discussion points and decisions"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary-mm" style="flex:1;justify-content:center;"><i class="fas fa-save"></i> Create meeting</button>
+                        <a asp-action="Index" class="btn-ghost-mm" style="flex:1;justify-content:center;"><i class="fas fa-times"></i> Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } }
