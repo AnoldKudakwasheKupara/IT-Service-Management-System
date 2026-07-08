@@ -1,0 +1,107 @@
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model Capa
+@{
+    ViewData["Title"] = Model.Reference;
+    var canEdit = (bool)(ViewBag.CanEdit ?? false);
+    var canVerify = (bool)(ViewBag.CanVerify ?? false);
+    var canClose = (bool)(ViewBag.CanClose ?? false);
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Title</h1>
+                        <p class="page-sub">
+                            <span class="badge-ims @ImsBadges.CapaStatusClass(Model.Status)">@Model.Status</span>
+                            <span class="meta">· @Model.Type · @Model.Source</span>
+                            @if (Model.Escalated) { <span class="badge-ims b-critical"><i class="fas fa-arrow-up"></i> Escalated</span> }
+                            @if (Model.IsOverdue) { <span class="badge-ims b-overdue">Overdue</span> }
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    @if (canEdit && !Model.IsClosed)
+                    {
+                        <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if ((canEdit || canVerify || canClose) && !Model.IsClosed)
+        {
+            <div class="card"><div class="card-head"><span class="t"><i class="fas fa-bolt"></i> Actions</span></div>
+            <div class="card-body" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-start;">
+                @if (canVerify)
+                {
+                    <form method="post" asp-action="Verify" asp-route-id="@Model.Id" style="flex:1;min-width:260px;">@Html.AntiForgeryToken()
+                        <label class="lbl"><i class="fas fa-clipboard-check"></i> Verification notes</label>
+                        <textarea class="inp" name="verificationNotes" rows="2" style="margin:.4rem 0;"></textarea>
+                        <button class="btn-success-ims" type="submit"><i class="fas fa-check"></i> Verify Effective</button>
+                    </form>
+                }
+                <div style="display:flex;flex-direction:column;gap:.5rem;">
+                    @if (canClose)
+                    {
+                        <form method="post" asp-action="Close" asp-route-id="@Model.Id" onsubmit="return confirm('Close this CAPA?');">@Html.AntiForgeryToken()
+                            <button class="btn-primary-ims" type="submit"><i class="fas fa-lock"></i> Close CAPA</button>
+                        </form>
+                    }
+                    @if (canEdit && !Model.Escalated)
+                    {
+                        <form method="post" asp-action="Escalate" asp-route-id="@Model.Id" onsubmit="return confirm('Escalate to management?');">@Html.AntiForgeryToken()
+                            <button class="btn-danger-ims" type="submit"><i class="fas fa-arrow-up"></i> Escalate</button>
+                        </form>
+                    }
+                </div>
+            </div></div>
+        }
+
+        <div class="card"><div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Overview</span></div>
+        <div class="card-body">
+            <div class="dl">
+                <div><div class="k">Responsible</div><div class="v">@(Model.Responsible?.FullName ?? "—")</div></div>
+                <div><div class="k">Department</div><div class="v">@(Model.Department?.Name ?? "—")</div></div>
+                <div><div class="k">Due Date</div><div class="v @(Model.IsOverdue ? "overdue" : "")">@(Model.DueDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                <div><div class="k">Source Reference</div><div class="v">@(Model.SourceReference ?? "—")</div></div>
+                <div><div class="k">Linked NC</div><div class="v">@(Model.NonConformance?.Reference ?? "—")</div></div>
+                <div><div class="k">Raised</div><div class="v">@Model.CreatedAt.ToString("dd MMM yyyy") by @(Model.CreatedBy?.FullName ?? "—")</div></div>
+                @if (Model.VerifiedAt != null)
+                { <div><div class="k">Verified</div><div class="v">@Model.VerifiedAt?.ToString("dd MMM yyyy") by @(Model.VerifiedBy?.FullName ?? "—")</div></div> }
+            </div>
+            <div style="margin-top:1rem;"><div class="k" style="text-transform:uppercase;font-size:.72rem;color:var(--gray-400);">Description</div><p style="color:var(--gray-700);">@Model.Description</p></div>
+        </div></div>
+
+        <div class="form-grid" style="align-items:start;">
+            <div class="card"><div class="card-head"><span class="t"><i class="fas fa-magnifying-glass-chart"></i> Investigation</span></div><div class="card-body">
+                @foreach (var (label, val) in new[] { ("Containment / Immediate Action", Model.Containment), ("Correction", Model.Correction), ("Root Cause", Model.RootCause) })
+                {
+                    <div style="margin-bottom:.75rem;"><div class="k" style="text-transform:uppercase;font-size:.72rem;color:var(--gray-400);">@label</div><p style="color:var(--gray-700);margin:.2rem 0;">@(string.IsNullOrWhiteSpace(val) ? "—" : val)</p></div>
+                }
+            </div></div>
+            <div class="card"><div class="card-head"><span class="t"><i class="fas fa-screwdriver-wrench"></i> Actions &amp; Effectiveness</span></div><div class="card-body">
+                @foreach (var (label, val) in new[] { ("Corrective Action", Model.CorrectiveAction), ("Preventive Action", Model.PreventiveAction), ("Verification", Model.VerificationNotes), ("Effectiveness Review", Model.EffectivenessReview) })
+                {
+                    <div style="margin-bottom:.75rem;"><div class="k" style="text-transform:uppercase;font-size:.72rem;color:var(--gray-400);">@label</div><p style="color:var(--gray-700);margin:.2rem 0;">@(string.IsNullOrWhiteSpace(val) ? "—" : val)</p></div>
+                }
+            </div></div>
+        </div>
+
+        @if (Model.Findings.Any())
+        {
+            <div class="card"><div class="card-head"><span class="t"><i class="fas fa-magnifying-glass"></i> Linked Audit Findings</span></div>
+            <div class="card-body" style="padding:0;">
+                <table class="tbl"><thead><tr><th>Ref</th><th>Type</th><th>Clause</th></tr></thead><tbody>
+                    @foreach (var f in Model.Findings)
+                    { <tr><td><a asp-controller="IsoAudits" asp-action="FindingDetails" asp-route-id="@f.Id"><span class="docnum">@f.Reference</span></a></td><td>@f.Type</td><td class="meta">@(f.ClauseReference ?? "—")</td></tr> }
+                </tbody></table>
+            </div></div>
+        }
+    </div>
+</div>

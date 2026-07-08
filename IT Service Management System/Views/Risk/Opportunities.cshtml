@@ -1,0 +1,46 @@
+@using IT_Service_Management_System.Models.Ims
+@model List<Opportunity>
+@{
+    ViewData["Title"] = "Opportunities Register";
+    var canEdit = (bool)(ViewBag.CanEdit ?? false);
+}
+<partial name="_ImsStyles" />
+<div class="ims"><div class="page-container">
+    <div class="page-header"><div class="head-row">
+        <div><h1 class="page-title"><i class="fas fa-arrow-trend-up"></i> Opportunities Register</h1><p class="page-sub">ISO 9001/27001 clause 6.1 — opportunities for improvement</p></div>
+        <div class="head-actions">
+            <a class="btn-ghost-ims" asp-action="Index"><i class="fas fa-gauge-high"></i> Risks</a>
+            @if (canEdit) { <a class="btn-primary-ims" asp-action="CreateOpportunity"><i class="fas fa-plus"></i> New Opportunity</a> }
+        </div>
+    </div></div>
+
+    <div class="stats">
+        <div class="stat"><div class="ic blue"><i class="fas fa-list"></i></div><div><h3>@ViewBag.Total</h3><p>Total</p></div></div>
+        <div class="stat"><div class="ic amber"><i class="fas fa-folder-open"></i></div><div><h3>@ViewBag.Open</h3><p>Active</p></div></div>
+        <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@ViewBag.Realised</h3><p>Realised</p></div></div>
+    </div>
+
+    <div class="card"><div class="card-body" style="padding:0;">
+        @if (Model.Any())
+        {
+            <table class="tbl">
+                <thead><tr><th>Ref</th><th>Title</th><th>Score</th><th>Owner</th><th>Target</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var o in Model)
+                    {
+                        <tr>
+                            <td><span class="docnum">@o.Reference</span></td>
+                            <td>@o.Title</td>
+                            <td><strong>@o.Score</strong></td>
+                            <td class="meta">@(o.Owner?.FullName ?? "—")</td>
+                            <td class="meta">@(o.TargetDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                            <td class="meta">@o.Status</td>
+                            <td>@if (canEdit) { <a class="act edit" asp-action="EditOpportunity" asp-route-id="@o.Id"><i class="fas fa-pen"></i></a> }</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else { <div class="empty"><i class="fas fa-arrow-trend-up"></i><h3>No opportunities recorded</h3></div> }
+    </div></div>
+</div></div>

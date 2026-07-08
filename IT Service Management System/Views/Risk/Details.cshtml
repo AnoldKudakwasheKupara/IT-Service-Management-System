@@ -1,0 +1,47 @@
+@using IT_Service_Management_System.Models.Ims
+@model Risk
+@{
+    ViewData["Title"] = Model.Reference;
+    var canEdit = (bool)(ViewBag.CanEdit ?? false);
+}
+<partial name="_ImsStyles" />
+<div class="ims"><div class="page-container">
+    <div class="page-header"><div class="head-row">
+        <div style="display:flex;gap:1rem;align-items:center;">
+            <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+            <div>
+                <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Title</h1>
+                <p class="page-sub"><span class="badge-ims @RiskScoring.CssClass(Model.Band)">@Model.Band · score @Model.Score</span> <span class="meta">· @Model.Category · @Model.Status</span></p>
+            </div>
+        </div>
+        <div class="head-actions">
+            @if (canEdit)
+            {
+                <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
+                <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this risk?');">@Html.AntiForgeryToken()<button class="btn-danger-ims" type="submit"><i class="fas fa-trash"></i></button></form>
+            }
+        </div>
+    </div></div>
+
+    <div class="form-grid" style="align-items:start;">
+        <div class="card"><div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Assessment</span></div><div class="card-body">
+            <div class="dl">
+                <div><div class="k">Likelihood</div><div class="v">@Model.Likelihood / 5</div></div>
+                <div><div class="k">Impact</div><div class="v">@Model.Impact / 5</div></div>
+                <div><div class="k">Inherent Score</div><div class="v"><span class="badge-ims @RiskScoring.CssClass(Model.Band)">@Model.Score · @Model.Band</span></div></div>
+                <div><div class="k">Residual Score</div><div class="v">@(Model.ResidualScore.HasValue ? $"{Model.ResidualScore} · {Model.ResidualBand}" : "—")</div></div>
+                <div><div class="k">Treatment</div><div class="v">@Model.Treatment</div></div>
+                <div><div class="k">Owner</div><div class="v">@(Model.Owner?.FullName ?? "—")</div></div>
+                <div><div class="k">Department</div><div class="v">@(Model.Department?.Name ?? "—")</div></div>
+                <div><div class="k">Related Asset</div><div class="v">@(Model.Asset?.ItemName ?? "—")</div></div>
+                <div><div class="k">Review Date</div><div class="v @(Model.IsReviewDue ? "overdue" : "")">@(Model.ReviewDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
+            </div>
+        </div></div>
+        <div class="card"><div class="card-head"><span class="t"><i class="fas fa-clipboard-list"></i> Threat, Vulnerability &amp; Treatment</span></div><div class="card-body">
+            @foreach (var (label, val) in new[] { ("Description", Model.Description), ("Threat", Model.Threat), ("Vulnerability", Model.Vulnerability), ("Treatment Plan", Model.TreatmentPlan) })
+            {
+                <div style="margin-bottom:.75rem;"><div class="k" style="text-transform:uppercase;font-size:.72rem;color:var(--gray-400);">@label</div><p style="color:var(--gray-700);margin:.2rem 0;">@(string.IsNullOrWhiteSpace(val) ? "—" : val)</p></div>
+            }
+        </div></div>
+    </div>
+</div></div>

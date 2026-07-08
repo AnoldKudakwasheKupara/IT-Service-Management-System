@@ -1,0 +1,135 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model NonConformance
+@{
+    ViewData["Title"] = Model.Reference;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    var canClose = (bool)(ViewBag.CanClose ?? false);
+
+    var sevClass = Model.Severity switch
+    {
+        NcSeverity.Minor => "b-low",
+        NcSeverity.Major => "b-high",
+        NcSeverity.Critical => "b-critical",
+        _ => "b-medium"
+    };
+    var statusClass = Model.Status switch
+    {
+        NcStatus.Closed => "b-closed",
+        NcStatus.Open => "b-open",
+        _ => "b-medium"
+    };
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Title</h1>
+                        <p class="page-sub">
+                            <span class="badge-ims @statusClass">@Model.Status</span>
+                            <span class="badge-ims @sevClass">@Model.Severity</span>
+                            <span class="meta">· <i class="fas fa-bug"></i> @Model.Source · @IsoStandards.Label(Model.Standard)</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    @if (canManage)
+                    {
+                        <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
+                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this non-conformance?');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-danger-ims" type="submit"><i class="fas fa-trash"></i> Delete</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="form-grid" style="align-items:start;">
+            @* ── Metadata ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
+                <div class="card-body">
+                    <div class="dl">
+                        <div><div class="k">Severity</div><div class="v"><span class="badge-ims @sevClass">@Model.Severity</span></div></div>
+                        <div><div class="k">Status</div><div class="v"><span class="badge-ims @statusClass">@Model.Status</span></div></div>
+                        <div><div class="k">Source</div><div class="v">@Model.Source</div></div>
+                        <div><div class="k">ISO Standard</div><div class="v">@IsoStandards.Label(Model.Standard)</div></div>
+                        <div><div class="k">Department</div><div class="v">@(Model.Department?.Name ?? "—")</div></div>
+                        <div><div class="k">Raised By</div><div class="v">@(Model.RaisedBy?.FullName ?? "—")</div></div>
+                        <div><div class="k">Assigned To</div><div class="v">@(Model.AssignedTo?.FullName ?? "—")</div></div>
+                        <div><div class="k">Detected Date</div><div class="v">@Model.DetectedDate.ToString("dd MMM yyyy")</div></div>
+                        <div><div class="k">Created</div><div class="v">@Model.CreatedAt.ToString("dd MMM yyyy")</div></div>
+                        <div><div class="k">Closed</div><div class="v @(Model.Status == NcStatus.Closed ? "" : "")">@(Model.ClosedAt?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                    </div>
+                </div>
+            </div>
+
+            @* ── Narrative ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-align-left"></i> Non-Conformity</span></div>
+                <div class="card-body">
+                    <div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Description</div>
+                    <p style="color:var(--gray-700);margin:.25rem 0 1rem;white-space:pre-wrap;">@Model.Description</p>
+
+                    <div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Root Cause</div>
+                    <p style="color:var(--gray-700);margin:.25rem 0 1rem;white-space:pre-wrap;">@(string.IsNullOrWhiteSpace(Model.RootCause) ? "—" : Model.RootCause)</p>
+
+                    <div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Evidence</div>
+                    <p style="color:var(--gray-700);margin:.25rem 0 0;white-space:pre-wrap;">@(string.IsNullOrWhiteSpace(Model.Evidence) ? "—" : Model.Evidence)</p>
+                </div>
+            </div>
+        </div>
+
+        @* ── Close action ── *@
+        @if (canClose && Model.Status != NcStatus.Closed)
+        {
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-circle-check"></i> Close Non-Conformance</span></div>
+                <div class="card-body">
+                    <form method="post" asp-action="Close" asp-route-id="@Model.Id">
+                        @Html.AntiForgeryToken()
+                        <label class="lbl"><i class="fas fa-magnifying-glass-chart"></i> Root Cause</label>
+                        <textarea class="inp" name="rootCause" rows="3" style="margin:.4rem 0;" placeholder="Confirm the root cause before closing">@Model.RootCause</textarea>
+                        <button class="btn-success-ims" type="submit"><i class="fas fa-check"></i> Close Non-Conformance</button>
+                        <span class="hint">Closing sets the status to Closed and stamps the closure date.</span>
+                    </form>
+                </div>
+            </div>
+        }
+
+        @* ── Linked CAPAs ── *@
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-screwdriver-wrench"></i> Linked CAPAs</span></div>
+            <div class="card-body" style="padding:0;">
+                @if (Model.Capas.Any())
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Reference</th><th>Title</th><th>Type</th><th>Status</th></tr></thead>
+                        <tbody>
+                            @foreach (var c in Model.Capas.OrderByDescending(c => c.Id))
+                            {
+                                <tr>
+                                    <td><span class="docnum">@c.Reference</span></td>
+                                    <td>@c.Title</td>
+                                    <td class="meta">@c.Type</td>
+                                    <td><span class="badge-ims @(c.IsClosed ? "b-closed" : "b-open")">@c.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="empty" style="padding:1.5rem;"><i class="fas fa-screwdriver-wrench"></i><h3>No CAPAs linked</h3></div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,301 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@using IT_Service_Management_System.Services.Ims
+@model IsoDocument
+@{
+    ViewData["Title"] = Model.DocumentNumber;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    var canApprove = (bool)(ViewBag.CanApprove ?? false);
+    int ackTotal = ViewBag.AckTotal ?? 0;
+    int ackDone = ViewBag.AckDone ?? 0;
+    int ackPct = ackTotal == 0 ? 0 : (int)Math.Round(ackDone * 100.0 / ackTotal);
+    var departments = ViewBag.Departments as List<Department> ?? new();
+    var users = ViewBag.Users as List<User> ?? new();
+
+    var steps = new[] { "Draft", "Department Review", "Quality Review", "Management Approval", "Published", "Archived" };
+    int current = Model.Status switch
+    {
+        DocumentStatus.Draft or DocumentStatus.Rejected or DocumentStatus.Revision => 0,
+        DocumentStatus.DepartmentReview => 1,
+        DocumentStatus.QualityReview => 2,
+        DocumentStatus.ManagementApproval => 3,
+        DocumentStatus.Published or DocumentStatus.UnderReview => 4,
+        _ => 5
+    };
+    var pendingStage = IsoDocumentService.StageForCurrent(Model);
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Index" asp-route-type="@Model.Type"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.DocumentNumber</span> &nbsp;@Model.Title</h1>
+                        <p class="page-sub">
+                            <span class="badge-ims @ImsBadges.DocStatusClass(Model.Status)">@ImsBadges.DocStatusLabel(Model.Status)</span>
+                            <span class="badge-ims @ImsBadges.ClassificationClass(Model.Classification)">@Model.Classification</span>
+                            <span class="meta">· @Model.Type · v@Model.CurrentVersion</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    @if (Model.CurrentVersionId != null)
+                    {
+                        <a class="btn-outline-ims" asp-action="Download" asp-route-versionId="@Model.CurrentVersionId"><i class="fas fa-download"></i> Current File</a>
+                    }
+                    @if (canManage && Model.Status != DocumentStatus.Archived)
+                    {
+                        <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
+                    }
+                    <a class="btn-ghost-ims" asp-action="AckReport" asp-route-id="@Model.Id"><i class="fas fa-chart-pie"></i> Ack Report</a>
+                </div>
+            </div>
+        </div>
+
+        @* ── Workflow stepper ── *@
+        <div class="card"><div class="card-body">
+            <div class="wf-steps">
+                @for (int i = 0; i < steps.Length; i++)
+                {
+                    var cls = i < current ? "done" : (i == current ? "active" : "");
+                    <div class="wf-step @cls"><span class="n"><i class="fas @(i < current ? "fa-check" : "fa-circle")"></i></span>@steps[i]</div>
+                }
+            </div>
+        </div></div>
+
+        @* ── Action bar ── *@
+        @if (canManage || canApprove)
+        {
+            <div class="card"><div class="card-head"><span class="t"><i class="fas fa-bolt"></i> Workflow Actions</span></div>
+            <div class="card-body">
+                <div style="display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;">
+                    @if (canManage && Model.Status is DocumentStatus.Draft or DocumentStatus.Revision or DocumentStatus.Rejected)
+                    {
+                        <form method="post" asp-action="Submit" asp-route-id="@Model.Id">@Html.AntiForgeryToken()
+                            <button class="btn-primary-ims" type="submit"><i class="fas fa-paper-plane"></i> Submit for Review</button>
+                        </form>
+                    }
+                    @if (Model.Status == DocumentStatus.Published)
+                    {
+                        <form method="post" asp-action="Revise" asp-route-id="@Model.Id">@Html.AntiForgeryToken()
+                            <button class="btn-outline-ims" type="submit"><i class="fas fa-code-branch"></i> Open for Revision</button>
+                        </form>
+                        <form method="post" asp-action="Archive" asp-route-id="@Model.Id" onsubmit="return confirm('Archive this document?');">@Html.AntiForgeryToken()
+                            <button class="btn-danger-ims" type="submit"><i class="fas fa-box-archive"></i> Archive</button>
+                        </form>
+                    }
+                </div>
+
+                @if (pendingStage != null && canApprove)
+                {
+                    <form method="post" asp-action="Decision" asp-route-id="@Model.Id" style="margin-top:1rem;border-top:1px solid var(--gray-200);padding-top:1rem;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="stage" value="@pendingStage" />
+                        <label class="lbl"><i class="fas fa-gavel"></i> @ImsBadges.DocStatusLabel(Model.Status) — record decision</label>
+                        <textarea class="inp" name="comments" rows="2" placeholder="Reviewer comments (optional)" style="margin:.4rem 0;"></textarea>
+                        <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
+                            <button class="btn-success-ims" type="submit" name="decision" value="Approved"><i class="fas fa-check"></i> Approve</button>
+                            <button class="btn-ghost-ims" type="submit" name="decision" value="ReturnedForChanges"><i class="fas fa-rotate-left"></i> Return for Changes</button>
+                            <button class="btn-danger-ims" type="submit" name="decision" value="Rejected"><i class="fas fa-xmark"></i> Reject</button>
+                        </div>
+                        <span class="hint">Approving the Management Approval stage publishes the document and distributes it for acknowledgement.</span>
+                    </form>
+                }
+            </div></div>
+        }
+
+        <div class="form-grid" style="align-items:start;">
+            @* ── Metadata ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
+                <div class="card-body">
+                    <div class="dl">
+                        <div><div class="k">Category</div><div class="v">@(Model.Category?.Name ?? "—")</div></div>
+                        <div><div class="k">Department</div><div class="v">@(Model.Department?.Name ?? "—")</div></div>
+                        <div><div class="k">Owner</div><div class="v">@(Model.Owner?.FullName ?? "—")</div></div>
+                        <div><div class="k">Approver</div><div class="v">@(Model.Approver?.FullName ?? "—")</div></div>
+                        <div><div class="k">ISO Standard</div><div class="v">@IsoStandards.Label(Model.Standard)</div></div>
+                        <div><div class="k">ISO Clause</div><div class="v">@(Model.IsoClause ?? "—")</div></div>
+                        <div><div class="k">Issue Date</div><div class="v">@(Model.IssueDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                        <div><div class="k">Effective Date</div><div class="v">@(Model.EffectiveDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                        <div><div class="k">Review Frequency</div><div class="v">@Model.ReviewFrequency</div></div>
+                        <div><div class="k">Next Review</div><div class="v @(Model.IsReviewDue ? "overdue" : "")">@(Model.ReviewDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                        <div><div class="k">Expiry</div><div class="v @(Model.IsExpired ? "overdue" : "")">@(Model.ExpiryDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                        <div><div class="k">Created</div><div class="v">@Model.CreatedAt.ToString("dd MMM yyyy")</div></div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Summary))
+                    {
+                        <div style="margin-top:1rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Summary</div><p style="color:var(--gray-700);margin:.25rem 0 0;">@Model.Summary</p></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Keywords))
+                    {
+                        <div style="margin-top:.75rem;"><span class="meta"><i class="fas fa-tags"></i> @Model.Keywords</span></div>
+                    }
+                </div>
+            </div>
+
+            @* ── Acknowledgement progress ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-user-check"></i> Acknowledgement</span></div>
+                <div class="card-body">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;"><span class="meta">Completion</span><strong style="font-size:1.5rem;">@ackPct%</strong></div>
+                    <div class="progress-ims green" style="margin:.5rem 0;"><span style="width:@ackPct%"></span></div>
+                    <div class="hint">@ackDone of @ackTotal acknowledged · @(ackTotal - ackDone) pending</div>
+
+                    @if (canManage)
+                    {
+                        <form method="post" asp-action="AddDistribution" asp-route-id="@Model.Id" style="margin-top:1rem;border-top:1px solid var(--gray-200);padding-top:1rem;">
+                            @Html.AntiForgeryToken()
+                            <label class="lbl"><i class="fas fa-share-nodes"></i> Add distribution target</label>
+                            <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.4rem;">
+                                <select class="inp" name="targetType" style="width:auto;" onchange="imsDistToggle(this.value)">
+                                    <option value="AllStaff">All Staff</option>
+                                    <option value="Department">Department</option>
+                                    <option value="Role">Role</option>
+                                    <option value="User">User</option>
+                                </select>
+                                <select class="inp" name="departmentId" id="dist-dept" style="width:auto;display:none;">
+                                    @foreach (var d in departments) { <option value="@d.Id">@d.Name</option> }
+                                </select>
+                                <select class="inp" name="userId" id="dist-user" style="width:auto;display:none;">
+                                    @foreach (var u in users) { <option value="@u.Id">@u.FullName</option> }
+                                </select>
+                                <input class="inp" name="roleName" id="dist-role" style="width:auto;display:none;" placeholder="Role e.g. Employee" />
+                                <button class="btn-ghost-ims" type="submit"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </form>
+                        @if (Model.Distributions.Any())
+                        {
+                            <div style="margin-top:.75rem;display:flex;flex-direction:column;gap:.35rem;">
+                                @foreach (var dist in Model.Distributions)
+                                {
+                                    var label = dist.TargetType switch {
+                                        DistributionTargetType.AllStaff => "All Staff",
+                                        DistributionTargetType.Department => "Dept: " + (dist.Department?.Name ?? "?"),
+                                        DistributionTargetType.Role => "Role: " + dist.RoleName,
+                                        _ => "User: " + (dist.User?.FullName ?? "?")
+                                    };
+                                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                                        <span class="badge-ims b-internal">@label</span>
+                                        <form method="post" asp-action="RemoveDistribution" asp-route-id="@Model.Id"><input type="hidden" name="distributionId" value="@dist.Id" />@Html.AntiForgeryToken()<button class="act del" type="submit"><i class="fas fa-xmark"></i></button></form>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── Version history ── *@
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-code-branch"></i> Version History</span></div>
+            <div class="card-body" style="padding:0;">
+                <table class="tbl">
+                    <thead><tr><th>Version</th><th>Notes</th><th>By</th><th>When</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var v in Model.Versions.OrderByDescending(v => v.Id))
+                        {
+                            <tr>
+                                <td><strong>v@v.VersionNumber</strong> @(v.IsCurrent ? "<span class=\"badge-ims b-published\">current</span>".ToString() : "")</td>
+                                <td class="meta">@(v.RevisionNotes ?? "—")</td>
+                                <td class="meta">@(v.CreatedBy?.FullName ?? "—")</td>
+                                <td class="meta">@v.CreatedAt.ToString("dd MMM yyyy HH:mm")</td>
+                                <td><span class="badge-ims @ImsBadges.DocStatusClass(v.Status)">@ImsBadges.DocStatusLabel(v.Status)</span></td>
+                                <td>
+                                    <div class="act-btns">
+                                        @if (v.HasFile) { <a class="act view" asp-action="Download" asp-route-versionId="@v.Id" title="Download"><i class="fas fa-download"></i></a> }
+                                        @if (canManage && !v.IsCurrent)
+                                        {
+                                            <form method="post" asp-action="RestoreVersion" asp-route-id="@Model.Id" onsubmit="return confirm('Restore this version?');"><input type="hidden" name="versionId" value="@v.Id" />@Html.AntiForgeryToken()<button class="act edit" title="Restore" type="submit"><i class="fas fa-clock-rotate-left"></i></button></form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                @if (canManage && Model.Status != DocumentStatus.Archived)
+                {
+                    <form method="post" asp-action="AddVersion" asp-route-id="@Model.Id" enctype="multipart/form-data" style="padding:1rem;border-top:1px solid var(--gray-200);display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+                        @Html.AntiForgeryToken()
+                        <input class="inp" type="file" name="file" style="width:auto;" />
+                        <input class="inp" type="text" name="notes" placeholder="Revision notes" style="flex:1;min-width:200px;" />
+                        <label class="meta"><input type="checkbox" name="major" value="true" /> Major version</label>
+                        <button class="btn-ghost-ims" type="submit"><i class="fas fa-plus"></i> Add Version</button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        @* ── Approval history & Reviews ── *@
+        <div class="form-grid" style="align-items:start;">
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-stamp"></i> Approval History</span></div>
+                <div class="card-body" style="padding:0;">
+                    @if (Model.Approvals.Any())
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Stage</th><th>Decision</th><th>By</th><th>When</th></tr></thead>
+                            <tbody>
+                                @foreach (var a in Model.Approvals.OrderBy(a => a.Sequence).ThenBy(a => a.Id))
+                                {
+                                    <tr>
+                                        <td>@a.Stage</td>
+                                        <td><span class="badge-ims @(a.Decision == ApprovalDecision.Approved ? "b-published" : a.Decision == ApprovalDecision.Pending ? "b-draft" : "b-rejected")">@a.Decision</span></td>
+                                        <td class="meta">@(a.Approver?.FullName ?? "—")</td>
+                                        <td class="meta">@(a.DecisionAt?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else { <div class="empty"><i class="fas fa-stamp"></i><h3>Not yet in workflow</h3></div> }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-calendar-check"></i> Reviews</span></div>
+                <div class="card-body" style="padding:0;">
+                    @if (Model.Reviews.Any())
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Scheduled</th><th>Outcome</th><th>By</th></tr></thead>
+                            <tbody>
+                                @foreach (var r in Model.Reviews.OrderByDescending(r => r.ScheduledDate))
+                                {
+                                    <tr>
+                                        <td class="@(r.IsOverdue ? "overdue" : "")">@r.ScheduledDate.ToString("dd MMM yyyy")</td>
+                                        <td>@r.Outcome</td>
+                                        <td class="meta">@(r.Reviewer?.FullName ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else { <div class="empty" style="padding:1.5rem;"><i class="fas fa-calendar"></i><h3>No reviews</h3></div> }
+                    @if (canManage)
+                    {
+                        <form method="post" asp-action="ScheduleReview" asp-route-id="@Model.Id" style="padding:1rem;border-top:1px solid var(--gray-200);display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                            @Html.AntiForgeryToken()
+                            <input class="inp" type="date" name="scheduledDate" required style="width:auto;" />
+                            <button class="btn-ghost-ims" type="submit"><i class="fas fa-calendar-plus"></i> Schedule Review</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function imsDistToggle(v) {
+        document.getElementById('dist-dept').style.display = v === 'Department' ? '' : 'none';
+        document.getElementById('dist-user').style.display = v === 'User' ? '' : 'none';
+        document.getElementById('dist-role').style.display = v === 'Role' ? '' : 'none';
+    }
+</script>

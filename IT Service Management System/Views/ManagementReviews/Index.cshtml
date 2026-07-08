@@ -1,0 +1,110 @@
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model List<ManagementReview>
+@{
+    ViewData["Title"] = "Management Review";
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    string StatusClass(ReviewMeetingStatus s) => s switch
+    {
+        ReviewMeetingStatus.Held or ReviewMeetingStatus.Closed => "b-published",
+        ReviewMeetingStatus.Cancelled => "b-rejected",
+        ReviewMeetingStatus.Scheduled => "b-medium",
+        _ => "b-draft"
+    };
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-people-group"></i> Management Review</h1>
+                    <p class="page-sub">Top-management review of the management system — ISO 9001/27001 clause 9.3</p>
+                </div>
+                <div class="head-actions">
+                    @if (canManage)
+                    {
+                        <a class="btn-primary-ims" asp-action="Create"><i class="fas fa-plus"></i> New Review</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="card" style="border-color:#a7f3d0;background:#ecfdf5;"><div class="card-body" style="color:#1e6b45;"><i class="fas fa-circle-check"></i> @TempData["Success"]</div></div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="card" style="border-color:#fecaca;background:#fef2f2;"><div class="card-body" style="color:#b3261e;"><i class="fas fa-triangle-exclamation"></i> @TempData["Error"]</div></div>
+        }
+
+        <div class="stats">
+            <div class="stat"><div class="ic blue"><i class="fas fa-people-group"></i></div><div><h3>@ViewBag.Total</h3><p>Total Reviews</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-calendar-day"></i></div><div><h3>@ViewBag.Planned</h3><p>Planned / Scheduled</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@ViewBag.Held</h3><p>Held / Closed</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-list-check"></i></div><div><h3>@ViewBag.OpenActions</h3><p>Open Actions</p></div></div>
+        </div>
+
+        <form method="get" class="toolbar">
+            <input class="inp" type="text" name="q" value="@ViewBag.Query" placeholder="Search title or location…" />
+            <select class="inp" name="status" onchange="this.form.submit()">
+                <option value="">All statuses</option>
+                @foreach (ReviewMeetingStatus s in Enum.GetValues(typeof(ReviewMeetingStatus)))
+                {
+                    <option value="@s" selected="@(ViewBag.Status as ReviewMeetingStatus? == s)">@s</option>
+                }
+            </select>
+            <button class="btn-ghost-ims" type="submit"><i class="fas fa-magnifying-glass"></i> Filter</button>
+        </form>
+
+        <div class="card">
+            <div class="card-body" style="padding:0;">
+                @if (Model.Any())
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr><th>Reference</th><th>Title</th><th>Standard</th><th>Meeting Date</th><th>Chair</th><th>Actions</th><th>Status</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model)
+                            {
+                                var openActs = r.Actions.Count(a => a.Status != ReviewActionStatus.Completed && a.Status != ReviewActionStatus.Cancelled);
+                                <tr>
+                                    <td><span class="docnum">@r.Reference</span></td>
+                                    <td><a asp-action="Details" asp-route-id="@r.Id">@r.Title</a></td>
+                                    <td class="meta">@IsoStandards.Label(r.Standard)</td>
+                                    <td class="meta">@r.MeetingDate.ToString("dd MMM yyyy")</td>
+                                    <td class="meta">@(r.Chair?.FullName ?? "—")</td>
+                                    <td>@(openActs > 0 ? $"{openActs} open" : "—")</td>
+                                    <td><span class="badge-ims @StatusClass(r.Status)">@r.Status</span></td>
+                                    <td>
+                                        <div class="act-btns">
+                                            <a class="act view" asp-action="Details" asp-route-id="@r.Id" title="Open"><i class="fas fa-eye"></i></a>
+                                            @if (canManage)
+                                            {
+                                                <a class="act edit" asp-action="Edit" asp-route-id="@r.Id" title="Edit"><i class="fas fa-pen"></i></a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="empty">
+                        <i class="fas fa-people-group"></i>
+                        <h3>No management reviews yet</h3>
+                        @if (canManage)
+                        {
+                            <a class="btn-primary-ims" asp-action="Create"><i class="fas fa-plus"></i> Schedule the first review</a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

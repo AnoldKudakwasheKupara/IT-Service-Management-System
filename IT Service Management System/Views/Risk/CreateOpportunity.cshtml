@@ -1,0 +1,16 @@
+@using IT_Service_Management_System.Models.Ims
+@model Opportunity
+@{ ViewData["Title"] = "New Opportunity"; }
+<partial name="_ImsStyles" />
+<div class="ims narrow"><div class="page-container">
+    <div class="page-header"><div class="head-row"><div style="display:flex;gap:1rem;align-items:center;">
+        <a class="btn-back" asp-action="Opportunities"><i class="fas fa-arrow-left"></i></a>
+        <div><h1 class="page-title"><i class="fas fa-arrow-trend-up"></i> New Opportunity</h1></div>
+    </div></div></div>
+    <form method="post" asp-action="CreateOpportunity">@Html.AntiForgeryToken()
+        <div class="card"><div class="card-body">
+            <partial name="_OppFields" model="Model" />
+            <div class="form-actions"><button class="btn-primary-ims" type="submit"><i class="fas fa-save"></i> Add Opportunity</button><a class="btn-ghost-ims" asp-action="Opportunities">Cancel</a></div>
+        </div></div>
+    </form>
+</div></div>

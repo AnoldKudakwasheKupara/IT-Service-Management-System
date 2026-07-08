@@ -1,0 +1,53 @@
+@using IT_Service_Management_System.Models.Ims
+@model List<Risk>
+@{
+    ViewData["Title"] = "Risk Assessment Matrix";
+    // cell[impact,likelihood] -> risks
+    var cells = new Dictionary<(int i, int l), List<Risk>>();
+    foreach (var r in Model)
+    {
+        var key = (Math.Clamp(r.Impact, 1, 5), Math.Clamp(r.Likelihood, 1, 5));
+        if (!cells.TryGetValue(key, out var lst)) cells[key] = lst = new();
+        lst.Add(r);
+    }
+    string Bg(RiskBand b) => b == RiskBand.Critical ? "#fdecea" : b == RiskBand.High ? "#fdf3e1" : b == RiskBand.Medium ? "#eff6ff" : "#f1f5f9";
+    string Fg(RiskBand b) => b == RiskBand.Critical ? "#b3261e" : b == RiskBand.High ? "#9a5b00" : b == RiskBand.Medium ? "#1d4ed8" : "#64748b";
+}
+<partial name="_ImsStyles" />
+<div class="ims"><div class="page-container">
+    <div class="page-header"><div class="head-row">
+        <div style="display:flex;gap:1rem;align-items:center;">
+            <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+            <div><h1 class="page-title"><i class="fas fa-fire"></i> Risk Assessment Matrix</h1><p class="page-sub">@Model.Count open risk(s) plotted by likelihood × impact</p></div>
+        </div>
+    </div></div>
+
+    <div class="card"><div class="card-body">
+        <div style="display:grid;grid-template-columns:auto repeat(5,1fr);gap:6px;align-items:stretch;">
+            <div></div>
+            @for (int l = 1; l <= 5; l++) { <div style="text-align:center;font-size:.75rem;font-weight:700;color:var(--gray-500);">Likelihood @l</div> }
+            @for (int i = 5; i >= 1; i--)
+            {
+                <div style="font-size:.75rem;font-weight:700;color:var(--gray-500);display:flex;align-items:center;justify-content:flex-end;padding-right:6px;">Impact @i</div>
+                @for (int l = 1; l <= 5; l++)
+                {
+                    var band = RiskScoring.BandFor(l * i);
+                    var list = cells.TryGetValue((i, l), out var v) ? v : new List<Risk>();
+                    <div style="min-height:70px;border-radius:8px;padding:.4rem;background:@Bg(band);color:@Fg(band);">
+                        <div style="font-weight:700;font-size:.7rem;opacity:.7;">@(l*i)</div>
+                        @foreach (var r in list)
+                        {
+                            <a asp-action="Details" asp-route-id="@r.Id" title="@r.Title" style="display:block;font-size:.72rem;color:inherit;text-decoration:none;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">• @r.Reference</a>
+                        }
+                    </div>
+                }
+            }
+        </div>
+        <div style="margin-top:1rem;display:flex;gap:1rem;flex-wrap:wrap;">
+            <span class="badge-ims b-low">Low (1–4)</span>
+            <span class="badge-ims b-medium">Medium (5–9)</span>
+            <span class="badge-ims b-high">High (10–15)</span>
+            <span class="badge-ims b-critical">Critical (16–25)</span>
+        </div>
+    </div></div>
+</div></div>

@@ -1,0 +1,33 @@
+@using IT_Service_Management_System.Models.Ims
+@model Capa
+@{
+    ViewData["Title"] = "New CAPA";
+    ViewData["IsEdit"] = false;
+}
+<partial name="_ImsStyles" />
+
+<div class="ims narrow">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-screwdriver-wrench"></i> New @Model.Type Action</h1>
+                        <p class="page-sub">Raise a corrective or preventive action</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <form method="post" asp-action="Create">
+            @Html.AntiForgeryToken()
+            <div class="card"><div class="card-body">
+                <partial name="_Fields" model="Model" />
+                <div class="form-actions">
+                    <button class="btn-primary-ims" type="submit"><i class="fas fa-save"></i> Raise CAPA</button>
+                    <a class="btn-ghost-ims" asp-action="Index">Cancel</a>
+                </div>
+            </div></div>
+        </form>
+    </div>
+</div>

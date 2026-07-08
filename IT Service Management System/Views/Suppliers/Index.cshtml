@@ -1,0 +1,110 @@
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model List<Supplier>
+@{
+    ViewData["Title"] = "Suppliers";
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    var status = ViewBag.Status as SupplierStatus?;
+
+    Func<SupplierStatus, string> statusClass = s => s switch
+    {
+        SupplierStatus.Approved => "b-published",
+        SupplierStatus.Prospective => "b-draft",
+        SupplierStatus.Conditional => "b-high",
+        SupplierStatus.Suspended => "b-critical",
+        _ => "b-archived"
+    };
+    Func<string, string> ratingClass = r => r switch
+    {
+        "Excellent" => "b-published",
+        "Good" => "b-low",
+        "Acceptable" => "b-medium",
+        _ => "b-critical"
+    };
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-truck-field"></i> Suppliers</h1>
+                    <p class="page-sub">Approved-supplier register &amp; performance evaluation — ISO 9001 clause 8.4</p>
+                </div>
+                <div class="head-actions">
+                    @if (canManage)
+                    {
+                        <a class="btn-primary-ims" asp-action="Create"><i class="fas fa-plus"></i> New Supplier</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat"><div class="ic blue"><i class="fas fa-truck-field"></i></div><div><h3>@ViewBag.Total</h3><p>Total Suppliers</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@ViewBag.Approved</h3><p>Approved</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-file-contract"></i></div><div><h3>@ViewBag.Expiring</h3><p>Contracts Expiring</p></div></div>
+            <div class="stat"><div class="ic purple"><i class="fas fa-star-half-stroke"></i></div><div><h3>@ViewBag.AvgScore</h3><p>Avg. Score</p></div></div>
+        </div>
+
+        <form method="get" class="toolbar">
+            <select class="inp" name="status" onchange="this.form.submit()">
+                <option value="">All statuses</option>
+                @foreach (SupplierStatus s in Enum.GetValues(typeof(SupplierStatus)))
+                {
+                    <option value="@s" selected="@(status == s)">@s</option>
+                }
+            </select>
+            <button class="btn-ghost-ims" type="submit"><i class="fas fa-magnifying-glass"></i> Filter</button>
+        </form>
+
+        <div class="card">
+            <div class="card-body" style="padding:0;">
+                @if (Model.Any())
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr><th>Reference</th><th>Name</th><th>Category</th><th>Status</th><th>Contract End</th><th>Latest Score</th><th>Rating</th><th></th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in Model)
+                            {
+                                var latest = s.Evaluations.OrderByDescending(e => e.EvaluationDate).ThenByDescending(e => e.Id).FirstOrDefault();
+                                <tr>
+                                    <td><span class="docnum">@s.Reference</span></td>
+                                    <td><a asp-action="Details" asp-route-id="@s.Id">@s.Name</a></td>
+                                    <td class="meta">@s.Category</td>
+                                    <td><span class="badge-ims @statusClass(s.Status)">@s.Status</span></td>
+                                    <td class="@(s.ContractEnd.HasValue && s.ContractEnd.Value.Date < DateTime.Now.Date ? "overdue" : "meta")">@(s.ContractEnd?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    <td>@(latest != null ? latest.OverallScore.ToString() : "—")</td>
+                                    <td>@(latest != null ? Html.Raw($"<span class=\"badge-ims {ratingClass(latest.Rating)}\">{latest.Rating}</span>") : Html.Raw("<span class=\"meta\">Not evaluated</span>"))</td>
+                                    <td>
+                                        <div class="act-btns">
+                                            <a class="act view" asp-action="Details" asp-route-id="@s.Id" title="Open"><i class="fas fa-eye"></i></a>
+                                            @if (canManage)
+                                            {
+                                                <a class="act edit" asp-action="Edit" asp-route-id="@s.Id" title="Edit"><i class="fas fa-pen"></i></a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="empty">
+                        <i class="fas fa-truck-field"></i>
+                        <h3>No suppliers found</h3>
+                        @if (canManage)
+                        {
+                            <a class="btn-primary-ims" asp-action="Create"><i class="fas fa-plus"></i> Register the first one</a>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

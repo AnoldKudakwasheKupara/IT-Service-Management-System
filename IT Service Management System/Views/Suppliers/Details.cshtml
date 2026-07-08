@@ -1,0 +1,208 @@
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model Supplier
+@{
+    ViewData["Title"] = Model.Reference;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    var latest = ViewBag.Latest as SupplierEvaluation;
+
+    Func<SupplierStatus, string> statusClass = s => s switch
+    {
+        SupplierStatus.Approved => "b-published",
+        SupplierStatus.Prospective => "b-draft",
+        SupplierStatus.Conditional => "b-high",
+        SupplierStatus.Suspended => "b-critical",
+        _ => "b-archived"
+    };
+    Func<string, string> ratingClass = r => r switch
+    {
+        "Excellent" => "b-published",
+        "Good" => "b-low",
+        "Acceptable" => "b-medium",
+        _ => "b-critical"
+    };
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Name</h1>
+                        <p class="page-sub">
+                            <span class="badge-ims @statusClass(Model.Status)">@Model.Status</span>
+                            <span class="meta">· @Model.Category</span>
+                            @if (latest != null)
+                            {
+                                <span class="badge-ims @ratingClass(latest.Rating)">@latest.Rating · @latest.OverallScore</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    @if (canManage)
+                    {
+                        <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
+                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this supplier and all its evaluations? This cannot be undone.');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-danger-ims" type="submit"><i class="fas fa-trash"></i> Delete</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="form-grid" style="align-items:start;">
+            @* ── Supplier metadata ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Supplier Details</span></div>
+                <div class="card-body">
+                    <div class="dl">
+                        <div><div class="k">Category</div><div class="v">@Model.Category</div></div>
+                        <div><div class="k">Status</div><div class="v"><span class="badge-ims @statusClass(Model.Status)">@Model.Status</span></div></div>
+                        <div><div class="k">Contact</div><div class="v">@(Model.ContactName ?? "—")</div></div>
+                        <div><div class="k">Email</div><div class="v">@(Model.Email ?? "—")</div></div>
+                        <div><div class="k">Phone</div><div class="v">@(Model.Phone ?? "—")</div></div>
+                        <div><div class="k">Address</div><div class="v">@(Model.Address ?? "—")</div></div>
+                        <div><div class="k">Approved Date</div><div class="v">@(Model.ApprovedDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                        <div><div class="k">Contract Start</div><div class="v">@(Model.ContractStart?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                        <div><div class="k">Contract End</div><div class="v @(Model.ContractEnd.HasValue && Model.ContractEnd.Value.Date < DateTime.Now.Date ? "overdue" : "")">@(Model.ContractEnd?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                        <div><div class="k">Certificate</div><div class="v">@(Model.CertificateName ?? "—")</div></div>
+                        <div><div class="k">Certificate Expiry</div><div class="v @(Model.CertificateExpiringSoon ? "overdue" : "")">@(Model.CertificateExpiry?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                        <div><div class="k">Registered</div><div class="v">@Model.CreatedAt.ToString("dd MMM yyyy")</div></div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.ProductsServices))
+                    {
+                        <div style="margin-top:1rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Products / Services</div><p style="color:var(--gray-700);margin:.25rem 0 0;">@Model.ProductsServices</p></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Notes))
+                    {
+                        <div style="margin-top:.75rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Notes</div><p style="color:var(--gray-700);margin:.25rem 0 0;">@Model.Notes</p></div>
+                    }
+                </div>
+            </div>
+
+            @* ── Latest evaluation summary ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-gauge-high"></i> Latest Evaluation</span></div>
+                <div class="card-body">
+                    @if (latest != null)
+                    {
+                        <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                            <span class="meta">Overall score</span>
+                            <strong style="font-size:1.75rem;">@latest.OverallScore</strong>
+                        </div>
+                        var pct = latest.OverallScore;
+                        var bar = pct >= 70 ? "green" : pct >= 50 ? "amber" : "";
+                        <div class="progress-ims @bar" style="margin:.5rem 0;"><span style="width:@pct%"></span></div>
+                        <div class="hint"><span class="badge-ims @ratingClass(latest.Rating)">@latest.Rating</span> · @latest.Period · @latest.EvaluationDate.ToString("dd MMM yyyy")</div>
+                        <div class="dl" style="margin-top:1rem;grid-template-columns:1fr 1fr;">
+                            <div><div class="k">Quality</div><div class="v">@latest.QualityScore</div></div>
+                            <div><div class="k">Delivery</div><div class="v">@latest.DeliveryScore</div></div>
+                            <div><div class="k">Pricing</div><div class="v">@latest.PricingScore</div></div>
+                            <div><div class="k">Support</div><div class="v">@latest.SupportScore</div></div>
+                            <div><div class="k">Compliance</div><div class="v">@latest.ComplianceScore</div></div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty" style="padding:2rem 1rem;">
+                            <i class="fas fa-star-half-stroke"></i>
+                            <h3>Not yet evaluated</h3>
+                            <p class="meta">Record the first performance evaluation below.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── Evaluation history ── *@
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-clipboard-check"></i> Evaluation History</span></div>
+            <div class="card-body" style="padding:0;">
+                @if (Model.Evaluations.Any())
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr><th>Date</th><th>Period</th><th>Quality</th><th>Delivery</th><th>Pricing</th><th>Support</th><th>Compliance</th><th>Overall</th><th>Rating</th><th>By</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var e in Model.Evaluations.OrderByDescending(e => e.EvaluationDate).ThenByDescending(e => e.Id))
+                            {
+                                <tr>
+                                    <td>@e.EvaluationDate.ToString("dd MMM yyyy")</td>
+                                    <td class="meta">@e.Period</td>
+                                    <td>@e.QualityScore</td>
+                                    <td>@e.DeliveryScore</td>
+                                    <td>@e.PricingScore</td>
+                                    <td>@e.SupportScore</td>
+                                    <td>@e.ComplianceScore</td>
+                                    <td><strong>@e.OverallScore</strong></td>
+                                    <td><span class="badge-ims @ratingClass(e.Rating)">@e.Rating</span></td>
+                                    <td class="meta">@(e.EvaluatedBy?.FullName ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="empty" style="padding:2rem 1rem;"><i class="fas fa-clipboard-list"></i><h3>No evaluations recorded</h3></div>
+                }
+            </div>
+        </div>
+
+        @* ── Add evaluation ── *@
+        @if (canManage)
+        {
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-plus"></i> Add Evaluation</span></div>
+                <div class="card-body">
+                    <form method="post" asp-action="AddEvaluation" asp-route-id="@Model.Id">
+                        @Html.AntiForgeryToken()
+                        <div class="form-grid">
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-calendar-day"></i> Evaluation Date</label>
+                                <input class="inp" type="date" name="EvaluationDate" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-repeat"></i> Period</label>
+                                <select class="inp" name="Period" asp-items="Html.GetEnumSelectList<EvaluationPeriod>()"></select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-award"></i> Quality (0–100)</label>
+                                <input class="inp" type="number" name="QualityScore" min="0" max="100" value="0" required />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-truck-fast"></i> Delivery (0–100)</label>
+                                <input class="inp" type="number" name="DeliveryScore" min="0" max="100" value="0" required />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-tag"></i> Pricing (0–100)</label>
+                                <input class="inp" type="number" name="PricingScore" min="0" max="100" value="0" required />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-headset"></i> Support (0–100)</label>
+                                <input class="inp" type="number" name="SupportScore" min="0" max="100" value="0" required />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-shield-halved"></i> Compliance (0–100)</label>
+                                <input class="inp" type="number" name="ComplianceScore" min="0" max="100" value="0" required />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-comment"></i> Comments</label>
+                                <textarea class="inp" name="Comments" rows="3" placeholder="Evaluation notes and evidence"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn-primary-ims" type="submit"><i class="fas fa-save"></i> Record Evaluation</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+</div>

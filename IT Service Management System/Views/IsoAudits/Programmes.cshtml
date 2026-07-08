@@ -1,0 +1,29 @@
+@using IT_Service_Management_System.Models.Ims
+@model List<AuditProgramme>
+@{
+    ViewData["Title"] = "Audit Programmes";
+    var canEdit = (bool)(ViewBag.CanEdit ?? false);
+}
+<partial name="_ImsStyles" />
+<div class="ims"><div class="page-container">
+    <div class="page-header"><div class="head-row">
+        <div style="display:flex;gap:1rem;align-items:center;">
+            <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+            <div><h1 class="page-title"><i class="fas fa-calendar"></i> Audit Programmes</h1><p class="page-sub">Annual audit plans (ISO 9.2)</p></div>
+        </div>
+        <div class="head-actions">@if (canEdit) { <a class="btn-primary-ims" asp-action="CreateProgramme"><i class="fas fa-plus"></i> New Programme</a> }</div>
+    </div></div>
+
+    <div class="card"><div class="card-body" style="padding:0;">
+        @if (Model.Any())
+        {
+            <table class="tbl"><thead><tr><th>Year</th><th>Title</th><th>Standard</th><th>Audits</th><th>Status</th></tr></thead><tbody>
+                @foreach (var p in Model)
+                {
+                    <tr><td><strong>@p.Year</strong></td><td>@p.Title</td><td class="meta">@p.Standard</td><td class="meta">@p.Audits.Count</td><td class="meta">@p.Status</td></tr>
+                }
+            </tbody></table>
+        }
+        else { <div class="empty"><i class="fas fa-calendar"></i><h3>No programmes yet</h3></div> }
+    </div></div>
+</div></div>

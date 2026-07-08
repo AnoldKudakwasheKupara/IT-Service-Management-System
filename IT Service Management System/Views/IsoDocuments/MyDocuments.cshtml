@@ -1,0 +1,55 @@
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model List<IsoDocumentAcknowledgement>
+@{
+    ViewData["Title"] = "My Documents";
+    var pending = Model.Count(a => a.Status != AcknowledgementStatus.Acknowledged);
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <h1 class="page-title"><i class="fas fa-user-check"></i> My Documents</h1>
+            <p class="page-sub">Policies and documents assigned to you for acknowledgement</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat"><div class="ic blue"><i class="fas fa-file-lines"></i></div><div><h3>@Model.Count</h3><p>Assigned</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-hourglass-half"></i></div><div><h3>@pending</h3><p>Pending</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@(Model.Count - pending)</h3><p>Acknowledged</p></div></div>
+        </div>
+
+        <div class="card"><div class="card-body" style="padding:0;">
+            @if (Model.Any())
+            {
+                <table class="tbl">
+                    <thead><tr><th>Document</th><th>Version</th><th>Assigned</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var a in Model)
+                        {
+                            <tr>
+                                <td><span class="docnum">@a.Document?.DocumentNumber</span><div class="meta">@a.Document?.Title</div></td>
+                                <td class="meta">v@(a.Document?.CurrentVersion)</td>
+                                <td class="meta">@a.AssignedAt.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    @if (a.Status == AcknowledgementStatus.Acknowledged)
+                                    { <span class="badge-ims b-published"><i class="fas fa-check"></i> Acknowledged</span> }
+                                    else
+                                    { <span class="badge-ims b-draft">Pending</span> }
+                                </td>
+                                <td>
+                                    @if (a.Status == AcknowledgementStatus.Acknowledged)
+                                    { <a class="btn-ghost-ims" asp-action="Read" asp-route-id="@a.IsoDocumentId">View</a> }
+                                    else
+                                    { <a class="btn-primary-ims" asp-action="Read" asp-route-id="@a.IsoDocumentId"><i class="fas fa-signature"></i> Read &amp; Sign</a> }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else { <div class="empty"><i class="fas fa-mug-hot"></i><h3>Nothing to acknowledge</h3><p class="meta">You're all caught up.</p></div> }
+        </div></div>
+    </div>
+</div>

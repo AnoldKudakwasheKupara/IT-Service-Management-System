@@ -1,0 +1,55 @@
+@using IT_Service_Management_System.Models.Ims
+@model AuditFinding
+@{
+    ViewData["Title"] = Model.Reference;
+    var canCapa = (bool)(ViewBag.CanRaiseCapa ?? false);
+    var canEdit = (bool)(ViewBag.CanEdit ?? false);
+    string FindClass(FindingType t) => t switch { FindingType.MajorNonConformance => "b-critical", FindingType.MinorNonConformance => "b-high", FindingType.OpportunityForImprovement => "b-medium", FindingType.Conformity => "b-closed", _ => "b-low" };
+}
+<partial name="_ImsStyles" />
+<div class="ims"><div class="page-container">
+    <div class="page-header"><div class="head-row">
+        <div style="display:flex;gap:1rem;align-items:center;">
+            <a class="btn-back" asp-action="Findings"><i class="fas fa-arrow-left"></i></a>
+            <div>
+                <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span></h1>
+                <p class="page-sub"><span class="badge-ims @FindClass(Model.Type)">@Model.Type</span> <span class="meta">· @Model.Status @(Model.IsOverdue ? "· overdue" : "")</span></p>
+            </div>
+        </div>
+    </div></div>
+
+    <div class="card"><div class="card-body">
+        <div class="dl">
+            <div><div class="k">Audit</div><div class="v">@(Model.Audit?.Reference ?? "—")</div></div>
+            <div><div class="k">ISO Clause</div><div class="v">@(Model.ClauseReference ?? "—")</div></div>
+            <div><div class="k">Department</div><div class="v">@(Model.Department?.Name ?? "—")</div></div>
+            <div><div class="k">Raised By</div><div class="v">@(Model.RaisedBy?.FullName ?? "—")</div></div>
+            <div><div class="k">Assigned To</div><div class="v">@(Model.AssignedTo?.FullName ?? "—")</div></div>
+            <div><div class="k">Due</div><div class="v @(Model.IsOverdue ? "overdue" : "")">@(Model.DueDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
+        </div>
+        <div style="margin-top:1rem;"><div class="k" style="text-transform:uppercase;font-size:.72rem;color:var(--gray-400);">Description</div><p style="color:var(--gray-700);">@Model.Description</p></div>
+        @if (!string.IsNullOrWhiteSpace(Model.Evidence)) { <div><div class="k" style="text-transform:uppercase;font-size:.72rem;color:var(--gray-400);">Evidence</div><p style="color:var(--gray-700);">@Model.Evidence</p></div> }
+    </div></div>
+
+    <div class="card"><div class="card-head"><span class="t"><i class="fas fa-screwdriver-wrench"></i> Corrective Action</span></div><div class="card-body">
+        @if (Model.CapaId.HasValue)
+        {
+            <p>A CAPA has been generated for this finding: <a class="btn-outline-ims" asp-controller="Capa" asp-action="Details" asp-route-id="@Model.CapaId"><span class="docnum">@(Model.Capa?.Reference)</span></a></p>
+        }
+        else if (Model.IsNonConformance && canCapa)
+        {
+            <p class="meta">This non-conformity needs a corrective action.</p>
+            <form method="post" asp-action="GenerateCapa" asp-route-id="@Model.Id">@Html.AntiForgeryToken()
+                <button class="btn-primary-ims" type="submit"><i class="fas fa-wand-magic-sparkles"></i> Generate CAPA</button>
+            </form>
+        }
+        else { <p class="meta">No corrective action required.</p> }
+
+        @if (canEdit && Model.Status != FindingStatus.Closed)
+        {
+            <form method="post" asp-action="CloseFinding" asp-route-id="@Model.Id" style="margin-top:1rem;" onsubmit="return confirm('Close this finding?');">@Html.AntiForgeryToken()
+                <button class="btn-ghost-ims" type="submit"><i class="fas fa-lock"></i> Close Finding</button>
+            </form>
+        }
+    </div></div>
+</div></div>

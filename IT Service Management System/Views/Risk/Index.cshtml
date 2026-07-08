@@ -1,0 +1,71 @@
+@using IT_Service_Management_System.Models.Ims
+@model List<Risk>
+@{
+    ViewData["Title"] = "Risk Register";
+    var canEdit = (bool)(ViewBag.CanEdit ?? false);
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-gauge-high"></i> Risk Register</h1>
+                    <p class="page-sub">ISO 9001/27001 clause 6.1 — risks &amp; treatment</p>
+                </div>
+                <div class="head-actions">
+                    <a class="btn-outline-ims" asp-action="Matrix"><i class="fas fa-fire"></i> Heat Map</a>
+                    <a class="btn-ghost-ims" asp-action="Opportunities"><i class="fas fa-arrow-trend-up"></i> Opportunities</a>
+                    @if (canEdit) { <a class="btn-primary-ims" asp-action="Create"><i class="fas fa-plus"></i> New Risk</a> }
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat"><div class="ic blue"><i class="fas fa-list"></i></div><div><h3>@ViewBag.Total</h3><p>Total</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-folder-open"></i></div><div><h3>@ViewBag.Open</h3><p>Open</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-triangle-exclamation"></i></div><div><h3>@ViewBag.Critical</h3><p>Critical</p></div></div>
+            <div class="stat"><div class="ic teal"><i class="fas fa-clock-rotate-left"></i></div><div><h3>@ViewBag.ReviewDue</h3><p>Review Due</p></div></div>
+        </div>
+
+        <form method="get" class="toolbar">
+            <select class="inp" name="category" onchange="this.form.submit()">
+                <option value="">All categories</option>
+                @foreach (RiskCategory c in Enum.GetValues(typeof(RiskCategory)))
+                { <option value="@c" selected="@(ViewBag.Category as RiskCategory? == c)">@c</option> }
+            </select>
+            <select class="inp" name="status" onchange="this.form.submit()">
+                <option value="">All statuses</option>
+                @foreach (RiskStatus s in Enum.GetValues(typeof(RiskStatus)))
+                { <option value="@s" selected="@(ViewBag.Status as RiskStatus? == s)">@s</option> }
+            </select>
+        </form>
+
+        <div class="card"><div class="card-body" style="padding:0;">
+            @if (Model.Any())
+            {
+                <table class="tbl">
+                    <thead><tr><th>Ref</th><th>Title</th><th>Category</th><th>L×I</th><th>Score</th><th>Band</th><th>Residual</th><th>Owner</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            <tr>
+                                <td><a asp-action="Details" asp-route-id="@r.Id"><span class="docnum">@r.Reference</span></a></td>
+                                <td>@r.Title</td>
+                                <td class="meta">@r.Category</td>
+                                <td class="meta">@r.Likelihood × @r.Impact</td>
+                                <td><strong>@r.Score</strong></td>
+                                <td><span class="badge-ims @RiskScoring.CssClass(r.Band)">@r.Band</span></td>
+                                <td>@(r.ResidualScore?.ToString() ?? "—")</td>
+                                <td class="meta">@(r.Owner?.FullName ?? "—")</td>
+                                <td class="meta">@r.Status</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else { <div class="empty"><i class="fas fa-shield-halved"></i><h3>No risks recorded</h3></div> }
+        </div></div>
+    </div>
+</div>

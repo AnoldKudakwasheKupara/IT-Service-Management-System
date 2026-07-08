@@ -1,0 +1,164 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model Objective
+@{
+    ViewData["Title"] = Model.Reference;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    var pct = Model.ProgressPercent ?? 0;
+
+    string statusClass = Model.Status switch
+    {
+        ObjectiveStatus.Achieved or ObjectiveStatus.OnTrack => "b-published",
+        ObjectiveStatus.AtRisk or ObjectiveStatus.NotAchieved => "b-critical",
+        ObjectiveStatus.Active => "b-medium",
+        _ => "b-draft"
+    };
+    string barClass = Model.Status switch
+    {
+        ObjectiveStatus.AtRisk or ObjectiveStatus.NotAchieved => "amber",
+        _ => "green"
+    };
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Title</h1>
+                        <p class="page-sub">
+                            <span class="badge-ims @statusClass">@Model.Status</span>
+                            <span class="meta">· @IsoStandards.Label(Model.Standard) · @Model.Frequency</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    @if (canManage)
+                    {
+                        <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
+                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this objective and its measurements?');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-danger-ims" type="submit"><i class="fas fa-trash"></i> Delete</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="card"><div class="card-body" style="color:var(--success);"><i class="fas fa-circle-check"></i> @TempData["Success"]</div></div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="card"><div class="card-body overdue"><i class="fas fa-triangle-exclamation"></i> @TempData["Error"]</div></div>
+        }
+
+        @* ── Progress ── *@
+        <div class="card"><div class="card-body">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                <span class="meta">Progress toward target (@Model.Direction)</span>
+                <strong style="font-size:1.5rem;">@pct%</strong>
+            </div>
+            <div class="progress-ims @barClass" style="margin:.5rem 0;"><span style="width:@pct%"></span></div>
+            <div class="hint">
+                Baseline @(Model.BaselineValue?.ToString("0.##") ?? "—") ·
+                Current <strong>@(Model.CurrentValue?.ToString("0.##") ?? "—")</strong> @Model.Unit ·
+                Target <strong>@(Model.TargetValue?.ToString("0.##") ?? "—")</strong> @Model.Unit
+            </div>
+        </div></div>
+
+        <div class="form-grid" style="align-items:start;">
+            @* ── Details ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
+                <div class="card-body">
+                    <div class="dl">
+                        <div><div class="k">Department</div><div class="v">@(Model.Department?.Name ?? "—")</div></div>
+                        <div><div class="k">Owner</div><div class="v">@(Model.Owner?.FullName ?? "—")</div></div>
+                        <div><div class="k">ISO Standard</div><div class="v">@IsoStandards.Label(Model.Standard)</div></div>
+                        <div><div class="k">KPI Direction</div><div class="v">@Model.Direction</div></div>
+                        <div><div class="k">Frequency</div><div class="v">@Model.Frequency</div></div>
+                        <div><div class="k">Target</div><div class="v">@(Model.TargetValue?.ToString("0.##") ?? "—") @Model.Unit</div></div>
+                        <div><div class="k">Start Date</div><div class="v">@(Model.StartDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                        <div><div class="k">Due Date</div><div class="v">@(Model.DueDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                        <div><div class="k">Created</div><div class="v">@Model.CreatedAt.ToString("dd MMM yyyy")</div></div>
+                        <div><div class="k">Created By</div><div class="v">@(Model.CreatedBy?.FullName ?? "—")</div></div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Description))
+                    {
+                        <div style="margin-top:1rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Description</div><p style="color:var(--gray-700);margin:.25rem 0 0;">@Model.Description</p></div>
+                    }
+                </div>
+            </div>
+
+            @* ── Record Measurement ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-plus"></i> Record Measurement</span></div>
+                <div class="card-body">
+                    @if (canManage)
+                    {
+                        <form method="post" asp-action="RecordMeasurement" asp-route-id="@Model.Id">
+                            @Html.AntiForgeryToken()
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-calendar"></i> Period <span class="req">*</span></label>
+                                <input class="inp" name="PeriodLabel" required placeholder="e.g. Q1 2026" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-gauge"></i> Value <span class="req">*</span></label>
+                                <input class="inp" type="number" step="any" name="Value" required />
+                                <span class="hint">Saving updates the objective's current value.</span>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-calendar-day"></i> Recorded Date</label>
+                                <input class="inp" type="date" name="RecordedDate" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-note-sticky"></i> Notes</label>
+                                <textarea class="inp" name="Notes" rows="2"></textarea>
+                            </div>
+                            <button class="btn-primary-ims" type="submit"><i class="fas fa-save"></i> Record</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="hint">You do not have permission to record measurements.</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── Measurement history ── *@
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-chart-line"></i> Measurement History</span></div>
+            <div class="card-body" style="padding:0;">
+                @if (Model.Measurements.Any())
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Period</th><th>Value</th><th>Recorded</th><th>By</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            @foreach (var m in Model.Measurements.OrderByDescending(m => m.RecordedDate).ThenByDescending(m => m.Id))
+                            {
+                                <tr>
+                                    <td><strong>@m.PeriodLabel</strong></td>
+                                    <td>@m.Value.ToString("0.##") @Model.Unit</td>
+                                    <td class="meta">@m.RecordedDate.ToString("dd MMM yyyy")</td>
+                                    <td class="meta">@(m.RecordedBy?.FullName ?? "—")</td>
+                                    <td class="meta">@(m.Notes ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="empty"><i class="fas fa-chart-line"></i><h3>No measurements yet</h3></div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

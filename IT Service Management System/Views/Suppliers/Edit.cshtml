@@ -1,0 +1,97 @@
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model Supplier
+@{
+    ViewData["Title"] = "Edit Supplier";
+}
+<partial name="_ImsStyles" />
+
+<div class="ims narrow">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Details" asp-route-id="@Model.Id"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-pen-to-square"></i> Edit @Model.Reference</h1>
+                        <p class="page-sub">Changes to the supplier record are audited.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-building"></i> Name <span class="req">*</span></label>
+                            <input class="inp" asp-for="Name" required />
+                            <span asp-validation-for="Name" class="hint" style="color:var(--danger)"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-tags"></i> Category</label>
+                            <select class="inp" asp-for="Category" asp-items="Html.GetEnumSelectList<SupplierCategory>()"></select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-signal"></i> Status</label>
+                            <select class="inp" asp-for="Status" asp-items="Html.GetEnumSelectList<SupplierStatus>()"></select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-calendar-check"></i> Approved Date</label>
+                            <input class="inp" type="date" asp-for="ApprovedDate" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-user"></i> Contact Name</label>
+                            <input class="inp" asp-for="ContactName" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-envelope"></i> Email</label>
+                            <input class="inp" asp-for="Email" />
+                            <span asp-validation-for="Email" class="hint" style="color:var(--danger)"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-phone"></i> Phone</label>
+                            <input class="inp" asp-for="Phone" />
+                            <span asp-validation-for="Phone" class="hint" style="color:var(--danger)"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-location-dot"></i> Address</label>
+                            <input class="inp" asp-for="Address" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-calendar-plus"></i> Contract Start</label>
+                            <input class="inp" type="date" asp-for="ContractStart" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-calendar-xmark"></i> Contract End</label>
+                            <input class="inp" type="date" asp-for="ContractEnd" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-certificate"></i> Certificate</label>
+                            <input class="inp" asp-for="CertificateName" placeholder="e.g. ISO 9001:2015" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-calendar-day"></i> Certificate Expiry</label>
+                            <input class="inp" type="date" asp-for="CertificateExpiry" />
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl"><i class="fas fa-box-open"></i> Products / Services</label>
+                            <textarea class="inp" asp-for="ProductsServices" rows="2" placeholder="What this supplier provides"></textarea>
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl"><i class="fas fa-align-left"></i> Notes</label>
+                            <textarea class="inp" asp-for="Notes" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn-primary-ims" type="submit"><i class="fas fa-save"></i> Save Changes</button>
+                        <a class="btn-ghost-ims" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

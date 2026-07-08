@@ -555,6 +555,8 @@
                     var navRole = Context.Session.GetString("UserRole");
                     var navFull = navRole == "Admin" || navRole == "SystemsAdmin";
                     var navHr = navRole == "HR";
+                    // IMS / ISO working roles (see Helpers/Ims/ImsAccess) — who sees the ISO management nav.
+                    var navIms = navFull || navRole is "QualityManager" or "DocumentController" or "DepartmentManager" or "Auditor" or "ExternalAuditor";
                 }
 
                 <div class="nav-group">Core</div>
@@ -582,6 +584,11 @@
                 <a class="nav-item @(currentController == "EmployeeDocuments" && currentAction == "MyDocuments" ? "active" : "")"
                    asp-controller="EmployeeDocuments" asp-action="MyDocuments">
                     <i class="fas fa-folder"></i> My Documents
+                </a>
+
+                <a class="nav-item @(currentController == "IsoDocuments" && currentAction == "MyDocuments" ? "active" : "")"
+                   asp-controller="IsoDocuments" asp-action="MyDocuments">
+                    <i class="fas fa-user-check"></i> My ISO Documents
                 </a>
 
                 <a class="nav-item @(currentController == "Mfa" ? "active" : "")"
@@ -620,6 +627,73 @@
                     <a class="nav-item @(currentController == "SlaPolicies" ? "active" : "")"
                        asp-controller="SlaPolicies" asp-action="Index">
                         <i class="fas fa-gauge-high"></i> SLA Policies
+                    </a>
+                }
+
+                @if (navIms)
+                {
+                    <div class="nav-group">Integrated Mgmt (ISO)</div>
+                    <a class="nav-item @(currentController == "Ims" ? "active" : "")"
+                       asp-controller="Ims" asp-action="Index">
+                        <i class="fas fa-certificate"></i> ISO Dashboard
+                    </a>
+                    <a class="nav-item @(currentController == "IsoDocuments" && currentAction != "MyDocuments" ? "active" : "")"
+                       asp-controller="IsoDocuments" asp-action="Index">
+                        <i class="fas fa-file-shield"></i> Document Control
+                    </a>
+                    <a class="nav-item @(currentController == "IsoAudits" ? "active" : "")"
+                       asp-controller="IsoAudits" asp-action="Index">
+                        <i class="fas fa-clipboard-check"></i> Internal Audits
+                    </a>
+                    <a class="nav-item @(currentController == "Capa" ? "active" : "")"
+                       asp-controller="Capa" asp-action="Index">
+                        <i class="fas fa-screwdriver-wrench"></i> CAPA
+                    </a>
+                    <a class="nav-item @(currentController == "NonConformances" ? "active" : "")"
+                       asp-controller="NonConformances" asp-action="Index">
+                        <i class="fas fa-bug"></i> Non-Conformance
+                    </a>
+                    <a class="nav-item @(currentController == "Risk" ? "active" : "")"
+                       asp-controller="Risk" asp-action="Index">
+                        <i class="fas fa-gauge-high"></i> Risk Register
+                    </a>
+
+                    <div class="nav-group">ISO Governance</div>
+                    <a class="nav-item @(currentController == "Suppliers" ? "active" : "")"
+                       asp-controller="Suppliers" asp-action="Index">
+                        <i class="fas fa-truck-field"></i> Suppliers
+                    </a>
+                    <a class="nav-item @(currentController == "Training" ? "active" : "")"
+                       asp-controller="Training" asp-action="Index">
+                        <i class="fas fa-graduation-cap"></i> Training
+                    </a>
+                    <a class="nav-item @(currentController == "ManagementReviews" ? "active" : "")"
+                       asp-controller="ManagementReviews" asp-action="Index">
+                        <i class="fas fa-people-group"></i> Management Review
+                    </a>
+                    <a class="nav-item @(currentController == "Objectives" ? "active" : "")"
+                       asp-controller="Objectives" asp-action="Index">
+                        <i class="fas fa-bullseye"></i> Objectives &amp; KPIs
+                    </a>
+                    <a class="nav-item @(currentController == "ComplianceRegister" ? "active" : "")"
+                       asp-controller="ComplianceRegister" asp-action="Index">
+                        <i class="fas fa-scale-balanced"></i> Compliance
+                    </a>
+                    <a class="nav-item @(currentController == "Improvements" ? "active" : "")"
+                       asp-controller="Improvements" asp-action="Index">
+                        <i class="fas fa-lightbulb"></i> Improvement
+                    </a>
+                    <a class="nav-item @(currentController == "Evidence" ? "active" : "")"
+                       asp-controller="Evidence" asp-action="Index">
+                        <i class="fas fa-paperclip"></i> Evidence
+                    </a>
+                    <a class="nav-item @(currentController == "IsoReports" ? "active" : "")"
+                       asp-controller="IsoReports" asp-action="Index">
+                        <i class="fas fa-file-export"></i> ISO Reports
+                    </a>
+                    <a class="nav-item @(currentController == "IsoAssistant" ? "active" : "")"
+                       asp-controller="IsoAssistant" asp-action="Index">
+                        <i class="fas fa-robot"></i> AI Assistant
                     </a>
                 }
 

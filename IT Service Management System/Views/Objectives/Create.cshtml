@@ -1,0 +1,109 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model Objective
+@{
+    ViewData["Title"] = "New Objective";
+    var departments = ViewBag.Departments as List<Department> ?? new();
+    var users = ViewBag.Users as List<User> ?? new();
+}
+<partial name="_ImsStyles" />
+
+<div class="ims narrow">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-bullseye"></i> New Objective</h1>
+                        <p class="page-sub">Define a measurable objective (KPI) with a target and direction.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" asp-action="Create">
+            @Html.AntiForgeryToken()
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg full">
+                            <label class="lbl"><i class="fas fa-heading"></i> Title <span class="req">*</span></label>
+                            <input class="inp" asp-for="Title" required />
+                            <span asp-validation-for="Title" class="hint" style="color:var(--danger)"></span>
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl"><i class="fas fa-align-left"></i> Description</label>
+                            <textarea class="inp" asp-for="Description" rows="3" placeholder="What the objective aims to achieve"></textarea>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-certificate"></i> ISO Standard</label>
+                            <select class="inp" asp-for="Standard" asp-items="Html.GetEnumSelectList<IsoStandard>()"></select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-flag"></i> Status</label>
+                            <select class="inp" asp-for="Status" asp-items="Html.GetEnumSelectList<ObjectiveStatus>()"></select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-building"></i> Department</label>
+                            <select class="inp" asp-for="DepartmentId">
+                                <option value="">— None —</option>
+                                @foreach (var d in departments)
+                                {
+                                    <option value="@d.Id" selected="@(Model.DepartmentId == d.Id)">@d.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-user-tie"></i> Owner</label>
+                            <select class="inp" asp-for="OwnerId">
+                                <option value="">— None —</option>
+                                @foreach (var u in users)
+                                {
+                                    <option value="@u.Id" selected="@(Model.OwnerId == u.Id)">@u.FullName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-bullseye"></i> Target Value</label>
+                            <input class="inp" type="number" step="any" asp-for="TargetValue" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-ruler"></i> Unit</label>
+                            <input class="inp" asp-for="Unit" placeholder="e.g. %, days, count" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-flag-checkered"></i> Baseline</label>
+                            <input class="inp" type="number" step="any" asp-for="BaselineValue" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-gauge"></i> Current Value</label>
+                            <input class="inp" type="number" step="any" asp-for="CurrentValue" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-arrows-up-down"></i> KPI Direction</label>
+                            <select class="inp" asp-for="Direction" asp-items="Html.GetEnumSelectList<KpiDirection>()"></select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-repeat"></i> Measurement Frequency</label>
+                            <select class="inp" asp-for="Frequency" asp-items="Html.GetEnumSelectList<MeasurementFrequency>()"></select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-calendar-plus"></i> Start Date</label>
+                            <input class="inp" type="date" asp-for="StartDate" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-calendar-day"></i> Due Date</label>
+                            <input class="inp" type="date" asp-for="DueDate" />
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn-primary-ims" type="submit"><i class="fas fa-save"></i> Create Objective</button>
+                        <a class="btn-ghost-ims" asp-action="Index">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

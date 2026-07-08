@@ -1,0 +1,169 @@
+@using IT_Service_Management_System.Models.Ims
+@model IT_Service_Management_System.ViewModels.Ims.ImsDashboardVm
+@{
+    ViewData["Title"] = "ISO Dashboard";
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-certificate"></i> Integrated Management System</h1>
+                    <p class="page-sub">ISO 9001:2015 &amp; ISO/IEC 27001:2022 — live compliance overview</p>
+                </div>
+                <div class="head-actions">
+                    <a class="btn-outline-ims" asp-controller="IsoReports" asp-action="Index"><i class="fas fa-file-export"></i> Reports</a>
+                    <a class="btn-primary-ims" asp-controller="IsoDocuments" asp-action="Index"><i class="fas fa-folder-open"></i> Documents</a>
+                </div>
+            </div>
+        </div>
+
+        @* ── Headline KPIs ── *@
+        <div class="stats">
+            <div class="stat"><div class="ic blue"><i class="fas fa-file-shield"></i></div><div><h3>@Model.PublishedDocuments</h3><p>Published Documents</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-clock-rotate-left"></i></div><div><h3>@Model.DocumentsDueReview</h3><p>Due for Review</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-triangle-exclamation"></i></div><div><h3>@Model.OpenCapas</h3><p>Open CAPAs</p></div></div>
+            <div class="stat"><div class="ic purple"><i class="fas fa-gauge-high"></i></div><div><h3>@Model.OpenRisks</h3><p>Open Risks</p></div></div>
+            <div class="stat"><div class="ic teal"><i class="fas fa-clipboard-check"></i></div><div><h3>@Model.OpenAudits</h3><p>Audits in Progress</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-user-check"></i></div><div><h3>@Model.AcknowledgementPercent%</h3><p>Acknowledgement Rate</p></div></div>
+        </div>
+
+        @* ── Progress meters ── *@
+        <div class="card">
+            <div class="card-body">
+                <div class="form-grid three">
+                    <div>
+                        <div class="meta" style="display:flex;justify-content:space-between;"><span><i class="fas fa-user-check"></i> Policy Acknowledgement</span><strong>@Model.AcknowledgementPercent%</strong></div>
+                        <div class="progress-ims green" style="margin-top:.4rem;"><span style="width:@Model.AcknowledgementPercent%"></span></div>
+                        <div class="hint">@Model.CompletedAcknowledgements of @Model.TotalAcknowledgements acknowledgements complete</div>
+                    </div>
+                    <div>
+                        <div class="meta" style="display:flex;justify-content:space-between;"><span><i class="fas fa-graduation-cap"></i> Training Completion</span><strong>@Model.TrainingCompletionPercent%</strong></div>
+                        <div class="progress-ims" style="margin-top:.4rem;"><span style="width:@Model.TrainingCompletionPercent%"></span></div>
+                        <div class="hint">@Model.TrainingCompleted of @Model.TrainingRecords records completed</div>
+                    </div>
+                    <div>
+                        <div class="meta" style="display:flex;justify-content:space-between;"><span><i class="fas fa-scale-balanced"></i> Compliance</span><strong>@Model.CompliancePercent%</strong></div>
+                        <div class="progress-ims amber" style="margin-top:.4rem;"><span style="width:@Model.CompliancePercent%"></span></div>
+                        <div class="hint">@Model.ComplianceObligations obligation(s) tracked</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ── Module tiles ── *@
+        <div class="stats">
+            <div class="stat"><div class="ic blue"><i class="fas fa-file-lines"></i></div><div><h3>@Model.TotalDocuments</h3><p>Total Documents</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-pen-ruler"></i></div><div><h3>@Model.InWorkflowDocuments</h3><p>In Workflow</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-file-circle-xmark"></i></div><div><h3>@Model.ExpiredDocuments</h3><p>Expired</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-bug"></i></div><div><h3>@Model.OpenNonConformances</h3><p>Open NCs</p></div></div>
+            <div class="stat"><div class="ic teal"><i class="fas fa-magnifying-glass"></i></div><div><h3>@Model.OpenFindings</h3><p>Open Findings</p></div></div>
+            <div class="stat"><div class="ic purple"><i class="fas fa-bullseye"></i></div><div><h3>@Model.ActiveObjectives</h3><p>Active Objectives</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-truck-field"></i></div><div><h3>@Model.Suppliers</h3><p>Suppliers</p></div></div>
+            <div class="stat"><div class="ic blue"><i class="fas fa-lightbulb"></i></div><div><h3>@Model.OpenImprovements</h3><p>Improvements</p></div></div>
+        </div>
+
+        <div class="form-grid" style="align-items:start;">
+            @* ── Risk heat map ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-fire"></i> Risk Heat Map</span><span class="meta">@Model.OpenRisks open · @Model.CriticalRisks critical</span></div>
+                <div class="card-body">
+                    <div style="display:grid;grid-template-columns:auto repeat(5,1fr);gap:4px;align-items:center;">
+                        <div></div>
+                        @for (int l = 1; l <= 5; l++) { <div style="text-align:center;font-size:.7rem;color:var(--gray-500);font-weight:600;">L@l</div> }
+                        @for (int i = 5; i >= 1; i--)
+                        {
+                            <div style="font-size:.7rem;color:var(--gray-500);font-weight:600;text-align:right;padding-right:4px;">I@i</div>
+                            @for (int l = 1; l <= 5; l++)
+                            {
+                                var count = Model.RiskHeatmap[(i - 1) * 5 + (l - 1)];
+                                var band = RiskScoring.BandFor(l * i);
+                                var bg = band == RiskBand.Critical ? "#fdecea" : band == RiskBand.High ? "#fdf3e1" : band == RiskBand.Medium ? "#eff6ff" : "#f1f5f9";
+                                var fg = band == RiskBand.Critical ? "#b3261e" : band == RiskBand.High ? "#9a5b00" : band == RiskBand.Medium ? "#1d4ed8" : "#64748b";
+                                <div title="Likelihood @l × Impact @i = @(l*i)" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-weight:700;background:@bg;color:@fg;">@(count > 0 ? count.ToString() : "")</div>
+                            }
+                        }
+                    </div>
+                    <div class="hint" style="margin-top:.6rem;">Likelihood (L) × Impact (I). Colour = risk band; number = open risks in that cell.</div>
+                </div>
+            </div>
+
+            @* ── Upcoming reviews ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-calendar-day"></i> Upcoming Document Reviews</span></div>
+                <div class="card-body" style="padding:0;">
+                    @if (Model.UpcomingReviews.Any())
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Document</th><th>Review Date</th></tr></thead>
+                            <tbody>
+                                @foreach (var d in Model.UpcomingReviews)
+                                {
+                                    <tr>
+                                        <td><a asp-controller="IsoDocuments" asp-action="Details" asp-route-id="@d.Id"><span class="docnum">@d.DocumentNumber</span></a><div class="meta">@d.Title</div></td>
+                                        <td class="@(d.IsReviewDue ? "overdue" : "")">@(d.ReviewDate?.ToString("dd MMM yyyy"))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else { <div class="empty"><i class="fas fa-calendar-check"></i><h3>No reviews scheduled</h3></div> }
+                </div>
+            </div>
+        </div>
+
+        <div class="form-grid" style="align-items:start;">
+            @* ── CAPA watchlist ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-triangle-exclamation"></i> CAPA Watchlist</span><span class="meta">@Model.OverdueCapas overdue</span></div>
+                <div class="card-body" style="padding:0;">
+                    @if (Model.CapaWatchlist.Any())
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Ref</th><th>Title</th><th>Owner</th><th>Due</th></tr></thead>
+                            <tbody>
+                                @foreach (var c in Model.CapaWatchlist)
+                                {
+                                    <tr>
+                                        <td><a asp-controller="Capa" asp-action="Details" asp-route-id="@c.Id"><span class="docnum">@c.Reference</span></a></td>
+                                        <td>@c.Title</td>
+                                        <td class="meta">@(c.Responsible?.FullName ?? "—")</td>
+                                        <td class="@(c.IsOverdue ? "overdue" : "")">@(c.DueDate?.ToString("dd MMM") ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else { <div class="empty"><i class="fas fa-clipboard-check"></i><h3>No open CAPAs</h3></div> }
+                </div>
+            </div>
+
+            @* ── Top risks ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-gauge-high"></i> Top Risks</span></div>
+                <div class="card-body" style="padding:0;">
+                    @if (Model.TopRisks.Any())
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Ref</th><th>Title</th><th>Score</th><th>Band</th></tr></thead>
+                            <tbody>
+                                @foreach (var r in Model.TopRisks)
+                                {
+                                    <tr>
+                                        <td><a asp-controller="Risk" asp-action="Details" asp-route-id="@r.Id"><span class="docnum">@r.Reference</span></a></td>
+                                        <td>@r.Title</td>
+                                        <td><strong>@r.Score</strong></td>
+                                        <td><span class="badge-ims @RiskScoring.CssClass(r.Band)">@r.Band</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else { <div class="empty"><i class="fas fa-shield-halved"></i><h3>No open risks</h3></div> }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

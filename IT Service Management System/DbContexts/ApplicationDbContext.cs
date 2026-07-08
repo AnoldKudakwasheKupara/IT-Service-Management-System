@@ -1,6 +1,7 @@
 ﻿using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Models.Efm;
 using IT_Service_Management_System.Models.Itsm;
+using IT_Service_Management_System.Models.Ims;
 using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.DbContexts
@@ -77,6 +78,50 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<MeetingAttendance> MeetingAttendances { get; set; }
         public DbSet<ActionItem> ActionItems { get; set; }
         public DbSet<ActionItemUpdate> ActionItemUpdates { get; set; }
+
+        // ── IMS / ISO (ISO 9001:2015 & ISO/IEC 27001:2022) ─────────────────────────
+        // Document Control
+        public DbSet<IsoDocumentCategory> IsoDocumentCategories { get; set; }
+        public DbSet<IsoDocument> IsoDocuments { get; set; }
+        public DbSet<IsoDocumentVersion> IsoDocumentVersions { get; set; }
+        public DbSet<IsoDocumentApproval> IsoDocumentApprovals { get; set; }
+        public DbSet<IsoDocumentAcknowledgement> IsoDocumentAcknowledgements { get; set; }
+        public DbSet<IsoDocumentDistribution> IsoDocumentDistributions { get; set; }
+        public DbSet<IsoDocumentReview> IsoDocumentReviews { get; set; }
+        // Internal Audits & Findings
+        public DbSet<AuditProgramme> AuditProgrammes { get; set; }
+        public DbSet<Audit> Audits { get; set; }
+        public DbSet<AuditTeamMember> AuditTeamMembers { get; set; }
+        public DbSet<AuditChecklistItem> AuditChecklistItems { get; set; }
+        public DbSet<AuditFinding> AuditFindings { get; set; }
+        // CAPA & Non-Conformance
+        public DbSet<Capa> Capas { get; set; }
+        public DbSet<NonConformance> NonConformances { get; set; }
+        // Risk & Opportunity
+        public DbSet<Risk> Risks { get; set; }
+        public DbSet<Opportunity> Opportunities { get; set; }
+        // Suppliers
+        public DbSet<Supplier> Suppliers { get; set; }
+        public DbSet<SupplierEvaluation> SupplierEvaluations { get; set; }
+        // Training & Competency
+        public DbSet<TrainingCourse> TrainingCourses { get; set; }
+        public DbSet<TrainingRecord> TrainingRecords { get; set; }
+        public DbSet<Competency> Competencies { get; set; }
+        public DbSet<UserCompetency> UserCompetencies { get; set; }
+        // Management Review
+        public DbSet<ManagementReview> ManagementReviews { get; set; }
+        public DbSet<ManagementReviewAttendee> ManagementReviewAttendees { get; set; }
+        public DbSet<ManagementReviewInput> ManagementReviewInputs { get; set; }
+        public DbSet<ManagementReviewAction> ManagementReviewActions { get; set; }
+        // Objectives & KPIs
+        public DbSet<Objective> Objectives { get; set; }
+        public DbSet<ObjectiveMeasurement> ObjectiveMeasurements { get; set; }
+        // Compliance, Improvement, Evidence, Reference
+        public DbSet<ComplianceObligation> ComplianceObligations { get; set; }
+        public DbSet<Improvement> Improvements { get; set; }
+        public DbSet<IsoEvidence> IsoEvidences { get; set; }
+        public DbSet<IsoClause> IsoClauses { get; set; }
+        public DbSet<IsoNotification> IsoNotifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -454,6 +499,92 @@ namespace IT_Service_Management_System.DbContexts
 
             modelBuilder.Entity<StorageProvider>().HasData(
                 new StorageProvider { Id = 1, Name = "Local Disk", Type = StorageProviderType.LocalDisk, RootLocation = "employee-documents", IsDefault = true, IsActive = true, CreatedAt = efmSeed }
+            );
+
+            // ── IMS / ISO (ISO 9001:2015 & ISO/IEC 27001:2022) ──────────────────────
+            // Persist every IMS enum as a readable string, keep decimals at (18,2), and set every IMS
+            // foreign key to Restrict so SQL Server never sees multiple cascade paths. IMS parents are
+            // soft-deleted (or never hard-deleted), so cascade delete is intentionally not used here.
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                         .Where(e => e.ClrType.Namespace == "IT_Service_Management_System.Models.Ims")
+                         .ToList())
+            {
+                var entity = modelBuilder.Entity(entityType.ClrType);
+
+                foreach (var prop in entityType.GetProperties().ToList())
+                {
+                    var clr = Nullable.GetUnderlyingType(prop.ClrType) ?? prop.ClrType;
+                    if (clr.IsEnum)
+                        entity.Property(prop.Name).HasConversion<string>();
+                    else if (clr == typeof(decimal))
+                        entity.Property(prop.Name).HasPrecision(18, 2);
+                }
+
+                foreach (var fk in entityType.GetForeignKeys())
+                    fk.DeleteBehavior = DeleteBehavior.Restrict;
+            }
+
+            // A document has many versions (history) and one "current" version pointer — configured
+            // explicitly so the two relationships between the same pair of types are unambiguous.
+            modelBuilder.Entity<IsoDocumentVersion>()
+                .HasOne(v => v.Document)
+                .WithMany(d => d.Versions)
+                .HasForeignKey(v => v.IsoDocumentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<IsoDocument>()
+                .HasOne(d => d.CurrentVersionRef)
+                .WithMany()
+                .HasForeignKey(d => d.CurrentVersionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<IsoDocument>().HasIndex(d => d.DocumentNumber).IsUnique();
+            modelBuilder.Entity<IsoDocument>().HasQueryFilter(d => !d.IsDeleted);
+            modelBuilder.Entity<IsoClause>().HasIndex(c => new { c.Standard, c.ClauseNumber });
+
+            // Seed document categories
+            modelBuilder.Entity<IsoDocumentCategory>().HasData(
+                new IsoDocumentCategory { Id = 1, Name = "Quality Management", Code = "QMS", IsActive = true },
+                new IsoDocumentCategory { Id = 2, Name = "Information Security", Code = "ISMS", IsActive = true },
+                new IsoDocumentCategory { Id = 3, Name = "Human Resources", Code = "HR", IsActive = true },
+                new IsoDocumentCategory { Id = 4, Name = "Information Technology", Code = "IT", IsActive = true },
+                new IsoDocumentCategory { Id = 5, Name = "Operations", Code = "OPS", IsActive = true },
+                new IsoDocumentCategory { Id = 6, Name = "Finance", Code = "FIN", IsActive = true },
+                new IsoDocumentCategory { Id = 7, Name = "Health, Safety & Environment", Code = "HSE", IsActive = true },
+                new IsoDocumentCategory { Id = 8, Name = "General / Administration", Code = "GEN", IsActive = true }
+            );
+
+            // Seed key ISO clauses (reference data for tagging, evidence and the AI compliance assistant)
+            modelBuilder.Entity<IsoClause>().HasData(
+                // ISO 9001:2015
+                new IsoClause { Id = 1, Standard = IsoStandard.Iso9001, ClauseNumber = "4", Title = "Context of the organization" },
+                new IsoClause { Id = 2, Standard = IsoStandard.Iso9001, ClauseNumber = "5", Title = "Leadership" },
+                new IsoClause { Id = 3, Standard = IsoStandard.Iso9001, ClauseNumber = "6", Title = "Planning" },
+                new IsoClause { Id = 4, Standard = IsoStandard.Iso9001, ClauseNumber = "6.2", Title = "Quality objectives and planning to achieve them" },
+                new IsoClause { Id = 5, Standard = IsoStandard.Iso9001, ClauseNumber = "7", Title = "Support" },
+                new IsoClause { Id = 6, Standard = IsoStandard.Iso9001, ClauseNumber = "7.2", Title = "Competence" },
+                new IsoClause { Id = 7, Standard = IsoStandard.Iso9001, ClauseNumber = "7.5", Title = "Documented information" },
+                new IsoClause { Id = 8, Standard = IsoStandard.Iso9001, ClauseNumber = "8", Title = "Operation" },
+                new IsoClause { Id = 9, Standard = IsoStandard.Iso9001, ClauseNumber = "8.4", Title = "Control of externally provided processes, products and services" },
+                new IsoClause { Id = 10, Standard = IsoStandard.Iso9001, ClauseNumber = "8.5", Title = "Production and service provision" },
+                new IsoClause { Id = 11, Standard = IsoStandard.Iso9001, ClauseNumber = "9", Title = "Performance evaluation" },
+                new IsoClause { Id = 12, Standard = IsoStandard.Iso9001, ClauseNumber = "9.2", Title = "Internal audit" },
+                new IsoClause { Id = 13, Standard = IsoStandard.Iso9001, ClauseNumber = "9.3", Title = "Management review" },
+                new IsoClause { Id = 14, Standard = IsoStandard.Iso9001, ClauseNumber = "10", Title = "Improvement" },
+                new IsoClause { Id = 15, Standard = IsoStandard.Iso9001, ClauseNumber = "10.2", Title = "Nonconformity and corrective action" },
+                // ISO/IEC 27001:2022
+                new IsoClause { Id = 16, Standard = IsoStandard.Iso27001, ClauseNumber = "4", Title = "Context of the organization" },
+                new IsoClause { Id = 17, Standard = IsoStandard.Iso27001, ClauseNumber = "5", Title = "Leadership" },
+                new IsoClause { Id = 18, Standard = IsoStandard.Iso27001, ClauseNumber = "6", Title = "Planning" },
+                new IsoClause { Id = 19, Standard = IsoStandard.Iso27001, ClauseNumber = "6.1.2", Title = "Information security risk assessment" },
+                new IsoClause { Id = 20, Standard = IsoStandard.Iso27001, ClauseNumber = "6.1.3", Title = "Information security risk treatment" },
+                new IsoClause { Id = 21, Standard = IsoStandard.Iso27001, ClauseNumber = "7", Title = "Support" },
+                new IsoClause { Id = 22, Standard = IsoStandard.Iso27001, ClauseNumber = "7.5", Title = "Documented information" },
+                new IsoClause { Id = 23, Standard = IsoStandard.Iso27001, ClauseNumber = "8", Title = "Operation" },
+                new IsoClause { Id = 24, Standard = IsoStandard.Iso27001, ClauseNumber = "9", Title = "Performance evaluation" },
+                new IsoClause { Id = 25, Standard = IsoStandard.Iso27001, ClauseNumber = "9.2", Title = "Internal audit" },
+                new IsoClause { Id = 26, Standard = IsoStandard.Iso27001, ClauseNumber = "9.3", Title = "Management review" },
+                new IsoClause { Id = 27, Standard = IsoStandard.Iso27001, ClauseNumber = "10", Title = "Improvement" },
+                new IsoClause { Id = 28, Standard = IsoStandard.Iso27001, ClauseNumber = "10.2", Title = "Nonconformity and corrective action" }
             );
         }
     }

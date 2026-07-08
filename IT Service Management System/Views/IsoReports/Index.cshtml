@@ -1,0 +1,38 @@
+@{
+    ViewData["Title"] = "ISO Reports";
+    var excel = new[]
+    {
+        ("Document Register", "fa-file-shield", "DocumentsXlsx"),
+        ("CAPA Register", "fa-screwdriver-wrench", "CapaXlsx"),
+        ("Risk Register", "fa-gauge-high", "RiskXlsx"),
+        ("Audit Findings", "fa-magnifying-glass", "FindingsXlsx"),
+        ("Training Records", "fa-graduation-cap", "TrainingXlsx"),
+        ("Supplier Evaluations", "fa-truck-field", "SuppliersXlsx"),
+    };
+}
+<partial name="_ImsStyles" />
+<div class="ims"><div class="page-container">
+    <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-file-export"></i> ISO Reports</h1>
+        <p class="page-sub">Export IMS registers to Excel or generate PDF report packs</p>
+    </div>
+
+    <div class="card"><div class="card-head"><span class="t"><i class="fas fa-file-pdf"></i> Report Packs (PDF)</span></div>
+    <div class="card-body">
+        <a class="btn-primary-ims" asp-action="ExecutiveSummaryPdf"><i class="fas fa-file-pdf"></i> Executive Summary Pack</a>
+        <p class="hint" style="margin-top:.5rem;">A one-page management overview: documents, CAPAs, top risks and open audit findings.</p>
+    </div></div>
+
+    <div class="card"><div class="card-head"><span class="t"><i class="fas fa-file-excel"></i> Register Exports (Excel)</span></div>
+    <div class="card-body">
+        <div class="stats" style="margin-bottom:0;">
+            @foreach (var (title, icon, action) in excel)
+            {
+                <a class="stat" style="text-decoration:none;cursor:pointer;" asp-action="@action">
+                    <div class="ic green"><i class="fas @icon"></i></div>
+                    <div><h3 style="font-size:1rem;">@title</h3><p><i class="fas fa-download"></i> Download .xlsx</p></div>
+                </a>
+            }
+        </div>
+    </div></div>
+</div></div>

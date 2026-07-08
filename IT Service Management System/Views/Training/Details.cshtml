@@ -1,0 +1,196 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model TrainingCourse
+@{
+    ViewData["Title"] = Model.Reference;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    var users = ViewBag.Users as List<User> ?? new();
+    var records = Model.Records.OrderByDescending(r => r.ScheduledDate ?? r.CreatedAt).ToList();
+    var completed = records.Count(r => r.Status == AttendanceStatus.Completed);
+    var pct = records.Count == 0 ? 0 : (int)Math.Round(completed * 100.0 / records.Count);
+
+    Func<AttendanceStatus, string> statusClass = s => s switch
+    {
+        AttendanceStatus.Completed => "b-published",
+        AttendanceStatus.Attended => "b-medium",
+        AttendanceStatus.Enrolled => "b-internal",
+        AttendanceStatus.Failed => "b-rejected",
+        AttendanceStatus.NoShow => "b-overdue",
+        _ => "b-archived"
+    };
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Title</h1>
+                        <p class="page-sub">
+                            <span class="badge-ims b-internal">@Model.Type</span>
+                            <span class="meta">· @IsoStandards.Label(Model.Standard) · @Model.DurationHours.ToString("0.#") hrs</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    @if (canManage)
+                    {
+                        <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
+                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this course and all its records?');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-danger-ims" type="submit"><i class="fas fa-trash"></i> Delete</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="form-grid" style="align-items:start;">
+            @* ── Details ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
+                <div class="card-body">
+                    <div class="dl">
+                        <div><div class="k">Type</div><div class="v">@Model.Type</div></div>
+                        <div><div class="k">ISO Standard</div><div class="v">@IsoStandards.Label(Model.Standard)</div></div>
+                        <div><div class="k">Provider</div><div class="v">@(Model.Provider ?? "—")</div></div>
+                        <div><div class="k">Duration</div><div class="v">@Model.DurationHours.ToString("0.#") hrs</div></div>
+                        <div><div class="k">Linked Document</div><div class="v">@(Model.LinkedDocument != null ? $"{Model.LinkedDocument.DocumentNumber} — {Model.LinkedDocument.Title}" : "—")</div></div>
+                        <div><div class="k">Created By</div><div class="v">@(Model.CreatedBy?.FullName ?? "—")</div></div>
+                        <div><div class="k">Created</div><div class="v">@Model.CreatedAt.ToString("dd MMM yyyy")</div></div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Description))
+                    {
+                        <div style="margin-top:1rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Description</div><p style="color:var(--gray-700);margin:.25rem 0 0;">@Model.Description</p></div>
+                    }
+                </div>
+            </div>
+
+            @* ── Completion ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-chart-simple"></i> Completion</span></div>
+                <div class="card-body">
+                    <div style="display:flex;justify-content:space-between;align-items:baseline;"><span class="meta">Completed</span><strong style="font-size:1.5rem;">@pct%</strong></div>
+                    <div class="progress-ims green" style="margin:.5rem 0;"><span style="width:@pct%"></span></div>
+                    <div class="hint">@completed of @records.Count records completed</div>
+                </div>
+            </div>
+        </div>
+
+        @* ── Training records ── *@
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-clipboard-user"></i> Training Records</span></div>
+            <div class="card-body" style="padding:0;">
+                @if (records.Any())
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Employee</th><th>Scheduled</th><th>Completed</th><th>Status</th><th>Score</th><th>Certificate</th><th>Expiry</th>@if (canManage) { <th></th> }</tr></thead>
+                        <tbody>
+                            @foreach (var r in records)
+                            {
+                                <tr>
+                                    <td>@(r.User?.FullName ?? $"User #{r.UserId}")</td>
+                                    <td class="meta">@(r.ScheduledDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    <td class="meta">@(r.CompletedDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    <td><span class="badge-ims @statusClass(r.Status)">@r.Status</span></td>
+                                    <td class="meta">@(r.Score.HasValue ? $"{r.Score}%" : "—")</td>
+                                    <td class="meta">@(r.CertificateName ?? "—")</td>
+                                    <td>
+                                        @if (r.CertificateExpiry.HasValue)
+                                        {
+                                            if (r.IsCertificateExpired)
+                                            {
+                                                <span class="badge-ims b-overdue"><i class="fas fa-triangle-exclamation"></i> Expired @r.CertificateExpiry.Value.ToString("dd MMM yyyy")</span>
+                                            }
+                                            else if (r.IsCertificateExpiringSoon)
+                                            {
+                                                <span class="badge-ims b-high"><i class="fas fa-clock"></i> @r.CertificateExpiry.Value.ToString("dd MMM yyyy")</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="meta">@r.CertificateExpiry.Value.ToString("dd MMM yyyy")</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="meta">—</span>
+                                        }
+                                    </td>
+                                    @if (canManage)
+                                    {
+                                        <td>
+                                            <form method="post" asp-action="DeleteRecord" asp-route-id="@Model.Id" onsubmit="return confirm('Remove this record?');">
+                                                <input type="hidden" name="recordId" value="@r.Id" />
+                                                @Html.AntiForgeryToken()
+                                                <button class="act del" type="submit" title="Remove"><i class="fas fa-xmark"></i></button>
+                                            </form>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="empty" style="padding:2rem;"><i class="fas fa-clipboard-user"></i><h3>No attendance records yet</h3></div>
+                }
+
+                @if (canManage)
+                {
+                    <form method="post" asp-action="AddRecord" asp-route-id="@Model.Id" style="padding:1rem;border-top:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <label class="lbl" style="margin-bottom:.6rem;"><i class="fas fa-user-plus"></i> Add Attendance Record</label>
+                        <div class="form-grid three">
+                            <div class="fg">
+                                <label class="lbl">Employee <span class="req">*</span></label>
+                                <select class="inp" name="UserId" required>
+                                    <option value="">— Select employee —</option>
+                                    @foreach (var u in users)
+                                    {
+                                        <option value="@u.Id">@u.FullName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Status</label>
+                                <select class="inp" name="Status" asp-items="Html.GetEnumSelectList<AttendanceStatus>()"></select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Score (%)</label>
+                                <input class="inp" type="number" name="Score" min="0" max="100" placeholder="Optional" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Scheduled Date</label>
+                                <input class="inp" type="date" name="ScheduledDate" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Completed Date</label>
+                                <input class="inp" type="date" name="CompletedDate" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Certificate</label>
+                                <input class="inp" name="CertificateName" placeholder="Certificate name / no." />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Certificate Expiry</label>
+                                <input class="inp" type="date" name="CertificateExpiry" />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl">Notes</label>
+                                <input class="inp" name="Notes" placeholder="Optional notes" />
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn-primary-ims" type="submit"><i class="fas fa-plus"></i> Add Record</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>

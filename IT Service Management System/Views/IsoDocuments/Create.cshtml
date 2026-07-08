@@ -1,0 +1,40 @@
+@using IT_Service_Management_System.Models.Ims
+@model IsoDocument
+@{
+    ViewData["Title"] = "New Document";
+}
+<partial name="_ImsStyles" />
+
+<div class="ims narrow">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Index" asp-route-type="@Model.Type"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-file-circle-plus"></i> New Controlled Document</h1>
+                        <p class="page-sub">Create a draft — it enters the approval workflow once submitted.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" asp-action="Create" enctype="multipart/form-data">
+            @Html.AntiForgeryToken()
+            <div class="card">
+                <div class="card-body">
+                    <partial name="_Fields" model="Model" />
+                    <div class="fg full">
+                        <label class="lbl"><i class="fas fa-paperclip"></i> Attach File (optional)</label>
+                        <input class="inp" type="file" name="file" />
+                        <span class="hint">PDF, Office, text or image up to 25 MB. Becomes version 0.1.</span>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn-primary-ims" type="submit"><i class="fas fa-save"></i> Create Draft</button>
+                        <a class="btn-ghost-ims" asp-action="Index" asp-route-type="@Model.Type">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

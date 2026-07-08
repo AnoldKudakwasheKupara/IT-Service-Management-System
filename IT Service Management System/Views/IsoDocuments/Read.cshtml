@@ -1,0 +1,73 @@
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model IsoDocument
+@{
+    ViewData["Title"] = "Read & Acknowledge";
+    var ack = ViewBag.Ack as IsoDocumentAcknowledgement;
+    var done = ack != null && ack.Status == AcknowledgementStatus.Acknowledged;
+}
+<partial name="_ImsStyles" />
+
+<div class="ims narrow">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="MyDocuments"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-book-open"></i> @Model.Title</h1>
+                        <p class="page-sub"><span class="docnum">@Model.DocumentNumber</span> · v@Model.CurrentVersion · <span class="badge-ims @ImsBadges.ClassificationClass(Model.Classification)">@Model.Classification</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card"><div class="card-body">
+            @if (!string.IsNullOrWhiteSpace(Model.Summary))
+            {
+                <p style="color:var(--gray-700);">@Model.Summary</p>
+            }
+            @if (Model.CurrentVersionId != null)
+            {
+                <a class="btn-outline-ims" asp-action="Download" asp-route-versionId="@Model.CurrentVersionId"><i class="fas fa-download"></i> Open / Download the document</a>
+            }
+            else
+            {
+                <p class="meta">No file is attached to this document.</p>
+            }
+        </div></div>
+
+        @if (done)
+        {
+            <div class="card"><div class="card-body" style="text-align:center;">
+                <i class="fas fa-circle-check" style="font-size:3rem;color:var(--success);"></i>
+                <h3 style="margin:.5rem 0;">You acknowledged this document</h3>
+                <p class="meta">Signed by @ack!.SignatureName on @ack.AcknowledgedAt?.ToString("dd MMM yyyy HH:mm")</p>
+            </div></div>
+        }
+        else if (ack != null)
+        {
+            <form method="post" asp-action="Acknowledge" asp-route-id="@Model.Id">
+                @Html.AntiForgeryToken()
+                <div class="card"><div class="card-head"><span class="t"><i class="fas fa-signature"></i> Acknowledgement &amp; Electronic Signature</span></div>
+                <div class="card-body">
+                    <label class="lbl" style="align-items:flex-start;">
+                        <input type="checkbox" name="accept" value="true" required style="margin-top:.2rem;" />
+                        <span>I confirm that I have read, understood and will comply with this document.</span>
+                    </label>
+                    <div class="fg" style="margin-top:1rem;">
+                        <label class="lbl"><i class="fas fa-pen-nib"></i> Type your full name as your electronic signature <span class="req">*</span></label>
+                        <input class="inp" name="signatureName" required placeholder="Full name" />
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn-primary-ims" type="submit"><i class="fas fa-check"></i> Acknowledge &amp; Sign</button>
+                    </div>
+                </div></div>
+            </form>
+        }
+        else
+        {
+            <div class="card"><div class="card-body meta">This document is not assigned to you for acknowledgement.</div></div>
+        }
+    </div>
+</div>

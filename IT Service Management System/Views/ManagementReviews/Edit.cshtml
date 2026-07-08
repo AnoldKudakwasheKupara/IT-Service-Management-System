@@ -1,0 +1,83 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model ManagementReview
+@{
+    ViewData["Title"] = "Edit " + Model.Reference;
+    var users = ViewBag.Users as List<User> ?? new();
+}
+<partial name="_ImsStyles" />
+
+<div class="ims narrow">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Details" asp-route-id="@Model.Id"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-pen-to-square"></i> Edit @Model.Reference</h1>
+                        <p class="page-sub">Update the review meeting record. Changes are audited.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg full">
+                            <label class="lbl"><i class="fas fa-heading"></i> Title <span class="req">*</span></label>
+                            <input class="inp" asp-for="Title" required />
+                            <span asp-validation-for="Title" class="hint" style="color:var(--danger)"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-certificate"></i> ISO Standard</label>
+                            <select class="inp" asp-for="Standard" asp-items="Html.GetEnumSelectList<IsoStandard>()"></select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-flag"></i> Status</label>
+                            <select class="inp" asp-for="Status" asp-items="Html.GetEnumSelectList<ReviewMeetingStatus>()"></select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-calendar-day"></i> Meeting Date</label>
+                            <input class="inp" type="datetime-local" asp-for="MeetingDate" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-location-dot"></i> Location</label>
+                            <input class="inp" asp-for="Location" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-user-tie"></i> Chairperson</label>
+                            <select class="inp" asp-for="ChairId">
+                                <option value="">— None —</option>
+                                @foreach (var u in users)
+                                {
+                                    <option value="@u.Id" selected="@(Model.ChairId == u.Id)">@u.FullName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl"><i class="fas fa-list"></i> Agenda</label>
+                            <textarea class="inp" asp-for="AgendaNotes" rows="3"></textarea>
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl"><i class="fas fa-gavel"></i> Decisions</label>
+                            <textarea class="inp" asp-for="Decisions" rows="3"></textarea>
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl"><i class="fas fa-flag-checkered"></i> Conclusions</label>
+                            <textarea class="inp" asp-for="Conclusions" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn-primary-ims" type="submit"><i class="fas fa-save"></i> Save Changes</button>
+                        <a class="btn-ghost-ims" asp-action="Details" asp-route-id="@Model.Id">Cancel</a>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,57 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@model Opportunity
+@{
+    var users = ViewBag.Users as List<User> ?? new();
+    var departments = ViewBag.Departments as List<Department> ?? new();
+}
+<div class="form-grid">
+    <div class="fg full">
+        <label class="lbl"><i class="fas fa-heading"></i> Title <span class="req">*</span></label>
+        <input class="inp" asp-for="Title" required />
+    </div>
+    <div class="fg">
+        <label class="lbl"><i class="fas fa-certificate"></i> ISO Standard</label>
+        <select class="inp" asp-for="Standard" asp-items="Html.GetEnumSelectList<IsoStandard>()"></select>
+    </div>
+    <div class="fg">
+        <label class="lbl"><i class="fas fa-flag"></i> Status</label>
+        <select class="inp" asp-for="Status" asp-items="Html.GetEnumSelectList<OpportunityStatus>()"></select>
+    </div>
+    <div class="fg">
+        <label class="lbl"><i class="fas fa-dice"></i> Likelihood (1–5)</label>
+        <input class="inp" type="number" min="1" max="5" asp-for="Likelihood" />
+    </div>
+    <div class="fg">
+        <label class="lbl"><i class="fas fa-star"></i> Benefit / Impact (1–5)</label>
+        <input class="inp" type="number" min="1" max="5" asp-for="BenefitScore" />
+    </div>
+    <div class="fg">
+        <label class="lbl"><i class="fas fa-user-tie"></i> Owner</label>
+        <select class="inp" asp-for="OwnerId"><option value="">— None —</option>
+            @foreach (var u in users) { <option value="@u.Id" selected="@(Model.OwnerId == u.Id)">@u.FullName</option> }
+        </select>
+    </div>
+    <div class="fg">
+        <label class="lbl"><i class="fas fa-building"></i> Department</label>
+        <select class="inp" asp-for="DepartmentId"><option value="">— None —</option>
+            @foreach (var d in departments) { <option value="@d.Id" selected="@(Model.DepartmentId == d.Id)">@d.Name</option> }
+        </select>
+    </div>
+    <div class="fg">
+        <label class="lbl"><i class="fas fa-calendar-day"></i> Target Date</label>
+        <input class="inp" type="date" asp-for="TargetDate" />
+    </div>
+    <div class="fg full">
+        <label class="lbl"><i class="fas fa-align-left"></i> Description</label>
+        <textarea class="inp" asp-for="Description" rows="2"></textarea>
+    </div>
+    <div class="fg full">
+        <label class="lbl"><i class="fas fa-gift"></i> Expected Benefit</label>
+        <textarea class="inp" asp-for="Benefit" rows="2"></textarea>
+    </div>
+    <div class="fg full">
+        <label class="lbl"><i class="fas fa-clipboard-list"></i> Action Plan</label>
+        <textarea class="inp" asp-for="ActionPlan" rows="2"></textarea>
+    </div>
+</div>

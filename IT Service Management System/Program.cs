@@ -165,6 +165,10 @@ builder.Services.AddScoped<IDocumentStorage>(sp =>
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<DocumentApprovalService>();
 
+// IMS / ISO (ISO 9001:2015 & ISO/IEC 27001:2022) services.
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ims.ImsNotificationService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ims.IsoDocumentService>();
+
 // Defensive, idempotent demo-data top-up seeder (gated by Demo:Seed, default ON).
 builder.Services.AddScoped<IT_Service_Management_System.Services.DemoDataSeeder>();
 // OCR engine (pluggable). PlainText baseline by default; set EFM:Ocr:Provider = "tesseract"

@@ -1,0 +1,82 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model Improvement
+@{
+    ViewData["Title"] = Model.Reference;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+
+    var statusClass = Model.Status switch
+    {
+        ImprovementStatus.Implemented => "b-published",
+        ImprovementStatus.Rejected => "b-critical",
+        ImprovementStatus.Proposed or ImprovementStatus.UnderReview => "b-draft",
+        _ => "b-medium"
+    };
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Title</h1>
+                        <p class="page-sub">
+                            <span class="badge-ims @statusClass">@Model.Status</span>
+                            <span class="meta">· <i class="fas fa-lightbulb"></i> @Model.Type · @IsoStandards.Label(Model.Standard)</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    @if (canManage)
+                    {
+                        <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
+                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this improvement?');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-danger-ims" type="submit"><i class="fas fa-trash"></i> Delete</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="form-grid" style="align-items:start;">
+            @* ── Metadata ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
+                <div class="card-body">
+                    <div class="dl">
+                        <div><div class="k">Type</div><div class="v">@Model.Type</div></div>
+                        <div><div class="k">ISO Standard</div><div class="v">@IsoStandards.Label(Model.Standard)</div></div>
+                        <div><div class="k">Department</div><div class="v">@(Model.Department?.Name ?? "—")</div></div>
+                        <div><div class="k">Proposed By</div><div class="v">@(Model.ProposedBy?.FullName ?? "—")</div></div>
+                        <div><div class="k">Owner</div><div class="v">@(Model.Owner?.FullName ?? "—")</div></div>
+                        <div><div class="k">Status</div><div class="v"><span class="badge-ims @statusClass">@Model.Status</span></div></div>
+                        <div><div class="k">Target Date</div><div class="v">@(Model.TargetDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                        <div><div class="k">Completed Date</div><div class="v">@(Model.CompletedDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
+                        <div><div class="k">Logged By</div><div class="v">@(Model.CreatedBy?.FullName ?? "—")</div></div>
+                        <div><div class="k">Created</div><div class="v">@Model.CreatedAt.ToString("dd MMM yyyy")</div></div>
+                    </div>
+                </div>
+            </div>
+
+            @* ── Narrative ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-align-left"></i> Improvement</span></div>
+                <div class="card-body">
+                    <div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Description</div>
+                    <p style="color:var(--gray-700);margin:.25rem 0 1rem;white-space:pre-wrap;">@Model.Description</p>
+
+                    <div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Expected Benefit</div>
+                    <p style="color:var(--gray-700);margin:.25rem 0 1rem;white-space:pre-wrap;">@(string.IsNullOrWhiteSpace(Model.ExpectedBenefit) ? "—" : Model.ExpectedBenefit)</p>
+
+                    <div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Actual Benefit</div>
+                    <p style="color:var(--gray-700);margin:.25rem 0 0;white-space:pre-wrap;">@(string.IsNullOrWhiteSpace(Model.ActualBenefit) ? "—" : Model.ActualBenefit)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

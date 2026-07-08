@@ -1,0 +1,110 @@
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model IsoEvidence
+@{
+    ViewData["Title"] = Model.Reference;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    string TypeClass(EvidenceType t) => t switch
+    {
+        EvidenceType.Certificate => "b-published",
+        EvidenceType.Report or EvidenceType.Record => "b-medium",
+        EvidenceType.Photo or EvidenceType.Screenshot => "b-internal",
+        _ => "b-open"
+    };
+    string FileSizeLabel(long bytes)
+    {
+        if (bytes <= 0) return "—";
+        string[] units = { "B", "KB", "MB", "GB" };
+        double size = bytes; int u = 0;
+        while (size >= 1024 && u < units.Length - 1) { size /= 1024; u++; }
+        return $"{size:0.#} {units[u]}";
+    }
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Title</h1>
+                        <p class="page-sub">
+                            <span class="badge-ims @TypeClass(Model.Type)">@Model.Type</span>
+                            <span class="meta">· @IsoStandards.Label(Model.Standard)@(string.IsNullOrWhiteSpace(Model.IsoClause) ? "" : $" · clause {Model.IsoClause}")</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    @if (Model.HasFile)
+                    {
+                        <a class="btn-outline-ims" asp-action="Download" asp-route-id="@Model.Id"><i class="fas fa-download"></i> Download File</a>
+                    }
+                    @if (canManage)
+                    {
+                        <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
+                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this evidence record?');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-danger-ims" type="submit"><i class="fas fa-trash"></i> Delete</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="card" style="border-color:#a7f3d0;background:#ecfdf5;"><div class="card-body" style="color:#1e6b45;"><i class="fas fa-circle-check"></i> @TempData["Success"]</div></div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="card" style="border-color:#fecaca;background:#fef2f2;"><div class="card-body" style="color:#b3261e;"><i class="fas fa-triangle-exclamation"></i> @TempData["Error"]</div></div>
+        }
+
+        <div class="form-grid" style="align-items:start;">
+            @* ── Metadata ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
+                <div class="card-body">
+                    <div class="dl">
+                        <div><div class="k">Reference</div><div class="v">@Model.Reference</div></div>
+                        <div><div class="k">Type</div><div class="v"><span class="badge-ims @TypeClass(Model.Type)">@Model.Type</span></div></div>
+                        <div><div class="k">ISO Standard</div><div class="v">@IsoStandards.Label(Model.Standard)</div></div>
+                        <div><div class="k">ISO Clause</div><div class="v">@(Model.IsoClause ?? "—")</div></div>
+                        <div><div class="k">Linked Record</div><div class="v">@(string.IsNullOrWhiteSpace(Model.LinkedEntityType) ? "—" : $"{Model.LinkedEntityType} #{Model.LinkedEntityId}")</div></div>
+                        <div><div class="k">Uploaded By</div><div class="v">@(Model.UploadedBy?.FullName ?? "—")</div></div>
+                        <div><div class="k">Captured</div><div class="v">@Model.CreatedAt.ToString("dd MMM yyyy HH:mm")</div></div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.Description))
+                    {
+                        <div style="margin-top:1rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Description</div><p style="color:var(--gray-700);margin:.25rem 0 0;white-space:pre-wrap;">@Model.Description</p></div>
+                    }
+                </div>
+            </div>
+
+            @* ── File ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-file"></i> Attached File</span></div>
+                <div class="card-body">
+                    @if (Model.HasFile)
+                    {
+                        <div class="dl">
+                            <div><div class="k">File Name</div><div class="v">@(Model.OriginalFileName ?? "—")</div></div>
+                            <div><div class="k">Content Type</div><div class="v">@(Model.ContentType ?? "—")</div></div>
+                            <div><div class="k">Size</div><div class="v">@FileSizeLabel(Model.FileSize)</div></div>
+                            <div><div class="k">Storage</div><div class="v">@(Model.StorageProvider ?? "—")</div></div>
+                        </div>
+                        <div style="margin-top:1rem;">
+                            <a class="btn-primary-ims" asp-action="Download" asp-route-id="@Model.Id"><i class="fas fa-download"></i> Download</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty" style="padding:1.5rem;"><i class="fas fa-file-circle-xmark"></i><h3>No file attached</h3></div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -114,7 +114,13 @@ namespace IT_Service_Management_System.Models
             SystemsAdmin,
             Development,
             HR,
-            Employee
+            Employee,
+            // ── IMS / ISO roles (Integrated Management System module) ──
+            QualityManager,
+            DepartmentManager,
+            Auditor,
+            DocumentController,
+            ExternalAuditor
         }
     }
 }

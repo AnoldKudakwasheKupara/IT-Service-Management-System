@@ -1,0 +1,235 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model ManagementReview
+@{
+    ViewData["Title"] = Model.Reference;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    var users = ViewBag.Users as List<User> ?? new();
+
+    string StatusClass(ReviewMeetingStatus s) => s switch
+    {
+        ReviewMeetingStatus.Held or ReviewMeetingStatus.Closed => "b-published",
+        ReviewMeetingStatus.Cancelled => "b-rejected",
+        ReviewMeetingStatus.Scheduled => "b-medium",
+        _ => "b-draft"
+    };
+    string ActionClass(ManagementReviewAction a)
+    {
+        if (a.Status == ReviewActionStatus.Completed) return "b-published";
+        if (a.Status == ReviewActionStatus.Cancelled) return "b-archived";
+        if (a.IsOverdue || a.Status == ReviewActionStatus.Overdue) return "b-overdue";
+        if (a.Status == ReviewActionStatus.Open) return "b-open";
+        return "b-medium";
+    }
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Title</h1>
+                        <p class="page-sub">
+                            <span class="badge-ims @StatusClass(Model.Status)">@Model.Status</span>
+                            <span class="meta">· @IsoStandards.Label(Model.Standard) · @Model.MeetingDate.ToString("dd MMM yyyy HH:mm")</span>
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    @if (canManage)
+                    {
+                        <form method="post" asp-action="GatherInputs" asp-route-id="@Model.Id" onsubmit="return confirm('Regenerate all review inputs from current live data? Existing gathered inputs will be replaced.');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-outline-ims" type="submit"><i class="fas fa-arrows-rotate"></i> Gather Inputs</button>
+                        </form>
+                        <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
+                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this management review and all its inputs, attendees and actions?');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-danger-ims" type="submit"><i class="fas fa-trash"></i> Delete</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="card" style="border-color:#a7f3d0;background:#ecfdf5;"><div class="card-body" style="color:#1e6b45;"><i class="fas fa-circle-check"></i> @TempData["Success"]</div></div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="card" style="border-color:#fecaca;background:#fef2f2;"><div class="card-body" style="color:#b3261e;"><i class="fas fa-triangle-exclamation"></i> @TempData["Error"]</div></div>
+        }
+
+        <div class="form-grid" style="align-items:start;">
+            @* ── Meeting details ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Meeting Details</span></div>
+                <div class="card-body">
+                    <div class="dl">
+                        <div><div class="k">Reference</div><div class="v">@Model.Reference</div></div>
+                        <div><div class="k">Status</div><div class="v"><span class="badge-ims @StatusClass(Model.Status)">@Model.Status</span></div></div>
+                        <div><div class="k">ISO Standard</div><div class="v">@IsoStandards.Label(Model.Standard)</div></div>
+                        <div><div class="k">Meeting Date</div><div class="v">@Model.MeetingDate.ToString("dd MMM yyyy HH:mm")</div></div>
+                        <div><div class="k">Location</div><div class="v">@(Model.Location ?? "—")</div></div>
+                        <div><div class="k">Chairperson</div><div class="v">@(Model.Chair?.FullName ?? "—")</div></div>
+                        <div><div class="k">Created By</div><div class="v">@(Model.CreatedBy?.FullName ?? "—")</div></div>
+                        <div><div class="k">Created</div><div class="v">@Model.CreatedAt.ToString("dd MMM yyyy")</div></div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.AgendaNotes))
+                    {
+                        <div style="margin-top:1rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Agenda</div><p style="color:var(--gray-700);margin:.25rem 0 0;white-space:pre-wrap;">@Model.AgendaNotes</p></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Decisions))
+                    {
+                        <div style="margin-top:.75rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Decisions</div><p style="color:var(--gray-700);margin:.25rem 0 0;white-space:pre-wrap;">@Model.Decisions</p></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Conclusions))
+                    {
+                        <div style="margin-top:.75rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Conclusions</div><p style="color:var(--gray-700);margin:.25rem 0 0;white-space:pre-wrap;">@Model.Conclusions</p></div>
+                    }
+                </div>
+            </div>
+
+            @* ── Attendees ── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-users"></i> Attendees</span></div>
+                <div class="card-body" style="padding:0;">
+                    @if (Model.Attendees.Any())
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Attendee</th><th>Role</th><th>Present</th>@if (canManage){<th></th>}</tr></thead>
+                            <tbody>
+                                @foreach (var a in Model.Attendees)
+                                {
+                                    <tr>
+                                        <td>@(a.User?.FullName ?? "—")</td>
+                                        <td class="meta">@(a.Role ?? "—")</td>
+                                        <td>@(a.Present ? "<span class=\"badge-ims b-published\">Present</span>".ToString() : "<span class=\"badge-ims b-draft\">Absent</span>".ToString())</td>
+                                        @if (canManage)
+                                        {
+                                            <td>
+                                                <form method="post" asp-action="RemoveAttendee" asp-route-id="@Model.Id"><input type="hidden" name="attendeeId" value="@a.Id" />@Html.AntiForgeryToken()<button class="act del" type="submit" title="Remove"><i class="fas fa-xmark"></i></button></form>
+                                            </td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else { <div class="empty" style="padding:1.5rem;"><i class="fas fa-users"></i><h3>No attendees recorded</h3></div> }
+                    @if (canManage)
+                    {
+                        <form method="post" asp-action="AddAttendee" asp-route-id="@Model.Id" style="padding:1rem;border-top:1px solid var(--gray-200);display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+                            @Html.AntiForgeryToken()
+                            <select class="inp" name="UserId" style="flex:1;min-width:160px;">
+                                @foreach (var u in users) { <option value="@u.Id">@u.FullName</option> }
+                            </select>
+                            <input class="inp" name="Role" placeholder="Role (optional)" style="width:auto;" />
+                            <label class="meta"><input type="checkbox" name="Present" value="true" checked /> Present</label>
+                            <button class="btn-ghost-ims" type="submit"><i class="fas fa-user-plus"></i> Add</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── Review inputs (ISO 9.3) ── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-layer-group"></i> Review Inputs (clause 9.3)</span>
+                @if (canManage)
+                {
+                    <form method="post" asp-action="GatherInputs" asp-route-id="@Model.Id" onsubmit="return confirm('Regenerate all review inputs from current live data?');">
+                        @Html.AntiForgeryToken()
+                        <button class="btn-ghost-ims" type="submit"><i class="fas fa-arrows-rotate"></i> Regenerate</button>
+                    </form>
+                }
+            </div>
+            <div class="card-body" style="padding:0;">
+                @if (Model.Inputs.Any())
+                {
+                    <table class="tbl">
+                        <thead><tr><th style="width:60px;">#</th><th>Category</th><th>Summary</th></tr></thead>
+                        <tbody>
+                            @foreach (var inp in Model.Inputs.OrderBy(i => i.Sequence))
+                            {
+                                <tr>
+                                    <td class="meta">@inp.Sequence</td>
+                                    <td><strong>@inp.Category</strong></td>
+                                    <td class="meta">@inp.Summary</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="empty">
+                        <i class="fas fa-layer-group"></i>
+                        <h3>No inputs gathered yet</h3>
+                        @if (canManage)
+                        {
+                            <form method="post" asp-action="GatherInputs" asp-route-id="@Model.Id">@Html.AntiForgeryToken()<button class="btn-primary-ims" type="submit"><i class="fas fa-arrows-rotate"></i> Gather Inputs from Live Data</button></form>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ── Actions (Meeting Action Tracking) ── *@
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-list-check"></i> Action Tracking</span></div>
+            <div class="card-body" style="padding:0;">
+                @if (Model.Actions.Any())
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Reference</th><th>Description</th><th>Assigned To</th><th>Due</th><th>Status</th>@if (canManage){<th></th>}</tr></thead>
+                        <tbody>
+                            @foreach (var a in Model.Actions.OrderBy(a => a.Status == ReviewActionStatus.Completed).ThenBy(a => a.DueDate))
+                            {
+                                <tr>
+                                    <td><span class="docnum">@a.Reference</span></td>
+                                    <td>@a.Description</td>
+                                    <td class="meta">@(a.AssignedTo?.FullName ?? "—")</td>
+                                    <td class="@(a.IsOverdue ? "overdue" : "meta")">@(a.DueDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    <td><span class="badge-ims @ActionClass(a)">@(a.IsOverdue && a.Status != ReviewActionStatus.Overdue ? "Overdue" : a.Status.ToString())</span></td>
+                                    @if (canManage)
+                                    {
+                                        <td>
+                                            @if (a.Status != ReviewActionStatus.Completed && a.Status != ReviewActionStatus.Cancelled)
+                                            {
+                                                <form method="post" asp-action="CompleteAction" asp-route-id="@Model.Id"><input type="hidden" name="actionId" value="@a.Id" />@Html.AntiForgeryToken()<button class="act view" type="submit" title="Mark complete"><i class="fas fa-check"></i></button></form>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else { <div class="empty" style="padding:1.5rem;"><i class="fas fa-list-check"></i><h3>No actions raised</h3></div> }
+                @if (canManage)
+                {
+                    <form method="post" asp-action="AddAction" asp-route-id="@Model.Id" style="padding:1rem;border-top:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <label class="lbl"><i class="fas fa-circle-plus"></i> Add action</label>
+                        <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:.5rem;">
+                            <input class="inp" name="Description" placeholder="Action description" required style="flex:1;min-width:220px;" />
+                            <select class="inp" name="AssignedToId" style="width:auto;">
+                                <option value="">— Assign to —</option>
+                                @foreach (var u in users) { <option value="@u.Id">@u.FullName</option> }
+                            </select>
+                            <input class="inp" type="date" name="DueDate" style="width:auto;" />
+                            <button class="btn-ghost-ims" type="submit"><i class="fas fa-plus"></i> Add</button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>

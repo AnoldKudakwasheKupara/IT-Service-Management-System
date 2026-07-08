@@ -1,0 +1,70 @@
+@using IT_Service_Management_System.Models.Ims
+@model List<IsoDocumentAcknowledgement>
+@{
+    var doc = ViewBag.Document as IsoDocument;
+    ViewData["Title"] = "Acknowledgement Report";
+    var total = Model.Count;
+    var done = Model.Count(a => a.Status == AcknowledgementStatus.Acknowledged);
+    var pct = total == 0 ? 0 : (int)Math.Round(done * 100.0 / total);
+    var byDept = Model.GroupBy(a => a.User?.Department?.Name ?? "—")
+        .Select(g => new { Dept = g.Key, Total = g.Count(), Done = g.Count(a => a.Status == AcknowledgementStatus.Acknowledged) })
+        .OrderByDescending(g => g.Total).ToList();
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-action="Details" asp-route-id="@doc?.Id"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-chart-pie"></i> Acknowledgement Report</h1>
+                        <p class="page-sub"><span class="docnum">@doc?.DocumentNumber</span> · @doc?.Title</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat"><div class="ic blue"><i class="fas fa-users"></i></div><div><h3>@total</h3><p>Recipients</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@done</h3><p>Acknowledged</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-hourglass-half"></i></div><div><h3>@(total - done)</h3><p>Pending</p></div></div>
+            <div class="stat"><div class="ic teal"><i class="fas fa-percent"></i></div><div><h3>@pct%</h3><p>Completion</p></div></div>
+        </div>
+
+        <div class="card"><div class="card-head"><span class="t"><i class="fas fa-building"></i> By Department</span></div>
+        <div class="card-body">
+            @foreach (var d in byDept)
+            {
+                var dpct = d.Total == 0 ? 0 : (int)Math.Round(d.Done * 100.0 / d.Total);
+                <div style="margin-bottom:.75rem;">
+                    <div class="meta" style="display:flex;justify-content:space-between;"><span>@d.Dept</span><span>@d.Done / @d.Total (@dpct%)</span></div>
+                    <div class="progress-ims green"><span style="width:@dpct%"></span></div>
+                </div>
+            }
+        </div></div>
+
+        <div class="card"><div class="card-body" style="padding:0;">
+            <table class="tbl">
+                <thead><tr><th>Employee</th><th>Department</th><th>Status</th><th>Signed</th><th>Signature</th></tr></thead>
+                <tbody>
+                    @foreach (var a in Model)
+                    {
+                        <tr>
+                            <td>@(a.User?.FullName ?? "—")</td>
+                            <td class="meta">@(a.User?.Department?.Name ?? "—")</td>
+                            <td>
+                                @if (a.Status == AcknowledgementStatus.Acknowledged) { <span class="badge-ims b-published">Acknowledged</span> }
+                                else if (a.Status == AcknowledgementStatus.Opened) { <span class="badge-ims b-qualreview">Opened</span> }
+                                else { <span class="badge-ims b-draft">Pending</span> }
+                            </td>
+                            <td class="meta">@(a.AcknowledgedAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</td>
+                            <td class="meta">@(a.SignatureName ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div></div>
+    </div>
+</div>

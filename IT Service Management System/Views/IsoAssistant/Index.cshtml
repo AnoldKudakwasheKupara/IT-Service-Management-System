@@ -1,0 +1,50 @@
+@model IT_Service_Management_System.ViewModels.Ims.IsoAssistantVm
+@{
+    ViewData["Title"] = "AI Compliance Assistant";
+}
+<partial name="_ImsStyles" />
+<div class="ims narrow"><div class="page-container">
+    <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-robot"></i> AI Compliance Assistant</h1>
+        <p class="page-sub">Ask about your ISO documents, CAPAs, risks, audits, training &amp; compliance — grounded in approved records</p>
+    </div>
+
+    <form method="get" asp-action="Ask" class="card"><div class="card-body">
+        <div style="display:flex;gap:.5rem;">
+            <input class="inp" name="q" value="@Model.Query" placeholder="e.g. When is the Password Policy due for review?" autofocus />
+            <button class="btn-primary-ims" type="submit"><i class="fas fa-paper-plane"></i> Ask</button>
+        </div>
+        <div style="margin-top:.75rem;display:flex;flex-wrap:wrap;gap:.4rem;">
+            @foreach (var s in Model.Suggestions)
+            {
+                <a class="badge-ims b-internal" style="text-decoration:none;cursor:pointer;" asp-action="Ask" asp-route-q="@s">@s</a>
+            }
+        </div>
+    </div></form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Answer))
+    {
+        <div class="card"><div class="card-body" style="display:flex;gap:.85rem;align-items:flex-start;">
+            <div class="ic blue" style="width:40px;height:40px;border-radius:.7rem;display:flex;align-items:center;justify-content:center;color:white;background:linear-gradient(135deg,var(--primary),var(--primary-dark));flex-shrink:0;"><i class="fas fa-robot"></i></div>
+            <div style="flex:1;"><p style="margin:0;color:var(--gray-800);font-size:1.02rem;font-weight:500;">@Model.Answer</p></div>
+        </div></div>
+    }
+
+    @if (Model.Results.Any())
+    {
+        <div class="card"><div class="card-head"><span class="t"><i class="fas fa-list"></i> @Model.Results.Count result(s)</span></div>
+        <div class="card-body" style="padding:0;">
+            @foreach (var r in Model.Results)
+            {
+                <a href="@r.Url" style="display:flex;gap:.85rem;align-items:center;padding:.85rem 1.25rem;border-bottom:1px solid var(--gray-100);text-decoration:none;color:inherit;">
+                    <i class="fas @r.Icon" style="color:var(--primary);width:20px;text-align:center;"></i>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;color:var(--gray-800);">@r.Title</div>
+                        <div class="meta">@r.Subtitle</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(r.Badge)) { <span class="badge-ims b-internal">@r.Badge</span> }
+                </a>
+            }
+        </div></div>
+    }
+</div></div>

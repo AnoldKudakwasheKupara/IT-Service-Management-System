@@ -1,0 +1,56 @@
+@using IT_Service_Management_System.Models.Ims
+@model List<Audit>
+@{
+    ViewData["Title"] = "Internal Audits";
+    var canEdit = (bool)(ViewBag.CanEdit ?? false);
+    string StatusClass(AuditStatus s) => s switch { AuditStatus.Completed or AuditStatus.Closed => "b-closed", AuditStatus.InProgress => "b-medium", AuditStatus.Cancelled => "b-critical", _ => "b-draft" };
+}
+<partial name="_ImsStyles" />
+<div class="ims"><div class="page-container">
+    <div class="page-header"><div class="head-row">
+        <div><h1 class="page-title"><i class="fas fa-clipboard-check"></i> Internal Audits</h1><p class="page-sub">ISO 9001/27001 clause 9.2 — audit programme &amp; execution</p></div>
+        <div class="head-actions">
+            <a class="btn-ghost-ims" asp-action="Programmes"><i class="fas fa-calendar"></i> Programmes</a>
+            <a class="btn-outline-ims" asp-action="Findings"><i class="fas fa-magnifying-glass"></i> Findings</a>
+            @if (canEdit) { <a class="btn-primary-ims" asp-action="Create"><i class="fas fa-plus"></i> New Audit</a> }
+        </div>
+    </div></div>
+
+    <div class="stats">
+        <div class="stat"><div class="ic blue"><i class="fas fa-list"></i></div><div><h3>@ViewBag.Total</h3><p>Audits</p></div></div>
+        <div class="stat"><div class="ic amber"><i class="fas fa-spinner"></i></div><div><h3>@ViewBag.Open</h3><p>Open</p></div></div>
+        <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@ViewBag.Completed</h3><p>Completed</p></div></div>
+        <div class="stat"><div class="ic red"><i class="fas fa-magnifying-glass"></i></div><div><h3>@ViewBag.OpenFindings</h3><p>Open Findings</p></div></div>
+    </div>
+
+    <form method="get" class="toolbar">
+        <select class="inp" name="status" onchange="this.form.submit()">
+            <option value="">All statuses</option>
+            @foreach (AuditStatus s in Enum.GetValues(typeof(AuditStatus))) { <option value="@s" selected="@(ViewBag.Status as AuditStatus? == s)">@s</option> }
+        </select>
+    </form>
+
+    <div class="card"><div class="card-body" style="padding:0;">
+        @if (Model.Any())
+        {
+            <table class="tbl">
+                <thead><tr><th>Ref</th><th>Title</th><th>Type</th><th>Lead</th><th>Planned</th><th>Findings</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var a in Model)
+                    {
+                        <tr>
+                            <td><a asp-action="Details" asp-route-id="@a.Id"><span class="docnum">@a.Reference</span></a></td>
+                            <td>@a.Title</td>
+                            <td class="meta">@a.Type</td>
+                            <td class="meta">@(a.LeadAuditor?.FullName ?? "—")</td>
+                            <td class="meta">@(a.PlannedStartDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                            <td class="meta">@a.Findings.Count</td>
+                            <td><span class="badge-ims @StatusClass(a.Status)">@a.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else { <div class="empty"><i class="fas fa-clipboard-check"></i><h3>No audits yet</h3></div> }
+    </div></div>
+</div></div>

@@ -1,0 +1,47 @@
+@using IT_Service_Management_System.Models.Ims
+@model List<AuditFinding>
+@{
+    ViewData["Title"] = "Audit Findings";
+    string FindClass(FindingType t) => t switch { FindingType.MajorNonConformance => "b-critical", FindingType.MinorNonConformance => "b-high", FindingType.OpportunityForImprovement => "b-medium", FindingType.Conformity => "b-closed", _ => "b-low" };
+}
+<partial name="_ImsStyles" />
+<div class="ims"><div class="page-container">
+    <div class="page-header"><div class="head-row">
+        <div style="display:flex;gap:1rem;align-items:center;">
+            <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+            <div><h1 class="page-title"><i class="fas fa-magnifying-glass"></i> Audit Findings</h1><p class="page-sub">Observations, OFIs and non-conformities</p></div>
+        </div>
+    </div></div>
+
+    <div class="stats">
+        <div class="stat"><div class="ic blue"><i class="fas fa-list"></i></div><div><h3>@ViewBag.Total</h3><p>Total</p></div></div>
+        <div class="stat"><div class="ic amber"><i class="fas fa-folder-open"></i></div><div><h3>@ViewBag.Open</h3><p>Open</p></div></div>
+        <div class="stat"><div class="ic red"><i class="fas fa-triangle-exclamation"></i></div><div><h3>@ViewBag.Ncs</h3><p>Non-Conformities</p></div></div>
+    </div>
+
+    <form method="get" class="toolbar">
+        <select class="inp" name="type" onchange="this.form.submit()"><option value="">All types</option>@foreach (FindingType t in Enum.GetValues(typeof(FindingType))) { <option value="@t" selected="@(ViewBag.Type as FindingType? == t)">@t</option> }</select>
+        <select class="inp" name="status" onchange="this.form.submit()"><option value="">All statuses</option>@foreach (FindingStatus s in Enum.GetValues(typeof(FindingStatus))) { <option value="@s" selected="@(ViewBag.Status as FindingStatus? == s)">@s</option> }</select>
+    </form>
+
+    <div class="card"><div class="card-body" style="padding:0;">
+        @if (Model.Any())
+        {
+            <table class="tbl"><thead><tr><th>Ref</th><th>Type</th><th>Audit</th><th>Clause</th><th>Assigned</th><th>Due</th><th>Status</th></tr></thead><tbody>
+                @foreach (var f in Model)
+                {
+                    <tr>
+                        <td><a asp-action="FindingDetails" asp-route-id="@f.Id"><span class="docnum">@f.Reference</span></a></td>
+                        <td><span class="badge-ims @FindClass(f.Type)">@f.Type</span></td>
+                        <td class="meta">@(f.Audit?.Reference ?? "—")</td>
+                        <td class="meta">@(f.ClauseReference ?? "—")</td>
+                        <td class="meta">@(f.AssignedTo?.FullName ?? "—")</td>
+                        <td class="@(f.IsOverdue ? "overdue" : "meta")">@(f.DueDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                        <td class="meta">@f.Status</td>
+                    </tr>
+                }
+            </tbody></table>
+        }
+        else { <div class="empty"><i class="fas fa-clipboard-check"></i><h3>No findings</h3></div> }
+    </div></div>
+</div></div>
