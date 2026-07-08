@@ -334,23 +334,33 @@ namespace IT_Service_Management_System.DbContexts
 
             // ── Meeting Minutes relationships ──────────────────────────────────────────
             // Store enums as readable strings (matches the Ticket/User convention above).
-            modelBuilder.Entity<Meeting>().Property(m => m.Day).HasConversion<string>();
             modelBuilder.Entity<Meeting>().Property(m => m.Status).HasConversion<string>();
             modelBuilder.Entity<MeetingAttendance>().Property(a => a.Status).HasConversion<string>();
             modelBuilder.Entity<ActionItem>().Property(a => a.Status).HasConversion<string>();
             modelBuilder.Entity<ActionItem>().Property(a => a.Priority).HasConversion<string>();
             modelBuilder.Entity<ActionItemUpdate>().Property(u => u.StatusAtUpdate).HasConversion<string>();
 
-            // All User FKs use Restrict (no cascade) so the many links from these tables to
-            // Users never create multiple-cascade-path errors on SQL Server.
+            // All User/Department FKs use Restrict (no cascade) so the many links from these
+            // tables never create multiple-cascade-path errors on SQL Server.
             modelBuilder.Entity<Meeting>()
                 .HasOne(m => m.Facilitator).WithMany().HasForeignKey(m => m.FacilitatorId)
                 .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Meeting>()
+                .HasOne(m => m.MinuteTaker).WithMany().HasForeignKey(m => m.MinuteTakerId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Meeting>()
+                .HasOne(m => m.Department).WithMany().HasForeignKey(m => m.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Meeting>().HasIndex(m => m.DepartmentId);
 
             modelBuilder.Entity<MeetingRosterMember>()
                 .HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<MeetingRosterMember>().HasIndex(r => r.UserId).IsUnique();
+            modelBuilder.Entity<MeetingRosterMember>()
+                .HasOne(r => r.Department).WithMany().HasForeignKey(r => r.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            // A user appears once per department roster (and once on the org-wide roster).
+            modelBuilder.Entity<MeetingRosterMember>().HasIndex(r => new { r.DepartmentId, r.UserId }).IsUnique();
 
             // Attendance: cascade from its meeting; Restrict on the user link.
             modelBuilder.Entity<MeetingAttendance>()

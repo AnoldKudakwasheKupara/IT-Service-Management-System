@@ -29,33 +29,41 @@ namespace IT_Service_Management_System.Controllers
         private int? CurrentUserId => HttpContext.Session.GetInt32("UserId");
         private bool IsManager => HttpContext.Session.GetString("UserRole") is "Admin" or "SystemsAdmin";
 
-        private static MeetingDay DeriveDay(DateTime d) => d.DayOfWeek switch
-        {
-            DayOfWeek.Monday => MeetingDay.Monday,
-            DayOfWeek.Friday => MeetingDay.Friday,
-            _ => MeetingDay.Other
-        };
-
         private void LoadUsers() =>
             ViewBag.Users = _context.Users
                 .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
                 .ToList();
 
+        private void LoadDepartments() =>
+            ViewBag.Departments = _context.Departments
+                .OrderBy(d => d.Name)
+                .ToList();
+
         // ── LIST (all staff) ───────────────────────────────────────────────────────────
         [AllowAnyRole]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int? departmentId)
         {
-            var meetings = await _context.Meetings
+            var query = _context.Meetings
+                .Include(m => m.Department)
                 .Include(m => m.Facilitator)
                 .Include(m => m.Attendances)
                 .Include(m => m.ActionItems)
-                .OrderByDescending(m => m.Date)
-                .ToListAsync();
+                .AsQueryable();
+
+            // null = all; 0 = organization-wide (no department); >0 = that department.
+            if (departmentId == 0)
+                query = query.Where(m => m.DepartmentId == null);
+            else if (departmentId.HasValue)
+                query = query.Where(m => m.DepartmentId == departmentId.Value);
+
+            var meetings = await query.OrderByDescending(m => m.Date).ToListAsync();
 
             ViewBag.TotalMeetings = meetings.Count;
             ViewBag.OpenActionItems = await _context.ActionItems
                 .CountAsync(a => a.Status != ActionItemStatus.Done);
             ViewBag.RosterCount = await _context.MeetingRosterMembers.CountAsync();
+            ViewBag.SelectedDepartmentId = departmentId;
+            LoadDepartments();
 
             return View(meetings);
         }
@@ -65,8 +73,10 @@ namespace IT_Service_Management_System.Controllers
         public async Task<IActionResult> Details(int id)
         {
             var meeting = await _context.Meetings
+                .Include(m => m.Department)
                 .Include(m => m.Facilitator)
-                .Include(m => m.Attendances).ThenInclude(a => a.User)
+                .Include(m => m.MinuteTaker)
+                .Include(m => m.Attendances).ThenInclude(a => a.User).ThenInclude(u => u!.Department)
                 .Include(m => m.ActionItems).ThenInclude(a => a.AssignedTo)
                 .Include(m => m.ActionItems).ThenInclude(a => a.Updates).ThenInclude(u => u.UpdatedBy)
                 .FirstOrDefaultAsync(m => m.Id == id);
@@ -146,11 +156,11 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ── CREATE MEETING (admin) ───────────────────────────────────────────────────────
-        public IActionResult Create()
+        public IActionResult Create(int? departmentId)
         {
             LoadUsers();
-            var today = DateTime.Today;
-            return View(new Meeting { Date = today, Day = DeriveDay(today), Status = MeetingStatus.Held });
+            LoadDepartments();
+            return View(new Meeting { Date = DateTime.Today, DepartmentId = departmentId, Status = MeetingStatus.Held });
         }
 
         [HttpPost]
@@ -160,18 +170,22 @@ namespace IT_Service_Management_System.Controllers
             if (!ModelState.IsValid)
             {
                 LoadUsers();
+                LoadDepartments();
                 return View(meeting);
             }
 
-            meeting.Day = DeriveDay(meeting.Date);
             meeting.CreatedAt = DateTime.Now;
             meeting.CreatedById = CurrentUserId;
 
             _context.Meetings.Add(meeting);
             await _context.SaveChangesAsync();
 
-            // Pre-load the standing roster into the attendance register (all Present by default).
-            var rosterUserIds = await _context.MeetingRosterMembers.Select(r => r.UserId).ToListAsync();
+            // Pre-load the roster for this meeting's department (null = org-wide roster) into the
+            // attendance register, all Present by default.
+            var rosterUserIds = await _context.MeetingRosterMembers
+                .Where(r => r.DepartmentId == meeting.DepartmentId)
+                .Select(r => r.UserId)
+                .ToListAsync();
             foreach (var userId in rosterUserIds)
             {
                 _context.MeetingAttendances.Add(new MeetingAttendance
@@ -184,11 +198,11 @@ namespace IT_Service_Management_System.Controllers
             await _context.SaveChangesAsync();
 
             await _audit.LogAsync("Created", "Meeting", meeting.Id,
-                $"Meeting created for {meeting.Date:dd MMM yyyy} ({meeting.Day}), {rosterUserIds.Count} roster attendee(s)");
+                $"Meeting created for {meeting.Date:dd MMM yyyy} ({meeting.WeekdayName}), {rosterUserIds.Count} roster attendee(s)");
 
             TempData["Success"] = rosterUserIds.Count > 0
                 ? $"Meeting created. {rosterUserIds.Count} roster member(s) added to attendance."
-                : "Meeting created. Add roster members to auto-fill attendance next time.";
+                : "Meeting created. Add roster members for this department to auto-fill attendance next time.";
             return RedirectToAction(nameof(Details), new { id = meeting.Id });
         }
 
@@ -198,6 +212,7 @@ namespace IT_Service_Management_System.Controllers
             var meeting = await _context.Meetings.FindAsync(id);
             if (meeting == null) return NotFound();
             LoadUsers();
+            LoadDepartments();
             return View(meeting);
         }
 
@@ -208,6 +223,7 @@ namespace IT_Service_Management_System.Controllers
             if (!ModelState.IsValid)
             {
                 LoadUsers();
+                LoadDepartments();
                 return View(meeting);
             }
 
@@ -215,10 +231,16 @@ namespace IT_Service_Management_System.Controllers
             if (existing == null) return NotFound();
 
             existing.Date = meeting.Date;
-            existing.Day = DeriveDay(meeting.Date);
+            existing.DepartmentId = meeting.DepartmentId;
             existing.Title = meeting.Title;
+            existing.Venue = meeting.Venue;
+            existing.StartTime = meeting.StartTime;
+            existing.EndTime = meeting.EndTime;
             existing.FacilitatorId = meeting.FacilitatorId;
+            existing.MinuteTakerId = meeting.MinuteTakerId;
+            existing.Objective = meeting.Objective;
             existing.Summary = meeting.Summary;
+            existing.NextMeetingDate = meeting.NextMeetingDate;
             existing.Status = meeting.Status;
 
             await _context.SaveChangesAsync();
@@ -315,7 +337,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateActionItem(int meetingId, string title, string? details,
-            int? assignedToId, DateTime? dueDate, ActionItemPriority priority)
+            int? assignedToId, string? assigneeLabel, DateTime? dueDate, ActionItemPriority priority)
         {
             if (string.IsNullOrWhiteSpace(title))
             {
@@ -329,6 +351,7 @@ namespace IT_Service_Management_System.Controllers
                 Title = title.Trim(),
                 Details = string.IsNullOrWhiteSpace(details) ? null : details.Trim(),
                 AssignedToId = assignedToId,
+                AssigneeLabel = assignedToId.HasValue || string.IsNullOrWhiteSpace(assigneeLabel) ? null : assigneeLabel.Trim(),
                 DueDate = dueDate,
                 Priority = priority,
                 Status = ActionItemStatus.Open,
@@ -346,7 +369,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditActionItem(int id, string title, string? details,
-            int? assignedToId, DateTime? dueDate, ActionItemPriority priority, ActionItemStatus status)
+            int? assignedToId, string? assigneeLabel, DateTime? dueDate, ActionItemPriority priority, ActionItemStatus status)
         {
             var item = await _context.ActionItems.FindAsync(id);
             if (item == null) return NotFound();
@@ -354,6 +377,7 @@ namespace IT_Service_Management_System.Controllers
             item.Title = string.IsNullOrWhiteSpace(title) ? item.Title : title.Trim();
             item.Details = string.IsNullOrWhiteSpace(details) ? null : details.Trim();
             item.AssignedToId = assignedToId;
+            item.AssigneeLabel = assignedToId.HasValue || string.IsNullOrWhiteSpace(assigneeLabel) ? null : assigneeLabel.Trim();
             item.DueDate = dueDate;
             item.Priority = priority;
             item.Status = status;
@@ -366,36 +390,41 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction(nameof(Details), new { id = item.MeetingId });
         }
 
-        // ── STANDING ROSTER (admin) ──────────────────────────────────────────────────────
-        public async Task<IActionResult> Roster()
+        // ── STANDING ROSTERS — one per department, plus an org-wide roster (admin) ─────────
+        public async Task<IActionResult> Roster(int? departmentId)
         {
             var roster = await _context.MeetingRosterMembers
                 .Include(r => r.User)
+                .Include(r => r.Department)
                 .OrderBy(r => r.User!.FirstName).ThenBy(r => r.User!.LastName)
                 .ToListAsync();
 
-            var rosterUserIds = roster.Select(r => r.UserId).ToHashSet();
-            ViewBag.AddableUsers = await _context.Users
-                .Where(u => !rosterUserIds.Contains(u.Id))
-                .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
-                .ToListAsync();
+            LoadUsers();          // all users for the add-member picker
+            LoadDepartments();    // department picker (+ an "Organization-wide" option in the view)
+            ViewBag.SelectedDepartmentId = departmentId;
 
             return View(roster);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddRosterMember(int userId)
+        public async Task<IActionResult> AddRosterMember(int userId, int? departmentId)
         {
-            bool exists = await _context.MeetingRosterMembers.AnyAsync(r => r.UserId == userId);
+            bool exists = await _context.MeetingRosterMembers
+                .AnyAsync(r => r.UserId == userId && r.DepartmentId == departmentId);
             if (!exists)
             {
-                _context.MeetingRosterMembers.Add(new MeetingRosterMember { UserId = userId });
+                _context.MeetingRosterMembers.Add(new MeetingRosterMember { UserId = userId, DepartmentId = departmentId });
                 await _context.SaveChangesAsync();
-                await _audit.LogAsync("Roster Member Added", "MeetingRoster", userId, "Added to standing meeting roster");
+                await _audit.LogAsync("Roster Member Added", "MeetingRoster", userId,
+                    $"Added to {(departmentId.HasValue ? "department" : "organization-wide")} meeting roster");
                 TempData["Success"] = "Roster member added.";
             }
-            return RedirectToAction(nameof(Roster));
+            else
+            {
+                TempData["Error"] = "That person is already on this roster.";
+            }
+            return RedirectToAction(nameof(Roster), new { departmentId });
         }
 
         [HttpPost]

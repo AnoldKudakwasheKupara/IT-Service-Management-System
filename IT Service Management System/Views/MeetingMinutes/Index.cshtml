@@ -1,8 +1,11 @@
 @model IEnumerable<IT_Service_Management_System.Models.Meeting>
 @using IT_Service_Management_System.Enums
+@using IT_Service_Management_System.Models
 @{
     ViewData["Title"] = "Meeting Minutes - Axis IT Helpdesk";
     var isManager = (Context.Session.GetString("UserRole") is "Admin" or "SystemsAdmin");
+    var departments = (ViewBag.Departments as List<Department>) ?? new List<Department>();
+    int? selectedDept = ViewBag.SelectedDepartmentId;
 }
 
 <partial name="_MeetingStyles" />
@@ -39,13 +42,22 @@
         </div>
 
         <div class="card">
-            <div class="card-head"><span class="t"><i class="fas fa-calendar-days"></i> Meetings</span></div>
+            <div class="card-head">
+                <span class="t"><i class="fas fa-calendar-days"></i> Meetings</span>
+                <form method="get" style="display:flex;gap:.5rem;align-items:center;">
+                    <select name="departmentId" class="inp" style="min-width:200px;padding:.4rem .6rem;" onchange="this.form.submit()">
+                        <option value="">All departments</option>
+                        <option value="0" selected="@(selectedDept == 0)">Organization-wide</option>
+                        @foreach (var d in departments) { <option value="@d.Id" selected="@(selectedDept == d.Id)">@d.Name</option> }
+                    </select>
+                </form>
+            </div>
             @if (Model.Any())
             {
                 <table class="tbl">
                     <thead>
                         <tr>
-                            <th>Date</th><th>Meeting</th><th>Facilitator</th>
+                            <th>Date</th><th>Meeting</th><th>Department</th><th>Chair</th>
                             <th>Attendance</th><th>Open items</th><th>Status</th><th></th>
                         </tr>
                     </thead>
@@ -58,8 +70,9 @@
                                 <td>@m.Date.ToString("dd MMM yyyy")</td>
                                 <td>
                                     <a asp-action="Details" asp-route-id="@m.Id" style="text-decoration:none;color:var(--gray-800);font-weight:600;">@m.DisplayTitle</a>
-                                    <span class="badge-mm b-day-@m.Day.ToString().ToLower()" style="margin-left:.4rem;">@m.Day</span>
+                                    <span class="badge-mm b-dept" style="margin-left:.4rem;">@m.WeekdayName</span>
                                 </td>
+                                <td>@(m.Department?.Name ?? "Org-wide")</td>
                                 <td>@(m.Facilitator?.FullName ?? "—")</td>
                                 <td><i class="fas fa-user-check" style="color:var(--success);"></i> @present / @m.Attendances.Count</td>
                                 <td>@(openItems > 0 ? $"{openItems} open" : "—")</td>

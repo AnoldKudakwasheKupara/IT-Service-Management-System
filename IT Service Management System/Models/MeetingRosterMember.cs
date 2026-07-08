@@ -11,6 +11,12 @@ namespace IT_Service_Management_System.Models
     {
         public int Id { get; set; }
 
+        /// <summary>Department this roster belongs to. Null = an organization-wide roster.</summary>
+        public int? DepartmentId { get; set; }
+
+        [ValidateNever]
+        public Department? Department { get; set; }
+
         public int UserId { get; set; }
 
         [ValidateNever]

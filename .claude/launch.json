@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "itsm-web",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "IT Service Management System/IT Service Management System.csproj", "--urls", "http://localhost:5129"],
+      "port": 5129
+    },
+    {
+      "name": "savetrack",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "C:/Users/Anold Kupara/source/repos/SaveTrack/SaveTrack/SaveTrack.csproj", "--urls", "http://localhost:5107"],
+      "port": 5107
+    }
+  ]
+}

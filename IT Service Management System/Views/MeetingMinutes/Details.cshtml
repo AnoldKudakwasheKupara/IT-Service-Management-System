@@ -22,7 +22,7 @@
                     <h1 class="page-title">@Model.DisplayTitle</h1>
                     <p class="page-sub">
                         <i class="far fa-calendar"></i> @Model.Date.ToString("dddd, dd MMM yyyy")
-                        &nbsp;·&nbsp; <span class="badge-mm b-day-@Model.Day.ToString().ToLower()">@Model.Day</span>
+                        &nbsp;·&nbsp; <span class="badge-mm b-dept">@(Model.Department?.Name ?? "Organization-wide")</span>
                         &nbsp; <span class="badge-mm b-status-@Model.Status.ToString().ToLower()">@Model.Status</span>
                     </p>
                 </div>
@@ -39,10 +39,24 @@
         <div class="card">
             <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
             <div class="card-body">
-                <p class="meta" style="margin:0 0 .5rem;"><strong>Facilitator:</strong> @(Model.Facilitator?.FullName ?? "—")</p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.6rem 1.5rem;margin-bottom:1rem;">
+                    <p class="meta" style="margin:0;"><strong>Day:</strong> @Model.WeekdayName</p>
+                    <p class="meta" style="margin:0;"><strong>Venue:</strong> @(string.IsNullOrWhiteSpace(Model.Venue) ? "—" : Model.Venue)</p>
+                    <p class="meta" style="margin:0;"><strong>Time:</strong> @(Model.StartTime?.ToString("HH:mm") ?? "—")@(Model.EndTime.HasValue ? $" – {Model.EndTime:HH\\:mm}" : "")</p>
+                    <p class="meta" style="margin:0;"><strong>Chair:</strong> @(Model.Facilitator?.FullName ?? "—")</p>
+                    <p class="meta" style="margin:0;"><strong>Minute taker:</strong> @(Model.MinuteTaker?.FullName ?? "—")</p>
+                    <p class="meta" style="margin:0;"><strong>Next meeting:</strong> @(Model.NextMeetingDate?.ToString("dd MMM yyyy") ?? "—")</p>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Objective))
+                {
+                    <div style="margin-bottom:1rem;">
+                        <strong style="font-size:.85rem;color:var(--gray-700);">Overview / objective</strong>
+                        <p style="white-space:pre-wrap;margin:.35rem 0 0;color:var(--gray-700);">@Model.Objective</p>
+                    </div>
+                }
                 <div>
-                    <strong style="font-size:.85rem;color:var(--gray-700);">Minutes / Summary</strong>
-                    <p style="white-space:pre-wrap;margin:.35rem 0 0;color:var(--gray-700);">@(string.IsNullOrWhiteSpace(Model.Summary) ? "No summary recorded." : Model.Summary)</p>
+                    <strong style="font-size:.85rem;color:var(--gray-700);">Minutes / discussion</strong>
+                    <p style="white-space:pre-wrap;margin:.35rem 0 0;color:var(--gray-700);">@(string.IsNullOrWhiteSpace(Model.Summary) ? "No minutes recorded." : Model.Summary)</p>
                 </div>
             </div>
         </div>
@@ -63,7 +77,7 @@
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="meetingId" value="@Model.Id" />
                         <table class="tbl">
-                            <thead><tr><th>Attendee</th><th style="width:190px;">Status</th><th>Note</th></tr></thead>
+                            <thead><tr><th>Attendee</th><th>Dept / Role</th><th style="width:190px;">Status</th><th>Note</th></tr></thead>
                             <tbody>
                                 @foreach (var a in Model.Attendances.OrderBy(a => a.User!.FirstName))
                                 {
@@ -72,6 +86,7 @@
                                             <span class="with-avatar"><span class="avatar">@Initials(a.User?.FullName)</span> @a.User?.FullName</span>
                                             <input type="hidden" name="attendanceId" value="@a.Id" />
                                         </td>
+                                        <td class="meta">@(a.User?.Department?.Name ?? "—") · @a.User?.Role</td>
                                         <td>
                                             <select name="status" class="inp">
                                                 @foreach (AttendanceStatus s in Enum.GetValues(typeof(AttendanceStatus)))
@@ -107,12 +122,13 @@
                 else
                 {
                     <table class="tbl">
-                        <thead><tr><th>Attendee</th><th>Status</th><th>Note</th></tr></thead>
+                        <thead><tr><th>Attendee</th><th>Dept / Role</th><th>Status</th><th>Note</th></tr></thead>
                         <tbody>
                             @foreach (var a in Model.Attendances.OrderBy(a => a.User!.FirstName))
                             {
                                 <tr>
                                     <td><span class="with-avatar"><span class="avatar">@Initials(a.User?.FullName)</span> @a.User?.FullName</span></td>
+                                    <td class="meta">@(a.User?.Department?.Name ?? "—") · @a.User?.Role</td>
                                     <td><span class="badge-mm b-@a.Status.ToString().ToLower()">@a.Status</span></td>
                                     <td class="meta">@a.Note</td>
                                 </tr>
@@ -137,11 +153,12 @@
                             <div class="form-grid">
                                 <div class="fg full"><label class="lbl"><i class="fas fa-heading"></i> Title <span class="req">*</span></label><input name="title" class="inp" required placeholder="What needs to be done?" /></div>
                                 <div class="fg full"><label class="lbl"><i class="fas fa-align-left"></i> Details</label><textarea name="details" rows="2" class="inp"></textarea></div>
-                                <div class="fg"><label class="lbl"><i class="fas fa-user"></i> Assign to</label>
-                                    <select name="assignedToId" class="inp"><option value="">— Unassigned —</option>
+                                <div class="fg"><label class="lbl"><i class="fas fa-user"></i> Assign to (person)</label>
+                                    <select name="assignedToId" class="inp"><option value="">— none —</option>
                                         @foreach (var u in users) { <option value="@u.Id">@u.FullName</option> }
                                     </select>
                                 </div>
+                                <div class="fg"><label class="lbl"><i class="fas fa-users"></i> …or team / other</label><input name="assigneeLabel" class="inp" placeholder="e.g. Support Team" /></div>
                                 <div class="fg"><label class="lbl"><i class="fas fa-calendar-day"></i> Due date</label><input type="date" name="dueDate" class="inp" /></div>
                                 <div class="fg"><label class="lbl"><i class="fas fa-flag"></i> Priority</label>
                                     <select name="priority" class="inp">
@@ -170,7 +187,7 @@
                                     <div class="ai-meta">
                                         <span class="badge-mm b-@item.Status.ToString().ToLower()">@(item.Status == ActionItemStatus.InProgress ? "In Progress" : item.Status.ToString())</span>
                                         <span class="badge-mm b-pri-@item.Priority.ToString().ToLower()">@item.Priority</span>
-                                        <span class="meta"><i class="fas fa-user"></i> @(item.AssignedTo?.FullName ?? "Unassigned")</span>
+                                        <span class="meta"><i class="fas fa-user"></i> @item.AssigneeDisplay</span>
                                         @if (item.DueDate.HasValue)
                                         {
                                             <span class="meta @(item.IsOverdue ? "overdue" : "")"><i class="fas fa-calendar-day"></i> Due @item.DueDate.Value.ToString("dd MMM")</span>
@@ -185,11 +202,12 @@
                                             <input type="hidden" name="id" value="@item.Id" />
                                             <div class="fg"><label class="lbl">Title</label><input name="title" class="inp" value="@item.Title" /></div>
                                             <div class="fg"><label class="lbl">Details</label><textarea name="details" rows="2" class="inp">@item.Details</textarea></div>
-                                            <div class="fg"><label class="lbl">Assign to</label>
-                                                <select name="assignedToId" class="inp"><option value="">— Unassigned —</option>
+                                            <div class="fg"><label class="lbl">Assign to (person)</label>
+                                                <select name="assignedToId" class="inp"><option value="">— none —</option>
                                                     @foreach (var u in users) { <option value="@u.Id" selected="@(u.Id == item.AssignedToId)">@u.FullName</option> }
                                                 </select>
                                             </div>
+                                            <div class="fg"><label class="lbl">…or team / other</label><input name="assigneeLabel" class="inp" value="@item.AssigneeLabel" placeholder="e.g. Support Team" /></div>
                                             <div class="fg"><label class="lbl">Due date</label><input type="date" name="dueDate" class="inp" value="@(item.DueDate?.ToString("yyyy-MM-dd"))" /></div>
                                             <div class="fg"><label class="lbl">Priority</label>
                                                 <select name="priority" class="inp">@foreach (ActionItemPriority p in Enum.GetValues(typeof(ActionItemPriority))) { <option value="@p" selected="@(p == item.Priority)">@p</option> }</select>

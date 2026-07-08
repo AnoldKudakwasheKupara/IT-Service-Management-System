@@ -24,6 +24,11 @@ namespace IT_Service_Management_System.Models
         [ValidateNever]
         public User? AssignedTo { get; set; }
 
+        /// <summary>Free-text assignee for a team/department or multiple people
+        /// (e.g. "Support Team", "Danai H. / Ngonidzashe J.") when it isn't a single system user.</summary>
+        [StringLength(150)]
+        public string? AssigneeLabel { get; set; }
+
         /// <summary>The meeting where this item was first raised.</summary>
         public int MeetingId { get; set; }
 
@@ -45,6 +50,12 @@ namespace IT_Service_Management_System.Models
 
         [ValidateNever]
         public ICollection<ActionItemUpdate> Updates { get; set; } = new List<ActionItemUpdate>();
+
+        /// <summary>Who the item is on: the assigned user, else the free-text label, else "Unassigned".</summary>
+        [NotMapped]
+        public string AssigneeDisplay =>
+            AssignedTo?.FullName
+            ?? (string.IsNullOrWhiteSpace(AssigneeLabel) ? "Unassigned" : AssigneeLabel!);
 
         [NotMapped]
         public bool IsOpen => Status != ActionItemStatus.Done;
