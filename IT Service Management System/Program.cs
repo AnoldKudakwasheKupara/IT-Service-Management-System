@@ -169,6 +169,22 @@ builder.Services.AddScoped<DocumentApprovalService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Ims.ImsNotificationService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Ims.IsoDocumentService>();
 
+// ECIE — Enterprise Compliance Intelligence Engine (deterministic, evidence-grounded).
+// The AI seam is off by default (NullAiProvider makes no external calls); swap in a real
+// IAiProvider later to enable phrasing/semantic search without changing any specialist.
+builder.Services.AddSingleton<IT_Service_Management_System.Services.Ecie.IAiProvider,
+    IT_Service_Management_System.Services.Ecie.NullAiProvider>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.EvidenceGraphService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.ComplianceHealthService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.EcieOrchestrator>();
+// AI specialists (routed to by the orchestrator).
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
+    IT_Service_Management_System.Services.Ecie.Specialists.DocumentExpertSpecialist>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
+    IT_Service_Management_System.Services.Ecie.Specialists.IsoConsultantSpecialist>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
+    IT_Service_Management_System.Services.Ecie.Specialists.RiskAdvisorSpecialist>();
+
 // Defensive, idempotent demo-data top-up seeder (gated by Demo:Seed, default ON).
 builder.Services.AddScoped<IT_Service_Management_System.Services.DemoDataSeeder>();
 // OCR engine (pluggable). PlainText baseline by default; set EFM:Ocr:Provider = "tesseract"
