@@ -633,6 +633,10 @@
                 @if (navIms)
                 {
                     <div class="nav-group">Integrated Mgmt (ISO)</div>
+                    <a class="nav-item @(currentController == "Ecie" ? "active" : "")"
+                       asp-controller="Ecie" asp-action="Index">
+                        <i class="fas fa-brain"></i> Intelligence Engine
+                    </a>
                     <a class="nav-item @(currentController == "Ims" ? "active" : "")"
                        asp-controller="Ims" asp-action="Index">
                         <i class="fas fa-certificate"></i> ISO Dashboard

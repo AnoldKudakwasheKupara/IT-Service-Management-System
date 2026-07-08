@@ -1,0 +1,24 @@
+@model IT_Service_Management_System.ViewModels.Ecie.RefSection
+@if (Model.Items != null && Model.Items.Count > 0)
+{
+    <div class="card">
+        <div class="card-head"><span class="t"><i class="fas @Model.Icon"></i> @Model.Title</span><span class="meta">@Model.Items.Count</span></div>
+        <div class="card-body" style="padding:0;">
+            @foreach (var e in Model.Items)
+            {
+                <a href="@(string.IsNullOrEmpty(e.Url) ? "javascript:void(0)" : e.Url)"
+                   style="display:flex;gap:.85rem;align-items:center;padding:.7rem 1.25rem;border-bottom:1px solid var(--gray-100);text-decoration:none;color:inherit;@(string.IsNullOrEmpty(e.Url) ? "cursor:default;" : "")">
+                    <i class="fas @e.Icon" style="color:var(--primary);width:20px;text-align:center;"></i>
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:600;color:var(--gray-800);">@(string.IsNullOrEmpty(e.Reference) ? "" : e.Reference + " — ")@e.Title</div>
+                        <div class="meta">@e.Kind@(string.IsNullOrEmpty(e.Subtitle) ? "" : " · " + e.Subtitle)</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(e.Badge))
+                    {
+                        <span class="badge-ims b-internal">@e.Badge</span>
+                    }
+                </a>
+            }
+        </div>
+    </div>
+}

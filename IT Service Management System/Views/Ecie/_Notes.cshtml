@@ -1,0 +1,12 @@
+@model IT_Service_Management_System.ViewModels.Ecie.NoteSection
+@if (Model.Items != null && Model.Items.Count > 0)
+{
+    <div class="card">
+        <div class="card-head"><span class="t"><i class="fas @Model.Icon"></i> @Model.Title</span></div>
+        <div class="card-body">
+            <ul style="margin:0;padding-left:1.1rem;color:var(--gray-700);line-height:1.8;">
+                @foreach (var i in Model.Items) { <li>@i</li> }
+            </ul>
+        </div>
+    </div>
+}

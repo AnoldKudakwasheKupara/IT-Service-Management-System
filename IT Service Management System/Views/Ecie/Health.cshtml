@@ -1,0 +1,63 @@
+@model IT_Service_Management_System.ViewModels.Ecie.ComplianceHealthVm
+@{
+    ViewData["Title"] = "Compliance Health";
+    string Ring(string band) => band == "green" ? "var(--success)" : band == "amber" ? "var(--warning)" : "var(--danger)";
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-heart-pulse"></i> Compliance Health Score</h1>
+                    <p class="page-sub">Continuously computed from live records — every figure is itself audit evidence</p>
+                </div>
+                <div class="head-actions">
+                    <a class="btn-ghost-ims" asp-action="Index"><i class="fas fa-brain"></i> Ask the Engine</a>
+                    <a class="btn-outline-ims" asp-action="AuditMode"><i class="fas fa-user-secret"></i> Audit Mode</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card"><div class="card-body">
+            <div style="display:flex;gap:2rem;align-items:center;flex-wrap:wrap;">
+                <div style="width:150px;height:150px;border-radius:50%;background:conic-gradient(@Ring(Model.OverallBand) @(Model.Overall * 3.6)deg, var(--gray-100) 0deg);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                    <div style="width:118px;height:118px;border-radius:50%;background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                        <div style="font-size:2.4rem;font-weight:800;color:@Ring(Model.OverallBand);line-height:1;">@Model.Overall</div>
+                        <div class="meta">Overall</div>
+                    </div>
+                </div>
+                <div style="flex:1;min-width:240px;">
+                    <h2 style="margin:0;color:var(--gray-800);">Compliance is <span style="color:@Ring(Model.OverallBand)">@Model.OverallLabel</span></h2>
+                    <p class="meta" style="margin:.35rem 0 0;">Weighted across nine management-system dimensions. @(Model.AiEnabled ? "AI phrasing enabled." : "Deterministic engine — no external AI calls.")</p>
+                    @if (Model.Alerts.Any())
+                    {
+                        <div style="margin-top:1rem;display:flex;flex-direction:column;gap:.4rem;">
+                            @foreach (var a in Model.Alerts)
+                            {
+                                <div style="display:flex;gap:.5rem;align-items:center;color:var(--gray-700);"><i class="fas fa-triangle-exclamation" style="color:var(--warning);"></i> @a</div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div></div>
+
+        <div class="stats">
+            @foreach (var s in Model.Scores)
+            {
+                <div class="stat" style="flex-direction:column;align-items:stretch;gap:.5rem;">
+                    <div style="display:flex;align-items:center;gap:.75rem;">
+                        <div class="ic @s.Band" style="background:@Ring(s.Band);"><i class="fas @s.Icon"></i></div>
+                        <div style="flex:1;"><h3 style="font-size:1.5rem;">@s.Score<span style="font-size:.9rem;color:var(--gray-400);">/100</span></h3><p>@s.Name</p></div>
+                    </div>
+                    <div class="progress-ims @(s.Band == "green" ? "green" : s.Band == "amber" ? "amber" : "")" style="@(s.Band == "red" ? "background:var(--gray-100);" : "")">
+                        <span style="width:@s.Score%;@(s.Band == "red" ? "background:var(--danger);" : "")"></span>
+                    </div>
+                    <div class="hint">@s.Detail</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

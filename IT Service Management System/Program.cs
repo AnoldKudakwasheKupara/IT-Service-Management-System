@@ -184,6 +184,24 @@ builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpeci
     IT_Service_Management_System.Services.Ecie.Specialists.IsoConsultantSpecialist>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
     IT_Service_Management_System.Services.Ecie.Specialists.RiskAdvisorSpecialist>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
+    IT_Service_Management_System.Services.Ecie.Specialists.CapaAdvisorSpecialist>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
+    IT_Service_Management_System.Services.Ecie.Specialists.InternalAuditorSpecialist>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
+    IT_Service_Management_System.Services.Ecie.Specialists.RootCauseAnalystSpecialist>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
+    IT_Service_Management_System.Services.Ecie.Specialists.SecurityAdvisorSpecialist>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
+    IT_Service_Management_System.Services.Ecie.Specialists.QualityAdvisorSpecialist>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
+    IT_Service_Management_System.Services.Ecie.Specialists.TrainingAdvisorSpecialist>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
+    IT_Service_Management_System.Services.Ecie.Specialists.SupplierAdvisorSpecialist>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
+    IT_Service_Management_System.Services.Ecie.Specialists.MeetingAdvisorSpecialist>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
+    IT_Service_Management_System.Services.Ecie.Specialists.ExecutiveAdvisorSpecialist>();
 
 // Defensive, idempotent demo-data top-up seeder (gated by Demo:Seed, default ON).
 builder.Services.AddScoped<IT_Service_Management_System.Services.DemoDataSeeder>();

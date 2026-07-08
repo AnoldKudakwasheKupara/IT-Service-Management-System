@@ -1,0 +1,63 @@
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Services.Ecie
+@model EvidenceGraph
+@{
+    ViewData["Title"] = "Evidence Map";
+    var doc = ViewBag.Doc as IsoDocument;
+    var root = Model.Nodes.FirstOrDefault();
+    var spokes = Model.Edges.Where(e => e.From == root?.Id)
+        .Select(e => new { Edge = e, Node = Model.Nodes.FirstOrDefault(n => n.Id == e.To) })
+        .Where(x => x.Node != null)
+        .GroupBy(x => x.Edge.Label);
+}
+<partial name="_ImsStyles" />
+
+<div class="ims">
+    <div class="page-container">
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex;gap:1rem;align-items:center;">
+                    <a class="btn-back" asp-controller="IsoDocuments" asp-action="Details" asp-route-id="@doc?.Id"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-diagram-project"></i> Evidence Map</h1>
+                        <p class="page-sub"><span class="docnum">@doc?.DocumentNumber</span> · @doc?.Title</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card"><div class="card-body" style="text-align:center;">
+            <div style="display:inline-flex;flex-direction:column;align-items:center;gap:.4rem;padding:1rem 1.5rem;border-radius:1rem;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;">
+                <i class="fas fa-file-shield" style="font-size:1.5rem;"></i>
+                <strong>@doc?.DocumentNumber</strong>
+                <span style="font-size:.85rem;opacity:.9;">@doc?.Title</span>
+            </div>
+            <p class="hint" style="margin-top:.75rem;">This controlled document is connected to @(Model.Nodes.Count - 1) related record(s) across the management system.</p>
+        </div></div>
+
+        @if (spokes.Any())
+        {
+            <div class="form-grid" style="align-items:start;">
+                @foreach (var group in spokes)
+                {
+                    <div class="card">
+                        <div class="card-head"><span class="t"><i class="fas fa-link"></i> @System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(group.Key)</span><span class="meta">@group.Count()</span></div>
+                        <div class="card-body" style="padding:0;">
+                            @foreach (var x in group)
+                            {
+                                <div style="display:flex;gap:.75rem;align-items:center;padding:.7rem 1.25rem;border-bottom:1px solid var(--gray-100);">
+                                    <i class="fas @x.Node!.Icon" style="color:var(--primary);width:20px;text-align:center;"></i>
+                                    <div style="flex:1;"><div style="font-weight:600;color:var(--gray-800);">@x.Node!.Label</div><div class="meta">@x.Node!.Kind</div></div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="card"><div class="empty"><i class="fas fa-diagram-project"></i><h3>No linked records yet</h3><p class="meta">Tag this document to an ISO clause, link training, or raise findings to grow its evidence map.</p></div></div>
+        }
+    </div>
+</div>
