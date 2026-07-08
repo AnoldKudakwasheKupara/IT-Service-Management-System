@@ -410,6 +410,22 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction(nameof(Notifications));
         }
 
+        // Mark a single notification as read (per-item button on the Notifications page).
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkNotificationRead(int id)
+        {
+            var notification = await _db.DocumentNotifications.FindAsync(id);
+            if (notification == null) return NotFound();
+            if (!notification.IsRead)
+            {
+                notification.IsRead = true;
+                notification.ReadAt = DateTime.Now;
+                await _db.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(Notifications));
+        }
+
         // Manually trigger the expiry/retention scans (also runs automatically every 6 hours).
         [HttpPost]
         [ValidateAntiForgeryToken]
