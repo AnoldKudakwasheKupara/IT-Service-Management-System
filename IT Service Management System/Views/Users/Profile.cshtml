@@ -810,10 +810,10 @@
                 }
                 
                 // Check if any changes were made
-                const originalFirstName = '@Model.FirstName';
-                const originalLastName = '@Model.LastName';
-                const originalEmail = '@Model.Email';
-                const originalPhone = '@Model.Phone';
+                const originalFirstName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FirstName));
+                const originalLastName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.LastName));
+                const originalEmail = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Email));
+                const originalPhone = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Phone ?? ""));
 
                 if (firstName === originalFirstName && lastName === originalLastName &&
                     email === originalEmail && phone === originalPhone) {
