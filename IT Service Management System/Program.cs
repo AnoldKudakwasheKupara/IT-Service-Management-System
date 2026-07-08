@@ -115,7 +115,14 @@ builder.Services.AddSession(options =>
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sql =>
+        {
+            // Survive transient SQL faults (failovers, throttling, brief network blips)
+            // instead of surfacing them as hard 500s; cap long-running commands.
+            sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
+            sql.CommandTimeout(60);
+        }));
 
 builder.Services.AddHttpContextAccessor();
 
