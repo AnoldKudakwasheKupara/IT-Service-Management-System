@@ -6,87 +6,514 @@
     var confClass = Model.Confidence switch { EcieConfidence.High => "green", EcieConfidence.Medium => "amber", _ => "red" };
     string confColor = Model.Confidence switch { EcieConfidence.High => "var(--success)", EcieConfidence.Medium => "var(--warning)", EcieConfidence.Low => "var(--danger)", _ => "var(--gray-400)" };
 }
-<partial name="_ImsStyles" />
 
-<div class="ims">
-    <div class="page-container">
-        <div class="page-header">
-            <div class="head-row">
-                <div>
-                    <h1 class="page-title"><i class="fas fa-brain"></i> Compliance Intelligence Engine</h1>
-                    <p class="page-sub">
-                        Grounded answers from your approved records — never invented.
-                        <span class="badge-ims @(aiEnabled ? "b-published" : "b-internal")">
-                            <i class="fas @(aiEnabled ? "fa-robot" : "fa-shield-halved")"></i> @(aiEnabled ? "AI phrasing on" : "Deterministic mode")
-                        </span>
-                    </p>
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-brain me-2" style="color: var(--primary);"></i>
+                    Compliance Intelligence Engine
+                </h1>
+                <p class="text-muted mt-2">
+                    Grounded answers from your approved records — never invented.
+                    <span class="status-badge @(aiEnabled ? "badge-primary" : "badge-gray")" style="margin-left:0.5rem;">
+                        <i class="fas @(aiEnabled ? "fa-robot" : "fa-shield-halved")"></i>
+                        @(aiEnabled ? "AI phrasing on" : "Deterministic mode")
+                    </span>
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn-create-ticket" asp-action="Health" style="background: var(--gray-100); color: var(--gray-700);">
+                    <i class="fas fa-heart-pulse"></i>
+                    Compliance Health
+                </a>
+                <a class="btn-create-ticket" asp-action="AuditMode" style="background: var(--gray-100); color: var(--gray-700);">
+                    <i class="fas fa-user-secret"></i>
+                    Audit Mode
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEARCH FORM -->
+    <div class="data-card">
+        <div class="card-body-custom">
+            <form method="get" asp-action="Index">
+                <div class="search-form-row">
+                    <input class="form-control search-input-large" name="q" value="@Model.Query" placeholder="e.g. What evidence supports ISO 27001 Clause 6.1?" autofocus />
+                    <button class="btn-create-ticket" type="submit">
+                        <i class="fas fa-paper-plane"></i> Ask
+                    </button>
                 </div>
-                <div class="head-actions">
-                    <a class="btn-outline-ims" asp-action="Health"><i class="fas fa-heart-pulse"></i> Compliance Health</a>
-                    <a class="btn-ghost-ims" asp-action="AuditMode"><i class="fas fa-user-secret"></i> Audit Mode</a>
+                <div class="suggestions-row">
+                    @foreach (var s in Model.Suggestions)
+                    {
+                        <a class="suggestion-badge" asp-action="Index" asp-route-q="@s">@s</a>
+                    }
                 </div>
+            </form>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Query))
+    {
+        <!-- ANSWER CARD -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas @Model.SpecialistIcon" style="color: var(--primary);"></i>
+                    <span>@Model.Specialist</span>
+                </div>
+                <div class="confidence-display" title="Confidence reflects how much approved evidence backs this answer">
+                    Confidence: <strong style="color:@confColor">@Model.Confidence (@Model.ConfidencePercent%)</strong>
+                </div>
+            </div>
+            <div class="card-body-custom">
+                <div class="answer-header">
+                    <div class="answer-icon blue">
+                        <i class="fas @Model.SpecialistIcon"></i>
+                    </div>
+                    <div class="answer-content">
+                        <p class="answer-summary">@Model.Summary</p>
+                        <div class="progress-bar-track confidence-track">
+                            <div class="progress-bar-fill @confClass" style="width:@Model.ConfidencePercent%"></div>
+                        </div>
+                    </div>
+                </div>
+                @if (Model.Answer.Any())
+                {
+                    <ul class="answer-list">
+                        @foreach (var a in Model.Answer)
+                        {
+                            <li>@a</li>
+                        }
+                    </ul>
+                }
             </div>
         </div>
 
-        <form method="get" asp-action="Index" class="card">
-            <div class="card-body">
-                <div style="display:flex;gap:.5rem;">
-                    <input class="inp" name="q" value="@Model.Query" placeholder="e.g. What evidence supports ISO 27001 Clause 6.1?" autofocus />
-                    <button class="btn-primary-ims" type="submit"><i class="fas fa-paper-plane"></i> Ask</button>
-                </div>
-                <div style="margin-top:.75rem;display:flex;flex-wrap:wrap;gap:.4rem;">
-                    @foreach (var s in Model.Suggestions)
-                    {
-                        <a class="badge-ims b-internal" style="text-decoration:none;cursor:pointer;" asp-action="Index" asp-route-q="@s">@s</a>
-                    }
-                </div>
-            </div>
-        </form>
+        <!-- EVIDENCE USED -->
+        <partial name="_Refs" model='new RefSection("Evidence Used", "fa-shield-halved", Model.EvidenceUsed)' />
 
-        @if (!string.IsNullOrWhiteSpace(Model.Query))
-        {
-            <div class="card">
-                <div class="card-head">
-                    <span class="t"><i class="fas @Model.SpecialistIcon"></i> @Model.Specialist</span>
-                    <span class="meta" title="Confidence reflects how much approved evidence backs this answer">
-                        Confidence: <strong style="color:@confColor">@Model.Confidence (@Model.ConfidencePercent%)</strong>
-                    </span>
-                </div>
-                <div class="card-body">
-                    <div style="display:flex;gap:.85rem;align-items:flex-start;">
-                        <div class="ic blue" style="width:42px;height:42px;border-radius:.7rem;display:flex;align-items:center;justify-content:center;color:white;background:linear-gradient(135deg,var(--primary),var(--primary-dark));flex-shrink:0;"><i class="fas @Model.SpecialistIcon"></i></div>
-                        <div style="flex:1;">
-                            <p style="margin:0 0 .5rem;color:var(--gray-800);font-size:1.05rem;font-weight:600;">@Model.Summary</p>
-                            <div class="progress-ims @confClass" style="max-width:280px;"><span style="width:@Model.ConfidencePercent%"></span></div>
-                        </div>
-                    </div>
-                    @if (Model.Answer.Any())
-                    {
-                        <ul style="margin:1rem 0 0;padding-left:1.1rem;color:var(--gray-700);line-height:1.7;">
-                            @foreach (var a in Model.Answer) { <li>@a</li> }
-                        </ul>
-                    }
-                </div>
-            </div>
+        <!-- REFERENCE SECTIONS GRID -->
+        <div class="ref-grid">
+            <partial name="_Refs" model='new RefSection("Related Documents", "fa-file-shield", Model.RelatedDocuments)' />
+            <partial name="_Refs" model='new RefSection("Related Policies", "fa-file-lines", Model.RelatedPolicies)' />
+            <partial name="_Refs" model='new RefSection("Related Procedures", "fa-diagram-project", Model.RelatedProcedures)' />
+            <partial name="_Refs" model='new RefSection("Related Risks", "fa-gauge-high", Model.RelatedRisks)' />
+            <partial name="_Refs" model='new RefSection("Related CAPAs", "fa-screwdriver-wrench", Model.RelatedCapas)' />
+            <partial name="_Refs" model='new RefSection("Related Audits & Findings", "fa-magnifying-glass", Model.RelatedAudits)' />
+            <partial name="_Refs" model='new RefSection("Related Meetings", "fa-people-group", Model.RelatedMeetings)' />
+            <partial name="_Refs" model='new RefSection("Related Training", "fa-graduation-cap", Model.RelatedTraining)' />
+        </div>
 
-            <partial name="_Refs" model='new RefSection("Evidence Used", "fa-shield-halved", Model.EvidenceUsed)' />
-
-            <div class="form-grid" style="align-items:start;">
-                <partial name="_Refs" model='new RefSection("Related Documents", "fa-file-shield", Model.RelatedDocuments)' />
-                <partial name="_Refs" model='new RefSection("Related Policies", "fa-file-lines", Model.RelatedPolicies)' />
-                <partial name="_Refs" model='new RefSection("Related Procedures", "fa-diagram-project", Model.RelatedProcedures)' />
-                <partial name="_Refs" model='new RefSection("Related Risks", "fa-gauge-high", Model.RelatedRisks)' />
-                <partial name="_Refs" model='new RefSection("Related CAPAs", "fa-screwdriver-wrench", Model.RelatedCapas)' />
-                <partial name="_Refs" model='new RefSection("Related Audits & Findings", "fa-magnifying-glass", Model.RelatedAudits)' />
-                <partial name="_Refs" model='new RefSection("Related Meetings", "fa-people-group", Model.RelatedMeetings)' />
-                <partial name="_Refs" model='new RefSection("Related Training", "fa-graduation-cap", Model.RelatedTraining)' />
-            </div>
-
-            <div class="form-grid" style="align-items:start;">
-                <partial name="_Notes" model='new NoteSection("Recommendations", "fa-lightbulb", Model.Recommendations)' />
-                <partial name="_Notes" model='new NoteSection("Next Actions", "fa-list-check", Model.NextActions)' />
-                <partial name="_Notes" model='new NoteSection("Potential Risks", "fa-triangle-exclamation", Model.PotentialRisks)' />
-            </div>
-        }
-    </div>
+        <!-- NOTES SECTIONS GRID -->
+        <div class="notes-grid">
+            <partial name="_Notes" model='new NoteSection("Recommendations", "fa-lightbulb", Model.Recommendations)' />
+            <partial name="_Notes" model='new NoteSection("Next Actions", "fa-list-check", Model.NextActions)' />
+            <partial name="_Notes" model='new NoteSection("Potential Risks", "fa-triangle-exclamation", Model.PotentialRisks)' />
+        </div>
+    }
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-primary {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    /* ===== SEARCH FORM ===== */
+    .search-form-row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .search-input-large {
+        flex: 1;
+        padding: 0.7rem 1rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.6rem;
+        font-size: 0.95rem;
+        font-weight: 400;
+        font-family: inherit;
+        background: white;
+        transition: all 0.2s ease;
+        color: var(--gray-800);
+        min-height: 48px;
+    }
+
+        .search-input-large:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .search-input-large::placeholder {
+            color: var(--gray-400);
+            font-size: 0.9rem;
+        }
+
+    .suggestions-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.75rem;
+    }
+
+    .suggestion-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--gray-600);
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        text-decoration: none;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+        .suggestion-badge:hover {
+            background: var(--primary-light);
+            color: white;
+            border-color: var(--primary);
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+    /* ===== ANSWER CARD ===== */
+    .confidence-display {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--gray-500);
+    }
+
+        .confidence-display strong {
+            font-size: 0.85rem;
+        }
+
+    .answer-header {
+        display: flex;
+        gap: 0.85rem;
+        align-items: flex-start;
+    }
+
+    .answer-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        flex-shrink: 0;
+        font-size: 1.1rem;
+    }
+
+        .answer-icon.blue {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        }
+
+    .answer-content {
+        flex: 1;
+    }
+
+    .answer-summary {
+        margin: 0 0 0.5rem 0;
+        color: var(--gray-800);
+        font-size: 1.05rem;
+        font-weight: 600;
+        line-height: 1.5;
+    }
+
+    .confidence-track {
+        max-width: 280px;
+        height: 8px;
+        background: var(--gray-100);
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+        .confidence-track .progress-bar-fill {
+            height: 100%;
+            border-radius: 1rem;
+            transition: width 0.6s ease;
+            min-width: 4px;
+        }
+
+    .progress-bar-fill.green {
+        background: linear-gradient(90deg, #6ee7b7, var(--success));
+    }
+
+    .progress-bar-fill.amber {
+        background: linear-gradient(90deg, #fcd34d, var(--warning));
+    }
+
+    .progress-bar-fill.red {
+        background: linear-gradient(90deg, #fca5a5, var(--danger));
+    }
+
+    .answer-list {
+        margin: 1rem 0 0 0;
+        padding-left: 1.2rem;
+        color: var(--gray-700);
+        line-height: 1.8;
+        list-style: none;
+    }
+
+        .answer-list li {
+            position: relative;
+            padding: 0.2rem 0 0.2rem 1.5rem;
+            font-size: 0.9rem;
+            color: var(--gray-700);
+        }
+
+            .answer-list li::before {
+                content: '•';
+                position: absolute;
+                left: 0;
+                color: var(--primary);
+                font-weight: 700;
+                font-size: 1.2rem;
+            }
+
+    /* ===== REFERENCE GRID ===== */
+    .ref-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ===== NOTES GRID ===== */
+    .notes-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 992px) {
+        .notes-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .ref-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .notes-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .search-form-row {
+            flex-direction: column;
+        }
+
+            .search-form-row .btn-create-ticket {
+                width: 100%;
+                justify-content: center;
+            }
+
+        .search-input-large {
+            font-size: 0.85rem;
+            min-height: 42px;
+        }
+
+        .answer-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .answer-summary {
+            font-size: 0.95rem;
+        }
+
+        .confidence-track {
+            max-width: 100%;
+        }
+
+        .answer-list li {
+            font-size: 0.85rem;
+        }
+
+        .suggestion-badge {
+            font-size: 0.7rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .search-input-large {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+            min-height: 38px;
+        }
+
+        .answer-summary {
+            font-size: 0.85rem;
+        }
+
+        .answer-icon {
+            width: 36px;
+            height: 36px;
+            font-size: 0.9rem;
+        }
+
+        .answer-list li {
+            font-size: 0.8rem;
+            padding: 0.15rem 0 0.15rem 1.25rem;
+        }
+
+        .confidence-display {
+            font-size: 0.7rem;
+        }
+
+            .confidence-display strong {
+                font-size: 0.75rem;
+            }
+    }
+</style>

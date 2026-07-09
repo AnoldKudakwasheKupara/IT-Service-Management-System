@@ -10,54 +10,441 @@
         .Where(x => x.Node != null)
         .GroupBy(x => x.Edge.Label);
 }
-<partial name="_ImsStyles" />
 
-<div class="ims">
-    <div class="page-container">
-        <div class="page-header">
-            <div class="head-row">
-                <div style="display:flex;gap:1rem;align-items:center;">
-                    <a class="btn-back" asp-controller="IsoDocuments" asp-action="Details" asp-route-id="@doc?.Id"><i class="fas fa-arrow-left"></i></a>
-                    <div>
-                        <h1 class="page-title"><i class="fas fa-diagram-project"></i> Evidence Map</h1>
-                        <p class="page-sub"><span class="docnum">@doc?.DocumentNumber</span> · @doc?.Title</p>
-                    </div>
-                </div>
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a class="btn-back" asp-controller="IsoDocuments" asp-action="Details" asp-route-id="@doc?.Id">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-diagram-project me-2" style="color: var(--primary);"></i>
+                    Evidence Map
+                </h1>
+                <p class="text-muted mt-2">
+                    <span class="doc-number">@doc?.DocumentNumber</span> · @doc?.Title
+                </p>
             </div>
         </div>
-
-        <div class="card"><div class="card-body" style="text-align:center;">
-            <div style="display:inline-flex;flex-direction:column;align-items:center;gap:.4rem;padding:1rem 1.5rem;border-radius:1rem;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;">
-                <i class="fas fa-file-shield" style="font-size:1.5rem;"></i>
-                <strong>@doc?.DocumentNumber</strong>
-                <span style="font-size:.85rem;opacity:.9;">@doc?.Title</span>
-            </div>
-            <p class="hint" style="margin-top:.75rem;">This controlled document is connected to @(Model.Nodes.Count - 1) related record(s) across the management system.</p>
-        </div></div>
-
-        @if (spokes.Any())
-        {
-            <div class="form-grid" style="align-items:start;">
-                @foreach (var group in spokes)
-                {
-                    <div class="card">
-                        <div class="card-head"><span class="t"><i class="fas fa-link"></i> @System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(group.Key)</span><span class="meta">@group.Count()</span></div>
-                        <div class="card-body" style="padding:0;">
-                            @foreach (var x in group)
-                            {
-                                <div style="display:flex;gap:.75rem;align-items:center;padding:.7rem 1.25rem;border-bottom:1px solid var(--gray-100);">
-                                    <i class="fas @x.Node!.Icon" style="color:var(--primary);width:20px;text-align:center;"></i>
-                                    <div style="flex:1;"><div style="font-weight:600;color:var(--gray-800);">@x.Node!.Label</div><div class="meta">@x.Node!.Kind</div></div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                }
-            </div>
-        }
-        else
-        {
-            <div class="card"><div class="empty"><i class="fas fa-diagram-project"></i><h3>No linked records yet</h3><p class="meta">Tag this document to an ISO clause, link training, or raise findings to grow its evidence map.</p></div></div>
-        }
     </div>
+
+    <!-- ROOT NODE CARD -->
+    <div class="data-card">
+        <div class="card-body-custom" style="text-align:center;">
+            <div class="root-node">
+                <i class="fas fa-file-shield"></i>
+                <strong>@doc?.DocumentNumber</strong>
+                <span>@doc?.Title</span>
+            </div>
+            <p class="map-hint">
+                This controlled document is connected to <strong>@(Model.Nodes.Count - 1)</strong> related record(s) across the management system.
+            </p>
+        </div>
+    </div>
+
+    <!-- CONNECTED RECORDS GRID -->
+    @if (spokes.Any())
+    {
+        <div class="connected-grid">
+            @foreach (var group in spokes)
+            {
+                <div class="data-card">
+                    <div class="card-header-custom">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-link" style="color: var(--primary);"></i>
+                            <span>@System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(group.Key)</span>
+                        </div>
+                        <span class="connection-count">@group.Count()</span>
+                    </div>
+                    <div class="card-body-custom" style="padding:0;">
+                        @foreach (var x in group)
+                        {
+                            <div class="connected-item">
+                                <div class="connected-item-icon">
+                                    <i class="fas @x.Node!.Icon"></i>
+                                </div>
+                                <div class="connected-item-content">
+                                    <div class="connected-item-title">@x.Node!.Label</div>
+                                    <div class="connected-item-kind">@x.Node!.Kind</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="data-card">
+            <div class="empty-state">
+                <i class="fas fa-diagram-project"></i>
+                <h3>No linked records yet</h3>
+                <p>Tag this document to an ISO clause, link training, or raise findings to grow its evidence map.</p>
+            </div>
+        </div>
+    }
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 0.95rem;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* ===== ROOT NODE ===== */
+    .root-node {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 1.25rem 2rem;
+        border-radius: 1rem;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        box-shadow: var(--shadow-md);
+    }
+
+        .root-node i {
+            font-size: 1.5rem;
+            opacity: 0.9;
+        }
+
+        .root-node strong {
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .root-node span {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+    .map-hint {
+        margin: 0.75rem 0 0 0;
+        font-size: 0.9rem;
+        color: var(--gray-500);
+    }
+
+        .map-hint strong {
+            color: var(--gray-700);
+            font-weight: 600;
+        }
+
+    /* ===== CONNECTED GRID ===== */
+    .connected-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .connection-count {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        background: var(--gray-100);
+        padding: 0.15rem 0.6rem;
+        border-radius: 2rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    /* ===== CONNECTED ITEM ===== */
+    .connected-item {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        padding: 0.7rem 1.25rem;
+        border-bottom: 1px solid var(--gray-100);
+        transition: background-color 0.2s ease;
+    }
+
+        .connected-item:last-child {
+            border-bottom: none;
+        }
+
+        .connected-item:hover {
+            background-color: var(--gray-50);
+        }
+
+    .connected-item-icon {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+        color: var(--primary);
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+    }
+
+    .connected-item:hover .connected-item-icon {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .connected-item-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .connected-item-title {
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 0.9rem;
+    }
+
+    .connected-item-kind {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-wrap: wrap;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .connected-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .root-node {
+            padding: 1rem 1.5rem;
+        }
+
+            .root-node i {
+                font-size: 1.25rem;
+            }
+
+            .root-node strong {
+                font-size: 0.9rem;
+            }
+
+            .root-node span {
+                font-size: 0.8rem;
+            }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .connected-item {
+            padding: 0.6rem 1rem;
+        }
+
+        .connected-item-title {
+            font-size: 0.85rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .doc-number {
+            font-size: 0.85rem;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .root-node {
+            padding: 0.75rem 1rem;
+            width: 100%;
+        }
+
+            .root-node i {
+                font-size: 1.1rem;
+            }
+
+            .root-node strong {
+                font-size: 0.85rem;
+            }
+
+            .root-node span {
+                font-size: 0.75rem;
+            }
+
+        .map-hint {
+            font-size: 0.8rem;
+        }
+
+        .connected-item {
+            padding: 0.5rem 0.75rem;
+            gap: 0.5rem;
+        }
+
+        .connected-item-icon {
+            width: 28px;
+            height: 28px;
+            font-size: 0.7rem;
+        }
+
+        .connected-item-title {
+            font-size: 0.8rem;
+        }
+
+        .connected-item-kind {
+            font-size: 0.65rem;
+        }
+
+        .connection-count {
+            font-size: 0.65rem;
+            padding: 0.1rem 0.4rem;
+        }
+
+        .empty-state {
+            padding: 2rem;
+        }
+
+            .empty-state i {
+                font-size: 3rem;
+            }
+
+            .empty-state h3 {
+                font-size: 1rem;
+            }
+
+            .empty-state p {
+                font-size: 0.8rem;
+            }
+    }
+</style>

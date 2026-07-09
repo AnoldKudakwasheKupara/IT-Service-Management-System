@@ -4,69 +4,463 @@
     ViewData["Title"] = "Audit Mode";
     string Ring(string band) => band == "green" ? "var(--success)" : band == "amber" ? "var(--warning)" : "var(--danger)";
 }
-<partial name="_ImsStyles" />
 
-<div class="ims">
-    <div class="page-container">
-        <div class="page-header">
-            <div class="head-row">
-                <div>
-                    <h1 class="page-title"><i class="fas fa-user-secret"></i> Audit Mode</h1>
-                    <p class="page-sub">The engine acts as an external auditor — requesting evidence, scoring readiness and identifying gaps</p>
-                </div>
-                <div class="head-actions">
-                    <a class="btn-ghost-ims" asp-action="Index"><i class="fas fa-brain"></i> Ask the Engine</a>
-                    <a class="btn-outline-ims" asp-action="Health"><i class="fas fa-heart-pulse"></i> Compliance Health</a>
-                </div>
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-user-secret me-2" style="color: var(--primary);"></i>
+                    Audit Mode
+                </h1>
+                <p class="text-muted mt-2">The engine acts as an external auditor — requesting evidence, scoring readiness and identifying gaps</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn-create-ticket" asp-action="Index" style="background: var(--gray-100); color: var(--gray-700);">
+                    <i class="fas fa-brain"></i>
+                    Ask the Engine
+                </a>
+                <a class="btn-create-ticket" asp-action="Health" style="background: var(--gray-100); color: var(--gray-700);">
+                    <i class="fas fa-heart-pulse"></i>
+                    Compliance Health
+                </a>
             </div>
         </div>
+    </div>
 
-        <div class="card">
-            <div class="card-head"><span class="t"><i class="fas fa-gavel"></i> Audit Readiness Verdict</span>
-                <span class="badge-ims @(Model.Health.OverallBand == "green" ? "b-published" : Model.Health.OverallBand == "amber" ? "b-medium" : "b-critical")">Overall @Model.Health.Overall/100</span>
+    <!-- READINESS VERDICT CARD -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-gavel" style="color: var(--primary);"></i>
+                <span>Audit Readiness Verdict</span>
             </div>
-            <div class="card-body">
-                <p style="margin:0;color:var(--gray-800);font-size:1.05rem;font-weight:600;">@Model.Readiness.Summary</p>
-                @if (Model.Readiness.Answer.Any())
-                {
-                    <ul style="margin:1rem 0 0;padding-left:1.1rem;color:var(--gray-700);line-height:1.7;">
-                        @foreach (var a in Model.Readiness.Answer) { <li>@a</li> }
-                    </ul>
-                }
-            </div>
+            <span class="status-badge @(Model.Health.OverallBand == "green" ? "badge-success" : Model.Health.OverallBand == "amber" ? "badge-warning" : "badge-critical")">
+                Overall @Model.Health.Overall/100
+            </span>
         </div>
-
-        @* Readiness scores strip *@
-        <div class="stats">
-            @foreach (var s in Model.Health.Scores)
+        <div class="card-body-custom">
+            <p class="verdict-summary">@Model.Readiness.Summary</p>
+            @if (Model.Readiness.Answer.Any())
             {
-                <div class="stat">
-                    <div class="ic @s.Band" style="background:@Ring(s.Band);"><i class="fas @s.Icon"></i></div>
-                    <div><h3>@s.Score</h3><p>@s.Name</p></div>
-                </div>
+                <ul class="verdict-list">
+                    @foreach (var a in Model.Readiness.Answer)
+                    {
+                        <li>@a</li>
+                    }
+                </ul>
             }
         </div>
+    </div>
 
-        <div class="form-grid" style="align-items:start;">
-            <partial name="_Notes" model='new NoteSection("Identified Gaps &amp; Improvements", "fa-list-check", Model.Readiness.NextActions)' />
-            <partial name="_Notes" model='new NoteSection("Auditor Recommendations", "fa-lightbulb", Model.Readiness.Recommendations)' />
-        </div>
-
-        <partial name="_Refs" model='new RefSection("Evidence Sampled", "fa-folder-open", Model.Readiness.EvidenceUsed)' />
-
-        <div class="card">
-            <div class="card-head"><span class="t"><i class="fas fa-clipboard-question"></i> Auditor Evidence Requests</span></div>
-            <div class="card-body">
-                <p class="hint" style="margin-top:0;">Click a request to have the engine retrieve the supporting evidence:</p>
-                <div style="display:flex;flex-direction:column;gap:.5rem;">
-                    @foreach (var q in Model.Questions)
-                    {
-                        <a asp-action="Index" asp-route-q="@q" style="display:flex;gap:.6rem;align-items:center;padding:.7rem 1rem;border:1px solid var(--gray-200);border-radius:.7rem;text-decoration:none;color:var(--gray-800);background:white;">
-                            <i class="fas fa-magnifying-glass" style="color:var(--primary);"></i> @q
-                        </a>
-                    }
+    <!-- READINESS SCORES -->
+    <div class="stats-cards">
+        @foreach (var s in Model.Health.Scores)
+        {
+            <div class="stat-card">
+                <div class="stat-icon" style="background: @Ring(s.Band);">
+                    <i class="fas @s.Icon"></i>
                 </div>
+                <div class="stat-info">
+                    <h3>@s.Score</h3>
+                    <p>@s.Name</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- NOTES GRID -->
+    <div class="notes-grid">
+        <partial name="_Notes" model='new NoteSection("Identified Gaps &amp; Improvements", "fa-list-check", Model.Readiness.NextActions)' />
+        <partial name="_Notes" model='new NoteSection("Auditor Recommendations", "fa-lightbulb", Model.Readiness.Recommendations)' />
+    </div>
+
+    <!-- EVIDENCE SAMPLED -->
+    <partial name="_Refs" model='new RefSection("Evidence Sampled", "fa-folder-open", Model.Readiness.EvidenceUsed)' />
+
+    <!-- AUDITOR EVIDENCE REQUESTS -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-clipboard-question me-2" style="color: var(--primary);"></i>
+            <span>Auditor Evidence Requests</span>
+        </div>
+        <div class="card-body-custom">
+            <p class="evidence-hint">Click a request to have the engine retrieve the supporting evidence:</p>
+            <div class="evidence-requests">
+                @foreach (var q in Model.Questions)
+                {
+                    <a asp-action="Index" asp-route-q="@q" class="evidence-request-item">
+                        <i class="fas fa-magnifying-glass"></i>
+                        <span>@q</span>
+                        <i class="fas fa-chevron-right evidence-request-arrow"></i>
+                    </a>
+                }
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    /* ===== VERDICT ===== */
+    .verdict-summary {
+        margin: 0;
+        color: var(--gray-800);
+        font-size: 1.05rem;
+        font-weight: 600;
+        line-height: 1.5;
+    }
+
+    .verdict-list {
+        margin: 1rem 0 0 0;
+        padding-left: 1.2rem;
+        color: var(--gray-700);
+        line-height: 1.8;
+        list-style: none;
+    }
+
+        .verdict-list li {
+            position: relative;
+            padding: 0.2rem 0 0.2rem 1.5rem;
+            font-size: 0.9rem;
+            color: var(--gray-700);
+        }
+
+            .verdict-list li::before {
+                content: '•';
+                position: absolute;
+                left: 0;
+                color: var(--primary);
+                font-weight: 700;
+                font-size: 1.2rem;
+            }
+
+    /* ===== STATISTICS CARDS ===== */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ===== NOTES GRID ===== */
+    .notes-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ===== EVIDENCE REQUESTS ===== */
+    .evidence-hint {
+        margin: 0 0 0.75rem 0;
+        font-size: 0.875rem;
+        color: var(--gray-500);
+    }
+
+    .evidence-requests {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .evidence-request-item {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        padding: 0.7rem 1rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.7rem;
+        text-decoration: none;
+        color: var(--gray-700);
+        background: white;
+        transition: all 0.2s ease;
+        font-size: 0.9rem;
+    }
+
+        .evidence-request-item:hover {
+            border-color: var(--primary);
+            background: var(--gray-50);
+            text-decoration: none;
+            transform: translateX(4px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .evidence-request-item i:first-child {
+            color: var(--primary);
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+
+        .evidence-request-item span {
+            flex: 1;
+        }
+
+    .evidence-request-arrow {
+        color: var(--gray-300);
+        font-size: 0.75rem;
+        transition: all 0.25s ease;
+    }
+
+    .evidence-request-item:hover .evidence-request-arrow {
+        transform: translateX(4px);
+        color: var(--primary);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .notes-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .stats-cards {
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .verdict-summary {
+            font-size: 0.95rem;
+        }
+
+        .verdict-list li {
+            font-size: 0.85rem;
+        }
+
+        .evidence-request-item {
+            font-size: 0.85rem;
+            padding: 0.6rem 0.85rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .stat-card {
+            padding: 1rem;
+        }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+
+        .stat-info h3 {
+            font-size: 1.25rem;
+        }
+
+        .evidence-request-item {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .verdict-summary {
+            font-size: 0.85rem;
+        }
+
+        .verdict-list li {
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.5rem;
+        }
+    }
+</style>
