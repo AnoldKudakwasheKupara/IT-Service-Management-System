@@ -1,8 +1,8 @@
 @model IT_Service_Management_System.Helpers.PagingInfo
 @{
-    if (Model == null || Model.TotalPages <= 1)
+    if (Model == null)
     {
-        // Still show the summary line even with a single page.
+        return; // Nothing to page.
     }
 
     // Build a base query string preserving all params except "page".

@@ -18,7 +18,7 @@ namespace IT_Service_Management_System.Services.Efm
         public LocalDiskDocumentStorage(IWebHostEnvironment env, IConfiguration config,
             ILogger<LocalDiskDocumentStorage> logger)
         {
-            _root = config["EFM:LocalRoot"];
+            _root = config["EFM:LocalRoot"] ?? string.Empty;
             if (string.IsNullOrWhiteSpace(_root))
                 _root = Path.Combine(env.ContentRootPath, "employee-documents");
             Directory.CreateDirectory(_root);

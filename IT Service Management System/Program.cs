@@ -46,9 +46,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
         | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
-    // Single trusted proxy in front; clear the default allow-list. Pin KnownProxies/KnownNetworks
+    // Single trusted proxy in front; clear the default allow-list. Pin KnownProxies/KnownIPNetworks
     // instead if the proxy address is fixed.
-    options.KnownNetworks.Clear();
+    options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
 

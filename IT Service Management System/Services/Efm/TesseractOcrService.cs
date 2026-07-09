@@ -87,8 +87,11 @@ namespace IT_Service_Management_System.Services.Efm
             var sb = new System.Text.StringBuilder();
             int pageNo = 0;
 
+            // CA1416: PDFium rasterization is supported on the Windows/Linux servers this app targets.
+#pragma warning disable CA1416
             foreach (var bitmap in PDFtoImage.Conversion.ToImages(pdfBytes, options: new(Dpi: RenderDpi)))
             {
+#pragma warning restore CA1416
                 using (bitmap)
                 {
                     ct.ThrowIfCancellationRequested();

@@ -77,10 +77,15 @@ namespace IT_Service_Management_System.Services
                 var file = Path.Combine(path, $"{DbName}_{DateTime.Now:yyyyMMdd_HHmmss}.bak");
 
                 // Backup (WITH INIT — no compression so SQL Express is supported).
+                // EF1002: the database name is a T-SQL *identifier* that cannot be parameterized;
+                // it comes from configuration (not user input) and is bracket-escaped above. The
+                // file path and backup name are passed as SqlParameters.
+#pragma warning disable EF1002
                 await _context.Database.ExecuteSqlRawAsync(
                     $"BACKUP DATABASE [{db}] TO DISK = @path WITH INIT, NAME = @name;",
                     new SqlParameter("@path", file),
                     new SqlParameter("@name", $"{DbName} full backup"));
+#pragma warning restore EF1002
 
                 // Verify the backup is readable/restorable.
                 await _context.Database.ExecuteSqlRawAsync(
