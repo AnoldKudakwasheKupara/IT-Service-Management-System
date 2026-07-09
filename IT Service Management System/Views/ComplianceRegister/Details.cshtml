@@ -8,93 +8,533 @@
 
     string statusClass = Model.Status switch
     {
-        ComplianceStatus.Compliant => "b-published",
-        ComplianceStatus.NonCompliant => "b-critical",
-        ComplianceStatus.PartiallyCompliant or ComplianceStatus.UnderReview => "b-medium",
-        _ => "b-draft"
+        ComplianceStatus.Compliant => "badge-success",
+        ComplianceStatus.NonCompliant => "badge-critical",
+        ComplianceStatus.PartiallyCompliant or ComplianceStatus.UnderReview => "badge-warning",
+        _ => "badge-gray"
     };
 }
-<partial name="_ImsStyles" />
 
-<div class="ims">
-    <div class="page-container">
-        <div class="page-header">
-            <div class="head-row">
-                <div style="display:flex;gap:1rem;align-items:center;">
-                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
-                    <div>
-                        <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Title</h1>
-                        <p class="page-sub">
-                            <span class="badge-ims @statusClass">@Model.Status</span>
-                            <span class="meta">· @Model.Type · @IsoStandards.Label(Model.Standard)</span>
-                            @if (Model.IsReviewDue)
-                            {
-                                <span class="badge-ims b-overdue"><i class="fas fa-clock-rotate-left"></i> Review due</span>
-                            }
-                        </p>
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <a class="btn-back" asp-action="Index">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <span class="doc-number" style="font-size:1rem;font-weight:600;color:var(--primary);">@Model.Reference</span>
+                        <span style="font-weight:700;color:var(--gray-800);">@Model.Title</span>
+                    </h1>
+                    <div class="page-subtitle">
+                        <span class="status-badge @statusClass">@Model.Status</span>
+                        <span class="meta-separator">·</span>
+                        <span class="meta-text">@Model.Type · @IsoStandards.Label(Model.Standard)</span>
+                        @if (Model.IsReviewDue)
+                        {
+                            <span class="status-badge badge-overdue">
+                                <i class="fas fa-clock-rotate-left"></i> Review due
+                            </span>
+                        }
                     </div>
                 </div>
-                <div class="head-actions">
-                    @if (canManage)
-                    {
-                        <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
-                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this obligation?');">
-                            @Html.AntiForgeryToken()
-                            <button class="btn-danger-ims" type="submit"><i class="fas fa-trash"></i> Delete</button>
-                        </form>
-                    }
-                </div>
             </div>
+            @if (canManage)
+            {
+                <div class="d-flex gap-2">
+                    <a class="btn-create-ticket" asp-action="Edit" asp-route-id="@Model.Id" style="background:var(--gray-100);color:var(--gray-700);">
+                        <i class="fas fa-pen"></i> Edit
+                    </a>
+                    <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this obligation?');" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button class="btn-danger" type="submit">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            }
         </div>
+    </div>
 
-        @if (TempData["Success"] != null)
-        {
-            <div class="card"><div class="card-body" style="color:var(--success);"><i class="fas fa-circle-check"></i> @TempData["Success"]</div></div>
-        }
-        @if (TempData["Error"] != null)
-        {
-            <div class="card"><div class="card-body overdue"><i class="fas fa-triangle-exclamation"></i> @TempData["Error"]</div></div>
-        }
-
-        <div class="card">
-            <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Obligation Details</span></div>
-            <div class="card-body">
-                <div class="dl">
-                    <div><div class="k">Type</div><div class="v">@Model.Type</div></div>
-                    <div><div class="k">ISO Standard</div><div class="v">@IsoStandards.Label(Model.Standard)</div></div>
-                    <div><div class="k">Issuing Authority</div><div class="v">@(Model.Authority ?? "—")</div></div>
-                    <div><div class="k">Legal / Reg. Reference</div><div class="v">@(Model.LegalReference ?? "—")</div></div>
-                    <div><div class="k">Owner</div><div class="v">@(Model.Owner?.FullName ?? "—")</div></div>
-                    <div><div class="k">Department</div><div class="v">@(Model.Department?.Name ?? "—")</div></div>
-                    <div><div class="k">Status</div><div class="v"><span class="badge-ims @statusClass">@Model.Status</span></div></div>
-                    <div><div class="k">Last Assessed</div><div class="v">@(Model.LastAssessedDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
-                    <div><div class="k">Next Review</div><div class="v @(Model.IsReviewDue ? "overdue" : "")">@(Model.NextReviewDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
-                    <div><div class="k">Created</div><div class="v">@Model.CreatedAt.ToString("dd MMM yyyy")</div></div>
-                    <div><div class="k">Created By</div><div class="v">@(Model.CreatedBy?.FullName ?? "—")</div></div>
-                </div>
-            </div>
+    <!-- FLASH MESSAGES -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-flash success">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
         </div>
-
-        <div class="form-grid" style="align-items:start;">
-            <div class="card">
-                <div class="card-head"><span class="t"><i class="fas fa-align-left"></i> Description</span></div>
-                <div class="card-body">
-                    <p style="color:var(--gray-700);margin:0;">@(string.IsNullOrWhiteSpace(Model.Description) ? "—" : Model.Description)</p>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-head"><span class="t"><i class="fas fa-list-check"></i> Requirement</span></div>
-                <div class="card-body">
-                    <p style="color:var(--gray-700);margin:0;">@(string.IsNullOrWhiteSpace(Model.Requirement) ? "—" : Model.Requirement)</p>
-                </div>
-            </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-flash danger">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
         </div>
+    }
 
-        <div class="card">
-            <div class="card-head"><span class="t"><i class="fas fa-folder-open"></i> Evidence / Notes</span></div>
-            <div class="card-body">
-                <p style="color:var(--gray-700);margin:0;">@(string.IsNullOrWhiteSpace(Model.EvidenceNotes) ? "—" : Model.EvidenceNotes)</p>
+    <!-- OBLIGATION DETAILS CARD -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-circle-info me-2" style="color: var(--primary);"></i>
+            <span>Obligation Details</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Type</div>
+                    <div class="detail-value">@Model.Type</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">ISO Standard</div>
+                    <div class="detail-value">@IsoStandards.Label(Model.Standard)</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Issuing Authority</div>
+                    <div class="detail-value">@(Model.Authority ?? "—")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Legal / Reg. Reference</div>
+                    <div class="detail-value">@(Model.LegalReference ?? "—")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Owner</div>
+                    <div class="detail-value">@(Model.Owner?.FullName ?? "—")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Department</div>
+                    <div class="detail-value">@(Model.Department?.Name ?? "—")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value">
+                        <span class="status-badge @statusClass">@Model.Status</span>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Last Assessed</div>
+                    <div class="detail-value">@(Model.LastAssessedDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Next Review</div>
+                    <div class="detail-value @(Model.IsReviewDue ? "text-danger" : "")">
+                        @(Model.NextReviewDate?.ToString("dd MMM yyyy") ?? "—")
+                        @if (Model.IsReviewDue)
+                        {
+                            <span class="status-badge badge-overdue" style="margin-left:0.5rem;">
+                                <i class="fas fa-exclamation-circle"></i> Due
+                            </span>
+                        }
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Created</div>
+                    <div class="detail-value">@Model.CreatedAt.ToString("dd MMM yyyy")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Created By</div>
+                    <div class="detail-value">@(Model.CreatedBy?.FullName ?? "—")</div>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- DESCRIPTION & REQUIREMENT -->
+    <div class="two-col-grid">
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-align-left me-2" style="color: var(--primary);"></i>
+                <span>Description</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="field-value">@(string.IsNullOrWhiteSpace(Model.Description) ? "—" : Model.Description)</div>
+            </div>
+        </div>
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-list-check me-2" style="color: var(--primary);"></i>
+                <span>Requirement</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="field-value">@(string.IsNullOrWhiteSpace(Model.Requirement) ? "—" : Model.Requirement)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EVIDENCE / NOTES -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-folder-open me-2" style="color: var(--primary);"></i>
+            <span>Evidence / Notes</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="field-value">@(string.IsNullOrWhiteSpace(Model.EvidenceNotes) ? "—" : Model.EvidenceNotes)</div>
+        </div>
+    </div>
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 1rem;
+    }
+
+    .page-subtitle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.3rem;
+    }
+
+    .meta-separator {
+        color: var(--gray-300);
+    }
+
+    .meta-text {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-danger {
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        background: linear-gradient(100deg, #dc2626, var(--danger));
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    /* ===== ALERT FLASH ===== */
+    .alert-flash {
+        padding: 0.9rem 1.2rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: 1px solid transparent;
+    }
+
+        .alert-flash.success {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .alert-flash.danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+        .alert-flash i {
+            font-size: 1.1rem;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* ===== TWO COLUMN GRID ===== */
+    .two-col-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ===== DETAILS GRID ===== */
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1rem 1.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
+    .detail-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .detail-value {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+        .detail-value.text-danger {
+            color: var(--danger);
+        }
+
+    /* ===== FIELD VALUE ===== */
+    .field-value {
+        font-size: 0.9rem;
+        color: var(--gray-700);
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .badge-overdue {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .two-col-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .btn-create-ticket,
+        .btn-danger {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.8rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.1rem;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .btn-create-ticket,
+        .btn-danger {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .d-flex.gap-2 {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .field-value {
+            font-size: 0.8rem;
+        }
+
+        .detail-value {
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .meta-text {
+            font-size: 0.75rem;
+        }
+    }
+</style>
