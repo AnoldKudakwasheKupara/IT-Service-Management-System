@@ -37,6 +37,16 @@ namespace IT_Service_Management_System.Models
         /// <summary>SLA target first-response time, set from the applicable SLA policy at creation.</summary>
         public DateTime? ResponseDueAt { get; set; }
 
+        // ── On-hold (SLA pause) &amp; escalation ────────────────────────────────────
+        /// <summary>When the ticket was placed on hold (SLA paused); null when not on hold.</summary>
+        public DateTime? OnHoldSince { get; set; }
+
+        /// <summary>Accumulated minutes spent on hold, excluded from the SLA clock.</summary>
+        public int PausedMinutes { get; set; }
+
+        /// <summary>Set when the ticket has been escalated.</summary>
+        public DateTime? EscalatedAt { get; set; }
+
         // ── ITIL links ──────────────────────────────────────────────────────────
         /// <summary>Optional link to the Problem this incident is a symptom of.</summary>
         public int? ProblemId { get; set; }
@@ -55,14 +65,20 @@ namespace IT_Service_Management_System.Models
         [NotMapped]
         public bool IsOpen => Status != TicketStatus.Resolved && Status != TicketStatus.Closed;
 
-        /// <summary>True when the SLA target has passed and the ticket is still open.</summary>
         [NotMapped]
-        public bool IsSlaBreached => DueAt.HasValue && IsOpen && DueAt.Value < DateTime.Now;
+        public bool IsOnHold => Status == TicketStatus.OnHold;
 
-        /// <summary>True when the first-response target passed without a staff reply.</summary>
+        [NotMapped]
+        public bool IsEscalated => EscalatedAt.HasValue;
+
+        /// <summary>True when the SLA target has passed and the ticket is still open. Paused while on hold.</summary>
+        [NotMapped]
+        public bool IsSlaBreached => DueAt.HasValue && IsOpen && !IsOnHold && DueAt.Value < DateTime.Now;
+
+        /// <summary>True when the first-response target passed without a staff reply. Paused while on hold.</summary>
         [NotMapped]
         public bool IsResponseBreached => ResponseDueAt.HasValue && FirstRespondedAt == null
-            && IsOpen && ResponseDueAt.Value < DateTime.Now;
+            && IsOpen && !IsOnHold && ResponseDueAt.Value < DateTime.Now;
 
         public int CreatedById { get; set; }
         [ValidateNever]
@@ -95,6 +111,7 @@ namespace IT_Service_Management_System.Models
         {
             Open,
             InProgress,
+            OnHold,
             Resolved,
             Closed
         }
