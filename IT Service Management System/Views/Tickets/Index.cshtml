@@ -211,12 +211,24 @@
                                             <i class="fas fa-check-circle"></i> Resolved
                                         </span>
                                     }
+                                    else if (status == "OnHold")
+                                    {
+                                        <span class="status-badge" style="background:#fef3c7;color:#92400e;">
+                                            <i class="fas fa-pause-circle"></i> On Hold
+                                        </span>
+                                    }
                                     else
                                     {
                                         <span class="status-badge status-closed">
                                             <i class="fas fa-ban"></i> Closed
                                         </span>
                                     }
+                                }
+                                @if (ticket.IsEscalated && ticket.IsOpen)
+                                {
+                                    <span class="status-badge" style="background:#fee2e2;color:#b91c1c;margin-top:.3rem;display:inline-flex;">
+                                        <i class="fas fa-angles-up"></i> Escalated
+                                    </span>
                                 }
                             </td>
                             <td class="creator-cell">
