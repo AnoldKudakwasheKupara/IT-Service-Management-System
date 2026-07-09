@@ -135,11 +135,16 @@ namespace IT_Service_Management_System.Services.Ecie
         // ── Approved-document search (authoritative sources) ────────────────────────
         public async Task<List<IsoDocument>> SearchApprovedDocumentsAsync(string? role, List<string> tokens, int? departmentId = null, DocumentType? type = null)
         {
-            var published = await _db.IsoDocuments.Include(d => d.Category).Include(d => d.Department)
-                .Where(d => d.Status == DocumentStatus.Published).ToListAsync();
-            published = published.Where(d => CanSeeDocument(role, d)).ToList();
-            if (departmentId.HasValue) published = published.Where(d => d.DepartmentId == departmentId).ToList();
-            if (type.HasValue) published = published.Where(d => d.Type == type).ToList();
+            // Push the scalar filters into SQL so we never materialize the whole published set;
+            // only the role/classification check must run in memory (it can't be translated).
+            var query = _db.IsoDocuments.AsNoTracking()
+                .Include(d => d.Category).Include(d => d.Department)
+                .Where(d => d.Status == DocumentStatus.Published);
+            if (departmentId.HasValue) query = query.Where(d => d.DepartmentId == departmentId);
+            if (type.HasValue) query = query.Where(d => d.Type == type);
+
+            var published = (await query.ToListAsync())
+                .Where(d => CanSeeDocument(role, d)).ToList();
             if (tokens.Count == 0) return published;
 
             return published
