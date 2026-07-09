@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="IT Service Management System.Tests/IT Service Management System.Tests.csproj" />
   <Project Path="IT Service Management System/IT Service Management System.csproj" />
 </Solution>
