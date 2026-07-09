@@ -250,14 +250,14 @@
                                 }
                             </td>
                             <td class="action-buttons">
-                                <a asp-action="Details" asp-route-id="@ticket.Id" class="action-btn btn-view" title="View Details">
-                                    <i class="fas fa-eye"></i>
+                                <a asp-action="Details" asp-route-id="@ticket.Id" class="action-btn btn-view" title="View Details" aria-label="View ticket @ticket.Reference">
+                                    <i class="fas fa-eye" aria-hidden="true"></i>
                                 </a>
-                                <a asp-action="Edit" asp-route-id="@ticket.Id" class="action-btn btn-edit" title="Edit Ticket">
-                                    <i class="fas fa-pencil-alt"></i>
+                                <a asp-action="Edit" asp-route-id="@ticket.Id" class="action-btn btn-edit" title="Edit Ticket" aria-label="Edit ticket @ticket.Reference">
+                                    <i class="fas fa-pencil-alt" aria-hidden="true"></i>
                                 </a>
-                                <a asp-action="Delete" asp-route-id="@ticket.Id" class="btn btn-danger">
-                                    <i class="fas fa-trash"></i>
+                                <a asp-action="Delete" asp-route-id="@ticket.Id" class="btn btn-danger" title="Delete Ticket" aria-label="Delete ticket @ticket.Reference">
+                                    <i class="fas fa-trash" aria-hidden="true"></i>
                                 </a>
                             </td>
                         </tr>
