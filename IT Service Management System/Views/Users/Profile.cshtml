@@ -242,6 +242,14 @@
                 <input type="hidden" name="enable" value="@((!Model.MfaEnabled).ToString().ToLower())" />
                 @if (Model.MfaEnabled)
                 {
+                    <div style="margin-bottom:.6rem;">
+                        <label for="mfaOffPassword" style="display:block;font-size:.85rem;color:var(--gray-600);margin-bottom:.25rem;">
+                            Confirm your password to turn off 2FA
+                        </label>
+                        <input type="password" id="mfaOffPassword" name="password" required autocomplete="current-password"
+                               placeholder="Current password"
+                               style="width:100%;max-width:320px;padding:.55rem .75rem;border:1.5px solid var(--gray-200);border-radius:.55rem;" />
+                    </div>
                     <button type="submit" class="btn-logout-all" style="background:linear-gradient(100deg,#475569,#64748b);">
                         <i class="fas fa-toggle-off"></i> Turn off two-factor authentication
                     </button>

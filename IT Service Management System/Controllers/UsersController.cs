@@ -437,7 +437,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost]
         [IT_Service_Management_System.Filters.AllowAnyRole]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ToggleMfa(bool enable)
+        public async Task<IActionResult> ToggleMfa(bool enable, string? password)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
             if (userId == null)
@@ -448,6 +448,17 @@ namespace IT_Service_Management_System.Controllers
                 return NotFound();
 
             bool was = user.MfaEnabled;
+
+            // Step-up: turning MFA OFF requires re-confirming the password, so a hijacked
+            // session cannot silently strip the second factor.
+            if (was && !enable &&
+                (string.IsNullOrEmpty(password) ||
+                 !IT_Service_Management_System.Helpers.PasswordHasher.VerifyPassword(password, user.PasswordHash)))
+            {
+                TempData["Error"] = "Enter your current password to turn off two-factor authentication.";
+                return RedirectToAction(nameof(Profile));
+            }
+
             user.MfaEnabled = enable;
             await _context.SaveChangesAsync();
 
