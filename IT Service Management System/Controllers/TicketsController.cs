@@ -323,14 +323,131 @@ namespace IT_Service_Management_System.Controllers
 
             var oldStatus = ticket.Status;
             ticket.Status = TicketStatus.Open;
-            ticket.ResolvedAt = null;
-            ticket.ClosedAt = null;
             ticket.UpdatedAt = DateTime.Now;
+            ApplyStatusTimestamps(ticket, oldStatus);
             await _context.SaveChangesAsync();
             await _auditService.LogAsync("Reopened", "Ticket", ticket.Id, "Ticket reopened");
             await NotifyStatusChangeAsync(ticket, oldStatus);
 
             TempData["Success"] = "Ticket reopened.";
+            return RedirectToAction("Details", new { id });
+        }
+
+        // ── put on hold (staff) — pauses the SLA clock ───────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Hold(int id, string? reason)
+        {
+            var uid = HttpContext.Session.GetInt32("UserId");
+            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
+
+            var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
+            if (ticket == null) return NotFound();
+            if (!ticket.IsOpen || ticket.IsOnHold)
+            {
+                TempData["Error"] = "Only an active ticket can be placed on hold.";
+                return RedirectToAction("Details", new { id });
+            }
+
+            var oldStatus = ticket.Status;
+            ticket.Status = TicketStatus.OnHold;
+            ticket.UpdatedAt = DateTime.Now;
+            ApplyStatusTimestamps(ticket, oldStatus);   // stamps OnHoldSince (SLA paused)
+            if (uid != null)
+                _context.TicketMessages.Add(new TicketMessage
+                {
+                    TicketId = id,
+                    SenderId = uid.Value,
+                    Message = "Placed on hold — SLA paused." + (string.IsNullOrWhiteSpace(reason) ? "" : $" Reason: {reason.Trim()}"),
+                    SentAt = DateTime.Now,
+                    IsInternal = true
+                });
+            await _context.SaveChangesAsync();
+            await _auditService.LogAsync("On Hold", "Ticket", id,
+                string.IsNullOrWhiteSpace(reason) ? "Ticket placed on hold" : $"On hold: {reason.Trim()}");
+
+            TempData["Success"] = "Ticket placed on hold — SLA paused.";
+            return RedirectToAction("Details", new { id });
+        }
+
+        // ── resume from hold (staff) — resumes the SLA clock ─────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Resume(int id)
+        {
+            var uid = HttpContext.Session.GetInt32("UserId");
+            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
+
+            var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
+            if (ticket == null) return NotFound();
+            if (!ticket.IsOnHold)
+            {
+                TempData["Error"] = "This ticket is not on hold.";
+                return RedirectToAction("Details", new { id });
+            }
+
+            var oldStatus = ticket.Status;
+            ticket.Status = ticket.AssignedToId != null ? TicketStatus.InProgress : TicketStatus.Open;
+            ticket.UpdatedAt = DateTime.Now;
+            ApplyStatusTimestamps(ticket, oldStatus);   // adds paused time + extends SLA targets
+            if (uid != null)
+                _context.TicketMessages.Add(new TicketMessage
+                {
+                    TicketId = id,
+                    SenderId = uid.Value,
+                    Message = "Resumed from hold — SLA running again.",
+                    SentAt = DateTime.Now,
+                    IsInternal = true
+                });
+            await _context.SaveChangesAsync();
+            await _auditService.LogAsync("Resumed", "Ticket", id, $"Resumed from hold ({ticket.PausedMinutes} min paused total)");
+
+            TempData["Success"] = "Ticket resumed — SLA running again.";
+            return RedirectToAction("Details", new { id });
+        }
+
+        // ── escalate (staff) — raise priority + alert the team ───────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Escalate(int id, string? reason)
+        {
+            var uid = HttpContext.Session.GetInt32("UserId");
+            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
+
+            var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
+            if (ticket == null) return NotFound();
+            if (!ticket.IsOpen)
+            {
+                TempData["Error"] = "Only an open ticket can be escalated.";
+                return RedirectToAction("Details", new { id });
+            }
+
+            ticket.EscalatedAt = DateTime.Now;
+            var oldPriority = ticket.Priority;
+            ticket.Priority = ticket.Priority switch
+            {
+                TicketPriority.Low => TicketPriority.Medium,
+                TicketPriority.Medium => TicketPriority.High,
+                _ => TicketPriority.Critical
+            };
+            ticket.UpdatedAt = DateTime.Now;
+            if (uid != null)
+                _context.TicketMessages.Add(new TicketMessage
+                {
+                    TicketId = id,
+                    SenderId = uid.Value,
+                    Message = $"Escalated (priority {oldPriority} → {ticket.Priority})."
+                        + (string.IsNullOrWhiteSpace(reason) ? "" : $" Reason: {reason.Trim()}"),
+                    SentAt = DateTime.Now,
+                    IsInternal = true
+                });
+            await _context.SaveChangesAsync();
+            await _auditService.LogAsync("Escalated", "Ticket", id, $"Escalated; priority {oldPriority} -> {ticket.Priority}");
+
+            await _rt.NotifyStaffAsync(new IT_Service_Management_System.Services.Realtime.RealtimeNotice(
+                $"Escalated: {ticket.Reference}", ticket.Title, TicketLink(ticket.Id), "error"));
+
+            TempData["Warning"] = $"Ticket escalated — priority raised to {ticket.Priority}.";
             return RedirectToAction("Details", new { id });
         }
 
@@ -560,6 +677,26 @@ namespace IT_Service_Management_System.Controllers
         private static void ApplyStatusTimestamps(Ticket ticket, TicketStatus oldStatus)
         {
             if (ticket.Status == oldStatus) return;
+
+            // On-hold SLA pause: stamp when entering hold; on leaving, add the paused time and push
+            // the SLA targets out by that amount so the wait doesn't count against the agent.
+            if (ticket.Status == TicketStatus.OnHold && oldStatus != TicketStatus.OnHold)
+            {
+                ticket.OnHoldSince = DateTime.Now;
+            }
+            else if (oldStatus == TicketStatus.OnHold && ticket.OnHoldSince.HasValue)
+            {
+                var paused = (int)Math.Round((DateTime.Now - ticket.OnHoldSince.Value).TotalMinutes);
+                if (paused > 0)
+                {
+                    ticket.PausedMinutes += paused;
+                    if (ticket.DueAt.HasValue) ticket.DueAt = ticket.DueAt.Value.AddMinutes(paused);
+                    if (ticket.ResponseDueAt.HasValue && ticket.FirstRespondedAt == null)
+                        ticket.ResponseDueAt = ticket.ResponseDueAt.Value.AddMinutes(paused);
+                }
+                ticket.OnHoldSince = null;
+            }
+
             if (ticket.Status == TicketStatus.Resolved) ticket.ResolvedAt = DateTime.Now;
             if (ticket.Status == TicketStatus.Closed) ticket.ClosedAt = DateTime.Now;
             if (ticket.Status == TicketStatus.Open || ticket.Status == TicketStatus.InProgress)
