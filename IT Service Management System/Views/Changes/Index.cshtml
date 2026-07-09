@@ -9,6 +9,7 @@
 }
 
 <div class="page-container">
+    <!-- PAGE HEADER -->
     <div class="page-header">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
@@ -18,17 +19,17 @@
                 </h1>
                 <p class="text-muted mt-2">Plan, approve, and track controlled changes</p>
             </div>
-            <a asp-action="Create" class="btn-create">
+            <a asp-action="Create" class="btn-create-ticket">
                 <i class="fas fa-plus-circle me-2"></i>
                 New Change
             </a>
         </div>
     </div>
 
-    <!-- Statistics Cards -->
+    <!-- STATISTICS CARDS -->
     <div class="stats-cards mb-4">
         <div class="stat-card">
-            <div class="stat-icon">
+            <div class="stat-icon primary">
                 <i class="fas fa-code-branch"></i>
             </div>
             <div class="stat-info">
@@ -37,7 +38,7 @@
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+            <div class="stat-icon warning">
                 <i class="fas fa-user-clock"></i>
             </div>
             <div class="stat-info">
@@ -46,7 +47,7 @@
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+            <div class="stat-icon primary">
                 <i class="fas fa-calendar-check"></i>
             </div>
             <div class="stat-info">
@@ -55,7 +56,7 @@
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+            <div class="stat-icon success">
                 <i class="fas fa-chart-line"></i>
             </div>
             <div class="stat-info">
@@ -65,7 +66,7 @@
         </div>
     </div>
 
-    <!-- Filters Section -->
+    <!-- FILTERS SECTION -->
     <div class="filters-card mb-4">
         <div class="filters-header">
             <i class="fas fa-filter"></i>
@@ -99,7 +100,7 @@
                     <input type="text" name="q" value="@curQ" placeholder="Search by title or description..." class="search-input">
                 </div>
             </div>
-            <button type="submit" class="btn-clear-filters" style="background:var(--primary,#3b82f6);color:#fff;border:none;">
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary);color:#fff;border:none;">
                 <i class="fas fa-search"></i>
                 Search
             </button>
@@ -110,21 +111,21 @@
         </form>
     </div>
 
-    <!-- Changes Table -->
+    <!-- CHANGES TABLE -->
     <div class="data-card">
         <div class="card-header-custom">
             <div>
                 <i class="fas fa-list me-2"></i>
                 <span>Change List</span>
             </div>
-            <div class="record-count">
+            <div class="ticket-count">
                 <i class="fas fa-chart-simple"></i>
                 <span>@Model.Count</span> changes shown
             </div>
         </div>
 
         <div class="table-responsive">
-            <table class="data-table">
+            <table class="tickets-table" id="changesTable">
                 <thead>
                     <tr>
                         <th><i class="fas fa-hashtag me-1"></i> Ref</th>
@@ -134,30 +135,27 @@
                         <th><i class="fas fa-server me-1"></i> CI</th>
                         <th><i class="fas fa-user-gear me-1"></i> Assignee</th>
                         <th><i class="fas fa-calendar me-1"></i> Scheduled</th>
-                        <th><i class="fas fa-cog me-1"></i> Actions</th>
+                        <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var c in Model)
+                    @foreach (var c in Model.OrderByDescending(x => x.CreatedAt))
                     {
                         <tr>
                             <td>
-                                <div class="ticket-title" style="display:flex;align-items:center;gap:0.5rem;">
-                                    <i class="fas fa-code-branch" style="color:var(--primary);"></i>
-                                    <div>
-                                        <a asp-action="Details" asp-route-id="@c.Id" style="text-decoration:none;">
-                                            <span style="display:block;font-size:0.68rem;font-weight:700;color:var(--primary);letter-spacing:0.5px;">@c.ChangeRef</span>
-                                        </a>
-                                        <span>@c.Title</span>
-                                    </div>
+                                <div class="change-ref-cell">
+                                    <a asp-action="Details" asp-route-id="@c.Id" class="change-link">
+                                        <span class="change-ref">@c.ChangeRef</span>
+                                        <span class="change-title">@c.Title</span>
+                                    </a>
                                 </div>
                             </td>
                             <td>
                                 @{
                                     var typeBadge = c.Type switch
                                     {
-                                        ChangeType.Emergency => "badge-red",
-                                        ChangeType.Normal => "badge-blue",
+                                        ChangeType.Emergency => "badge-critical",
+                                        ChangeType.Normal => "badge-primary",
                                         _ => "badge-gray"
                                     };
                                 }
@@ -167,9 +165,9 @@
                                 @{
                                     var riskBadge = c.Risk switch
                                     {
-                                        ChangeRisk.High => "badge-red",
-                                        ChangeRisk.Medium => "badge-amber",
-                                        _ => "badge-green"
+                                        ChangeRisk.High => "badge-critical",
+                                        ChangeRisk.Medium => "badge-warning",
+                                        _ => "badge-success"
                                     };
                                 }
                                 <span class="status-badge @riskBadge">@c.Risk</span>
@@ -179,41 +177,35 @@
                                     var statusBadge = c.Status switch
                                     {
                                         ChangeStatus.Draft => "badge-gray",
-                                        ChangeStatus.SubmittedForApproval => "badge-amber",
-                                        ChangeStatus.Approved => "badge-blue",
-                                        ChangeStatus.Scheduled => "badge-blue",
-                                        ChangeStatus.InProgress => "badge-amber",
-                                        ChangeStatus.Implemented => "badge-green",
-                                        ChangeStatus.Closed => "badge-green",
-                                        ChangeStatus.Rejected => "badge-red",
-                                        ChangeStatus.Failed => "badge-red",
-                                        ChangeStatus.Cancelled => "badge-red",
+                                        ChangeStatus.SubmittedForApproval => "badge-warning",
+                                        ChangeStatus.Approved => "badge-primary",
+                                        ChangeStatus.Scheduled => "badge-primary",
+                                        ChangeStatus.InProgress => "badge-warning",
+                                        ChangeStatus.Implemented => "badge-success",
+                                        ChangeStatus.Closed => "badge-success",
+                                        ChangeStatus.Rejected => "badge-critical",
+                                        ChangeStatus.Failed => "badge-critical",
+                                        ChangeStatus.Cancelled => "badge-critical",
                                         _ => "badge-gray"
                                     };
                                 }
                                 <span class="status-badge @statusBadge">@c.Status</span>
                             </td>
-                            <td>
-                                @if (c.ConfigurationItem != null)
-                                {
-                                    <span>@c.ConfigurationItem.Name</span>
-                                }
-                                else
-                                {
-                                    <span style="color:var(--gray-400);font-style:italic;">—</span>
-                                }
-                            </td>
+                            <td class="ci-cell">@(c.ConfigurationItem?.Name ?? "—")</td>
                             <td>
                                 @if (c.AssignedTo != null)
                                 {
-                                    <span class="status-badge badge-blue"><i class="fas fa-user-gear"></i> @c.AssignedTo.FirstName @c.AssignedTo.LastName</span>
+                                    <span class="assignee-badge">
+                                        <i class="fas fa-user-gear"></i>
+                                        @c.AssignedTo.FirstName @c.AssignedTo.LastName
+                                    </span>
                                 }
                                 else
                                 {
-                                    <span style="color:var(--gray-400);font-style:italic;">Unassigned</span>
+                                    <span class="unassigned-text">Unassigned</span>
                                 }
                             </td>
-                            <td class="date-cell">
+                            <td class="scheduled-date">
                                 @if (c.ScheduledStart != null)
                                 {
                                     <i class="far fa-calendar-alt"></i>
@@ -221,7 +213,7 @@
                                 }
                                 else
                                 {
-                                    <span style="color:var(--gray-400);font-style:italic;">Not scheduled</span>
+                                    <span class="not-scheduled">Not scheduled</span>
                                 }
                             </td>
                             <td class="action-buttons">
@@ -234,7 +226,7 @@
                                 <form asp-action="Delete" asp-route-id="@c.Id" method="post" style="display:inline;margin:0;"
                                       onsubmit="return confirm('Delete change @c.ChangeRef? This cannot be undone.');">
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="action-btn btn-delete" title="Delete Change" style="border:none;cursor:pointer;">
+                                    <button type="submit" class="action-btn btn-delete" title="Delete Change">
                                         <i class="fas fa-trash"></i>
                                     </button>
                                 </form>
@@ -251,10 +243,660 @@
                 <i class="fas fa-code-branch"></i>
                 <h3>No changes found</h3>
                 <p>Get started by raising your first change request</p>
-                <a asp-action="Create" class="btn-create btn-create-sm">
+                <a asp-action="Create" class="btn-create-ticket-sm">
                     <i class="fas fa-plus-circle"></i> New Change
                 </a>
             </div>
         }
     </div>
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-create-ticket-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-create-ticket-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== STATISTICS CARDS ===== */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+        .stat-icon.primary {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        }
+
+        .stat-icon.success {
+            background: linear-gradient(135deg, #2c9e6e, #227a55);
+        }
+
+        .stat-icon.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .stat-icon.warning {
+            background: linear-gradient(135deg, #f5b042, #e6a017);
+        }
+
+        .stat-icon.violet {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ===== FILTERS CARD ===== */
+    .filters-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .filters-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filters-body {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 180px;
+    }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 0.75rem;
+        padding-right: 2rem;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .search-wrapper {
+        position: relative;
+    }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+        }
+
+    .search-input {
+        width: 100%;
+        padding: 0.625rem 0.75rem 0.625rem 2rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .btn-clear-filters {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-clear-filters:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.9rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+    /* ===== CHANGE REF CELL ===== */
+    .change-ref-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .change-link {
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.05rem;
+    }
+
+        .change-link:hover {
+            text-decoration: none;
+        }
+
+    .change-ref {
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--primary);
+        letter-spacing: 0.5px;
+        transition: color 0.2s;
+    }
+
+    .change-link:hover .change-ref {
+        color: var(--primary-dark);
+    }
+
+    .change-title {
+        font-size: 0.9rem;
+        color: var(--gray-700);
+        transition: color 0.2s;
+    }
+
+    .change-link:hover .change-title {
+        color: var(--primary);
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-primary {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    /* ===== ASSIGNEE ===== */
+    .assignee-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.75rem;
+        color: var(--gray-600);
+    }
+
+        .assignee-badge i {
+            color: var(--primary);
+            font-size: 0.7rem;
+        }
+
+    .unassigned-text {
+        color: var(--gray-400);
+        font-style: italic;
+        font-size: 0.8rem;
+    }
+
+    /* ===== CI CELL ===== */
+    .ci-cell {
+        color: var(--gray-600);
+        font-size: 0.85rem;
+    }
+
+    /* ===== SCHEDULED DATE ===== */
+    .scheduled-date {
+        color: var(--gray-600);
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+
+        .scheduled-date i {
+            color: var(--gray-400);
+            margin-right: 0.25rem;
+        }
+
+    .not-scheduled {
+        color: var(--gray-400);
+        font-style: italic;
+        font-size: 0.8rem;
+    }
+
+    /* ===== ACTION BUTTONS ===== */
+    .action-buttons {
+        display: flex;
+        gap: 0.25rem;
+        justify-content: flex-end;
+    }
+
+    .action-btn {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.8rem;
+        border: none;
+        cursor: pointer;
+        background: transparent;
+    }
+
+    .btn-view {
+        background: var(--gray-100);
+        color: var(--info);
+    }
+
+        .btn-view:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .btn-edit {
+        background: var(--gray-100);
+        color: var(--warning);
+    }
+
+        .btn-edit:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .btn-delete {
+        background: var(--gray-100);
+        color: var(--danger);
+    }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .page-header .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .stats-cards {
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .filters-body {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-group {
+            min-width: 100%;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.6rem 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.8rem;
+        }
+
+        .action-btn {
+            width: 30px;
+            height: 30px;
+            font-size: 0.7rem;
+        }
+
+        .change-title {
+            font-size: 0.8rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.4rem;
+        }
+
+        .change-ref {
+            font-size: 0.6rem;
+        }
+
+        .change-title {
+            font-size: 0.7rem;
+        }
+
+        .assignee-badge {
+            font-size: 0.65rem;
+        }
+
+        .scheduled-date {
+            font-size: 0.7rem;
+        }
+    }
+</style>
