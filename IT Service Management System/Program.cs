@@ -40,6 +40,18 @@ builder.Services.AddAntiforgery(options => options.HeaderName = "RequestVerifica
 
 builder.Services.AddSignalR();
 
+// Honour X-Forwarded-* from a trusted reverse proxy / load balancer so the app sees the real
+// client scheme + IP (correct HTTPS redirects, Secure/SameSite cookies, and audit/geo IPs).
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+        | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+    // Single trusted proxy in front; clear the default allow-list. Pin KnownProxies/KnownNetworks
+    // instead if the proxy address is fixed.
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddMemoryCache();
 
 // Distributed cache + session store. Uses Redis when a connection string is configured
@@ -243,6 +255,9 @@ builder.Services.AddHealthChecks()
     .AddCheck<DatabaseHealthCheck>("database");
 
 var app = builder.Build();
+
+// Must run before any middleware that reads the scheme/remote IP (HTTPS redirect, cookies, auth).
+app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
