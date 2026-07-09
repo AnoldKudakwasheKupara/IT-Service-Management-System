@@ -541,6 +541,35 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<IsoDocument>().HasQueryFilter(d => !d.IsDeleted);
             modelBuilder.Entity<IsoClause>().HasIndex(c => new { c.Standard, c.ClauseNumber });
 
+            // ── Performance indexes ─────────────────────────────────────────────────
+            // Status/date columns are filtered/counted constantly by the dashboards,
+            // registers and the ECIE compliance-health engine but were unindexed, so
+            // every load scanned the table. (Enum columns are persisted as strings;
+            // an index on the nvarchar column serves equality filters well.)
+            modelBuilder.Entity<Ticket>().HasIndex(t => new { t.Status, t.AssignedToId });
+            modelBuilder.Entity<Ticket>().HasIndex(t => new { t.Status, t.Priority });
+            modelBuilder.Entity<AuditLog>().HasIndex(a => a.Timestamp);
+            modelBuilder.Entity<AuditLog>().HasIndex(a => new { a.UserId, a.Timestamp });
+
+            modelBuilder.Entity<IsoDocument>().HasIndex(d => d.Status);
+            modelBuilder.Entity<IsoDocument>().HasIndex(d => d.ReviewDate);
+            modelBuilder.Entity<IsoDocument>().HasIndex(d => d.ExpiryDate);
+            modelBuilder.Entity<IsoDocumentAcknowledgement>().HasIndex(a => a.Status);
+            modelBuilder.Entity<Risk>().HasIndex(r => r.Status);
+            modelBuilder.Entity<Risk>().HasIndex(r => r.Category);
+            modelBuilder.Entity<Capa>().HasIndex(c => new { c.Status, c.DueDate });
+            modelBuilder.Entity<NonConformance>().HasIndex(n => n.Status);
+            modelBuilder.Entity<AuditFinding>().HasIndex(f => f.Status);
+            modelBuilder.Entity<Audit>().HasIndex(a => new { a.Status, a.ActualEndDate });
+            modelBuilder.Entity<TrainingRecord>().HasIndex(t => t.Status);
+            modelBuilder.Entity<TrainingRecord>().HasIndex(t => t.CertificateExpiry);
+            modelBuilder.Entity<Supplier>().HasIndex(s => s.Status);
+            modelBuilder.Entity<ManagementReview>().HasIndex(m => new { m.Status, m.MeetingDate });
+            modelBuilder.Entity<ManagementReviewAction>().HasIndex(a => new { a.Status, a.DueDate });
+            modelBuilder.Entity<Objective>().HasIndex(o => o.Status);
+            modelBuilder.Entity<ComplianceObligation>().HasIndex(o => o.Status);
+            modelBuilder.Entity<Improvement>().HasIndex(i => i.Status);
+
             // Seed document categories
             modelBuilder.Entity<IsoDocumentCategory>().HasData(
                 new IsoDocumentCategory { Id = 1, Name = "Quality Management", Code = "QMS", IsActive = true },
