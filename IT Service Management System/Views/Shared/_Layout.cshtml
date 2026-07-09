@@ -80,23 +80,56 @@
                 transition: var(--transition-smooth);
                 z-index: 20;
                 box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
-                overflow-y: auto;
-                scrollbar-width: thin;
+                overflow: hidden;
                 flex-shrink: 0;
             }
 
-                .sidebar::-webkit-scrollbar {
+            /* Only the menu scrolls; the brand header stays pinned. */
+            .sidebar-nav {
+                flex: 1;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                padding-bottom: 1rem;
+            }
+
+                .sidebar-nav::-webkit-scrollbar {
                     width: 4px;
                 }
 
-                .sidebar::-webkit-scrollbar-track {
+                .sidebar-nav::-webkit-scrollbar-track {
                     background: transparent;
                 }
 
-                .sidebar::-webkit-scrollbar-thumb {
+                .sidebar-nav::-webkit-scrollbar-thumb {
                     background: rgba(255,255,255,0.2);
                     border-radius: 10px;
                 }
+
+            /* Collapsible group headers (built up by the accordion script). */
+            .nav-group-toggle {
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                user-select: none;
+                transition: color .15s;
+            }
+
+                .nav-group-toggle:hover { color: #94a3b8; }
+
+                .nav-group-toggle:focus-visible {
+                    outline: 2px solid var(--primary);
+                    outline-offset: -2px;
+                    border-radius: 4px;
+                }
+
+                .nav-chevron {
+                    font-size: .58rem;
+                    opacity: .7;
+                    transition: transform .2s ease;
+                }
+
+                .nav-group-toggle.collapsed .nav-chevron { transform: rotate(-90deg); }
 
             .sidebar-header {
                 padding: 1.75rem 1.5rem 1.25rem 1.5rem;
@@ -109,6 +142,7 @@
                 gap: 12px;
                 border-bottom: 1px solid rgba(255,255,255,0.06);
                 margin-bottom: 0.5rem;
+                flex-shrink: 0;
             }
 
                 .sidebar-header i {
@@ -551,6 +585,7 @@
                     <span>Axis IT</span>
                 </div>
 
+                <nav class="sidebar-nav" id="sidebarNav" aria-label="Main navigation">
                 @{
                     var navRole = Context.Session.GetString("UserRole");
                     var navFull = navRole == "Admin" || navRole == "SystemsAdmin";
@@ -632,7 +667,7 @@
 
                 @if (navIms)
                 {
-                    <div class="nav-group">Integrated Mgmt (ISO)</div>
+                    <div class="nav-group">ISO / Compliance</div>
                     <a class="nav-item @(currentController == "Ecie" ? "active" : "")"
                        asp-controller="Ecie" asp-action="Index">
                         <i class="fas fa-brain"></i> Intelligence Engine
@@ -661,8 +696,6 @@
                        asp-controller="Risk" asp-action="Index">
                         <i class="fas fa-gauge-high"></i> Risk Register
                     </a>
-
-                    <div class="nav-group">ISO Governance</div>
                     <a class="nav-item @(currentController == "Suppliers" ? "active" : "")"
                        asp-controller="Suppliers" asp-action="Index">
                         <i class="fas fa-truck-field"></i> Suppliers
@@ -831,6 +864,7 @@
                         File Settings
                     </a>
                 }
+                </nav>
             </aside>
 
             <!-- MAIN AREA -->
@@ -1054,6 +1088,56 @@
         });
         });
         });
+
+        // Collapsible sidebar groups (accordion) built over the flat nav structure.
+        (function () {
+            var nav = document.getElementById('sidebarNav');
+            if (!nav) return;
+            var KEY = 'sidebarGroups';
+            var state = {};
+            try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { }
+            nav.querySelectorAll('.nav-group').forEach(function (g) {
+                var label = g.textContent.trim();
+                var items = [];
+                var el = g.nextElementSibling;
+                while (el && !el.classList.contains('nav-group')) {
+                    if (el.classList && el.classList.contains('nav-item')) items.push(el);
+                    el = el.nextElementSibling;
+                }
+                if (!items.length) return;
+
+                var chev = document.createElement('i');
+                chev.className = 'fas fa-chevron-down nav-chevron';
+                chev.setAttribute('aria-hidden', 'true');
+                g.appendChild(chev);
+                g.classList.add('nav-group-toggle');
+                g.setAttribute('role', 'button');
+                g.setAttribute('tabindex', '0');
+
+                var hasActive = items.some(function (i) { return i.classList.contains('active'); });
+                // Core and the current page's group start open; others follow saved state (default collapsed).
+                var open = (hasActive || label.toLowerCase() === 'core') ? true
+                         : (label in state ? state[label] : false);
+
+                function apply(o) {
+                    g.setAttribute('aria-expanded', o ? 'true' : 'false');
+                    g.classList.toggle('collapsed', !o);
+                    items.forEach(function (i) { i.style.display = o ? '' : 'none'; });
+                }
+                apply(open);
+
+                function toggle() {
+                    open = !open;
+                    apply(open);
+                    state[label] = open;
+                    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { }
+                }
+                g.addEventListener('click', toggle);
+                g.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+                });
+            });
+        })();
     </script>
 
     <!-- Real-time notifications (SignalR): live bell badge + toasts -->
