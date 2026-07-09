@@ -3,167 +3,1014 @@
 @{
     ViewData["Title"] = "ISO Dashboard";
 }
-<partial name="_ImsStyles" />
 
-<div class="ims">
-    <div class="page-container">
-        <div class="page-header">
-            <div class="head-row">
-                <div>
-                    <h1 class="page-title"><i class="fas fa-certificate"></i> Integrated Management System</h1>
-                    <p class="page-sub">ISO 9001:2015 &amp; ISO/IEC 27001:2022 — live compliance overview</p>
-                </div>
-                <div class="head-actions">
-                    <a class="btn-outline-ims" asp-controller="IsoReports" asp-action="Index"><i class="fas fa-file-export"></i> Reports</a>
-                    <a class="btn-primary-ims" asp-controller="IsoDocuments" asp-action="Index"><i class="fas fa-folder-open"></i> Documents</a>
-                </div>
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-certificate me-2" style="color: var(--primary);"></i>
+                    Integrated Management System
+                </h1>
+                <p class="text-muted mt-2">ISO 9001:2015 &amp; ISO/IEC 27001:2022 — live compliance overview</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn-create-ticket" asp-controller="IsoReports" asp-action="Index" style="background: var(--gray-100); color: var(--gray-700);">
+                    <i class="fas fa-file-export"></i>
+                    Reports
+                </a>
+                <a class="btn-create-ticket" asp-controller="IsoDocuments" asp-action="Index">
+                    <i class="fas fa-folder-open"></i>
+                    Documents
+                </a>
             </div>
         </div>
+    </div>
 
-        @* ── Headline KPIs ── *@
-        <div class="stats">
-            <div class="stat"><div class="ic blue"><i class="fas fa-file-shield"></i></div><div><h3>@Model.PublishedDocuments</h3><p>Published Documents</p></div></div>
-            <div class="stat"><div class="ic amber"><i class="fas fa-clock-rotate-left"></i></div><div><h3>@Model.DocumentsDueReview</h3><p>Due for Review</p></div></div>
-            <div class="stat"><div class="ic red"><i class="fas fa-triangle-exclamation"></i></div><div><h3>@Model.OpenCapas</h3><p>Open CAPAs</p></div></div>
-            <div class="stat"><div class="ic purple"><i class="fas fa-gauge-high"></i></div><div><h3>@Model.OpenRisks</h3><p>Open Risks</p></div></div>
-            <div class="stat"><div class="ic teal"><i class="fas fa-clipboard-check"></i></div><div><h3>@Model.OpenAudits</h3><p>Audits in Progress</p></div></div>
-            <div class="stat"><div class="ic green"><i class="fas fa-user-check"></i></div><div><h3>@Model.AcknowledgementPercent%</h3><p>Acknowledgement Rate</p></div></div>
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon primary">
+                <i class="fas fa-file-shield"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.PublishedDocuments</div>
+                <div class="kpi-label">Published Documents</div>
+            </div>
         </div>
+        <div class="kpi-card">
+            <div class="kpi-icon warning">
+                <i class="fas fa-clock-rotate-left"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.DocumentsDueReview</div>
+                <div class="kpi-label">Due for Review</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon danger">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.OpenCapas</div>
+                <div class="kpi-label">Open CAPAs</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon violet">
+                <i class="fas fa-gauge-high"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.OpenRisks</div>
+                <div class="kpi-label">Open Risks</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon info">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.OpenAudits</div>
+                <div class="kpi-label">Audits in Progress</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon success">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.AcknowledgementPercent%</div>
+                <div class="kpi-label">Acknowledgement Rate</div>
+            </div>
+        </div>
+    </div>
 
-        @* ── Progress meters ── *@
-        <div class="card">
-            <div class="card-body">
-                <div class="form-grid three">
-                    <div>
-                        <div class="meta" style="display:flex;justify-content:space-between;"><span><i class="fas fa-user-check"></i> Policy Acknowledgement</span><strong>@Model.AcknowledgementPercent%</strong></div>
-                        <div class="progress-ims green" style="margin-top:.4rem;"><span style="width:@Model.AcknowledgementPercent%"></span></div>
-                        <div class="hint">@Model.CompletedAcknowledgements of @Model.TotalAcknowledgements acknowledgements complete</div>
+    <!-- PROGRESS METERS -->
+    <div class="data-card">
+        <div class="card-body-custom">
+            <div class="progress-grid">
+                <!-- Policy Acknowledgement -->
+                <div class="progress-item">
+                    <div class="progress-header">
+                        <span><i class="fas fa-user-check" style="color: var(--primary);"></i> Policy Acknowledgement</span>
+                        <strong>@Model.AcknowledgementPercent%</strong>
                     </div>
-                    <div>
-                        <div class="meta" style="display:flex;justify-content:space-between;"><span><i class="fas fa-graduation-cap"></i> Training Completion</span><strong>@Model.TrainingCompletionPercent%</strong></div>
-                        <div class="progress-ims" style="margin-top:.4rem;"><span style="width:@Model.TrainingCompletionPercent%"></span></div>
-                        <div class="hint">@Model.TrainingCompleted of @Model.TrainingRecords records completed</div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill success" style="width: @Model.AcknowledgementPercent%"></div>
                     </div>
-                    <div>
-                        <div class="meta" style="display:flex;justify-content:space-between;"><span><i class="fas fa-scale-balanced"></i> Compliance</span><strong>@Model.CompliancePercent%</strong></div>
-                        <div class="progress-ims amber" style="margin-top:.4rem;"><span style="width:@Model.CompliancePercent%"></span></div>
-                        <div class="hint">@Model.ComplianceObligations obligation(s) tracked</div>
+                    <div class="progress-hint">
+                        @Model.CompletedAcknowledgements of @Model.TotalAcknowledgements acknowledgements complete
                     </div>
                 </div>
-            </div>
-        </div>
 
-        @* ── Module tiles ── *@
-        <div class="stats">
-            <div class="stat"><div class="ic blue"><i class="fas fa-file-lines"></i></div><div><h3>@Model.TotalDocuments</h3><p>Total Documents</p></div></div>
-            <div class="stat"><div class="ic amber"><i class="fas fa-pen-ruler"></i></div><div><h3>@Model.InWorkflowDocuments</h3><p>In Workflow</p></div></div>
-            <div class="stat"><div class="ic red"><i class="fas fa-file-circle-xmark"></i></div><div><h3>@Model.ExpiredDocuments</h3><p>Expired</p></div></div>
-            <div class="stat"><div class="ic red"><i class="fas fa-bug"></i></div><div><h3>@Model.OpenNonConformances</h3><p>Open NCs</p></div></div>
-            <div class="stat"><div class="ic teal"><i class="fas fa-magnifying-glass"></i></div><div><h3>@Model.OpenFindings</h3><p>Open Findings</p></div></div>
-            <div class="stat"><div class="ic purple"><i class="fas fa-bullseye"></i></div><div><h3>@Model.ActiveObjectives</h3><p>Active Objectives</p></div></div>
-            <div class="stat"><div class="ic green"><i class="fas fa-truck-field"></i></div><div><h3>@Model.Suppliers</h3><p>Suppliers</p></div></div>
-            <div class="stat"><div class="ic blue"><i class="fas fa-lightbulb"></i></div><div><h3>@Model.OpenImprovements</h3><p>Improvements</p></div></div>
-        </div>
-
-        <div class="form-grid" style="align-items:start;">
-            @* ── Risk heat map ── *@
-            <div class="card">
-                <div class="card-head"><span class="t"><i class="fas fa-fire"></i> Risk Heat Map</span><span class="meta">@Model.OpenRisks open · @Model.CriticalRisks critical</span></div>
-                <div class="card-body">
-                    <div style="display:grid;grid-template-columns:auto repeat(5,1fr);gap:4px;align-items:center;">
-                        <div></div>
-                        @for (int l = 1; l <= 5; l++) { <div style="text-align:center;font-size:.7rem;color:var(--gray-500);font-weight:600;">L@l</div> }
-                        @for (int i = 5; i >= 1; i--)
-                        {
-                            <div style="font-size:.7rem;color:var(--gray-500);font-weight:600;text-align:right;padding-right:4px;">I@i</div>
-                            @for (int l = 1; l <= 5; l++)
-                            {
-                                var count = Model.RiskHeatmap[(i - 1) * 5 + (l - 1)];
-                                var band = RiskScoring.BandFor(l * i);
-                                var bg = band == RiskBand.Critical ? "#fdecea" : band == RiskBand.High ? "#fdf3e1" : band == RiskBand.Medium ? "#eff6ff" : "#f1f5f9";
-                                var fg = band == RiskBand.Critical ? "#b3261e" : band == RiskBand.High ? "#9a5b00" : band == RiskBand.Medium ? "#1d4ed8" : "#64748b";
-                                <div title="Likelihood @l × Impact @i = @(l*i)" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;font-weight:700;background:@bg;color:@fg;">@(count > 0 ? count.ToString() : "")</div>
-                            }
-                        }
+                <!-- Training Completion -->
+                <div class="progress-item">
+                    <div class="progress-header">
+                        <span><i class="fas fa-graduation-cap" style="color: var(--warning);"></i> Training Completion</span>
+                        <strong>@Model.TrainingCompletionPercent%</strong>
                     </div>
-                    <div class="hint" style="margin-top:.6rem;">Likelihood (L) × Impact (I). Colour = risk band; number = open risks in that cell.</div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill warning" style="width: @Model.TrainingCompletionPercent%"></div>
+                    </div>
+                    <div class="progress-hint">
+                        @Model.TrainingCompleted of @Model.TrainingRecords records completed
+                    </div>
                 </div>
-            </div>
 
-            @* ── Upcoming reviews ── *@
-            <div class="card">
-                <div class="card-head"><span class="t"><i class="fas fa-calendar-day"></i> Upcoming Document Reviews</span></div>
-                <div class="card-body" style="padding:0;">
-                    @if (Model.UpcomingReviews.Any())
-                    {
-                        <table class="tbl">
-                            <thead><tr><th>Document</th><th>Review Date</th></tr></thead>
-                            <tbody>
-                                @foreach (var d in Model.UpcomingReviews)
-                                {
-                                    <tr>
-                                        <td><a asp-controller="IsoDocuments" asp-action="Details" asp-route-id="@d.Id"><span class="docnum">@d.DocumentNumber</span></a><div class="meta">@d.Title</div></td>
-                                        <td class="@(d.IsReviewDue ? "overdue" : "")">@(d.ReviewDate?.ToString("dd MMM yyyy"))</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                    else { <div class="empty"><i class="fas fa-calendar-check"></i><h3>No reviews scheduled</h3></div> }
-                </div>
-            </div>
-        </div>
-
-        <div class="form-grid" style="align-items:start;">
-            @* ── CAPA watchlist ── *@
-            <div class="card">
-                <div class="card-head"><span class="t"><i class="fas fa-triangle-exclamation"></i> CAPA Watchlist</span><span class="meta">@Model.OverdueCapas overdue</span></div>
-                <div class="card-body" style="padding:0;">
-                    @if (Model.CapaWatchlist.Any())
-                    {
-                        <table class="tbl">
-                            <thead><tr><th>Ref</th><th>Title</th><th>Owner</th><th>Due</th></tr></thead>
-                            <tbody>
-                                @foreach (var c in Model.CapaWatchlist)
-                                {
-                                    <tr>
-                                        <td><a asp-controller="Capa" asp-action="Details" asp-route-id="@c.Id"><span class="docnum">@c.Reference</span></a></td>
-                                        <td>@c.Title</td>
-                                        <td class="meta">@(c.Responsible?.FullName ?? "—")</td>
-                                        <td class="@(c.IsOverdue ? "overdue" : "")">@(c.DueDate?.ToString("dd MMM") ?? "—")</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                    else { <div class="empty"><i class="fas fa-clipboard-check"></i><h3>No open CAPAs</h3></div> }
-                </div>
-            </div>
-
-            @* ── Top risks ── *@
-            <div class="card">
-                <div class="card-head"><span class="t"><i class="fas fa-gauge-high"></i> Top Risks</span></div>
-                <div class="card-body" style="padding:0;">
-                    @if (Model.TopRisks.Any())
-                    {
-                        <table class="tbl">
-                            <thead><tr><th>Ref</th><th>Title</th><th>Score</th><th>Band</th></tr></thead>
-                            <tbody>
-                                @foreach (var r in Model.TopRisks)
-                                {
-                                    <tr>
-                                        <td><a asp-controller="Risk" asp-action="Details" asp-route-id="@r.Id"><span class="docnum">@r.Reference</span></a></td>
-                                        <td>@r.Title</td>
-                                        <td><strong>@r.Score</strong></td>
-                                        <td><span class="badge-ims @RiskScoring.CssClass(r.Band)">@r.Band</span></td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    }
-                    else { <div class="empty"><i class="fas fa-shield-halved"></i><h3>No open risks</h3></div> }
+                <!-- Compliance -->
+                <div class="progress-item">
+                    <div class="progress-header">
+                        <span><i class="fas fa-scale-balanced" style="color: var(--violet);"></i> Compliance</span>
+                        <strong>@Model.CompliancePercent%</strong>
+                    </div>
+                    <div class="progress-bar-track">
+                        <div class="progress-bar-fill violet" style="width: @Model.CompliancePercent%"></div>
+                    </div>
+                    <div class="progress-hint">
+                        @Model.ComplianceObligations obligation(s) tracked
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- SECONDARY KPI CARDS -->
+    <div class="kpi-grid mt-4">
+        <div class="kpi-card">
+            <div class="kpi-icon primary">
+                <i class="fas fa-file-lines"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.TotalDocuments</div>
+                <div class="kpi-label">Total Documents</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon warning">
+                <i class="fas fa-pen-ruler"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.InWorkflowDocuments</div>
+                <div class="kpi-label">In Workflow</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon danger">
+                <i class="fas fa-file-circle-xmark"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.ExpiredDocuments</div>
+                <div class="kpi-label">Expired</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon danger">
+                <i class="fas fa-bug"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.OpenNonConformances</div>
+                <div class="kpi-label">Open NCs</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon info">
+                <i class="fas fa-magnifying-glass"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.OpenFindings</div>
+                <div class="kpi-label">Open Findings</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon violet">
+                <i class="fas fa-bullseye"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.ActiveObjectives</div>
+                <div class="kpi-label">Active Objectives</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon success">
+                <i class="fas fa-truck-field"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.Suppliers</div>
+                <div class="kpi-label">Suppliers</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon primary">
+                <i class="fas fa-lightbulb"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.OpenImprovements</div>
+                <div class="kpi-label">Improvements</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TWO COLUMN GRID: Risk Heat Map & Upcoming Reviews -->
+    <div class="two-col-grid mt-4">
+        <!-- Risk Heat Map -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div>
+                    <i class="fas fa-fire me-2" style="color: var(--danger);"></i>
+                    <span>Risk Heat Map</span>
+                </div>
+                <div class="ticket-count">
+                    <span>@Model.OpenRisks open · @Model.CriticalRisks critical</span>
+                </div>
+            </div>
+            <div class="card-body-custom">
+                <div class="heatmap-grid">
+                    <div class="heatmap-header"></div>
+                    @for (int l = 1; l <= 5; l++)
+                    {
+                        <div class="heatmap-header" style="text-align:center;font-size:0.7rem;color:var(--gray-500);font-weight:600;">L@l</div>
+                    }
+                    @for (int i = 5; i >= 1; i--)
+                    {
+                        <div class="heatmap-label" style="font-size:0.7rem;color:var(--gray-500);font-weight:600;text-align:right;padding-right:4px;">I@i</div>
+                        @for (int l = 1; l <= 5; l++)
+                        {
+                            var count = Model.RiskHeatmap[(i - 1) * 5 + (l - 1)];
+                            var band = RiskScoring.BandFor(l * i);
+                            var bg = band == RiskBand.Critical ? "#fdecea" : band == RiskBand.High ? "#fdf3e1" : band == RiskBand.Medium ? "#eff6ff" : "#f1f5f9";
+                            var fg = band == RiskBand.Critical ? "#b3261e" : band == RiskBand.High ? "#9a5b00" : band == RiskBand.Medium ? "#1d4ed8" : "#64748b";
+                            var border = band == RiskBand.Critical ? "1px solid #fecaca" : band == RiskBand.High ? "1px solid #fde68a" : band == RiskBand.Medium ? "1px solid #bfdbfe" : "1px solid var(--gray-200)";
+                            <div class="heatmap-cell" 
+                                 style="background:@bg;color:@fg;border:@border;"
+                                 title="Likelihood @l × Impact @i = @(l*i)">
+                                @(count > 0 ? count.ToString() : "")
+                            </div>
+                        }
+                    }
+                </div>
+                <div class="heatmap-hint">
+                    <i class="fas fa-info-circle"></i>
+                    Likelihood (L) × Impact (I). Colour = risk band; number = open risks in that cell.
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Reviews -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-calendar-day me-2" style="color: var(--warning);"></i>
+                <span>Upcoming Document Reviews</span>
+            </div>
+            <div class="card-body-custom" style="padding:0;">
+                @if (Model.UpcomingReviews.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="tickets-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-file me-1"></i> Document</th>
+                                    <th><i class="fas fa-calendar me-1"></i> Review Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var d in Model.UpcomingReviews.Take(10))
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="document-cell">
+                                                <a asp-controller="IsoDocuments" asp-action="Details" asp-route-id="@d.Id" class="doc-link">
+                                                    <span class="doc-number">@d.DocumentNumber</span>
+                                                </a>
+                                                <div class="doc-title">@d.Title</div>
+                                            </div>
+                                        </td>
+                                        <td class="review-date @(d.IsReviewDue ? "overdue" : "")">
+                                            @(d.ReviewDate?.ToString("dd MMM yyyy") ?? "—")
+                                            @if (d.IsReviewDue)
+                                            {
+                                                <span class="status-badge status-overdue"><i class="fas fa-exclamation-circle"></i> Due</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state-mini">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>No reviews scheduled</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- TWO COLUMN GRID: CAPA Watchlist & Top Risks -->
+    <div class="two-col-grid mt-4">
+        <!-- CAPA Watchlist -->
+        <div class="data-card">
+            <div class="card-header-custom" style="border-left: 4px solid var(--danger);">
+                <div>
+                    <i class="fas fa-triangle-exclamation me-2" style="color: var(--danger);"></i>
+                    <span style="color: var(--danger);">CAPA Watchlist</span>
+                </div>
+                <div class="ticket-count">
+                    <span>@Model.OverdueCapas overdue</span>
+                </div>
+            </div>
+            <div class="card-body-custom" style="padding:0;">
+                @if (Model.CapaWatchlist.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="tickets-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-hashtag me-1"></i> Ref</th>
+                                    <th><i class="fas fa-heading me-1"></i> Title</th>
+                                    <th><i class="fas fa-user me-1"></i> Owner</th>
+                                    <th><i class="fas fa-calendar me-1"></i> Due</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var c in Model.CapaWatchlist.Take(10))
+                                {
+                                    <tr>
+                                        <td><a asp-controller="Capa" asp-action="Details" asp-route-id="@c.Id" class="doc-link"><span class="doc-number">@c.Reference</span></a></td>
+                                        <td class="capa-title">@c.Title</td>
+                                        <td class="capa-owner">@(c.Responsible?.FullName ?? "—")</td>
+                                        <td class="@(c.IsOverdue ? "overdue" : "") capa-due">
+                                            @(c.DueDate?.ToString("dd MMM") ?? "—")
+                                            @if (c.IsOverdue)
+                                            {
+                                                <span class="status-badge status-overdue"><i class="fas fa-exclamation-circle"></i> Overdue</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state-mini">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>No open CAPAs</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Top Risks -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-gauge-high me-2" style="color: var(--violet);"></i>
+                <span>Top Risks</span>
+            </div>
+            <div class="card-body-custom" style="padding:0;">
+                @if (Model.TopRisks.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="tickets-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-hashtag me-1"></i> Ref</th>
+                                    <th><i class="fas fa-heading me-1"></i> Title</th>
+                                    <th><i class="fas fa-chart-simple me-1"></i> Score</th>
+                                    <th><i class="fas fa-tag me-1"></i> Band</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in Model.TopRisks.Take(10))
+                                {
+                                    var bandClass = r.Band == RiskBand.Critical ? "risk-critical" :
+                                                   r.Band == RiskBand.High ? "risk-high" :
+                                                   r.Band == RiskBand.Medium ? "risk-medium" : "risk-low";
+                                    <tr>
+                                        <td><a asp-controller="Risk" asp-action="Details" asp-route-id="@r.Id" class="doc-link"><span class="doc-number">@r.Reference</span></a></td>
+                                        <td class="risk-title">@r.Title</td>
+                                        <td><strong class="risk-score">@r.Score</strong></td>
+                                        <td><span class="risk-badge @bandClass">@r.Band</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state-mini">
+                        <i class="fas fa-shield-halved"></i>
+                        <span>No open risks</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+    .btn-create-ticket:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        color: white;
+        text-decoration: none;
+    }
+
+    /* ===== KPI CARDS ===== */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .kpi-grid.mt-4 {
+        margin-top: 1.5rem;
+    }
+
+    .kpi-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .kpi-icon.primary { background: linear-gradient(135deg, var(--primary-light), var(--primary)); }
+    .kpi-icon.success { background: linear-gradient(135deg, #2c9e6e, #227a55); }
+    .kpi-icon.danger { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .kpi-icon.warning { background: linear-gradient(135deg, #f5b042, #e6a017); }
+    .kpi-icon.violet { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+    .kpi-icon.info { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+    .kpi-icon.slate { background: linear-gradient(135deg, var(--gray-500), var(--gray-600)); }
+
+    .kpi-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .kpi-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        line-height: 1.2;
+    }
+
+    .kpi-label {
+        font-size: 0.65rem;
+        font-weight: 500;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-top: 0.05rem;
+    }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .ticket-count {
+        font-size: 0.8rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== TWO COLUMN GRID ===== */
+    .two-col-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .two-col-grid.mt-4 {
+        margin-top: 1.5rem;
+    }
+
+    /* ===== PROGRESS METERS ===== */
+    .progress-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+    }
+
+    .progress-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+        color: var(--gray-700);
+        font-weight: 500;
+    }
+
+    .progress-header strong {
+        font-size: 1rem;
+        color: var(--gray-800);
+    }
+
+    .progress-bar-track {
+        width: 100%;
+        height: 8px;
+        background: var(--gray-100);
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 1rem;
+        transition: width 0.6s ease;
+        min-width: 4px;
+    }
+
+    .progress-bar-fill.success {
+        background: linear-gradient(90deg, #6ee7b7, var(--success));
+    }
+
+    .progress-bar-fill.warning {
+        background: linear-gradient(90deg, #fcd34d, var(--warning));
+    }
+
+    .progress-bar-fill.violet {
+        background: linear-gradient(90deg, #a78bfa, #7c3aed);
+    }
+
+    .progress-hint {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+    }
+
+    /* ===== HEAT MAP ===== */
+    .heatmap-grid {
+        display: grid;
+        grid-template-columns: auto repeat(5, 1fr);
+        gap: 4px;
+        align-items: center;
+    }
+
+    .heatmap-cell {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        min-height: 32px;
+    }
+
+    .heatmap-header {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .heatmap-label {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        font-weight: 600;
+        text-align: right;
+        padding-right: 4px;
+    }
+
+    .heatmap-hint {
+        margin-top: 0.75rem;
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .heatmap-hint i {
+        color: var(--gray-400);
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+    .tickets-table thead {
+        background: var(--gray-50);
+        border-bottom: 2px solid var(--gray-200);
+    }
+
+    .tickets-table th {
+        padding: 0.75rem 1.2rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--gray-600);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .tickets-table td {
+        padding: 0.65rem 1.2rem;
+        border-bottom: 1px solid var(--gray-200);
+        vertical-align: middle;
+    }
+
+    .tickets-table tbody tr {
+        transition: background-color 0.15s;
+    }
+
+    .tickets-table tbody tr:hover {
+        background-color: var(--gray-50);
+    }
+
+    .tickets-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* ===== DOCUMENT CELL ===== */
+    .document-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .doc-link {
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+    .doc-link:hover {
+        text-decoration: none;
+    }
+
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 0.8rem;
+        transition: color 0.2s;
+    }
+
+    .doc-link:hover .doc-number {
+        color: var(--primary-dark);
+    }
+
+    .doc-title {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+    }
+
+    /* ===== REVIEW DATE ===== */
+    .review-date {
+        white-space: nowrap;
+        font-weight: 500;
+    }
+
+    .review-date.overdue {
+        color: var(--danger);
+    }
+
+    /* ===== CAPA ===== */
+    .capa-title {
+        max-width: 180px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--gray-700);
+    }
+
+    .capa-owner {
+        color: var(--gray-500);
+        font-size: 0.8rem;
+    }
+
+    .capa-due {
+        white-space: nowrap;
+        font-weight: 500;
+    }
+
+    .capa-due.overdue {
+        color: var(--danger);
+    }
+
+    /* ===== RISK ===== */
+    .risk-title {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--gray-700);
+    }
+
+    .risk-score {
+        color: var(--gray-800);
+        font-size: 0.95rem;
+    }
+
+    /* ===== RISK BADGES ===== */
+    .risk-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.6rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .risk-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .risk-high {
+        background: #fff5f5;
+        color: #e67e22;
+        border: 1px solid #ffe0d4;
+    }
+
+    .risk-medium {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .risk-low {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.1rem 0.5rem;
+        border-radius: 2rem;
+        font-size: 0.6rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+        margin-left: 0.25rem;
+    }
+
+    .status-overdue {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state-mini {
+        text-align: center;
+        padding: 2rem;
+        color: var(--gray-500);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .empty-state-mini i {
+        font-size: 2rem;
+        color: var(--gray-300);
+    }
+
+    .empty-state-mini span {
+        font-size: 0.95rem;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .two-col-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .progress-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .kpi-card {
+            padding: 0.9rem 1rem;
+        }
+
+        .kpi-icon {
+            width: 38px;
+            height: 38px;
+            font-size: 0.9rem;
+        }
+
+        .kpi-value {
+            font-size: 1.1rem;
+        }
+
+        .page-header .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .tickets-table td,
+        .tickets-table th {
+            padding: 0.5rem 0.8rem;
+        }
+
+        .progress-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .heatmap-cell {
+            font-size: 0.65rem;
+            min-height: 28px;
+        }
+
+        .capa-title,
+        .risk-title {
+            max-width: 100px;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.75rem;
+        }
+
+        .tickets-table td,
+        .tickets-table th {
+            padding: 0.4rem 0.5rem;
+        }
+
+        .risk-badge,
+        .status-badge {
+            font-size: 0.55rem;
+            padding: 0.05rem 0.3rem;
+        }
+
+        .doc-number {
+            font-size: 0.7rem;
+        }
+
+        .doc-title {
+            font-size: 0.65rem;
+        }
+
+        .heatmap-cell {
+            font-size: 0.55rem;
+            min-height: 24px;
+        }
+
+        .capa-title,
+        .risk-title {
+            max-width: 60px;
+        }
+    }
+</style>

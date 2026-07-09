@@ -12,6 +12,12 @@
       "runtimeExecutable": "dotnet",
       "runtimeArgs": ["run", "--project", "C:/Users/Anold Kupara/source/repos/SaveTrack/SaveTrack/SaveTrack.csproj", "--urls", "http://localhost:5107"],
       "port": 5107
+    },
+    {
+      "name": "catholichubzim",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "C:/Users/Anold Kupara/source/repos/CatholicHubZim/CatholicHubZim/CatholicHubZim.csproj", "--urls", "http://localhost:5174"],
+      "port": 5174
     }
   ]
 }
