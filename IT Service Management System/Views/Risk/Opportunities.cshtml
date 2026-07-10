@@ -108,8 +108,8 @@
                                     <td>
                                         @{
                                             var statusClass = o.Status == OpportunityStatus.Realised ? "badge-success" :
-                                                             o.Status == OpportunityStatus.InProgress ? "badge-warning" :
-                                                             o.Status == OpportunityStatus.Rejected ? "badge-critical" : "badge-primary";
+                                                             o.Status == OpportunityStatus.Pursuing ? "badge-warning" :
+                                                             o.Status == OpportunityStatus.Declined ? "badge-critical" : "badge-primary";
                                         }
                                         <span class="status-badge @statusClass">@o.Status</span>
                                     </td>

@@ -118,7 +118,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var a in Model.OrderByDescending(x => x.AcknowledgedAt ?? x.CreatedAt))
+                        @foreach (var a in Model.OrderByDescending(x => x.AcknowledgedAt ?? x.AssignedAt))
                         {
                             var statusClass = a.Status == AcknowledgementStatus.Acknowledged ? "badge-success" :
                                              a.Status == AcknowledgementStatus.Opened ? "badge-warning" : "badge-gray";

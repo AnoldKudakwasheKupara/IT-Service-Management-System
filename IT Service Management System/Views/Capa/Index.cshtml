@@ -135,7 +135,7 @@
                         <tbody>
                             @foreach (var c in Model.OrderByDescending(x => x.CreatedAt))
                             {
-                                var rowClass = c.IsOverdue && c.Status != CapaStatus.Closed && c.Status != CapaStatus.Rejected ? "row-overdue" : "";
+                                var rowClass = c.IsOverdue && c.Status != CapaStatus.Closed && c.Status != CapaStatus.Verified ? "row-overdue" : "";
                                 <tr class="@rowClass">
                                     <td><span class="doc-number">@c.Reference</span></td>
                                     <td>
@@ -146,9 +146,9 @@
                                     <td><span class="type-badge">@c.Type</span></td>
                                     <td class="meta-text">@c.Source</td>
                                     <td class="meta-text">@(c.Responsible?.FullName ?? "—")</td>
-                                    <td class="@(c.IsOverdue && c.Status != CapaStatus.Closed && c.Status != CapaStatus.Rejected ? "date-overdue" : "meta-text")">
+                                    <td class="@(c.IsOverdue && c.Status != CapaStatus.Closed && c.Status != CapaStatus.Verified ? "date-overdue" : "meta-text")">
                                         @(c.DueDate?.ToString("dd MMM yyyy") ?? "—")
-                                        @if (c.IsOverdue && c.Status != CapaStatus.Closed && c.Status != CapaStatus.Rejected)
+                                        @if (c.IsOverdue && c.Status != CapaStatus.Closed && c.Status != CapaStatus.Verified)
                                         {
                                             <span class="overdue-badge"><i class="fas fa-exclamation-circle"></i></span>
                                         }
@@ -160,7 +160,7 @@
                                         <a asp-action="Details" asp-route-id="@c.Id" class="action-btn btn-view" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        @if (c.Status != CapaStatus.Closed && c.Status != CapaStatus.Rejected)
+                                        @if (c.Status != CapaStatus.Closed && c.Status != CapaStatus.Verified)
                                         {
                                             <a asp-action="Edit" asp-route-id="@c.Id" class="action-btn btn-edit" title="Edit">
                                                 <i class="fas fa-pen"></i>

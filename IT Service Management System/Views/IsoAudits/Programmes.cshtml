@@ -70,7 +70,7 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="status-badge @(p.Status == "Active" ? "badge-success" : p.Status == "Planned" ? "badge-warning" : "badge-gray")">
+                                        <span class="status-badge @(p.Status == AuditStatus.InProgress ? "badge-success" : p.Status == AuditStatus.Planned ? "badge-warning" : "badge-gray")">
                                             @p.Status
                                         </span>
                                     </td>
