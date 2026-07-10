@@ -9,201 +9,360 @@
 
     string StatusClass(ReviewMeetingStatus s) => s switch
     {
-        ReviewMeetingStatus.Held or ReviewMeetingStatus.Closed => "b-published",
-        ReviewMeetingStatus.Cancelled => "b-rejected",
-        ReviewMeetingStatus.Scheduled => "b-medium",
-        _ => "b-draft"
+        ReviewMeetingStatus.Held or ReviewMeetingStatus.Closed => "badge-success",
+        ReviewMeetingStatus.Cancelled => "badge-critical",
+        ReviewMeetingStatus.Scheduled => "badge-warning",
+        _ => "badge-gray"
     };
     string ActionClass(ManagementReviewAction a)
     {
-        if (a.Status == ReviewActionStatus.Completed) return "b-published";
-        if (a.Status == ReviewActionStatus.Cancelled) return "b-archived";
-        if (a.IsOverdue || a.Status == ReviewActionStatus.Overdue) return "b-overdue";
-        if (a.Status == ReviewActionStatus.Open) return "b-open";
-        return "b-medium";
+        if (a.Status == ReviewActionStatus.Completed) return "badge-success";
+        if (a.Status == ReviewActionStatus.Cancelled) return "badge-gray";
+        if (a.IsOverdue || a.Status == ReviewActionStatus.Overdue) return "badge-critical";
+        if (a.Status == ReviewActionStatus.Open) return "badge-warning";
+        return "badge-primary";
     }
 }
-<partial name="_ImsStyles" />
 
-<div class="ims">
-    <div class="page-container">
-        <div class="page-header">
-            <div class="head-row">
-                <div style="display:flex;gap:1rem;align-items:center;">
-                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
-                    <div>
-                        <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Title</h1>
-                        <p class="page-sub">
-                            <span class="badge-ims @StatusClass(Model.Status)">@Model.Status</span>
-                            <span class="meta">· @IsoStandards.Label(Model.Standard) · @Model.MeetingDate.ToString("dd MMM yyyy HH:mm")</span>
-                        </p>
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <a class="btn-back" asp-action="Index">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <span class="doc-number" style="font-size:1rem;font-weight:600;color:var(--primary);">@Model.Reference</span>
+                        <span style="font-weight:700;color:var(--gray-800);">@Model.Title</span>
+                    </h1>
+                    <div class="page-subtitle">
+                        <span class="status-badge @StatusClass(Model.Status)">@Model.Status</span>
+                        <span class="meta-separator">·</span>
+                        <span class="meta-text">@IsoStandards.Label(Model.Standard) · @Model.MeetingDate.ToString("dd MMM yyyy HH:mm")</span>
                     </div>
                 </div>
-                <div class="head-actions">
-                    @if (canManage)
-                    {
-                        <form method="post" asp-action="GatherInputs" asp-route-id="@Model.Id" onsubmit="return confirm('Regenerate all review inputs from current live data? Existing gathered inputs will be replaced.');">
-                            @Html.AntiForgeryToken()
-                            <button class="btn-outline-ims" type="submit"><i class="fas fa-arrows-rotate"></i> Gather Inputs</button>
-                        </form>
-                        <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
-                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this management review and all its inputs, attendees and actions?');">
-                            @Html.AntiForgeryToken()
-                            <button class="btn-danger-ims" type="submit"><i class="fas fa-trash"></i> Delete</button>
-                        </form>
-                    }
+            </div>
+            @if (canManage)
+            {
+                <div class="d-flex gap-2">
+                    <form method="post" asp-action="GatherInputs" asp-route-id="@Model.Id" onsubmit="return confirm('Regenerate all review inputs from current live data? Existing gathered inputs will be replaced.');" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button class="btn-create-ticket" type="submit" style="background:var(--gray-100);color:var(--gray-700);">
+                            <i class="fas fa-arrows-rotate"></i> Gather Inputs
+                        </button>
+                    </form>
+                    <a class="btn-create-ticket" asp-action="Edit" asp-route-id="@Model.Id" style="background:var(--gray-100);color:var(--gray-700);">
+                        <i class="fas fa-pen"></i> Edit
+                    </a>
+                    <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this management review and all its inputs, attendees and actions?');" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button class="btn-danger" type="submit">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
                 </div>
+            }
+        </div>
+    </div>
+
+    <!-- FLASH MESSAGES -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-flash success">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-flash danger">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+        </div>
+    }
+
+    <!-- TWO COLUMN GRID: Meeting Details & Attendees -->
+    <div class="two-col-grid">
+        <!-- MEETING DETAILS -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-circle-info me-2" style="color:var(--primary);"></i>
+                <span>Meeting Details</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Reference</div>
+                        <div class="detail-value">@Model.Reference</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value">
+                            <span class="status-badge @StatusClass(Model.Status)">@Model.Status</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ISO Standard</div>
+                        <div class="detail-value">@IsoStandards.Label(Model.Standard)</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Meeting Date</div>
+                        <div class="detail-value">@Model.MeetingDate.ToString("dd MMM yyyy HH:mm")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Location</div>
+                        <div class="detail-value">@(Model.Location ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Chairperson</div>
+                        <div class="detail-value">@(Model.Chair?.FullName ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Created By</div>
+                        <div class="detail-value">@(Model.CreatedBy?.FullName ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Created</div>
+                        <div class="detail-value">@Model.CreatedAt.ToString("dd MMM yyyy")</div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.AgendaNotes))
+                {
+                    <div class="narrative-section">
+                        <div class="narrative-label">Agenda</div>
+                        <div class="narrative-text">@Model.AgendaNotes</div>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Decisions))
+                {
+                    <div class="narrative-section">
+                        <div class="narrative-label">Decisions</div>
+                        <div class="narrative-text">@Model.Decisions</div>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.Conclusions))
+                {
+                    <div class="narrative-section">
+                        <div class="narrative-label">Conclusions</div>
+                        <div class="narrative-text">@Model.Conclusions</div>
+                    </div>
+                }
             </div>
         </div>
 
-        @if (TempData["Success"] != null)
-        {
-            <div class="card" style="border-color:#a7f3d0;background:#ecfdf5;"><div class="card-body" style="color:#1e6b45;"><i class="fas fa-circle-check"></i> @TempData["Success"]</div></div>
-        }
-        @if (TempData["Error"] != null)
-        {
-            <div class="card" style="border-color:#fecaca;background:#fef2f2;"><div class="card-body" style="color:#b3261e;"><i class="fas fa-triangle-exclamation"></i> @TempData["Error"]</div></div>
-        }
-
-        <div class="form-grid" style="align-items:start;">
-            @* ── Meeting details ── *@
-            <div class="card">
-                <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Meeting Details</span></div>
-                <div class="card-body">
-                    <div class="dl">
-                        <div><div class="k">Reference</div><div class="v">@Model.Reference</div></div>
-                        <div><div class="k">Status</div><div class="v"><span class="badge-ims @StatusClass(Model.Status)">@Model.Status</span></div></div>
-                        <div><div class="k">ISO Standard</div><div class="v">@IsoStandards.Label(Model.Standard)</div></div>
-                        <div><div class="k">Meeting Date</div><div class="v">@Model.MeetingDate.ToString("dd MMM yyyy HH:mm")</div></div>
-                        <div><div class="k">Location</div><div class="v">@(Model.Location ?? "—")</div></div>
-                        <div><div class="k">Chairperson</div><div class="v">@(Model.Chair?.FullName ?? "—")</div></div>
-                        <div><div class="k">Created By</div><div class="v">@(Model.CreatedBy?.FullName ?? "—")</div></div>
-                        <div><div class="k">Created</div><div class="v">@Model.CreatedAt.ToString("dd MMM yyyy")</div></div>
-                    </div>
-                    @if (!string.IsNullOrWhiteSpace(Model.AgendaNotes))
-                    {
-                        <div style="margin-top:1rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Agenda</div><p style="color:var(--gray-700);margin:.25rem 0 0;white-space:pre-wrap;">@Model.AgendaNotes</p></div>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(Model.Decisions))
-                    {
-                        <div style="margin-top:.75rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Decisions</div><p style="color:var(--gray-700);margin:.25rem 0 0;white-space:pre-wrap;">@Model.Decisions</p></div>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(Model.Conclusions))
-                    {
-                        <div style="margin-top:.75rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Conclusions</div><p style="color:var(--gray-700);margin:.25rem 0 0;white-space:pre-wrap;">@Model.Conclusions</p></div>
-                    }
-                </div>
+        <!-- ATTENDEES -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-users me-2" style="color:var(--primary);"></i>
+                <span>Attendees</span>
             </div>
-
-            @* ── Attendees ── *@
-            <div class="card">
-                <div class="card-head"><span class="t"><i class="fas fa-users"></i> Attendees</span></div>
-                <div class="card-body" style="padding:0;">
-                    @if (Model.Attendees.Any())
-                    {
-                        <table class="tbl">
-                            <thead><tr><th>Attendee</th><th>Role</th><th>Present</th>@if (canManage){<th></th>}</tr></thead>
+            <div class="card-body-custom" style="padding:0;">
+                @if (Model.Attendees.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="tickets-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-user me-1"></i> Attendee</th>
+                                    <th><i class="fas fa-tag me-1"></i> Role</th>
+                                    <th><i class="fas fa-check me-1"></i> Present</th>
+                                    @if (canManage)
+                                    {
+                                        <th style="text-align:right;"><i class="fas fa-cog me-1"></i></th>
+                                    }
+                                </tr>
+                            </thead>
                             <tbody>
                                 @foreach (var a in Model.Attendees)
                                 {
                                     <tr>
-                                        <td>@(a.User?.FullName ?? "—")</td>
-                                        <td class="meta">@(a.Role ?? "—")</td>
-                                        <td>@(a.Present ? "<span class=\"badge-ims b-published\">Present</span>".ToString() : "<span class=\"badge-ims b-draft\">Absent</span>".ToString())</td>
+                                        <td class="attendee-name">@(a.User?.FullName ?? "—")</td>
+                                        <td class="meta-text">@(a.Role ?? "—")</td>
+                                        <td>
+                                            @if (a.Present)
+                                            {
+                                                <span class="status-badge badge-success"><i class="fas fa-check-circle"></i> Present</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="status-badge badge-gray"><i class="fas fa-circle"></i> Absent</span>
+                                            }
+                                        </td>
                                         @if (canManage)
                                         {
-                                            <td>
-                                                <form method="post" asp-action="RemoveAttendee" asp-route-id="@Model.Id"><input type="hidden" name="attendeeId" value="@a.Id" />@Html.AntiForgeryToken()<button class="act del" type="submit" title="Remove"><i class="fas fa-xmark"></i></button></form>
+                                            <td style="text-align:right;">
+                                                <form method="post" asp-action="RemoveAttendee" asp-route-id="@Model.Id" style="display:inline;">
+                                                    <input type="hidden" name="attendeeId" value="@a.Id" />
+                                                    @Html.AntiForgeryToken()
+                                                    <button class="action-btn btn-delete" type="submit" title="Remove">
+                                                        <i class="fas fa-xmark"></i>
+                                                    </button>
+                                                </form>
                                             </td>
                                         }
                                     </tr>
                                 }
                             </tbody>
                         </table>
-                    }
-                    else { <div class="empty" style="padding:1.5rem;"><i class="fas fa-users"></i><h3>No attendees recorded</h3></div> }
-                    @if (canManage)
-                    {
-                        <form method="post" asp-action="AddAttendee" asp-route-id="@Model.Id" style="padding:1rem;border-top:1px solid var(--gray-200);display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
-                            @Html.AntiForgeryToken()
-                            <select class="inp" name="UserId" style="flex:1;min-width:160px;">
-                                @foreach (var u in users) { <option value="@u.Id">@u.FullName</option> }
-                            </select>
-                            <input class="inp" name="Role" placeholder="Role (optional)" style="width:auto;" />
-                            <label class="meta"><input type="checkbox" name="Present" value="true" checked /> Present</label>
-                            <button class="btn-ghost-ims" type="submit"><i class="fas fa-user-plus"></i> Add</button>
-                        </form>
-                    }
-                </div>
-            </div>
-        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state-mini">
+                        <i class="fas fa-users"></i>
+                        <span>No attendees recorded</span>
+                    </div>
+                }
 
-        @* ── Review inputs (ISO 9.3) ── *@
-        <div class="card">
-            <div class="card-head">
-                <span class="t"><i class="fas fa-layer-group"></i> Review Inputs (clause 9.3)</span>
                 @if (canManage)
                 {
-                    <form method="post" asp-action="GatherInputs" asp-route-id="@Model.Id" onsubmit="return confirm('Regenerate all review inputs from current live data?');">
+                    <form method="post" asp-action="AddAttendee" asp-route-id="@Model.Id" class="add-attendee-form">
                         @Html.AntiForgeryToken()
-                        <button class="btn-ghost-ims" type="submit"><i class="fas fa-arrows-rotate"></i> Regenerate</button>
+                        <div class="add-attendee-row">
+                            <select class="form-control" name="UserId" style="flex:1;min-width:160px;">
+                                @foreach (var u in users)
+                                {
+                                    <option value="@u.Id">@u.FullName</option>
+                                }
+                            </select>
+                            <input class="form-control" name="Role" placeholder="Role (optional)" style="width:auto;" />
+                            <label class="present-check">
+                                <input type="checkbox" name="Present" value="true" checked /> Present
+                            </label>
+                            <button class="btn-add-attendee" type="submit">
+                                <i class="fas fa-user-plus"></i> Add
+                            </button>
+                        </div>
                     </form>
                 }
             </div>
-            <div class="card-body" style="padding:0;">
-                @if (Model.Inputs.Any())
-                {
-                    <table class="tbl">
-                        <thead><tr><th style="width:60px;">#</th><th>Category</th><th>Summary</th></tr></thead>
+        </div>
+    </div>
+
+    <!-- REVIEW INPUTS -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-layer-group me-2" style="color:var(--primary);"></i>
+            <span>Review Inputs (clause 9.3)</span>
+            @if (canManage)
+            {
+                <form method="post" asp-action="GatherInputs" asp-route-id="@Model.Id" onsubmit="return confirm('Regenerate all review inputs from current live data?');" style="display:inline;margin-left:auto;">
+                    @Html.AntiForgeryToken()
+                    <button class="btn-regenerate" type="submit">
+                        <i class="fas fa-arrows-rotate"></i> Regenerate
+                    </button>
+                </form>
+            }
+        </div>
+        <div class="card-body-custom" style="padding:0;">
+            @if (Model.Inputs.Any())
+            {
+                <div class="table-responsive">
+                    <table class="tickets-table">
+                        <thead>
+                            <tr>
+                                <th style="width:60px;"><i class="fas fa-hashtag me-1"></i> #</th>
+                                <th><i class="fas fa-tag me-1"></i> Category</th>
+                                <th><i class="fas fa-align-left me-1"></i> Summary</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             @foreach (var inp in Model.Inputs.OrderBy(i => i.Sequence))
                             {
                                 <tr>
-                                    <td class="meta">@inp.Sequence</td>
-                                    <td><strong>@inp.Category</strong></td>
-                                    <td class="meta">@inp.Summary</td>
+                                    <td class="meta-text" style="text-align:center;">@inp.Sequence</td>
+                                    <td><span class="input-category">@inp.Category</span></td>
+                                    <td class="input-summary">@inp.Summary</td>
                                 </tr>
                             }
                         </tbody>
                     </table>
-                }
-                else
-                {
-                    <div class="empty">
-                        <i class="fas fa-layer-group"></i>
-                        <h3>No inputs gathered yet</h3>
-                        @if (canManage)
-                        {
-                            <form method="post" asp-action="GatherInputs" asp-route-id="@Model.Id">@Html.AntiForgeryToken()<button class="btn-primary-ims" type="submit"><i class="fas fa-arrows-rotate"></i> Gather Inputs from Live Data</button></form>
-                        }
-                    </div>
-                }
-            </div>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-mini" style="padding:2rem;">
+                    <i class="fas fa-layer-group"></i>
+                    <span>No inputs gathered yet</span>
+                    @if (canManage)
+                    {
+                        <form method="post" asp-action="GatherInputs" asp-route-id="@Model.Id" style="margin-top:0.5rem;">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-gather-inputs" type="submit">
+                                <i class="fas fa-arrows-rotate"></i> Gather Inputs from Live Data
+                            </button>
+                        </form>
+                    }
+                </div>
+            }
         </div>
+    </div>
 
-        @* ── Actions (Meeting Action Tracking) ── *@
-        <div class="card">
-            <div class="card-head"><span class="t"><i class="fas fa-list-check"></i> Action Tracking</span></div>
-            <div class="card-body" style="padding:0;">
-                @if (Model.Actions.Any())
-                {
-                    <table class="tbl">
-                        <thead><tr><th>Reference</th><th>Description</th><th>Assigned To</th><th>Due</th><th>Status</th>@if (canManage){<th></th>}</tr></thead>
+    <!-- ACTION TRACKING -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-list-check me-2" style="color:var(--primary);"></i>
+            <span>Action Tracking</span>
+        </div>
+        <div class="card-body-custom" style="padding:0;">
+            @if (Model.Actions.Any())
+            {
+                <div class="table-responsive">
+                    <table class="tickets-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-hashtag me-1"></i> Reference</th>
+                                <th><i class="fas fa-align-left me-1"></i> Description</th>
+                                <th><i class="fas fa-user me-1"></i> Assigned To</th>
+                                <th><i class="fas fa-calendar me-1"></i> Due</th>
+                                <th><i class="fas fa-tag me-1"></i> Status</th>
+                                @if (canManage)
+                                {
+                                    <th style="text-align:right;"><i class="fas fa-cog me-1"></i></th>
+                                }
+                            </tr>
+                        </thead>
                         <tbody>
                             @foreach (var a in Model.Actions.OrderBy(a => a.Status == ReviewActionStatus.Completed).ThenBy(a => a.DueDate))
                             {
-                                <tr>
-                                    <td><span class="docnum">@a.Reference</span></td>
-                                    <td>@a.Description</td>
-                                    <td class="meta">@(a.AssignedTo?.FullName ?? "—")</td>
-                                    <td class="@(a.IsOverdue ? "overdue" : "meta")">@(a.DueDate?.ToString("dd MMM yyyy") ?? "—")</td>
-                                    <td><span class="badge-ims @ActionClass(a)">@(a.IsOverdue && a.Status != ReviewActionStatus.Overdue ? "Overdue" : a.Status.ToString())</span></td>
+                                var rowClass = a.IsOverdue && a.Status != ReviewActionStatus.Completed ? "row-overdue" : "";
+                                <tr class="@rowClass">
+                                    <td><span class="doc-number">@a.Reference</span></td>
+                                    <td class="action-description">@a.Description</td>
+                                    <td class="meta-text">@(a.AssignedTo?.FullName ?? "—")</td>
+                                    <td class="@(a.IsOverdue && a.Status != ReviewActionStatus.Completed ? "date-overdue" : "meta-text")">
+                                        @(a.DueDate?.ToString("dd MMM yyyy") ?? "—")
+                                        @if (a.IsOverdue && a.Status != ReviewActionStatus.Completed)
+                                        {
+                                            <span class="overdue-badge"><i class="fas fa-exclamation-circle"></i></span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="status-badge @ActionClass(a)">
+                                            @if (a.IsOverdue && a.Status != ReviewActionStatus.Completed && a.Status != ReviewActionStatus.Overdue)
+                                            {
+                                                <i class="fas fa-clock"></i>
+                                                Overdue
+                                            }
+                                            else
+                                            {
+                                                @a.Status
+                                            }
+                                        </span>
+                                    </td>
                                     @if (canManage)
                                     {
-                                        <td>
+                                        <td style="text-align:right;">
                                             @if (a.Status != ReviewActionStatus.Completed && a.Status != ReviewActionStatus.Cancelled)
                                             {
-                                                <form method="post" asp-action="CompleteAction" asp-route-id="@Model.Id"><input type="hidden" name="actionId" value="@a.Id" />@Html.AntiForgeryToken()<button class="act view" type="submit" title="Mark complete"><i class="fas fa-check"></i></button></form>
+                                                <form method="post" asp-action="CompleteAction" asp-route-id="@Model.Id" style="display:inline;">
+                                                    <input type="hidden" name="actionId" value="@a.Id" />
+                                                    @Html.AntiForgeryToken()
+                                                    <button class="action-btn btn-complete" type="submit" title="Mark complete">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                </form>
                                             }
                                         </td>
                                     }
@@ -211,25 +370,753 @@
                             }
                         </tbody>
                     </table>
-                }
-                else { <div class="empty" style="padding:1.5rem;"><i class="fas fa-list-check"></i><h3>No actions raised</h3></div> }
-                @if (canManage)
-                {
-                    <form method="post" asp-action="AddAction" asp-route-id="@Model.Id" style="padding:1rem;border-top:1px solid var(--gray-200);">
-                        @Html.AntiForgeryToken()
-                        <label class="lbl"><i class="fas fa-circle-plus"></i> Add action</label>
-                        <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:.5rem;">
-                            <input class="inp" name="Description" placeholder="Action description" required style="flex:1;min-width:220px;" />
-                            <select class="inp" name="AssignedToId" style="width:auto;">
-                                <option value="">— Assign to —</option>
-                                @foreach (var u in users) { <option value="@u.Id">@u.FullName</option> }
-                            </select>
-                            <input class="inp" type="date" name="DueDate" style="width:auto;" />
-                            <button class="btn-ghost-ims" type="submit"><i class="fas fa-plus"></i> Add</button>
-                        </div>
-                    </form>
-                }
-            </div>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-mini">
+                    <i class="fas fa-list-check"></i>
+                    <span>No actions raised</span>
+                </div>
+            }
+
+            @if (canManage)
+            {
+                <form method="post" asp-action="AddAction" asp-route-id="@Model.Id" class="add-action-form">
+                    @Html.AntiForgeryToken()
+                    <div class="add-action-row">
+                        <input class="form-control" name="Description" placeholder="Action description" required style="flex:1;min-width:220px;" />
+                        <select class="form-control" name="AssignedToId" style="width:auto;">
+                            <option value="">— Assign to —</option>
+                            @foreach (var u in users)
+                            {
+                                <option value="@u.Id">@u.FullName</option>
+                            }
+                        </select>
+                        <input class="form-control" type="date" name="DueDate" style="width:auto;" />
+                        <button class="btn-add-action" type="submit">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                </form>
+            }
         </div>
     </div>
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 1rem;
+    }
+
+    .page-subtitle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.3rem;
+    }
+
+    .meta-separator {
+        color: var(--gray-300);
+    }
+
+    .meta-text {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-danger {
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        background: linear-gradient(100deg, #dc2626, var(--danger));
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-regenerate,
+    .btn-gather-inputs {
+        padding: 0.3rem 0.8rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.75rem;
+        background: var(--gray-100);
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+        .btn-regenerate:hover,
+        .btn-gather-inputs:hover {
+            background: var(--gray-200);
+            border-color: var(--gray-300);
+        }
+
+    .btn-add-attendee,
+    .btn-add-action {
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.8rem;
+        background: var(--gray-100);
+        color: var(--primary);
+        border: 1px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+        .btn-add-attendee:hover,
+        .btn-add-action:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+    .action-btn {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.8rem;
+        border: none;
+        cursor: pointer;
+        background: transparent;
+    }
+
+    .btn-delete {
+        background: var(--gray-100);
+        color: var(--danger);
+    }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-complete {
+        background: var(--gray-100);
+        color: var(--success);
+    }
+
+        .btn-complete:hover {
+            background: var(--success);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* ===== ALERT FLASH ===== */
+    .alert-flash {
+        padding: 0.9rem 1.2rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: 1px solid transparent;
+    }
+
+        .alert-flash.success {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .alert-flash.danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+        .alert-flash i {
+            font-size: 1.1rem;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* ===== TWO COLUMN GRID ===== */
+    .two-col-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ===== DETAILS GRID ===== */
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem 1.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .detail-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .detail-value {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    /* ===== NARRATIVE ===== */
+    .narrative-section {
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--gray-200);
+        margin-top: 0.75rem;
+    }
+
+        .narrative-section:last-child {
+            margin-bottom: 0;
+        }
+
+    .narrative-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 0.1rem;
+    }
+
+    .narrative-text {
+        font-size: 0.85rem;
+        color: var(--gray-700);
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .badge-primary {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    /* ===== ATTENDEES ===== */
+    .attendee-name {
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .add-attendee-form {
+        padding: 1rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .add-attendee-row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+        .add-attendee-row .form-control {
+            padding: 0.4rem 0.6rem;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: white;
+        }
+
+            .add-attendee-row .form-control:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+    .present-check {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        cursor: pointer;
+    }
+
+        .present-check input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+    /* ===== INPUTS ===== */
+    .input-category {
+        font-weight: 600;
+        color: var(--gray-700);
+        font-size: 0.85rem;
+    }
+
+    .input-summary {
+        color: var(--gray-600);
+        font-size: 0.85rem;
+    }
+
+    /* ===== ACTIONS ===== */
+    .action-description {
+        color: var(--gray-700);
+        font-size: 0.85rem;
+    }
+
+    .date-overdue {
+        color: var(--danger);
+        font-weight: 600;
+    }
+
+    .overdue-badge {
+        display: inline-flex;
+        align-items: center;
+        color: var(--danger);
+        margin-left: 0.25rem;
+        font-size: 0.65rem;
+    }
+
+    .row-overdue {
+        background-color: #fef2f2;
+    }
+
+        .row-overdue:hover {
+            background-color: #fee2e2 !important;
+        }
+
+    .add-action-form {
+        padding: 1rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .add-action-row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+        .add-action-row .form-control {
+            padding: 0.4rem 0.6rem;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: white;
+        }
+
+            .add-action-row .form-control:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+    /* ===== EMPTY STATE MINI ===== */
+    .empty-state-mini {
+        text-align: center;
+        padding: 1.5rem;
+        color: var(--gray-500);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+        .empty-state-mini i {
+            font-size: 1.5rem;
+            color: var(--gray-300);
+        }
+
+        .empty-state-mini span {
+            font-size: 0.9rem;
+        }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 0.75rem 1.2rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.65rem 1.2rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .two-col-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .btn-create-ticket,
+        .btn-danger {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .add-attendee-row,
+        .add-action-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+            .add-attendee-row .form-control,
+            .add-action-row .form-control {
+                width: 100% !important;
+            }
+
+            .add-attendee-row .btn-add-attendee,
+            .add-action-row .btn-add-action {
+                width: 100%;
+                justify-content: center;
+            }
+
+        .present-check {
+            justify-content: center;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.5rem 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.8rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .meta-text {
+            font-size: 0.75rem;
+        }
+
+        .input-category {
+            font-size: 0.75rem;
+        }
+
+        .input-summary {
+            font-size: 0.75rem;
+        }
+
+        .action-description {
+            font-size: 0.75rem;
+        }
+
+        .d-flex.gap-2 {
+            flex-wrap: wrap;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.1rem;
+        }
+
+        .doc-number {
+            font-size: 0.85rem;
+        }
+
+        .btn-create-ticket,
+        .btn-danger {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .d-flex.gap-2 {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .status-badge {
+            font-size: 0.55rem;
+            padding: 0.1rem 0.35rem;
+        }
+
+        .narrative-text {
+            font-size: 0.8rem;
+        }
+
+        .detail-value {
+            font-size: 0.8rem;
+        }
+
+        .add-attendee-row .form-control,
+        .add-action-row .form-control {
+            font-size: 0.75rem;
+        }
+
+        .btn-add-attendee,
+        .btn-add-action {
+            font-size: 0.7rem;
+        }
+    }
+</style>
