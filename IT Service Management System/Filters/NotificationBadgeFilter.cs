@@ -41,8 +41,12 @@ namespace IT_Service_Management_System.Filters
                 controller.ViewData["EfmUnreadStaff"] = isStaff;
 
                 if (isStaff)
+                {
                     controller.ViewData["EfmPendingApprovals"] =
                         await _db.DocumentApprovals.CountAsync(a => a.Status == Models.Efm.ApprovalStatus.Pending);
+                    controller.ViewData["EfmPendingRequests"] =
+                        await _db.DocumentRequests.CountAsync(r => r.Status == Models.Efm.DocumentRequestStatus.Pending);
+                }
             }
             catch
             {

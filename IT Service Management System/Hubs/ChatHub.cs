@@ -8,7 +8,9 @@ namespace IT_Service_Management_System.Hubs
     {
         public async Task SendMessage(int ticketId, string user, string message)
         {
-            await Clients.Group(ticketId.ToString())
+            // Broadcast to everyone in the ticket group EXCEPT the sender — the sender already
+            // renders their own message locally, so echoing it back would duplicate it.
+            await Clients.OthersInGroup(ticketId.ToString())
                 .SendAsync("ReceiveMessage", user, message);
         }
 

@@ -65,6 +65,7 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<StorageProvider> StorageProviders { get; set; }
         public DbSet<RetentionPolicy> RetentionPolicies { get; set; }
         public DbSet<ExpiryAlert> ExpiryAlerts { get; set; }
+        public DbSet<DocumentRequest> DocumentRequests { get; set; }
 
         // ── ITSM / ITIL (CMDB, Problems, Changes) + SLA ────────────────────────────
         public DbSet<ConfigurationItem> ConfigurationItems { get; set; }
@@ -330,6 +331,18 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<RetentionPolicy>()
                 .HasOne(r => r.Folder).WithMany().HasForeignKey(r => r.FolderId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DocumentRequest>()
+                .HasOne(r => r.Employee).WithMany().HasForeignKey(r => r.EmployeeId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<DocumentRequest>()
+                .HasOne(r => r.Category).WithMany().HasForeignKey(r => r.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<DocumentRequest>()
+                .HasOne(r => r.FulfilledDocument).WithMany().HasForeignKey(r => r.FulfilledDocumentId)
+                .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<DocumentRequest>().HasIndex(r => new { r.EmployeeId, r.Status });
+            modelBuilder.Entity<DocumentRequest>().HasIndex(r => r.Status);
 
             modelBuilder.Entity<DocumentAuditLog>().HasIndex(a => a.EmployeeDocumentId);
             modelBuilder.Entity<DocumentAuditLog>().HasIndex(a => a.EmployeeId);

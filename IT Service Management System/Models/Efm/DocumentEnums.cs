@@ -66,7 +66,10 @@ namespace IT_Service_Management_System.Models.Efm
         ApprovalNeeded = 4,
         DocumentApproved = 5,
         DocumentRejected = 6,
-        StorageAlmostFull = 7
+        StorageAlmostFull = 7,
+        DocumentRequested = 8,
+        DocumentRequestFulfilled = 9,
+        DocumentRequestCancelled = 10
     }
 
     /// <summary>What happens to a document when its retention period elapses.</summary>

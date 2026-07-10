@@ -13,6 +13,9 @@
         DocumentNotificationType.ApprovalNeeded => ("fa-user-check", "warning", "Approval Needed"),
         DocumentNotificationType.DocumentRejected => ("fa-ban", "danger", "Rejected"),
         DocumentNotificationType.DocumentApproved => ("fa-check", "success", "Approved"),
+        DocumentNotificationType.DocumentRequested => ("fa-file-circle-question", "info", "Requested"),
+        DocumentNotificationType.DocumentRequestFulfilled => ("fa-file-circle-check", "success", "Request Fulfilled"),
+        DocumentNotificationType.DocumentRequestCancelled => ("fa-ban", "secondary", "Request Cancelled"),
         _ => ("fa-bell", "secondary", "Notification")
     };
 }

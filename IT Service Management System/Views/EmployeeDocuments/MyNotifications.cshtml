@@ -10,6 +10,8 @@
         DocumentNotificationType.DocumentRejected => "fa-circle-xmark",
         DocumentNotificationType.DocumentExpiring => "fa-hourglass-half",
         DocumentNotificationType.DocumentExpired => "fa-triangle-exclamation",
+        DocumentNotificationType.DocumentRequested => "fa-file-circle-question",
+        DocumentNotificationType.DocumentRequestCancelled => "fa-ban",
         _ => "fa-circle-info"
     };
     string IconColor(DocumentNotificationType t) => t switch
@@ -18,6 +20,8 @@
         DocumentNotificationType.DocumentRejected => "danger",
         DocumentNotificationType.DocumentExpiring => "warning",
         DocumentNotificationType.DocumentExpired => "danger",
+        DocumentNotificationType.DocumentRequested => "warning",
+        DocumentNotificationType.DocumentRequestCancelled => "danger",
         _ => "primary"
     };
 }

@@ -13,5 +13,8 @@ namespace IT_Service_Management_System.ViewModels.Efm
         public List<EmployeeDocument> Documents { get; set; } = new();
         public List<DocumentCategory> Categories { get; set; } = new();
         public int TotalDocuments { get; set; }
+
+        /// <summary>Open document requests addressed to this employee (self-service page only).</summary>
+        public List<DocumentRequest> PendingRequests { get; set; } = new();
     }
 }

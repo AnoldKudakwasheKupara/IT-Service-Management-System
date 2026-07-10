@@ -3,6 +3,7 @@ using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Helpers.Efm;
 using IT_Service_Management_System.Models.Efm;
+using IT_Service_Management_System.Services;
 using IT_Service_Management_System.Services.Efm;
 using IT_Service_Management_System.ViewModels.Efm;
 using IT_Service_Management_System.ViewModels.Reports;
@@ -20,19 +21,22 @@ namespace IT_Service_Management_System.Controllers
         private readonly DocumentMaintenanceService _maint;
         private readonly DocumentApprovalService _approvals;
         private readonly IOcrService _ocr;
+        private readonly EmailDispatcher _email;
 
         private const long MaxFileBytes = 50L * 1024 * 1024; // 50 MB/file
         private static readonly string[] BlockedExtensions =
             { ".exe", ".dll", ".bat", ".cmd", ".com", ".scr", ".msi", ".ps1", ".sh", ".vbs", ".jar" };
 
         public EmployeeDocumentsController(ApplicationDbContext db, DocumentService docs,
-            DocumentMaintenanceService maint, DocumentApprovalService approvals, IOcrService ocr)
+            DocumentMaintenanceService maint, DocumentApprovalService approvals, IOcrService ocr,
+            EmailDispatcher email)
         {
             _db = db;
             _docs = docs;
             _maint = maint;
             _approvals = approvals;
             _ocr = ocr;
+            _email = email;
         }
 
         private string? Role => HttpContext.Session.GetString("UserRole");
@@ -681,7 +685,12 @@ namespace IT_Service_Management_System.Controllers
                     .Where(d => d.EmployeeId == uid.Value)
                     .OrderByDescending(d => d.CreatedAt).ToListAsync(),
                 Folders = await _db.DocumentFolders.Where(f => f.IsActive).OrderBy(f => f.SortOrder).ToListAsync(),
-                Categories = await _db.DocumentCategories.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync()
+                Categories = await _db.DocumentCategories.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync(),
+                PendingRequests = await _db.DocumentRequests
+                    .Include(r => r.Category)
+                    .Where(r => r.EmployeeId == uid.Value && r.Status == DocumentRequestStatus.Pending)
+                    .OrderBy(r => r.DueDate == null).ThenBy(r => r.DueDate).ThenBy(r => r.CreatedAt)
+                    .ToListAsync()
             };
             vm.TotalDocuments = vm.Documents.Count;
             return View(vm);
@@ -732,6 +741,265 @@ namespace IT_Service_Management_System.Controllers
             TempData["Success"] = saved > 0
                 ? $"{saved} document(s) uploaded and sent for HR approval."
                 : "No files were uploaded.";
+            return RedirectToAction(nameof(MyDocuments));
+        }
+
+        // ── document requests (HR asks employees to supply documents) ──────────────────
+        public async Task<IActionResult> Requests(string? status, int? employeeId, string? q, int page = 1)
+        {
+            IQueryable<DocumentRequest> query = _db.DocumentRequests
+                .Include(r => r.Employee).ThenInclude(u => u!.Department)
+                .Include(r => r.Category)
+                .Include(r => r.FulfilledDocument);
+
+            if (employeeId.HasValue) query = query.Where(r => r.EmployeeId == employeeId.Value);
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(r =>
+                    r.Title.Contains(term)
+                    || r.Employee!.FirstName.Contains(term)
+                    || r.Employee!.LastName.Contains(term)
+                    || r.Employee!.Email.Contains(term)
+                    || r.Category!.Name.Contains(term));
+            }
+
+            var today = DateTime.Today;
+            query = status switch
+            {
+                "pending" => query.Where(r => r.Status == DocumentRequestStatus.Pending),
+                "overdue" => query.Where(r => r.Status == DocumentRequestStatus.Pending
+                                              && r.DueDate != null && r.DueDate < today),
+                "fulfilled" => query.Where(r => r.Status == DocumentRequestStatus.Fulfilled),
+                "cancelled" => query.Where(r => r.Status == DocumentRequestStatus.Cancelled),
+                _ => query
+            };
+
+            var (items, paging) = await query
+                .OrderBy(r => r.Status)
+                .ThenBy(r => r.DueDate == null).ThenBy(r => r.DueDate)
+                .ThenByDescending(r => r.CreatedAt)
+                .PageAsync(page, 10);
+            ViewBag.Paging = paging;
+
+            return View(new DocumentRequestsVm
+            {
+                Requests = items,
+                Employees = await _db.Users.OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync(),
+                Categories = await _db.DocumentCategories.Where(c => c.IsActive).OrderBy(c => c.Name).ToListAsync(),
+                Status = status, EmployeeId = employeeId, Q = q,
+                PendingCount = await _db.DocumentRequests.CountAsync(r => r.Status == DocumentRequestStatus.Pending),
+                OverdueCount = await _db.DocumentRequests.CountAsync(r => r.Status == DocumentRequestStatus.Pending
+                                                                          && r.DueDate != null && r.DueDate < today),
+                FulfilledCount = await _db.DocumentRequests.CountAsync(r => r.Status == DocumentRequestStatus.Fulfilled),
+                CancelledCount = await _db.DocumentRequests.CountAsync(r => r.Status == DocumentRequestStatus.Cancelled)
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateRequest(int[] employeeIds, int categoryId, string title,
+            string? instructions, DateTime? dueDate)
+        {
+            if (!EfmAccess.Can(Role, EfmPermission.Upload)) return Denied();
+
+            if (employeeIds == null || employeeIds.Length == 0)
+            { TempData["Error"] = "Select at least one employee."; return RedirectToAction(nameof(Requests)); }
+            if (string.IsNullOrWhiteSpace(title))
+            { TempData["Error"] = "A title describing the requested document is required."; return RedirectToAction(nameof(Requests)); }
+
+            var category = await _db.DocumentCategories.FirstOrDefaultAsync(c => c.Id == categoryId && c.IsActive);
+            if (category == null)
+            { TempData["Error"] = "Invalid document category."; return RedirectToAction(nameof(Requests)); }
+
+            var employees = await _db.Users.Where(u => employeeIds.Contains(u.Id)).ToListAsync();
+            if (employees.Count == 0)
+            { TempData["Error"] = "No valid employees selected."; return RedirectToAction(nameof(Requests)); }
+
+            var requesterName = HttpContext.Session.GetString("UserName");
+            title = title.Trim();
+
+            foreach (var employee in employees)
+            {
+                // Skip duplicates: an identical ask already open for this employee.
+                var alreadyOpen = await _db.DocumentRequests.AnyAsync(r =>
+                    r.EmployeeId == employee.Id && r.CategoryId == categoryId
+                    && r.Title == title && r.Status == DocumentRequestStatus.Pending);
+                if (alreadyOpen) continue;
+
+                var request = new DocumentRequest
+                {
+                    EmployeeId = employee.Id,
+                    CategoryId = categoryId,
+                    Title = title,
+                    Instructions = string.IsNullOrWhiteSpace(instructions) ? null : instructions.Trim(),
+                    DueDate = dueDate,
+                    RequestedById = Uid,
+                    RequestedByName = requesterName,
+                    CreatedAt = DateTime.Now
+                };
+                _db.DocumentRequests.Add(request);
+                NotifyRequestedEmployee(employee, request, category.Name, reminder: false);
+            }
+
+            await _db.SaveChangesAsync();
+            TempData["Success"] = $"Document request sent to {employees.Count} employee(s).";
+            return RedirectToAction(nameof(Requests));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemindRequest(int id)
+        {
+            if (!EfmAccess.Can(Role, EfmPermission.Upload)) return Denied();
+
+            var request = await _db.DocumentRequests
+                .Include(r => r.Employee).Include(r => r.Category)
+                .FirstOrDefaultAsync(r => r.Id == id);
+            if (request == null) return NotFound();
+            if (request.Status != DocumentRequestStatus.Pending)
+            { TempData["Error"] = "Only pending requests can be reminded."; return RedirectToAction(nameof(Requests)); }
+
+            request.LastReminderAt = DateTime.Now;
+            if (request.Employee != null)
+                NotifyRequestedEmployee(request.Employee, request, request.Category?.Name ?? "document", reminder: true);
+            await _db.SaveChangesAsync();
+
+            TempData["Success"] = $"Reminder sent to {request.Employee?.FullName}.";
+            return RedirectToAction(nameof(Requests));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelRequest(int id)
+        {
+            if (!EfmAccess.Can(Role, EfmPermission.Upload)) return Denied();
+
+            var request = await _db.DocumentRequests.Include(r => r.Employee).FirstOrDefaultAsync(r => r.Id == id);
+            if (request == null) return NotFound();
+            if (request.Status != DocumentRequestStatus.Pending)
+            { TempData["Error"] = "Only pending requests can be cancelled."; return RedirectToAction(nameof(Requests)); }
+
+            request.Status = DocumentRequestStatus.Cancelled;
+            request.CancelledAt = DateTime.Now;
+            request.CancelledByName = HttpContext.Session.GetString("UserName");
+
+            _db.DocumentNotifications.Add(new DocumentNotification
+            {
+                Type = DocumentNotificationType.DocumentRequestCancelled,
+                EmployeeId = request.EmployeeId,
+                RecipientUserId = request.EmployeeId,
+                Title = "Document request cancelled",
+                Message = $"The request for '{request.Title}' has been cancelled — no action needed.",
+                CreatedAt = DateTime.Now
+            });
+            await _db.SaveChangesAsync();
+
+            TempData["Success"] = "Request cancelled.";
+            return RedirectToAction(nameof(Requests));
+        }
+
+        /// <summary>In-app + email notification to the employee a document was requested from.</summary>
+        private void NotifyRequestedEmployee(Models.User employee, DocumentRequest request,
+            string categoryName, bool reminder)
+        {
+            var due = request.DueDate.HasValue ? $" Please upload it by {request.DueDate:dd MMM yyyy}." : "";
+            var prefix = reminder ? "Reminder: " : "";
+            var body = $"{prefix}HR has requested '{request.Title}' ({categoryName}) from you.{due} " +
+                       "Open My Documents to upload it.";
+
+            _db.DocumentNotifications.Add(new DocumentNotification
+            {
+                Type = DocumentNotificationType.DocumentRequested,
+                EmployeeId = employee.Id,
+                RecipientUserId = employee.Id,
+                Title = reminder ? "Reminder: document requested" : "Document requested",
+                Message = body,
+                CreatedAt = DateTime.Now
+            });
+
+            if (!string.IsNullOrWhiteSpace(employee.Email))
+            {
+                var instructions = string.IsNullOrWhiteSpace(request.Instructions)
+                    ? ""
+                    : $"<p><strong>Instructions:</strong> {System.Net.WebUtility.HtmlEncode(request.Instructions)}</p>";
+                var html = $"<p>Hi {System.Net.WebUtility.HtmlEncode(employee.FirstName)},</p>" +
+                           $"<p>{System.Net.WebUtility.HtmlEncode(body)}</p>" + instructions +
+                           "<p style='color:#6b7280;font-size:0.85rem;'>Axis IT — Employee File Management</p>";
+                _email.Queue(employee.Email, employee.FullName,
+                    $"[Axis IT] {(reminder ? "Reminder: " : "")}Document requested: {request.Title}", html);
+            }
+        }
+
+        // Employee fulfils a pending request from My Documents (upload goes through HR approval).
+        [HttpPost]
+        [IT_Service_Management_System.Filters.AllowAnyRole]
+        [ValidateAntiForgeryToken]
+        [RequestSizeLimit(long.MaxValue)]
+        public async Task<IActionResult> FulfillRequest(int requestId, IFormFile file, string? note)
+        {
+            var uid = Uid;
+            if (uid == null) return RedirectToAction("Login", "Account");
+
+            var request = await _db.DocumentRequests
+                .Include(r => r.Category)
+                .FirstOrDefaultAsync(r => r.Id == requestId && r.EmployeeId == uid.Value);
+            if (request == null) return NotFound();
+            if (request.Status != DocumentRequestStatus.Pending)
+            { TempData["Error"] = "This request is no longer open."; return RedirectToAction(nameof(MyDocuments)); }
+
+            if (file == null || file.Length == 0)
+            { TempData["Error"] = "Please choose a file."; return RedirectToAction(nameof(MyDocuments)); }
+            if (file.Length > MaxFileBytes)
+            { TempData["Error"] = "File exceeds the 50 MB limit."; return RedirectToAction(nameof(MyDocuments)); }
+            if (BlockedExtensions.Contains(Path.GetExtension(file.FileName).ToLowerInvariant()))
+            { TempData["Error"] = "This file type is not allowed."; return RedirectToAction(nameof(MyDocuments)); }
+
+            // File into the category's default folder, falling back to the first active folder.
+            var folderId = request.Category?.DefaultFolderId
+                ?? await _db.DocumentFolders.Where(f => f.IsActive).OrderBy(f => f.SortOrder)
+                    .Select(f => f.Id).FirstAsync();
+
+            var userName = HttpContext.Session.GetString("UserName");
+            try
+            {
+                var doc = await _docs.CreateFromUploadAsync(new DocumentUploadInput
+                {
+                    EmployeeId = uid.Value,
+                    FolderId = folderId,
+                    CategoryId = request.CategoryId,
+                    Title = request.Title,
+                    Confidentiality = ConfidentialityLevel.Confidential,
+                    Description = string.IsNullOrWhiteSpace(note)
+                        ? $"Uploaded in response to a document request from {request.RequestedByName ?? "HR"}."
+                        : note.Trim()
+                }, file, uid, userName);
+
+                await _approvals.SubmitForApprovalAsync(doc);
+
+                request.Status = DocumentRequestStatus.Fulfilled;
+                request.FulfilledAt = DateTime.Now;
+                request.FulfilledDocumentId = doc.Id;
+
+                // Tell the requester (personally if known, otherwise the HR group).
+                _db.DocumentNotifications.Add(new DocumentNotification
+                {
+                    Type = DocumentNotificationType.DocumentRequestFulfilled,
+                    EmployeeDocumentId = doc.Id,
+                    EmployeeId = uid.Value,
+                    RecipientUserId = request.RequestedById,
+                    Title = "Document request fulfilled",
+                    Message = $"'{request.Title}' was uploaded by {userName ?? "the employee"} and awaits approval.",
+                    CreatedAt = DateTime.Now
+                });
+                await _db.SaveChangesAsync();
+
+                TempData["Success"] = $"'{request.Title}' uploaded and sent for HR approval.";
+            }
+            catch (UploadRejectedException ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
             return RedirectToAction(nameof(MyDocuments));
         }
 

@@ -847,7 +847,7 @@
                         <i class="fas fa-user-tie"></i>
                         Talent Identification
                     </a>
-                    <a class="nav-item @(currentController == "EmployeeDocuments" && currentAction != "Approvals" ? "active" : "")"
+                    <a class="nav-item @(currentController == "EmployeeDocuments" && currentAction != "Approvals" && currentAction != "Requests" ? "active" : "")"
                        asp-controller="EmployeeDocuments" asp-action="Index">
                         <i class="fas fa-folder-tree"></i>
                         Employee Files
@@ -857,6 +857,12 @@
                         <i class="fas fa-clipboard-check"></i>
                         Document Approvals
                         <span class="nav-badge">@(ViewData["EfmPendingApprovals"] as int? ?? 0)</span>
+                    </a>
+                    <a class="nav-item @(currentController == "EmployeeDocuments" && currentAction == "Requests" ? "active" : "")"
+                       asp-controller="EmployeeDocuments" asp-action="Requests">
+                        <i class="fas fa-file-circle-question"></i>
+                        Document Requests
+                        <span class="nav-badge">@(ViewData["EfmPendingRequests"] as int? ?? 0)</span>
                     </a>
                     <a class="nav-item @(currentController == "EfmSettings" ? "active" : "")"
                        asp-controller="EfmSettings" asp-action="Categories">
