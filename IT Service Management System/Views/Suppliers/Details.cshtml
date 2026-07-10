@@ -8,201 +8,1065 @@
 
     Func<SupplierStatus, string> statusClass = s => s switch
     {
-        SupplierStatus.Approved => "b-published",
-        SupplierStatus.Prospective => "b-draft",
-        SupplierStatus.Conditional => "b-high",
-        SupplierStatus.Suspended => "b-critical",
-        _ => "b-archived"
+        SupplierStatus.Approved => "badge-success",
+        SupplierStatus.Prospective => "badge-gray",
+        SupplierStatus.Conditional => "badge-warning",
+        SupplierStatus.Suspended => "badge-critical",
+        _ => "badge-gray"
     };
     Func<string, string> ratingClass = r => r switch
     {
-        "Excellent" => "b-published",
-        "Good" => "b-low",
-        "Acceptable" => "b-medium",
-        _ => "b-critical"
+        "Excellent" => "badge-success",
+        "Good" => "badge-primary",
+        "Acceptable" => "badge-warning",
+        _ => "badge-critical"
     };
 }
-<partial name="_ImsStyles" />
 
-<div class="ims">
-    <div class="page-container">
-        <div class="page-header">
-            <div class="head-row">
-                <div style="display:flex;gap:1rem;align-items:center;">
-                    <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
-                    <div>
-                        <h1 class="page-title"><span class="docnum" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Name</h1>
-                        <p class="page-sub">
-                            <span class="badge-ims @statusClass(Model.Status)">@Model.Status</span>
-                            <span class="meta">· @Model.Category</span>
-                            @if (latest != null)
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <a class="btn-back" asp-action="Index">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <span class="doc-number" style="font-size:1rem;font-weight:600;color:var(--primary);">@Model.Reference</span>
+                        <span style="font-weight:700;color:var(--gray-800);">@Model.Name</span>
+                    </h1>
+                    <div class="page-subtitle">
+                        <span class="status-badge @statusClass(Model.Status)">@Model.Status</span>
+                        <span class="meta-separator">·</span>
+                        <span class="meta-text">@Model.Category</span>
+                        @if (latest != null)
+                        {
+                            <span class="status-badge @ratingClass(latest.Rating)">@latest.Rating · @latest.OverallScore</span>
+                        }
+                    </div>
+                </div>
+            </div>
+            @if (canManage)
+            {
+                <div class="d-flex gap-2">
+                    <a class="btn-create-ticket" asp-action="Edit" asp-route-id="@Model.Id" style="background:var(--gray-100);color:var(--gray-700);">
+                        <i class="fas fa-pen"></i> Edit
+                    </a>
+                    <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this supplier and all its evaluations? This cannot be undone.');" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button class="btn-danger" type="submit">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- TWO COLUMN GRID -->
+    <div class="two-col-grid">
+        <!-- SUPPLIER DETAILS -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-circle-info me-2" style="color:var(--primary);"></i>
+                <span>Supplier Details</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Category</div>
+                        <div class="detail-value">@Model.Category</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value">
+                            <span class="status-badge @statusClass(Model.Status)">@Model.Status</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Contact</div>
+                        <div class="detail-value">@(Model.ContactName ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Email</div>
+                        <div class="detail-value">@(Model.Email ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Phone</div>
+                        <div class="detail-value">@(Model.Phone ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Address</div>
+                        <div class="detail-value">@(Model.Address ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Approved Date</div>
+                        <div class="detail-value">@(Model.ApprovedDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Contract Start</div>
+                        <div class="detail-value">@(Model.ContractStart?.ToString("dd MMM yyyy") ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Contract End</div>
+                        <div class="detail-value @(Model.ContractEnd.HasValue && Model.ContractEnd.Value.Date < DateTime.Now.Date ? "text-danger" : "")">
+                            @(Model.ContractEnd?.ToString("dd MMM yyyy") ?? "—")
+                            @if (Model.ContractEnd.HasValue && Model.ContractEnd.Value.Date < DateTime.Now.Date)
                             {
-                                <span class="badge-ims @ratingClass(latest.Rating)">@latest.Rating · @latest.OverallScore</span>
+                                <span class="status-badge badge-overdue" style="margin-left:0.5rem;">
+                                    <i class="fas fa-exclamation-circle"></i> Expired
+                                </span>
                             }
-                        </p>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Certificate</div>
+                        <div class="detail-value">@(Model.CertificateName ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Certificate Expiry</div>
+                        <div class="detail-value @(Model.CertificateExpiringSoon ? "text-danger" : "")">
+                            @(Model.CertificateExpiry?.ToString("dd MMM yyyy") ?? "—")
+                            @if (Model.CertificateExpiringSoon)
+                            {
+                                <span class="status-badge badge-overdue" style="margin-left:0.5rem;">
+                                    <i class="fas fa-exclamation-circle"></i> Expiring soon
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Registered</div>
+                        <div class="detail-value">@Model.CreatedAt.ToString("dd MMM yyyy")</div>
                     </div>
                 </div>
-                <div class="head-actions">
-                    @if (canManage)
-                    {
-                        <a class="btn-ghost-ims" asp-action="Edit" asp-route-id="@Model.Id"><i class="fas fa-pen"></i> Edit</a>
-                        <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this supplier and all its evaluations? This cannot be undone.');">
-                            @Html.AntiForgeryToken()
-                            <button class="btn-danger-ims" type="submit"><i class="fas fa-trash"></i> Delete</button>
-                        </form>
-                    }
-                </div>
-            </div>
-        </div>
 
-        <div class="form-grid" style="align-items:start;">
-            @* ── Supplier metadata ── *@
-            <div class="card">
-                <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Supplier Details</span></div>
-                <div class="card-body">
-                    <div class="dl">
-                        <div><div class="k">Category</div><div class="v">@Model.Category</div></div>
-                        <div><div class="k">Status</div><div class="v"><span class="badge-ims @statusClass(Model.Status)">@Model.Status</span></div></div>
-                        <div><div class="k">Contact</div><div class="v">@(Model.ContactName ?? "—")</div></div>
-                        <div><div class="k">Email</div><div class="v">@(Model.Email ?? "—")</div></div>
-                        <div><div class="k">Phone</div><div class="v">@(Model.Phone ?? "—")</div></div>
-                        <div><div class="k">Address</div><div class="v">@(Model.Address ?? "—")</div></div>
-                        <div><div class="k">Approved Date</div><div class="v">@(Model.ApprovedDate?.ToString("dd MMM yyyy") ?? "—")</div></div>
-                        <div><div class="k">Contract Start</div><div class="v">@(Model.ContractStart?.ToString("dd MMM yyyy") ?? "—")</div></div>
-                        <div><div class="k">Contract End</div><div class="v @(Model.ContractEnd.HasValue && Model.ContractEnd.Value.Date < DateTime.Now.Date ? "overdue" : "")">@(Model.ContractEnd?.ToString("dd MMM yyyy") ?? "—")</div></div>
-                        <div><div class="k">Certificate</div><div class="v">@(Model.CertificateName ?? "—")</div></div>
-                        <div><div class="k">Certificate Expiry</div><div class="v @(Model.CertificateExpiringSoon ? "overdue" : "")">@(Model.CertificateExpiry?.ToString("dd MMM yyyy") ?? "—")</div></div>
-                        <div><div class="k">Registered</div><div class="v">@Model.CreatedAt.ToString("dd MMM yyyy")</div></div>
-                    </div>
-                    @if (!string.IsNullOrWhiteSpace(Model.ProductsServices))
-                    {
-                        <div style="margin-top:1rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Products / Services</div><p style="color:var(--gray-700);margin:.25rem 0 0;">@Model.ProductsServices</p></div>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(Model.Notes))
-                    {
-                        <div style="margin-top:.75rem;"><div class="k" style="font-size:.72rem;text-transform:uppercase;color:var(--gray-400);">Notes</div><p style="color:var(--gray-700);margin:.25rem 0 0;">@Model.Notes</p></div>
-                    }
-                </div>
-            </div>
-
-            @* ── Latest evaluation summary ── *@
-            <div class="card">
-                <div class="card-head"><span class="t"><i class="fas fa-gauge-high"></i> Latest Evaluation</span></div>
-                <div class="card-body">
-                    @if (latest != null)
-                    {
-                        <div style="display:flex;justify-content:space-between;align-items:baseline;">
-                            <span class="meta">Overall score</span>
-                            <strong style="font-size:1.75rem;">@latest.OverallScore</strong>
-                        </div>
-                        var pct = latest.OverallScore;
-                        var bar = pct >= 70 ? "green" : pct >= 50 ? "amber" : "";
-                        <div class="progress-ims @bar" style="margin:.5rem 0;"><span style="width:@pct%"></span></div>
-                        <div class="hint"><span class="badge-ims @ratingClass(latest.Rating)">@latest.Rating</span> · @latest.Period · @latest.EvaluationDate.ToString("dd MMM yyyy")</div>
-                        <div class="dl" style="margin-top:1rem;grid-template-columns:1fr 1fr;">
-                            <div><div class="k">Quality</div><div class="v">@latest.QualityScore</div></div>
-                            <div><div class="k">Delivery</div><div class="v">@latest.DeliveryScore</div></div>
-                            <div><div class="k">Pricing</div><div class="v">@latest.PricingScore</div></div>
-                            <div><div class="k">Support</div><div class="v">@latest.SupportScore</div></div>
-                            <div><div class="k">Compliance</div><div class="v">@latest.ComplianceScore</div></div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="empty" style="padding:2rem 1rem;">
-                            <i class="fas fa-star-half-stroke"></i>
-                            <h3>Not yet evaluated</h3>
-                            <p class="meta">Record the first performance evaluation below.</p>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-
-        @* ── Evaluation history ── *@
-        <div class="card">
-            <div class="card-head"><span class="t"><i class="fas fa-clipboard-check"></i> Evaluation History</span></div>
-            <div class="card-body" style="padding:0;">
-                @if (Model.Evaluations.Any())
+                @if (!string.IsNullOrWhiteSpace(Model.ProductsServices))
                 {
-                    <table class="tbl">
+                    <div class="narrative-section">
+                        <div class="narrative-label">Products / Services</div>
+                        <div class="narrative-text">@Model.ProductsServices</div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.Notes))
+                {
+                    <div class="narrative-section" style="margin-bottom:0;">
+                        <div class="narrative-label">Notes</div>
+                        <div class="narrative-text">@Model.Notes</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- LATEST EVALUATION -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-gauge-high me-2" style="color:var(--primary);"></i>
+                <span>Latest Evaluation</span>
+            </div>
+            <div class="card-body-custom">
+                @if (latest != null)
+                {
+                    <div class="evaluation-score">
+                        <span class="eval-label">Overall score</span>
+                        <strong class="eval-value">@latest.OverallScore</strong>
+                    </div>
+                    var pct = latest.OverallScore;
+                    var barClass = pct >= 70 ? "success" : pct >= 50 ? "warning" : "danger";
+                    <div class="progress-bar-track @barClass">
+                        <div class="progress-bar-fill @barClass" style="width: @pct%;"></div>
+                    </div>
+                    <div class="eval-meta">
+                        <span class="status-badge @ratingClass(latest.Rating)">@latest.Rating</span>
+                        <span class="meta-text">· @latest.Period · @latest.EvaluationDate.ToString("dd MMM yyyy")</span>
+                    </div>
+                    <div class="eval-scores-grid">
+                        <div class="eval-score-item">
+                            <span class="eval-score-label">Quality</span>
+                            <span class="eval-score-value">@latest.QualityScore</span>
+                        </div>
+                        <div class="eval-score-item">
+                            <span class="eval-score-label">Delivery</span>
+                            <span class="eval-score-value">@latest.DeliveryScore</span>
+                        </div>
+                        <div class="eval-score-item">
+                            <span class="eval-score-label">Pricing</span>
+                            <span class="eval-score-value">@latest.PricingScore</span>
+                        </div>
+                        <div class="eval-score-item">
+                            <span class="eval-score-label">Support</span>
+                            <span class="eval-score-value">@latest.SupportScore</span>
+                        </div>
+                        <div class="eval-score-item">
+                            <span class="eval-score-label">Compliance</span>
+                            <span class="eval-score-value">@latest.ComplianceScore</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state-mini">
+                        <i class="fas fa-star-half-stroke"></i>
+                        <span>Not yet evaluated</span>
+                        <span style="font-size:0.8rem;color:var(--gray-400);">Record the first performance evaluation below.</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- EVALUATION HISTORY -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-clipboard-check me-2" style="color:var(--primary);"></i>
+            <span>Evaluation History</span>
+        </div>
+        <div class="card-body-custom" style="padding:0;">
+            @if (Model.Evaluations.Any())
+            {
+                <div class="table-responsive">
+                    <table class="tickets-table">
                         <thead>
-                            <tr><th>Date</th><th>Period</th><th>Quality</th><th>Delivery</th><th>Pricing</th><th>Support</th><th>Compliance</th><th>Overall</th><th>Rating</th><th>By</th></tr>
+                            <tr>
+                                <th><i class="fas fa-calendar me-1"></i> Date</th>
+                                <th><i class="fas fa-repeat me-1"></i> Period</th>
+                                <th><i class="fas fa-award me-1"></i> Quality</th>
+                                <th><i class="fas fa-truck-fast me-1"></i> Delivery</th>
+                                <th><i class="fas fa-tag me-1"></i> Pricing</th>
+                                <th><i class="fas fa-headset me-1"></i> Support</th>
+                                <th><i class="fas fa-shield-halved me-1"></i> Compliance</th>
+                                <th><i class="fas fa-gauge-high me-1"></i> Overall</th>
+                                <th><i class="fas fa-star me-1"></i> Rating</th>
+                                <th><i class="fas fa-user me-1"></i> By</th>
+                            </tr>
                         </thead>
                         <tbody>
                             @foreach (var e in Model.Evaluations.OrderByDescending(e => e.EvaluationDate).ThenByDescending(e => e.Id))
                             {
                                 <tr>
-                                    <td>@e.EvaluationDate.ToString("dd MMM yyyy")</td>
-                                    <td class="meta">@e.Period</td>
-                                    <td>@e.QualityScore</td>
-                                    <td>@e.DeliveryScore</td>
-                                    <td>@e.PricingScore</td>
-                                    <td>@e.SupportScore</td>
-                                    <td>@e.ComplianceScore</td>
-                                    <td><strong>@e.OverallScore</strong></td>
-                                    <td><span class="badge-ims @ratingClass(e.Rating)">@e.Rating</span></td>
-                                    <td class="meta">@(e.EvaluatedBy?.FullName ?? "—")</td>
+                                    <td class="meta-text">@e.EvaluationDate.ToString("dd MMM yyyy")</td>
+                                    <td class="meta-text">@e.Period</td>
+                                    <td class="eval-score-cell">@e.QualityScore</td>
+                                    <td class="eval-score-cell">@e.DeliveryScore</td>
+                                    <td class="eval-score-cell">@e.PricingScore</td>
+                                    <td class="eval-score-cell">@e.SupportScore</td>
+                                    <td class="eval-score-cell">@e.ComplianceScore</td>
+                                    <td class="eval-score-cell"><strong>@e.OverallScore</strong></td>
+                                    <td><span class="status-badge @ratingClass(e.Rating)">@e.Rating</span></td>
+                                    <td class="meta-text">@(e.EvaluatedBy?.FullName ?? "—")</td>
                                 </tr>
                             }
                         </tbody>
                     </table>
-                }
-                else
-                {
-                    <div class="empty" style="padding:2rem 1rem;"><i class="fas fa-clipboard-list"></i><h3>No evaluations recorded</h3></div>
-                }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-mini">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>No evaluations recorded</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ADD EVALUATION -->
+    @if (canManage)
+    {
+        <div class="data-card">
+            <div class="card-header-custom" style="border-left:4px solid var(--primary);">
+                <i class="fas fa-plus me-2" style="color:var(--primary);"></i>
+                <span>Add Evaluation</span>
+            </div>
+            <div class="card-body-custom">
+                <form method="post" asp-action="AddEvaluation" asp-route-id="@Model.Id">
+                    @Html.AntiForgeryToken()
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label-sm">
+                                <i class="fas fa-calendar-day"></i> Evaluation Date
+                            </label>
+                            <input class="form-control" type="date" name="EvaluationDate" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label-sm">
+                                <i class="fas fa-repeat"></i> Period
+                            </label>
+                            <select class="form-control" name="Period" asp-items="Html.GetEnumSelectList<EvaluationPeriod>()"></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label-sm">
+                                <i class="fas fa-award"></i> Quality (0–100) <span class="required">*</span>
+                            </label>
+                            <input class="form-control" type="number" name="QualityScore" min="0" max="100" value="0" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label-sm">
+                                <i class="fas fa-truck-fast"></i> Delivery (0–100) <span class="required">*</span>
+                            </label>
+                            <input class="form-control" type="number" name="DeliveryScore" min="0" max="100" value="0" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label-sm">
+                                <i class="fas fa-tag"></i> Pricing (0–100) <span class="required">*</span>
+                            </label>
+                            <input class="form-control" type="number" name="PricingScore" min="0" max="100" value="0" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label-sm">
+                                <i class="fas fa-headset"></i> Support (0–100) <span class="required">*</span>
+                            </label>
+                            <input class="form-control" type="number" name="SupportScore" min="0" max="100" value="0" required />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label-sm">
+                                <i class="fas fa-shield-halved"></i> Compliance (0–100) <span class="required">*</span>
+                            </label>
+                            <input class="form-control" type="number" name="ComplianceScore" min="0" max="100" value="0" required />
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label-sm">
+                                <i class="fas fa-comment"></i> Comments
+                            </label>
+                            <textarea class="form-control" name="Comments" rows="3" placeholder="Evaluation notes and evidence"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn-record-evaluation" type="submit">
+                            <i class="fas fa-save"></i> Record Evaluation
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-
-        @* ── Add evaluation ── *@
-        @if (canManage)
-        {
-            <div class="card">
-                <div class="card-head"><span class="t"><i class="fas fa-plus"></i> Add Evaluation</span></div>
-                <div class="card-body">
-                    <form method="post" asp-action="AddEvaluation" asp-route-id="@Model.Id">
-                        @Html.AntiForgeryToken()
-                        <div class="form-grid">
-                            <div class="fg">
-                                <label class="lbl"><i class="fas fa-calendar-day"></i> Evaluation Date</label>
-                                <input class="inp" type="date" name="EvaluationDate" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
-                            </div>
-                            <div class="fg">
-                                <label class="lbl"><i class="fas fa-repeat"></i> Period</label>
-                                <select class="inp" name="Period" asp-items="Html.GetEnumSelectList<EvaluationPeriod>()"></select>
-                            </div>
-                            <div class="fg">
-                                <label class="lbl"><i class="fas fa-award"></i> Quality (0–100)</label>
-                                <input class="inp" type="number" name="QualityScore" min="0" max="100" value="0" required />
-                            </div>
-                            <div class="fg">
-                                <label class="lbl"><i class="fas fa-truck-fast"></i> Delivery (0–100)</label>
-                                <input class="inp" type="number" name="DeliveryScore" min="0" max="100" value="0" required />
-                            </div>
-                            <div class="fg">
-                                <label class="lbl"><i class="fas fa-tag"></i> Pricing (0–100)</label>
-                                <input class="inp" type="number" name="PricingScore" min="0" max="100" value="0" required />
-                            </div>
-                            <div class="fg">
-                                <label class="lbl"><i class="fas fa-headset"></i> Support (0–100)</label>
-                                <input class="inp" type="number" name="SupportScore" min="0" max="100" value="0" required />
-                            </div>
-                            <div class="fg">
-                                <label class="lbl"><i class="fas fa-shield-halved"></i> Compliance (0–100)</label>
-                                <input class="inp" type="number" name="ComplianceScore" min="0" max="100" value="0" required />
-                            </div>
-                            <div class="fg full">
-                                <label class="lbl"><i class="fas fa-comment"></i> Comments</label>
-                                <textarea class="inp" name="Comments" rows="3" placeholder="Evaluation notes and evidence"></textarea>
-                            </div>
-                        </div>
-                        <div class="form-actions">
-                            <button class="btn-primary-ims" type="submit"><i class="fas fa-save"></i> Record Evaluation</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        }
-    </div>
+    }
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 1rem;
+    }
+
+    .page-subtitle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.3rem;
+    }
+
+    .meta-separator {
+        color: var(--gray-300);
+    }
+
+    .meta-text {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+    .btn-back:hover {
+        background: var(--gray-50);
+        color: var(--primary);
+        transform: translateX(-2px);
+        text-decoration: none;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+    .btn-create-ticket:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+        color: white;
+        text-decoration: none;
+    }
+
+    .btn-danger {
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        background: linear-gradient(100deg, #dc2626, var(--danger));
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn-record-evaluation {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        border: none;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        font-family: inherit;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .btn-record-evaluation:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* ===== TWO COLUMN GRID ===== */
+    .two-col-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ===== DETAILS GRID ===== */
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem 1.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .detail-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .detail-value {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .detail-value.text-danger {
+        color: var(--danger);
+    }
+
+    /* ===== NARRATIVE ===== */
+    .narrative-section {
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--gray-200);
+        margin-top: 0.75rem;
+    }
+
+    .narrative-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 0.1rem;
+    }
+
+    .narrative-text {
+        font-size: 0.85rem;
+        color: var(--gray-700);
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    /* ===== EVALUATION ===== */
+    .evaluation-score {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 0.25rem;
+    }
+
+    .eval-label {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+    }
+
+    .eval-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--gray-800);
+    }
+
+    .progress-bar-track {
+        width: 100%;
+        height: 8px;
+        background: var(--gray-100);
+        border-radius: 1rem;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+
+    .progress-bar-track.success .progress-bar-fill {
+        background: linear-gradient(90deg, #6ee7b7, var(--success));
+    }
+
+    .progress-bar-track.warning .progress-bar-fill {
+        background: linear-gradient(90deg, #fcd34d, var(--warning));
+    }
+
+    .progress-bar-track.danger .progress-bar-fill {
+        background: linear-gradient(90deg, #fca5a5, var(--danger));
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 1rem;
+        transition: width 0.6s ease;
+        min-width: 4px;
+    }
+
+    .eval-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin: 0.25rem 0 0.75rem;
+    }
+
+    .eval-scores-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 0.5rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .eval-score-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.1rem;
+        padding: 0.3rem 0.25rem;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+    }
+
+    .eval-score-label {
+        font-size: 0.6rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .eval-score-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--gray-700);
+    }
+
+    .eval-score-cell {
+        font-weight: 500;
+        color: var(--gray-700);
+        text-align: center;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .badge-primary {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    .badge-overdue {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    /* ===== EMPTY STATE MINI ===== */
+    .empty-state-mini {
+        text-align: center;
+        padding: 1.5rem;
+        color: var(--gray-500);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+    }
+
+    .empty-state-mini i {
+        font-size: 1.5rem;
+        color: var(--gray-300);
+    }
+
+    .empty-state-mini span {
+        font-size: 0.9rem;
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+    .tickets-table thead {
+        background: var(--gray-50);
+        border-bottom: 2px solid var(--gray-200);
+    }
+
+    .tickets-table th {
+        padding: 0.75rem 1.2rem;
+        text-align: left;
+        font-weight: 600;
+        color: var(--gray-600);
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .tickets-table td {
+        padding: 0.65rem 1.2rem;
+        border-bottom: 1px solid var(--gray-200);
+        vertical-align: middle;
+    }
+
+    .tickets-table tbody tr {
+        transition: background-color 0.15s;
+    }
+
+    .tickets-table tbody tr:hover {
+        background-color: var(--gray-50);
+    }
+
+    .tickets-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* ===== FORM ===== */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.25rem;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .form-label-sm {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .form-label-sm .required {
+        color: var(--danger);
+        font-weight: 700;
+        margin-left: 0.15rem;
+    }
+
+    .form-label-sm i {
+        font-size: 0.65rem;
+        color: var(--gray-400);
+    }
+
+    .form-control {
+        padding: 0.5rem 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.6rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        font-family: inherit;
+        background: white;
+        transition: all 0.2s ease;
+        width: 100%;
+        color: var(--gray-800);
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-control::placeholder {
+        color: var(--gray-400);
+        font-size: 0.8rem;
+    }
+
+    .form-control[type="date"],
+    .form-control[type="number"] {
+        min-height: 42px;
+    }
+
+    .form-control[type="date"]::-webkit-calendar-picker-indicator {
+        opacity: 0.5;
+        cursor: pointer;
+    }
+
+    .form-control[type="date"]:hover::-webkit-calendar-picker-indicator {
+        opacity: 1;
+    }
+
+    .form-control[type="number"] {
+        -moz-appearance: textfield;
+    }
+
+    .form-control[type="number"]::-webkit-outer-spin-button,
+    .form-control[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 0.75rem;
+        padding-right: 2rem;
+        cursor: pointer;
+    }
+
+    select.form-control:focus {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233b82f6' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 60px;
+        font-family: inherit;
+        line-height: 1.5;
+    }
+
+    textarea.form-control:focus {
+        resize: vertical;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        flex-wrap: wrap;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .two-col-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .btn-create-ticket,
+        .btn-danger {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1;
+        }
+
+        .eval-scores-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .btn-record-evaluation {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.5rem 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.8rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .meta-text {
+            font-size: 0.75rem;
+        }
+
+        .eval-score-value {
+            font-size: 0.95rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.1rem;
+        }
+
+        .doc-number {
+            font-size: 0.85rem;
+        }
+
+        .btn-create-ticket,
+        .btn-danger {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .d-flex.gap-2 {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .eval-scores-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .status-badge {
+            font-size: 0.55rem;
+            padding: 0.1rem 0.35rem;
+        }
+
+        .eval-value {
+            font-size: 1.5rem;
+        }
+
+        .eval-score-cell {
+            font-size: 0.8rem;
+        }
+
+        .form-control {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.6rem;
+        }
+
+        .form-label-sm {
+            font-size: 0.65rem;
+        }
+
+        .btn-record-evaluation {
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+        }
+    }
+</style>
