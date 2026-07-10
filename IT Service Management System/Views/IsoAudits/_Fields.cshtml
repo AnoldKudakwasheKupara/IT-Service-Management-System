@@ -7,73 +7,360 @@
     var programmes = ViewBag.Programmes as List<AuditProgramme> ?? new();
     var isEdit = (bool)(ViewData["IsEdit"] ?? false);
 }
-<div class="form-grid">
-    <div class="fg full">
-        <label class="lbl"><i class="fas fa-heading"></i> Title <span class="req">*</span></label>
-        <input class="inp" asp-for="Title" required />
-    </div>
-    <div class="fg">
-        <label class="lbl"><i class="fas fa-layer-group"></i> Type</label>
-        <select class="inp" asp-for="Type" asp-items="Html.GetEnumSelectList<AuditType>()"></select>
-    </div>
-    <div class="fg">
-        <label class="lbl"><i class="fas fa-certificate"></i> ISO Standard</label>
-        <select class="inp" asp-for="Standard" asp-items="Html.GetEnumSelectList<IsoStandard>()"></select>
-    </div>
-    <div class="fg">
-        <label class="lbl"><i class="fas fa-calendar"></i> Programme</label>
-        <select class="inp" asp-for="AuditProgrammeId"><option value="">— None —</option>
-            @foreach (var p in programmes) { <option value="@p.Id" selected="@(Model.AuditProgrammeId == p.Id)">@p.Year — @p.Title</option> }
-        </select>
-    </div>
-    <div class="fg">
-        <label class="lbl"><i class="fas fa-building"></i> Department / Area</label>
-        <select class="inp" asp-for="DepartmentId"><option value="">— None —</option>
-            @foreach (var d in departments) { <option value="@d.Id" selected="@(Model.DepartmentId == d.Id)">@d.Name</option> }
-        </select>
-    </div>
-    <div class="fg">
-        <label class="lbl"><i class="fas fa-user-tie"></i> Lead Auditor</label>
-        <select class="inp" asp-for="LeadAuditorId"><option value="">— None —</option>
-            @foreach (var u in users) { <option value="@u.Id" selected="@(Model.LeadAuditorId == u.Id)">@u.FullName</option> }
-        </select>
-    </div>
-    @if (isEdit)
-    {
-        <div class="fg">
-            <label class="lbl"><i class="fas fa-flag"></i> Status</label>
-            <select class="inp" asp-for="Status" asp-items="Html.GetEnumSelectList<AuditStatus>()"></select>
+
+<div class="audit-form-container">
+    <div class="form-grid">
+        <!-- Title -->
+        <div class="form-group full-width">
+            <label asp-for="Title" class="form-label">
+                <i class="fas fa-heading"></i> Title <span class="required">*</span>
+            </label>
+            <input asp-for="Title" class="form-control" placeholder="Enter the audit title..." required />
+            <span asp-validation-for="Title" class="validation-error"></span>
         </div>
-    }
-    <div class="fg">
-        <label class="lbl"><i class="fas fa-calendar-plus"></i> Planned Start</label>
-        <input class="inp" type="date" asp-for="PlannedStartDate" />
-    </div>
-    <div class="fg">
-        <label class="lbl"><i class="fas fa-calendar-check"></i> Planned End</label>
-        <input class="inp" type="date" asp-for="PlannedEndDate" />
-    </div>
-    <div class="fg full">
-        <label class="lbl"><i class="fas fa-crop"></i> Scope</label>
-        <textarea class="inp" asp-for="Scope" rows="2"></textarea>
-    </div>
-    <div class="fg full">
-        <label class="lbl"><i class="fas fa-bullseye"></i> Objectives</label>
-        <textarea class="inp" asp-for="Objectives" rows="2"></textarea>
-    </div>
-    <div class="fg full">
-        <label class="lbl"><i class="fas fa-ruler"></i> Criteria</label>
-        <textarea class="inp" asp-for="Criteria" rows="2"></textarea>
-    </div>
-    @if (isEdit)
-    {
-        <div class="fg full">
-            <label class="lbl"><i class="fas fa-file-lines"></i> Summary</label>
-            <textarea class="inp" asp-for="Summary" rows="2"></textarea>
+
+        <!-- Type & Standard -->
+        <div class="form-group">
+            <label asp-for="Type" class="form-label">
+                <i class="fas fa-layer-group"></i> Type
+            </label>
+            <select asp-for="Type" class="form-control" asp-items="Html.GetEnumSelectList<AuditType>()"></select>
+            <span asp-validation-for="Type" class="validation-error"></span>
         </div>
-        <div class="fg full">
-            <label class="lbl"><i class="fas fa-flag-checkered"></i> Conclusion</label>
-            <textarea class="inp" asp-for="Conclusion" rows="2"></textarea>
+
+        <div class="form-group">
+            <label asp-for="Standard" class="form-label">
+                <i class="fas fa-certificate"></i> ISO Standard
+            </label>
+            <select asp-for="Standard" class="form-control" asp-items="Html.GetEnumSelectList<IsoStandard>()"></select>
+            <span asp-validation-for="Standard" class="validation-error"></span>
         </div>
-    }
+
+        <!-- Programme -->
+        <div class="form-group">
+            <label asp-for="AuditProgrammeId" class="form-label">
+                <i class="fas fa-calendar"></i> Programme
+            </label>
+            <select asp-for="AuditProgrammeId" class="form-control">
+                <option value="">— None —</option>
+                @foreach (var p in programmes)
+                {
+                    <option value="@p.Id" selected="@(Model.AuditProgrammeId == p.Id)">@p.Year — @p.Title</option>
+                }
+            </select>
+            <span asp-validation-for="AuditProgrammeId" class="validation-error"></span>
+        </div>
+
+        <!-- Department & Lead Auditor -->
+        <div class="form-group">
+            <label asp-for="DepartmentId" class="form-label">
+                <i class="fas fa-building"></i> Department / Area
+            </label>
+            <select asp-for="DepartmentId" class="form-control">
+                <option value="">— None —</option>
+                @foreach (var d in departments)
+                {
+                    <option value="@d.Id" selected="@(Model.DepartmentId == d.Id)">@d.Name</option>
+                }
+            </select>
+            <span asp-validation-for="DepartmentId" class="validation-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="LeadAuditorId" class="form-label">
+                <i class="fas fa-user-tie"></i> Lead Auditor
+            </label>
+            <select asp-for="LeadAuditorId" class="form-control">
+                <option value="">— None —</option>
+                @foreach (var u in users)
+                {
+                    <option value="@u.Id" selected="@(Model.LeadAuditorId == u.Id)">@u.FullName</option>
+                }
+            </select>
+            <span asp-validation-for="LeadAuditorId" class="validation-error"></span>
+        </div>
+
+        <!-- Status (Edit only) -->
+        @if (isEdit)
+        {
+            <div class="form-group">
+                <label asp-for="Status" class="form-label">
+                    <i class="fas fa-flag"></i> Status
+                </label>
+                <select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<AuditStatus>()"></select>
+                <span asp-validation-for="Status" class="validation-error"></span>
+            </div>
+        }
+
+        <!-- Planned Dates -->
+        <div class="form-group">
+            <label asp-for="PlannedStartDate" class="form-label">
+                <i class="fas fa-calendar-plus"></i> Planned Start
+            </label>
+            <input asp-for="PlannedStartDate" class="form-control" type="date" />
+            <span asp-validation-for="PlannedStartDate" class="validation-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="PlannedEndDate" class="form-label">
+                <i class="fas fa-calendar-check"></i> Planned End
+            </label>
+            <input asp-for="PlannedEndDate" class="form-control" type="date" />
+            <span asp-validation-for="PlannedEndDate" class="validation-error"></span>
+        </div>
+
+        <!-- Scope -->
+        <div class="form-group full-width">
+            <label asp-for="Scope" class="form-label">
+                <i class="fas fa-crop"></i> Scope
+            </label>
+            <textarea asp-for="Scope" class="form-control" rows="3" placeholder="Define the scope of the audit..."></textarea>
+            <span asp-validation-for="Scope" class="validation-error"></span>
+        </div>
+
+        <!-- Objectives -->
+        <div class="form-group full-width">
+            <label asp-for="Objectives" class="form-label">
+                <i class="fas fa-bullseye"></i> Objectives
+            </label>
+            <textarea asp-for="Objectives" class="form-control" rows="3" placeholder="What are the audit objectives?"></textarea>
+            <span asp-validation-for="Objectives" class="validation-error"></span>
+        </div>
+
+        <!-- Criteria -->
+        <div class="form-group full-width">
+            <label asp-for="Criteria" class="form-label">
+                <i class="fas fa-ruler"></i> Criteria
+            </label>
+            <textarea asp-for="Criteria" class="form-control" rows="3" placeholder="What criteria will be used for the audit?"></textarea>
+            <span asp-validation-for="Criteria" class="validation-error"></span>
+        </div>
+
+        <!-- Summary (Edit only) -->
+        @if (isEdit)
+        {
+            <div class="form-group full-width">
+                <label asp-for="Summary" class="form-label">
+                    <i class="fas fa-file-lines"></i> Summary
+                </label>
+                <textarea asp-for="Summary" class="form-control" rows="3" placeholder="Summarize the audit findings..."></textarea>
+                <span asp-validation-for="Summary" class="validation-error"></span>
+            </div>
+
+            <!-- Conclusion (Edit only) -->
+            <div class="form-group full-width">
+                <label asp-for="Conclusion" class="form-label">
+                    <i class="fas fa-flag-checkered"></i> Conclusion
+                </label>
+                <textarea asp-for="Conclusion" class="form-control" rows="3" placeholder="What is the conclusion of the audit?"></textarea>
+                <span asp-validation-for="Conclusion" class="validation-error"></span>
+            </div>
+        }
+    </div>
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== FORM CONTAINER ===== */
+    .audit-form-container {
+        padding: 0.5rem 0;
+    }
+
+    /* ===== FORM GRID ===== */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.25rem;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    /* ===== FORM GROUP ===== */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    /* ===== FORM LABEL ===== */
+    .form-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+        .form-label i {
+            font-size: 0.7rem;
+            color: var(--gray-400);
+            width: 16px;
+            text-align: center;
+        }
+
+        .form-label .required {
+            color: var(--danger);
+            font-weight: 700;
+            margin-left: 0.15rem;
+        }
+
+    /* ===== FORM CONTROL ===== */
+    .form-control {
+        padding: 0.55rem 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.6rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        font-family: inherit;
+        background: white;
+        transition: all 0.2s ease;
+        width: 100%;
+        color: var(--gray-800);
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: var(--gray-400);
+            font-size: 0.8rem;
+        }
+
+        .form-control[type="date"] {
+            min-height: 42px;
+            cursor: pointer;
+        }
+
+            .form-control[type="date"]::-webkit-calendar-picker-indicator {
+                opacity: 0.5;
+                cursor: pointer;
+            }
+
+            .form-control[type="date"]:hover::-webkit-calendar-picker-indicator {
+                opacity: 1;
+            }
+
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 0.75rem;
+        padding-right: 2rem;
+        cursor: pointer;
+    }
+
+        select.form-control:focus {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233b82f6' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 60px;
+        font-family: inherit;
+        line-height: 1.5;
+    }
+
+        textarea.form-control:focus {
+            resize: vertical;
+        }
+
+    /* ===== VALIDATION ===== */
+    .validation-error {
+        font-size: 0.72rem;
+        color: var(--danger);
+        font-weight: 500;
+        margin-top: 0.1rem;
+    }
+
+        .validation-error:empty {
+            display: none;
+        }
+
+    .form-control.input-validation-error {
+        border-color: var(--danger) !important;
+    }
+
+        .form-control.input-validation-error:focus {
+            box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1) !important;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .form-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1;
+        }
+
+        .form-control {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.65rem;
+        }
+
+        .form-label {
+            font-size: 0.7rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .form-grid {
+            gap: 0.75rem;
+        }
+
+        .form-control {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.55rem;
+            border-radius: 0.5rem;
+        }
+
+        .form-label {
+            font-size: 0.65rem;
+        }
+
+        textarea.form-control {
+            min-height: 50px;
+        }
+    }
+</style>
