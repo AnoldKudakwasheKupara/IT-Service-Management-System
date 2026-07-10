@@ -2,13 +2,14 @@
 @{
     ViewData["Title"] = "SLA Compliance - Reports";
 
-    string BadgeFor(double pct) => pct >= 90 ? "badge-green" : pct >= 75 ? "badge-amber" : "badge-red";
+    string BadgeFor(double pct) => pct >= 90 ? "badge-success" : pct >= 75 ? "badge-warning" : "badge-critical";
     int Max(IEnumerable<IT_Service_Management_System.ViewModels.Reports.NameCount> l) => l.Any() ? l.Max(x => x.Count) : 1;
 }
 
 <div class="page-container">
+    <!-- PAGE HEADER -->
     <div class="page-header">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
             <div class="d-flex align-items-center gap-3">
                 <a asp-controller="Reports" asp-action="Index" class="btn-back" title="Back to Reports">
                     <i class="fas fa-arrow-left"></i>
@@ -24,10 +25,10 @@
         </div>
     </div>
 
-    <!-- STAT CARDS -->
-    <div class="stats-cards mb-4">
+    <!-- STATISTICS CARDS -->
+    <div class="stats-cards">
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+            <div class="stat-icon primary">
                 <i class="fas fa-reply"></i>
             </div>
             <div class="stat-info">
@@ -36,7 +37,7 @@
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+            <div class="stat-icon success">
                 <i class="fas fa-check-double"></i>
             </div>
             <div class="stat-info">
@@ -45,7 +46,7 @@
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+            <div class="stat-icon warning">
                 <i class="fas fa-clock"></i>
             </div>
             <div class="stat-info">
@@ -54,7 +55,7 @@
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+            <div class="stat-icon violet">
                 <i class="fas fa-hourglass-half"></i>
             </div>
             <div class="stat-info">
@@ -64,80 +65,129 @@
         </div>
     </div>
 
-    <!-- SUMMARY CARD -->
-    <div class="data-card mb-4">
+    <!-- SUMMARY GRID -->
+    <div class="data-card">
         <div class="card-header-custom">
-            <div><i class="fas fa-list-check me-2"></i><span>Measurement Summary</span></div>
-            <div class="record-count"><i class="fas fa-chart-simple"></i> <span>@Model.MeasuredTickets</span> measured tickets</div>
+            <div>
+                <i class="fas fa-list-check me-2" style="color: var(--primary);"></i>
+                <span>Measurement Summary</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.MeasuredTickets</span> measured tickets
+            </div>
         </div>
-        <div class="summary-grid">
-            <div class="summary-item"><span class="summary-label">Measured</span><span class="summary-value">@Model.MeasuredTickets</span></div>
-            <div class="summary-item"><span class="summary-label">Response Met</span><span class="summary-value text-green">@Model.ResponseMet</span></div>
-            <div class="summary-item"><span class="summary-label">Response Breached</span><span class="summary-value text-red">@Model.ResponseBreached</span></div>
-            <div class="summary-item"><span class="summary-label">Resolution Met</span><span class="summary-value text-green">@Model.ResolutionMet</span></div>
-            <div class="summary-item"><span class="summary-label">Resolution Breached</span><span class="summary-value text-red">@Model.ResolutionBreached</span></div>
-            <div class="summary-item"><span class="summary-label">Open &amp; Breaching</span><span class="summary-value text-amber">@Model.OpenBreaching</span></div>
+        <div class="card-body-custom">
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <span class="summary-label">Measured</span>
+                    <span class="summary-value">@Model.MeasuredTickets</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Response Met</span>
+                    <span class="summary-value text-green">@Model.ResponseMet</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Response Breached</span>
+                    <span class="summary-value text-red">@Model.ResponseBreached</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Resolution Met</span>
+                    <span class="summary-value text-green">@Model.ResolutionMet</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Resolution Breached</span>
+                    <span class="summary-value text-red">@Model.ResolutionBreached</span>
+                </div>
+                <div class="summary-item">
+                    <span class="summary-label">Open &amp; Breaching</span>
+                    <span class="summary-value text-amber">@Model.OpenBreaching</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- BY PRIORITY -->
-    <div class="data-card mb-4">
+    <!-- COMPLIANCE BY PRIORITY -->
+    <div class="data-card mt-4">
         <div class="card-header-custom">
-            <div><i class="fas fa-flag me-2"></i><span>Compliance by Priority</span></div>
-            <div class="record-count"><i class="fas fa-chart-simple"></i> <span>@Model.ByPriority.Count</span> priorities</div>
+            <div>
+                <i class="fas fa-flag me-2" style="color: var(--primary);"></i>
+                <span>Compliance by Priority</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.ByPriority.Count</span> priorities
+            </div>
         </div>
-        <div class="table-responsive">
+        <div class="card-body-custom" style="padding:0;">
             @if (Model.ByPriority.Any())
             {
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-flag me-1"></i> Priority</th>
-                            <th><i class="fas fa-hashtag me-1"></i> Total</th>
-                            <th><i class="fas fa-check me-1"></i> Met</th>
-                            <th><i class="fas fa-triangle-exclamation me-1"></i> Breached</th>
-                            <th><i class="fas fa-percent me-1"></i> Compliance</th>
-                            <th><i class="fas fa-hourglass-half me-1"></i> Avg Resolution</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var r in Model.ByPriority)
-                        {
+                <div class="table-responsive">
+                    <table class="tickets-table">
+                        <thead>
                             <tr>
-                                <td><span class="status-badge badge-blue">@r.Priority</span></td>
-                                <td>@r.Total</td>
-                                <td class="text-green">@r.Met</td>
-                                <td class="text-red">@r.Breached</td>
-                                <td><span class="status-badge @BadgeFor(r.Compliance)">@r.Compliance%</span></td>
-                                <td>@r.AvgResolutionHours h</td>
+                                <th><i class="fas fa-flag me-1"></i> Priority</th>
+                                <th><i class="fas fa-hashtag me-1"></i> Total</th>
+                                <th><i class="fas fa-check me-1"></i> Met</th>
+                                <th><i class="fas fa-triangle-exclamation me-1"></i> Breached</th>
+                                <th><i class="fas fa-percent me-1"></i> Compliance</th>
+                                <th><i class="fas fa-hourglass-half me-1"></i> Avg Resolution</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.ByPriority.OrderByDescending(x => x.Total))
+                            {
+                                var priorityBadge = r.Priority.ToString() == "Critical" ? "badge-critical" :
+                                                   r.Priority.ToString() == "High" ? "badge-warning" :
+                                                   r.Priority.ToString() == "Medium" ? "badge-primary" : "badge-gray";
+                                <tr>
+                                    <td><span class="status-badge @priorityBadge">@r.Priority</span></td>
+                                    <td>@r.Total</td>
+                                    <td class="text-green">@r.Met</td>
+                                    <td class="text-red">@r.Breached</td>
+                                    <td><span class="status-badge @BadgeFor(r.Compliance)">@r.Compliance%</span></td>
+                                    <td>@r.AvgResolutionHours h</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
             else
             {
-                <div class="empty-state"><i class="fas fa-flag"></i><h3>No measured tickets</h3><p>SLA data appears once tickets have due dates.</p></div>
+                <div class="empty-state-mini">
+                    <i class="fas fa-flag"></i>
+                    <span>No measured tickets</span>
+                    <span style="font-size:0.8rem;color:var(--gray-400);">SLA data appears once tickets have due dates.</span>
+                </div>
             }
         </div>
     </div>
 
     <!-- BREACHES BY CATEGORY -->
-    <div class="data-card">
+    <div class="data-card mt-4">
         <div class="card-header-custom">
-            <div><i class="fas fa-tags me-2"></i><span>Breaches by Category</span></div>
-            <div class="record-count"><i class="fas fa-chart-simple"></i> <span>@Model.BreachesByCategory.Count</span> categories</div>
+            <div>
+                <i class="fas fa-tags me-2" style="color: var(--primary);"></i>
+                <span>Breaches by Category</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.BreachesByCategory.Count</span> categories
+            </div>
         </div>
         <div class="card-body-custom">
             @if (Model.BreachesByCategory.Any())
             {
                 var m = Max(Model.BreachesByCategory);
                 <div class="bars">
-                    @foreach (var s in Model.BreachesByCategory)
+                    @foreach (var s in Model.BreachesByCategory.OrderByDescending(x => x.Count))
                     {
                         <div class="bar-row">
                             <div class="bar-label" title="@s.Name">@s.Name</div>
-                            <div class="bar-track"><div class="bar-fill red" style="width: @(s.Count * 100 / m)%"></div></div>
+                            <div class="bar-track">
+                                <div class="bar-fill danger" style="width: @(s.Count * 100 / m)%"></div>
+                            </div>
                             <div class="bar-value">@s.Count</div>
                         </div>
                     }
@@ -145,10 +195,569 @@
             }
             else
             {
-                <div class="empty-state-sm"><i class="fas fa-check-circle"></i><p>No resolution breaches — nice work.</p></div>
+                <div class="empty-state-mini success">
+                    <i class="fas fa-check-circle" style="color:var(--success);"></i>
+                    <span style="font-weight:600;color:var(--success);">No resolution breaches — nice work.</span>
+                </div>
             }
         </div>
     </div>
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== STATISTICS CARDS ===== */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+        .stat-icon.primary {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        }
+
+        .stat-icon.success {
+            background: linear-gradient(135deg, #2c9e6e, #227a55);
+        }
+
+        .stat-icon.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .stat-icon.warning {
+            background: linear-gradient(135deg, #f5b042, #e6a017);
+        }
+
+        .stat-icon.violet {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        .stat-icon.slate {
+            background: linear-gradient(135deg, var(--gray-500), var(--gray-600));
+        }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+        .data-card.mt-4 {
+            margin-top: 1.5rem;
+        }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .card-body-custom {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .ticket-count {
+        font-size: 0.8rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== SUMMARY GRID ===== */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+    }
+
+    .summary-item {
+        background: var(--gray-50);
+        padding: 0.85rem 1rem;
+        border-radius: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        border: 1px solid var(--gray-200);
+        transition: background-color 0.2s ease;
+    }
+
+        .summary-item:hover {
+            background: var(--gray-100);
+        }
+
+    .summary-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--gray-500);
+        font-weight: 600;
+    }
+
+    .summary-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        line-height: 1.2;
+    }
+
+    .text-green {
+        color: var(--success);
+    }
+
+    .text-red {
+        color: var(--danger);
+    }
+
+    .text-amber {
+        color: #b45309;
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 0.75rem 1.2rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.65rem 1.2rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .badge-primary {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    /* ===== BARS ===== */
+    .bars {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .bar-row {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .bar-label {
+        font-size: 0.78rem;
+        font-weight: 500;
+        color: var(--gray-600);
+        min-width: 70px;
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .bar-track {
+        flex: 1;
+        height: 8px;
+        background: var(--gray-100);
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .bar-fill {
+        height: 100%;
+        border-radius: 1rem;
+        transition: width 0.6s ease;
+        min-width: 4px;
+    }
+
+        .bar-fill.danger {
+            background: linear-gradient(90deg, #fca5a5, var(--danger));
+        }
+
+        .bar-fill.success {
+            background: linear-gradient(90deg, #6ee7b7, var(--success));
+        }
+
+        .bar-fill.primary {
+            background: linear-gradient(90deg, var(--primary-light), var(--primary));
+        }
+
+    .bar-value {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        min-width: 30px;
+        text-align: right;
+    }
+
+    /* ===== EMPTY STATE MINI ===== */
+    .empty-state-mini {
+        text-align: center;
+        padding: 1.5rem;
+        color: var(--gray-500);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+    }
+
+        .empty-state-mini i {
+            font-size: 1.5rem;
+            color: var(--gray-300);
+        }
+
+        .empty-state-mini span {
+            font-size: 0.9rem;
+        }
+
+        .empty-state-mini.success i {
+            color: var(--success);
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-wrap: wrap;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .stats-cards {
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.5rem 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.8rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .summary-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .summary-value {
+            font-size: 1.1rem;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .bar-label {
+            min-width: 50px;
+            max-width: 80px;
+            font-size: 0.7rem;
+        }
+
+        .bar-value {
+            font-size: 0.7rem;
+            min-width: 25px;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .tickets-table th {
+            font-size: 0.6rem;
+            padding: 0.4rem 0.5rem;
+        }
+
+        .status-badge {
+            font-size: 0.55rem;
+            padding: 0.1rem 0.35rem;
+        }
+
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .summary-value {
+            font-size: 1rem;
+        }
+
+        .summary-label {
+            font-size: 0.6rem;
+        }
+
+        .bar-label {
+            min-width: 40px;
+            max-width: 60px;
+            font-size: 0.65rem;
+        }
+
+        .bar-value {
+            font-size: 0.65rem;
+            min-width: 20px;
+        }
+
+        .empty-state-mini i {
+            font-size: 1.2rem;
+        }
+
+        .empty-state-mini span {
+            font-size: 0.8rem;
+        }
+
+        .text-green,
+        .text-red,
+        .text-amber {
+            font-weight: 600;
+        }
+    }
+
+    /* ===== PRINT STYLES ===== */
+    @@media print {
+        .btn-back {
+            display: none !important;
+        }
+
+        .data-card {
+            box-shadow: none !important;
+            border: 1px solid var(--gray-300) !important;
+            page-break-inside: avoid;
+        }
+
+        .stat-card {
+            box-shadow: none !important;
+            border: 1px solid var(--gray-300) !important;
+        }
+
+        .bar-fill {
+            background: var(--gray-600) !important;
+        }
+
+        .tickets-table tbody tr:hover {
+            background-color: transparent !important;
+        }
+
+        .summary-item {
+            background: white !important;
+            border: 1px solid var(--gray-300) !important;
+        }
+    }
+</style>
 
 @await Html.PartialAsync("_ReportExtras")

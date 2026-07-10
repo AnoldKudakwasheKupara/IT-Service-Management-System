@@ -8,12 +8,13 @@
         if (parts.Length == 0) return "?";
         return parts.Length == 1 ? parts[0].Substring(0, 1) : (parts[0].Substring(0, 1) + parts[^1].Substring(0, 1));
     }
-    string CsatBadge(double v) => v >= 4 ? "badge-green" : v >= 3 ? "badge-amber" : "badge-red";
+    string CsatBadge(double v) => v >= 4 ? "badge-success" : v >= 3 ? "badge-warning" : "badge-critical";
 }
 
 <div class="page-container">
+    <!-- PAGE HEADER -->
     <div class="page-header">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
             <div class="d-flex align-items-center gap-3">
                 <a asp-controller="Reports" asp-action="Index" class="btn-back" title="Back to Reports">
                     <i class="fas fa-arrow-left"></i>
@@ -29,10 +30,10 @@
         </div>
     </div>
 
-    <!-- STAT CARDS -->
-    <div class="stats-cards mb-4">
+    <!-- STATISTICS CARDS -->
+    <div class="stats-cards">
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+            <div class="stat-icon primary">
                 <i class="fas fa-users"></i>
             </div>
             <div class="stat-info">
@@ -41,7 +42,7 @@
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+            <div class="stat-icon success">
                 <i class="fas fa-check-circle"></i>
             </div>
             <div class="stat-info">
@@ -50,7 +51,7 @@
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+            <div class="stat-icon warning">
                 <i class="fas fa-user-slash"></i>
             </div>
             <div class="stat-info">
@@ -63,64 +64,72 @@
     <!-- AGENTS TABLE -->
     <div class="data-card">
         <div class="card-header-custom">
-            <div><i class="fas fa-list me-2"></i><span>Agents</span></div>
-            <div class="record-count"><i class="fas fa-chart-simple"></i> <span>@Model.Agents.Count</span> agents</div>
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Agents</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Agents.Count</span> agents
+            </div>
         </div>
-        <div class="table-responsive">
+        <div class="card-body-custom" style="padding:0;">
             @if (Model.Agents.Any())
             {
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th><i class="fas fa-user me-1"></i> Agent</th>
-                            <th><i class="fas fa-inbox me-1"></i> Assigned</th>
-                            <th><i class="fas fa-folder-open me-1"></i> Open</th>
-                            <th><i class="fas fa-check me-1"></i> Resolved</th>
-                            <th><i class="fas fa-hourglass-half me-1"></i> Avg Resolution</th>
-                            <th><i class="fas fa-triangle-exclamation me-1"></i> SLA Breaches</th>
-                            <th><i class="fas fa-star me-1"></i> CSAT</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var a in Model.Agents)
-                        {
+                <div class="table-responsive">
+                    <table class="tickets-table">
+                        <thead>
                             <tr>
-                                <td>
-                                    <div class="agent-cell">
-                                        <div class="list-avatar">@Initials(a.Name)</div>
-                                        <span>@a.Name</span>
-                                    </div>
-                                </td>
-                                <td>@a.Assigned</td>
-                                <td>@a.Open</td>
-                                <td class="text-green">@a.Resolved</td>
-                                <td>@a.AvgResolutionHours h</td>
-                                <td>
-                                    @if (a.SlaBreaches > 0)
-                                    {
-                                        <span class="status-badge badge-red">@a.SlaBreaches</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="status-badge badge-green">0</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (a.AvgCsat.HasValue)
-                                    {
-                                        <span class="status-badge @CsatBadge(a.AvgCsat.Value)">
-                                            <i class="fas fa-star csat-star"></i> @a.AvgCsat.Value.ToString("0.0")
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">—</span>
-                                    }
-                                </td>
+                                <th><i class="fas fa-user me-1"></i> Agent</th>
+                                <th><i class="fas fa-inbox me-1"></i> Assigned</th>
+                                <th><i class="fas fa-folder-open me-1"></i> Open</th>
+                                <th><i class="fas fa-check me-1"></i> Resolved</th>
+                                <th><i class="fas fa-hourglass-half me-1"></i> Avg Resolution</th>
+                                <th><i class="fas fa-triangle-exclamation me-1"></i> SLA Breaches</th>
+                                <th><i class="fas fa-star me-1"></i> CSAT</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in Model.Agents.OrderByDescending(x => x.Resolved))
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="agent-cell">
+                                            <div class="list-avatar">@Initials(a.Name)</div>
+                                            <span>@a.Name</span>
+                                        </div>
+                                    </td>
+                                    <td class="stat-number">@a.Assigned</td>
+                                    <td class="stat-number">@a.Open</td>
+                                    <td class="stat-number resolved-count">@a.Resolved</td>
+                                    <td class="stat-number">@a.AvgResolutionHours h</td>
+                                    <td>
+                                        @if (a.SlaBreaches > 0)
+                                        {
+                                            <span class="status-badge badge-critical">@a.SlaBreaches</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-badge badge-success">0</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (a.AvgCsat.HasValue)
+                                        {
+                                            <span class="status-badge @CsatBadge(a.AvgCsat.Value)">
+                                                <i class="fas fa-star csat-star"></i> @a.AvgCsat.Value.ToString("0.0")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="no-csat">—</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
             else
             {
@@ -133,5 +142,467 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== STATISTICS CARDS ===== */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+        .stat-icon.primary {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        }
+
+        .stat-icon.success {
+            background: linear-gradient(135deg, #2c9e6e, #227a55);
+        }
+
+        .stat-icon.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .stat-icon.warning {
+            background: linear-gradient(135deg, #f5b042, #e6a017);
+        }
+
+        .stat-icon.violet {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.9rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+    /* ===== AGENT CELL ===== */
+    .agent-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .list-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+        font-weight: 600;
+        font-size: 0.72rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+        flex-shrink: 0;
+        transition: transform 0.2s ease;
+    }
+
+    .agent-cell span {
+        font-weight: 500;
+        color: var(--gray-800);
+    }
+
+    /* ===== STAT NUMBERS ===== */
+    .stat-number {
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .resolved-count {
+        color: var(--success);
+        font-weight: 600;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    /* ===== CSAT STAR ===== */
+    .csat-star {
+        color: #f5b042;
+        font-size: 0.65rem;
+    }
+
+    .no-csat {
+        color: var(--gray-400);
+        font-size: 0.85rem;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin: 0;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-wrap: wrap;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .stats-cards {
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.6rem 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.8rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .agent-cell span {
+            font-size: 0.85rem;
+        }
+
+        .stat-number {
+            font-size: 0.85rem;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .tickets-table th {
+            font-size: 0.6rem;
+            padding: 0.4rem 0.5rem;
+        }
+
+        .status-badge {
+            font-size: 0.55rem;
+            padding: 0.1rem 0.35rem;
+        }
+
+        .stat-number {
+            font-size: 0.75rem;
+        }
+
+        .agent-cell span {
+            font-size: 0.75rem;
+        }
+
+        .list-avatar {
+            width: 28px;
+            height: 28px;
+            font-size: 0.6rem;
+        }
+
+        .csat-star {
+            font-size: 0.55rem;
+        }
+
+        .no-csat {
+            font-size: 0.7rem;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1rem;
+        }
+
+        .empty-state p {
+            font-size: 0.8rem;
+        }
+    }
+
+    /* ===== PRINT STYLES ===== */
+    @@media print {
+        .btn-back {
+            display: none !important;
+        }
+
+        .data-card {
+            box-shadow: none !important;
+            border: 1px solid var(--gray-300) !important;
+            page-break-inside: avoid;
+        }
+
+        .stat-card {
+            box-shadow: none !important;
+            border: 1px solid var(--gray-300) !important;
+        }
+
+        .tickets-table tbody tr:hover {
+            background-color: transparent !important;
+        }
+
+        .list-avatar {
+            background: var(--gray-600) !important;
+        }
+    }
+</style>
 
 @await Html.PartialAsync("_ReportExtras")

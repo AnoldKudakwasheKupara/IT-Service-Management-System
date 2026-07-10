@@ -193,336 +193,12 @@
 </div>
 
 <style>
-    /* ===== ROOT VARIABLES (from Dashboard) ===== */
-    :root {
-        --primary-dark: #2563eb;
-        --primary: #3b82f6;
-        --primary-light: #60a5fa;
-        --success: #2c9e6e;
-        --warning: #f5b042;
-        --danger: #e53e3e;
-        --info: #3b82f6;
-        --gray-50: #f8fafc;
-        --gray-100: #f1f5f9;
-        --gray-200: #e2e8f0;
-        --gray-300: #cbd5e1;
-        --gray-400: #94a3b8;
-        --gray-500: #64748b;
-        --gray-600: #475569;
-        --gray-700: #334155;
-        --gray-800: #1e293b;
-        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    }
+    /* ===== NOTE: This page uses the global Dashboard styles ===== */
+    /* All styles are already defined in the shared stylesheets.
+           This page only needs minimal local overrides if any. */
 
-    /* ===== PAGE CONTAINER ===== */
-    .page-container {
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-
-    .page-header {
-        margin-bottom: 2rem;
-    }
-
-    .page-title {
-        font-size: 1.875rem;
-        font-weight: 700;
-        color: var(--gray-800);
-        margin: 0;
-    }
-
-    /* ===== BUTTONS ===== */
-    .btn-create-ticket {
-        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
-        color: white;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.75rem;
-        font-weight: 600;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.3s ease;
-        box-shadow: var(--shadow-sm);
-        border: none;
-        cursor: pointer;
-        font-size: 0.875rem;
-        font-family: inherit;
-    }
-
-        .btn-create-ticket:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-            color: white;
-            text-decoration: none;
-        }
-
-    /* ===== KPI CARDS ===== */
-    .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .kpi-card {
-        background: white;
-        border-radius: 1rem;
-        padding: 1.1rem 1.25rem;
-        display: flex;
-        align-items: center;
-        gap: 0.9rem;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--gray-200);
-        transition: all 0.3s ease;
-    }
-
-        .kpi-card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-        }
-
-    .kpi-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 1.1rem;
-        flex-shrink: 0;
-    }
-
-        .kpi-icon.primary {
-            background: linear-gradient(135deg, var(--primary-light), var(--primary));
-        }
-
-        .kpi-icon.success {
-            background: linear-gradient(135deg, #2c9e6e, #227a55);
-        }
-
-        .kpi-icon.danger {
-            background: linear-gradient(135deg, #ef4444, #dc2626);
-        }
-
-        .kpi-icon.warning {
-            background: linear-gradient(135deg, #f5b042, #e6a017);
-        }
-
-        .kpi-icon.violet {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-        }
-
-        .kpi-icon.slate {
-            background: linear-gradient(135deg, var(--gray-500), var(--gray-600));
-        }
-
-    .kpi-body {
-        flex: 1;
-        min-width: 0;
-    }
-
-    .kpi-value {
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: var(--gray-800);
-        line-height: 1.2;
-    }
-
-    .kpi-label {
-        font-size: 0.7rem;
-        font-weight: 500;
-        color: var(--gray-500);
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-        margin-top: 0.05rem;
-    }
-
-    /* ===== DATA CARD ===== */
-    .data-card {
-        background: white;
-        border-radius: 1rem;
-        overflow: hidden;
-        box-shadow: var(--shadow-sm);
-        border: 1px solid var(--gray-200);
-    }
-
-        .data-card.mt-4 {
-            margin-top: 1.5rem;
-        }
-
-    .card-header-custom {
-        background: var(--gray-50);
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--gray-200);
-        font-weight: 600;
-        color: var(--gray-700);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-    }
-
-    .card-body-custom {
-        padding: 1.25rem 1.5rem;
-    }
-
-    .ticket-count {
-        font-size: 0.8rem;
-        font-weight: normal;
-        color: var(--gray-500);
-    }
-
-    /* ===== TWO COLUMN GRID ===== */
-    .two-col-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-    }
-
-    /* ===== BARS ===== */
-    .bars {
-        display: flex;
-        flex-direction: column;
-        gap: 0.6rem;
-    }
-
-    .bar-row {
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-    }
-
-    .bar-label {
-        font-size: 0.78rem;
-        font-weight: 500;
-        color: var(--gray-600);
-        min-width: 70px;
-        max-width: 100px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .bar-track {
-        flex: 1;
-        height: 8px;
-        background: var(--gray-100);
-        border-radius: 1rem;
-        overflow: hidden;
-    }
-
-    .bar-fill {
-        height: 100%;
-        border-radius: 1rem;
-        transition: width 0.6s ease;
-        min-width: 4px;
-    }
-
-        .bar-fill.primary {
-            background: linear-gradient(90deg, var(--primary-light), var(--primary));
-        }
-
-        .bar-fill.success {
-            background: linear-gradient(90deg, #6ee7b7, var(--success));
-        }
-
-        .bar-fill.danger {
-            background: linear-gradient(90deg, #fca5a5, var(--danger));
-        }
-
-        .bar-fill.warning {
-            background: linear-gradient(90deg, #fcd34d, var(--warning));
-        }
-
-        .bar-fill.violet {
-            background: linear-gradient(90deg, #a78bfa, #7c3aed);
-        }
-
-        .bar-fill.slate {
-            background: linear-gradient(90deg, #94a3b8, var(--gray-600));
-        }
-
-    .bar-value {
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: var(--gray-600);
-        min-width: 40px;
-        text-align: right;
-    }
-
-    /* ===== TABLE STYLES ===== */
-    .table-responsive {
-        overflow-x: auto;
-    }
-
-    .tickets-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.85rem;
-    }
-
-        .tickets-table thead {
-            background: var(--gray-50);
-            border-bottom: 2px solid var(--gray-200);
-        }
-
-        .tickets-table th {
-            padding: 0.75rem 1.2rem;
-            text-align: left;
-            font-weight: 600;
-            color: var(--gray-600);
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            white-space: nowrap;
-        }
-
-        .tickets-table td {
-            padding: 0.65rem 1.2rem;
-            border-bottom: 1px solid var(--gray-200);
-            vertical-align: middle;
-        }
-
-        .tickets-table tbody tr {
-            transition: background-color 0.15s;
-        }
-
-            .tickets-table tbody tr:hover {
-                background-color: var(--gray-50);
-            }
-
-            .tickets-table tbody tr:last-child td {
-                border-bottom: none;
-            }
-
-    /* ===== ACTIVITY SPECIFIC ===== */
-    .category-name {
-        font-weight: 500;
-        color: var(--gray-700);
-    }
-
-    /* ===== ACTIVITY COUNT BADGE ===== */
-    .activity-count-badge {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 32px;
-        padding: 0.15rem 0.6rem;
-        border-radius: 2rem;
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: var(--primary-dark);
-        background: #dbeafe;
-        border: 1px solid #bfdbfe;
-    }
-
-    /* ===== ACTIVITY NOTE ===== */
+    /* ===== LOCAL OVERRIDES (if needed) ===== */
+    /* The .activity-note class is specific to this page */
     .activity-note {
         padding: 0.75rem 0.5rem;
         font-size: 0.8rem;
@@ -539,46 +215,7 @@
             font-size: 0.9rem;
         }
 
-    /* ===== EMPTY STATE MINI ===== */
-    .empty-state-mini {
-        text-align: center;
-        padding: 1.5rem;
-        color: var(--gray-500);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        font-size: 0.9rem;
-    }
-
-        .empty-state-mini i {
-            font-size: 1.2rem;
-            color: var(--gray-400);
-        }
-
-    /* ===== PRINT STYLES ===== */
-    @@media print {
-        .btn-create-ticket {
-            display: none !important;
-        }
-
-        .data-card {
-            box-shadow: none !important;
-            border: 1px solid var(--gray-300) !important;
-            page-break-inside: avoid;
-        }
-
-        .kpi-card {
-            box-shadow: none !important;
-            border: 1px solid var(--gray-300) !important;
-        }
-
-        .bar-fill {
-            background: var(--gray-600) !important;
-        }
-    }
-
-    /* ===== RESPONSIVE ===== */
+    /* ===== RESPONSIVE OVERRIDES ===== */
     @@media (max-width: 992px) {
         .two-col-grid {
             grid-template-columns: 1fr;
@@ -676,6 +313,28 @@
 
         .activity-note {
             font-size: 0.7rem;
+        }
+    }
+
+    /* ===== PRINT STYLES ===== */
+    @@media print {
+        .btn-create-ticket {
+            display: none !important;
+        }
+
+        .data-card {
+            box-shadow: none !important;
+            border: 1px solid var(--gray-300) !important;
+            page-break-inside: avoid;
+        }
+
+        .kpi-card {
+            box-shadow: none !important;
+            border: 1px solid var(--gray-300) !important;
+        }
+
+        .bar-fill {
+            background: var(--gray-600) !important;
         }
     }
 </style>
