@@ -12,8 +12,9 @@
         if (items.Count == 0) return Microsoft.AspNetCore.Html.HtmlString.Empty;
         var names = string.Join(", ", items.Select(a => System.Net.WebUtility.HtmlEncode(a.OriginalFileName)));
         return new Microsoft.AspNetCore.Html.HtmlString(
-            $"<span class='field-hint' style='display:block;margin-top:.25rem;'><i class='fas fa-paperclip' style='color:var(--success);'></i> On file: {names}</span>");
+            $"<span class='field-hint' style='display:block;margin-top:0.25rem;'><i class='fas fa-paperclip' style='color:var(--success);'></i> On file: {names}</span>");
     };
+
     // Renders "Yes / No" tri-state radios bound to a nullable bool property.
     Func<string, bool?, Microsoft.AspNetCore.Html.IHtmlContent> yesNo = (name, val) =>
     {
@@ -28,30 +29,55 @@
     };
 }
 
-<div asp-validation-summary="ModelOnly" class="flash danger" style="display:block;"></div>
+<!-- ===== VALIDATION SUMMARY ===== -->
+<div asp-validation-summary="ModelOnly" class="alert-flash danger" style="display:block;margin-bottom:1.5rem;"></div>
 
-<!-- SECTION A -->
-<div class="section-band"><div class="section-letter">A</div><h3>Incident Details <span>· reported by</span></h3><div class="rule"></div></div>
+<!-- ===== SECTION A: Incident Details ===== -->
+<div class="section-divider">
+    <span class="section-letter">A</span>
+    <div class="section-title">
+        <h3>Incident Details</h3>
+        <span>· reported by</span>
+    </div>
+</div>
+
 <div class="form-grid">
     <div class="form-group full-width">
-        <label asp-for="Title" class="form-label"><i class="fas fa-heading"></i> Incident Title <span class="required">*</span></label>
+        <label asp-for="Title" class="form-label">
+            <i class="fas fa-heading"></i> Incident Title <span class="required">*</span>
+        </label>
         <input asp-for="Title" class="form-control" placeholder="e.g. Dees Pharmacy customer dissatisfaction" required />
         <span asp-validation-for="Title" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="DateOfIncident" class="form-label"><i class="fas fa-calendar-day"></i> Date of Incident</label>
+        <label asp-for="DateOfIncident" class="form-label">
+            <i class="fas fa-calendar-day"></i> Date of Incident
+        </label>
         <input asp-for="DateOfIncident" type="date" class="form-control" />
+        <span asp-validation-for="DateOfIncident" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="TimeOfIncident" class="form-label"><i class="fas fa-clock"></i> Time of Incident</label>
+        <label asp-for="TimeOfIncident" class="form-label">
+            <i class="fas fa-clock"></i> Time of Incident
+        </label>
         <input asp-for="TimeOfIncident" class="form-control" placeholder="e.g. 10:57 AM" />
+        <span asp-validation-for="TimeOfIncident" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="LocationOfIncident" class="form-label"><i class="fas fa-location-dot"></i> Location</label>
+        <label asp-for="LocationOfIncident" class="form-label">
+            <i class="fas fa-location-dot"></i> Location
+        </label>
         <input asp-for="LocationOfIncident" class="form-control" placeholder="Where it occurred / was reported" />
+        <span asp-validation-for="LocationOfIncident" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="DepartmentId" class="form-label"><i class="fas fa-sitemap"></i> Function / Department</label>
+        <label asp-for="DepartmentId" class="form-label">
+            <i class="fas fa-sitemap"></i> Function / Department
+        </label>
         <select asp-for="DepartmentId" class="form-control">
             <option value="">— Select —</option>
             @foreach (var d in departments)
@@ -59,287 +85,456 @@
                 <option value="@d.Id" selected="@(Model.DepartmentId == d.Id)">@d.Name</option>
             }
         </select>
+        <span asp-validation-for="DepartmentId" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="ReportedByName" class="form-label"><i class="fas fa-user"></i> Reported By</label>
+        <label asp-for="ReportedByName" class="form-label">
+            <i class="fas fa-user"></i> Reported By
+        </label>
         <input asp-for="ReportedByName" class="form-control" placeholder="Name of reporter" />
+        <span asp-validation-for="ReportedByName" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="DateReported" class="form-label"><i class="fas fa-calendar-check"></i> Date Reported</label>
+        <label asp-for="DateReported" class="form-label">
+            <i class="fas fa-calendar-check"></i> Date Reported
+        </label>
         <input asp-for="DateReported" type="date" class="form-control" />
+        <span asp-validation-for="DateReported" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="Standard" class="form-label"><i class="fas fa-certificate"></i> ISO Standard</label>
+        <label asp-for="Standard" class="form-label">
+            <i class="fas fa-certificate"></i> ISO Standard
+        </label>
         <select asp-for="Standard" class="form-control" asp-items="Html.GetEnumSelectList<IsoStandard>()"></select>
+        <span asp-validation-for="Standard" class="validation-error"></span>
     </div>
 </div>
 
-<!-- SECTION B -->
-<div class="section-band"><div class="section-letter">B</div><h3>Brief Description</h3><div class="rule"></div></div>
+<!-- ===== SECTION B: Brief Description ===== -->
+<div class="section-divider">
+    <span class="section-letter">B</span>
+    <div class="section-title">
+        <h3>Brief Description</h3>
+    </div>
+</div>
+
 <div class="form-grid">
     <div class="form-group full-width">
-        <label asp-for="BriefDescription" class="form-label"><i class="fas fa-align-left"></i> Brief description of incident</label>
-        <textarea asp-for="BriefDescription" class="form-control" rows="5" placeholder="A short account of what happened, as reported."></textarea>
+        <label asp-for="BriefDescription" class="form-label">
+            <i class="fas fa-align-left"></i> Brief description of incident
+        </label>
+        <textarea asp-for="BriefDescription" class="form-control" rows="4" placeholder="A short account of what happened, as reported."></textarea>
+        <span asp-validation-for="BriefDescription" class="validation-error"></span>
     </div>
 </div>
 
-<!-- SECTION C (police) -->
-<div class="section-band"><div class="section-letter">C</div><h3>Police Report <span>· if applicable</span></h3><div class="rule"></div></div>
+<!-- ===== SECTION C: Police Report ===== -->
+<div class="section-divider">
+    <span class="section-letter">C</span>
+    <div class="section-title">
+        <h3>Police Report</h3>
+        <span>· if applicable</span>
+    </div>
+</div>
+
 <div class="form-grid">
     <div class="form-group">
-        <label class="form-label"><i class="fas fa-building-shield"></i> Reported to Police?</label>
+        <label class="form-label">
+            <i class="fas fa-building-shield"></i> Reported to Police?
+        </label>
         @yesNo("ReportedToPolice", Model.ReportedToPolice)
         <span asp-validation-for="ReportedToPolice" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="ReportedToPoliceAt" class="form-label"><i class="fas fa-location-dot"></i> Reported to Police at</label>
+        <label asp-for="ReportedToPoliceAt" class="form-label">
+            <i class="fas fa-location-dot"></i> Reported to Police at
+        </label>
         <input asp-for="ReportedToPoliceAt" class="form-control" placeholder="Station / N/A" />
+        <span asp-validation-for="ReportedToPoliceAt" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="CaseNumber" class="form-label"><i class="fas fa-hashtag"></i> Case Number</label>
+        <label asp-for="CaseNumber" class="form-label">
+            <i class="fas fa-hashtag"></i> Case Number
+        </label>
         <input asp-for="CaseNumber" class="form-control" placeholder="N/A" />
+        <span asp-validation-for="CaseNumber" class="validation-error"></span>
     </div>
+
     <div class="form-group span-2">
-        <label asp-for="PoliceDetailsTel" class="form-label"><i class="fas fa-phone"></i> Police details &amp; Tel</label>
+        <label asp-for="PoliceDetailsTel" class="form-label">
+            <i class="fas fa-phone"></i> Police details &amp; Tel
+        </label>
         <input asp-for="PoliceDetailsTel" class="form-control" placeholder="N/A" />
+        <span asp-validation-for="PoliceDetailsTel" class="validation-error"></span>
     </div>
+
     <div class="form-group" id="policeReportRow">
-        <label class="form-label" for="policeReport"><i class="fas fa-file-arrow-up"></i> Police Report <span class="required" id="policeReportReq" style="display:none;">*</span></label>
-        <input type="file" name="policeReport" id="policeReport" class="form-control"
-               accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
+        <label class="form-label" for="policeReport">
+            <i class="fas fa-file-arrow-up"></i> Police Report
+            <span class="required" id="policeReportReq" style="display:none;">*</span>
+        </label>
+        <div class="file-upload-wrapper">
+            <input type="file" name="policeReport" id="policeReport" class="file-input"
+                   accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
+            <label for="policeReport" class="file-upload-label small">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Choose police report file</span>
+                <span class="file-hint">PDF, DOC, DOCX, PNG, JPG (max 25 MB)</span>
+            </label>
+            <span id="policeReportFileName" class="file-names-display"></span>
+        </div>
         <span class="field-hint" id="policeReportHint">Required when the incident was reported to the police (max 25 MB).</span>
     </div>
 </div>
+
 <script>
     (function () {
-        function sync() {
+        // Police report required toggle
+        function syncPolice() {
             var yes = document.querySelector('input[name="ReportedToPolice"][value="true"]');
             var on = yes && yes.checked;
             var req = document.getElementById('policeReportReq');
             var input = document.getElementById('policeReport');
+            var hint = document.getElementById('policeReportHint');
             if (req) req.style.display = on ? 'inline' : 'none';
             if (input) input.required = !!on;
+            if (hint) hint.style.display = on ? 'block' : 'none';
         }
         document.querySelectorAll('input[name="ReportedToPolice"]').forEach(function (r) {
-            r.addEventListener('change', sync);
+            r.addEventListener('change', syncPolice);
         });
-        sync();
+        syncPolice();
+
+        // File name display
+        var policeInput = document.getElementById('policeReport');
+        var policeDisplay = document.getElementById('policeReportFileName');
+        if (policeInput && policeDisplay) {
+            policeInput.addEventListener('change', function () {
+                if (this.files.length > 0) {
+                    policeDisplay.textContent = this.files[0].name;
+                    policeDisplay.style.display = 'block';
+                } else {
+                    policeDisplay.textContent = '';
+                    policeDisplay.style.display = 'none';
+                }
+            });
+        }
     })();
 </script>
 
-<!-- SECTION D -->
-<div class="section-band"><div class="section-letter">D</div><h3>Detailed Description &amp; Evidence <span>· investigation</span></h3><div class="rule"></div></div>
+<!-- ===== SECTION D: Detailed Description & Evidence ===== -->
+<div class="section-divider">
+    <span class="section-letter">D</span>
+    <div class="section-title">
+        <h3>Detailed Description &amp; Evidence</h3>
+        <span>· investigation</span>
+    </div>
+</div>
+
 <div class="form-grid">
     <div class="form-group full-width">
-        <label asp-for="DetailedDescription" class="form-label"><i class="fas fa-list-ol"></i> Detailed description / sequence of events</label>
-        <textarea asp-for="DetailedDescription" class="form-control" rows="7" placeholder="Full narrative and the sequence of events, in order."></textarea>
+        <label asp-for="DetailedDescription" class="form-label">
+            <i class="fas fa-list-ol"></i> Detailed description / sequence of events
+        </label>
+        <textarea asp-for="DetailedDescription" class="form-control" rows="6" placeholder="Full narrative and the sequence of events, in order."></textarea>
+        <span asp-validation-for="DetailedDescription" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="EvidencePeople" class="form-label"><i class="fas fa-users"></i> Evidence — People</label>
-        <textarea asp-for="EvidencePeople" class="form-control" rows="2"></textarea>
-        <input type="file" name="catfile_evpeople" class="form-control" multiple accept="@fileAccept" style="margin-top:0.4rem;" />
+        <label asp-for="EvidencePeople" class="form-label">
+            <i class="fas fa-users"></i> Evidence — People
+        </label>
+        <textarea asp-for="EvidencePeople" class="form-control" rows="2" placeholder="List of people involved or providing evidence..."></textarea>
+        <div class="file-upload-wrapper small">
+            <input type="file" name="catfile_evpeople" id="catfile_evpeople" class="file-input" multiple accept="@fileAccept" />
+            <label for="catfile_evpeople" class="file-upload-label tiny">
+                <i class="fas fa-paperclip"></i> Attach files
+            </label>
+            <span class="file-names-display" id="evpeopleFiles"></span>
+        </div>
         @onFile("Evidence — People")
+        <span asp-validation-for="EvidencePeople" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="EvidencePaper" class="form-label"><i class="fas fa-file-lines"></i> Evidence — Paper</label>
-        <textarea asp-for="EvidencePaper" class="form-control" rows="2"></textarea>
-        <input type="file" name="catfile_evpaper" class="form-control" multiple accept="@fileAccept" style="margin-top:0.4rem;" />
+        <label asp-for="EvidencePaper" class="form-label">
+            <i class="fas fa-file-lines"></i> Evidence — Paper
+        </label>
+        <textarea asp-for="EvidencePaper" class="form-control" rows="2" placeholder="Physical or digital paper evidence..."></textarea>
+        <div class="file-upload-wrapper small">
+            <input type="file" name="catfile_evpaper" id="catfile_evpaper" class="file-input" multiple accept="@fileAccept" />
+            <label for="catfile_evpaper" class="file-upload-label tiny">
+                <i class="fas fa-paperclip"></i> Attach files
+            </label>
+            <span class="file-names-display" id="evpaperFiles"></span>
+        </div>
         @onFile("Evidence — Paper")
+        <span asp-validation-for="EvidencePaper" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="EvidenceParts" class="form-label"><i class="fas fa-gears"></i> Evidence — Parts</label>
-        <textarea asp-for="EvidenceParts" class="form-control" rows="2"></textarea>
-        <input type="file" name="catfile_evparts" class="form-control" multiple accept="@fileAccept" style="margin-top:0.4rem;" />
+        <label asp-for="EvidenceParts" class="form-label">
+            <i class="fas fa-gears"></i> Evidence — Parts
+        </label>
+        <textarea asp-for="EvidenceParts" class="form-control" rows="2" placeholder="Parts or components evidence..."></textarea>
+        <div class="file-upload-wrapper small">
+            <input type="file" name="catfile_evparts" id="catfile_evparts" class="file-input" multiple accept="@fileAccept" />
+            <label for="catfile_evparts" class="file-upload-label tiny">
+                <i class="fas fa-paperclip"></i> Attach files
+            </label>
+            <span class="file-names-display" id="evpartsFiles"></span>
+        </div>
         @onFile("Evidence — Parts")
+        <span asp-validation-for="EvidenceParts" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="EvidencePositions" class="form-label"><i class="fas fa-location-crosshairs"></i> Evidence — Positions</label>
-        <textarea asp-for="EvidencePositions" class="form-control" rows="2"></textarea>
-        <input type="file" name="catfile_evpositions" class="form-control" multiple accept="@fileAccept" style="margin-top:0.4rem;" />
+        <label asp-for="EvidencePositions" class="form-label">
+            <i class="fas fa-location-crosshairs"></i> Evidence — Positions
+        </label>
+        <textarea asp-for="EvidencePositions" class="form-control" rows="2" placeholder="Positions or locations evidence..."></textarea>
+        <div class="file-upload-wrapper small">
+            <input type="file" name="catfile_evpositions" id="catfile_evpositions" class="file-input" multiple accept="@fileAccept" />
+            <label for="catfile_evpositions" class="file-upload-label tiny">
+                <i class="fas fa-paperclip"></i> Attach files
+            </label>
+            <span class="file-names-display" id="evpositionsFiles"></span>
+        </div>
         @onFile("Evidence — Positions")
+        <span asp-validation-for="EvidencePositions" class="validation-error"></span>
     </div>
 </div>
-<span class="field-hint" style="margin-top:0.5rem;display:block;">You can attach supporting files to any evidence line (optional).</span>
 
-<!-- SECTION E -->
-<div class="section-band"><div class="section-letter">E</div><h3>Classification</h3><div class="rule"></div></div>
+<span class="field-hint" style="margin-top:0.5rem;display:block;">
+    <i class="fas fa-info-circle"></i> You can attach supporting files to any evidence line (optional).
+</span>
+
+<script>
+    // File name display for evidence category file inputs
+    document.querySelectorAll('.file-upload-wrapper.small .file-input').forEach(function(input) {
+        var displayId = input.id + 'Files';
+        var display = document.getElementById(displayId);
+        if (display) {
+            input.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    var names = Array.from(this.files).map(f => f.name).join(', ');
+                    display.textContent = this.files.length + ' file(s): ' + names;
+                    display.style.display = 'block';
+                } else {
+                    display.textContent = '';
+                    display.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+
+<!-- ===== SECTION E: Classification ===== -->
+<div class="section-divider">
+    <span class="section-letter">E</span>
+    <div class="section-title">
+        <h3>Classification</h3>
+    </div>
+</div>
+
 <div class="form-grid">
     <div class="form-group">
-        <label asp-for="Category" class="form-label"><i class="fas fa-tag"></i> Incident category</label>
+        <label asp-for="Category" class="form-label">
+            <i class="fas fa-tag"></i> Incident category
+        </label>
         <input asp-for="Category" class="form-control" placeholder="e.g. Customer dissatisfaction" />
+        <span asp-validation-for="Category" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="Severity" class="form-label"><i class="fas fa-triangle-exclamation"></i> Severity</label>
+        <label asp-for="Severity" class="form-label">
+            <i class="fas fa-triangle-exclamation"></i> Severity
+        </label>
         <select asp-for="Severity" class="form-control" asp-items="Html.GetEnumSelectList<IncidentSeverity>()"></select>
+        <span asp-validation-for="Severity" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="Probability" class="form-label"><i class="fas fa-dice"></i> Probability of occurrence</label>
+        <label asp-for="Probability" class="form-label">
+            <i class="fas fa-dice"></i> Probability of occurrence
+        </label>
         <select asp-for="Probability" class="form-control" asp-items="Html.GetEnumSelectList<IncidentProbability>()"></select>
+        <span asp-validation-for="Probability" class="validation-error"></span>
     </div>
+
     <div class="form-group">
-        <label asp-for="ReportStatus" class="form-label"><i class="fas fa-clipboard-list"></i> Status of investigation report</label>
+        <label asp-for="ReportStatus" class="form-label">
+            <i class="fas fa-clipboard-list"></i> Status of investigation report
+        </label>
         <select asp-for="ReportStatus" class="form-control" asp-items="Html.GetEnumSelectList<InvestigationReportStatus>()"></select>
+        <span asp-validation-for="ReportStatus" class="validation-error"></span>
     </div>
 </div>
 
-<!-- SECTION F -->
-<div class="section-band"><div class="section-letter">F</div><h3>Supporting Documents <span>· tick each attached, then upload the file(s)</span></h3><div class="rule"></div></div>
+<!-- ===== SECTION F: Supporting Documents ===== -->
+<div class="section-divider">
+    <span class="section-letter">F</span>
+    <div class="section-title">
+        <h3>Supporting Documents</h3>
+        <span>· tick each attached, then upload the file(s)</span>
+    </div>
+</div>
+
 <div class="doc-grid">
     <div class="doc-cell">
-        <label class="check-item"><input type="checkbox" asp-for="DocPollutionReport" data-file="catfile_pollution" /> Pollution Report</label>
+        <label class="check-item">
+            <input type="checkbox" asp-for="DocPollutionReport" data-file="catfile_pollution" /> Pollution Report
+        </label>
         <div class="doc-file" data-for="catfile_pollution">
-            <input type="file" name="catfile_pollution" class="form-control" multiple accept="@fileAccept" />
+            <div class="file-upload-wrapper small">
+                <input type="file" name="catfile_pollution" id="catfile_pollution" class="file-input" multiple accept="@fileAccept" />
+                <label for="catfile_pollution" class="file-upload-label tiny">
+                    <i class="fas fa-paperclip"></i> Attach files
+                </label>
+                <span class="file-names-display" id="pollutionFiles"></span>
+            </div>
             @onFile("Pollution Report")
         </div>
     </div>
+
     <div class="doc-cell">
-        <label class="check-item"><input type="checkbox" asp-for="DocSketchDiagram" data-file="catfile_sketch" /> Sketch Diagram</label>
+        <label class="check-item">
+            <input type="checkbox" asp-for="DocSketchDiagram" data-file="catfile_sketch" /> Sketch Diagram
+        </label>
         <div class="doc-file" data-for="catfile_sketch">
-            <input type="file" name="catfile_sketch" class="form-control" multiple accept="@fileAccept" />
+            <div class="file-upload-wrapper small">
+                <input type="file" name="catfile_sketch" id="catfile_sketch" class="file-input" multiple accept="@fileAccept" />
+                <label for="catfile_sketch" class="file-upload-label tiny">
+                    <i class="fas fa-paperclip"></i> Attach files
+                </label>
+                <span class="file-names-display" id="sketchFiles"></span>
+            </div>
             @onFile("Sketch Diagram")
         </div>
     </div>
+
     <div class="doc-cell">
-        <label class="check-item"><input type="checkbox" asp-for="DocWrittenStatements" data-file="catfile_written" /> Written Statements</label>
+        <label class="check-item">
+            <input type="checkbox" asp-for="DocWrittenStatements" data-file="catfile_written" /> Written Statements
+        </label>
         <div class="doc-file" data-for="catfile_written">
-            <input type="file" name="catfile_written" class="form-control" multiple accept="@fileAccept" />
+            <div class="file-upload-wrapper small">
+                <input type="file" name="catfile_written" id="catfile_written" class="file-input" multiple accept="@fileAccept" />
+                <label for="catfile_written" class="file-upload-label tiny">
+                    <i class="fas fa-paperclip"></i> Attach files
+                </label>
+                <span class="file-names-display" id="writtenFiles"></span>
+            </div>
             @onFile("Written Statements")
         </div>
     </div>
+
     <div class="doc-cell">
-        <label class="check-item"><input type="checkbox" asp-for="DocMotorInsurance" data-file="catfile_motor" /> Motor Insurance Details</label>
+        <label class="check-item">
+            <input type="checkbox" asp-for="DocMotorInsurance" data-file="catfile_motor" /> Motor Insurance Details
+        </label>
         <div class="doc-file" data-for="catfile_motor">
-            <input type="file" name="catfile_motor" class="form-control" multiple accept="@fileAccept" />
+            <div class="file-upload-wrapper small">
+                <input type="file" name="catfile_motor" id="catfile_motor" class="file-input" multiple accept="@fileAccept" />
+                <label for="catfile_motor" class="file-upload-label tiny">
+                    <i class="fas fa-paperclip"></i> Attach files
+                </label>
+                <span class="file-names-display" id="motorFiles"></span>
+            </div>
             @onFile("Motor Insurance Details")
         </div>
     </div>
+
     <div class="doc-cell">
-        <label class="check-item"><input type="checkbox" asp-for="DocDeptOfLabour" data-file="catfile_labour" /> Dept of Labour</label>
+        <label class="check-item">
+            <input type="checkbox" asp-for="DocDeptOfLabour" data-file="catfile_labour" /> Dept of Labour
+        </label>
         <div class="doc-file" data-for="catfile_labour">
-            <input type="file" name="catfile_labour" class="form-control" multiple accept="@fileAccept" />
+            <div class="file-upload-wrapper small">
+                <input type="file" name="catfile_labour" id="catfile_labour" class="file-input" multiple accept="@fileAccept" />
+                <label for="catfile_labour" class="file-upload-label tiny">
+                    <i class="fas fa-paperclip"></i> Attach files
+                </label>
+                <span class="file-names-display" id="labourFiles"></span>
+            </div>
             @onFile("Dept of Labour")
         </div>
     </div>
+
     <div class="doc-cell">
-        <label class="check-item"><input type="checkbox" asp-for="DocDriversDetails" data-file="catfile_driver" /> Driver's Details</label>
+        <label class="check-item">
+            <input type="checkbox" asp-for="DocDriversDetails" data-file="catfile_driver" /> Driver's Details
+        </label>
         <div class="doc-file" data-for="catfile_driver">
-            <input type="file" name="catfile_driver" class="form-control" multiple accept="@fileAccept" />
+            <div class="file-upload-wrapper small">
+                <input type="file" name="catfile_driver" id="catfile_driver" class="file-input" multiple accept="@fileAccept" />
+                <label for="catfile_driver" class="file-upload-label tiny">
+                    <i class="fas fa-paperclip"></i> Attach files
+                </label>
+                <span class="file-names-display" id="driverFiles"></span>
+            </div>
             @onFile("Driver's Details")
         </div>
     </div>
+
     <div class="doc-cell">
-        <label class="check-item"><input type="checkbox" asp-for="DocInternalAudit" data-file="catfile_audit" /> Internal Audit</label>
+        <label class="check-item">
+            <input type="checkbox" asp-for="DocInternalAudit" data-file="catfile_audit" /> Internal Audit
+        </label>
         <div class="doc-file" data-for="catfile_audit">
-            <input type="file" name="catfile_audit" class="form-control" multiple accept="@fileAccept" />
+            <div class="file-upload-wrapper small">
+                <input type="file" name="catfile_audit" id="catfile_audit" class="file-input" multiple accept="@fileAccept" />
+                <label for="catfile_audit" class="file-upload-label tiny">
+                    <i class="fas fa-paperclip"></i> Attach files
+                </label>
+                <span class="file-names-display" id="auditFiles"></span>
+            </div>
             @onFile("Internal Audit")
         </div>
     </div>
+
     <div class="doc-cell">
-        <label class="check-item"><input type="checkbox" asp-for="DocWorkmenCompensation" data-file="catfile_workmen" /> Workmen Compensation</label>
+        <label class="check-item">
+            <input type="checkbox" asp-for="DocWorkmenCompensation" data-file="catfile_workmen" /> Workmen Compensation
+        </label>
         <div class="doc-file" data-for="catfile_workmen">
-            <input type="file" name="catfile_workmen" class="form-control" multiple accept="@fileAccept" />
+            <div class="file-upload-wrapper small">
+                <input type="file" name="catfile_workmen" id="catfile_workmen" class="file-input" multiple accept="@fileAccept" />
+                <label for="catfile_workmen" class="file-upload-label tiny">
+                    <i class="fas fa-paperclip"></i> Attach files
+                </label>
+                <span class="file-names-display" id="workmenFiles"></span>
+            </div>
             @onFile("Workmen Compensation")
         </div>
     </div>
+
     <div class="doc-cell">
-        <label class="check-item"><input type="checkbox" asp-for="DocOther" data-file="catfile_other" /> Other</label>
+        <label class="check-item">
+            <input type="checkbox" asp-for="DocOther" data-file="catfile_other" /> Other
+        </label>
         <div class="doc-file" data-for="catfile_other">
             <input asp-for="DocOtherText" class="form-control" placeholder="Describe the other document…" style="margin-bottom:0.4rem;" />
-            <input type="file" name="catfile_other" class="form-control" multiple accept="@fileAccept" />
+            <div class="file-upload-wrapper small">
+                <input type="file" name="catfile_other" id="catfile_other" class="file-input" multiple accept="@fileAccept" />
+                <label for="catfile_other" class="file-upload-label tiny">
+                    <i class="fas fa-paperclip"></i> Attach files
+                </label>
+                <span class="file-names-display" id="otherFiles"></span>
+            </div>
             @onFile("Other Supporting Document")
         </div>
     </div>
 </div>
-<span class="field-hint" style="margin-top:0.5rem;display:block;">Each ticked document reveals a file box — attach one or more files (up to 25 MB each).</span>
 
-<!-- SECTION H -->
-<div class="section-band"><div class="section-letter">H</div><h3>Preventability &amp; Claim</h3><div class="rule"></div></div>
-<div class="form-grid">
-    <div class="form-group">
-        <label class="form-label"><i class="fas fa-shield-halved"></i> Was the incident preventable?</label>
-        @yesNo("Preventable", Model.Preventable)
-    </div>
-    <div class="form-group span-2">
-        <label asp-for="PreventableNotes" class="form-label"><i class="fas fa-note-sticky"></i> Preventability notes</label>
-        <input asp-for="PreventableNotes" class="form-control" placeholder="e.g. control of documents accessibility" />
-    </div>
-    <div class="form-group">
-        <label class="form-label"><i class="fas fa-hand-holding-dollar"></i> Is the incident claimable?</label>
-        @yesNo("Claimable", Model.Claimable)
-    </div>
-    <div class="form-group">
-        <label class="form-label"><i class="fas fa-file-invoice-dollar"></i> Claimed from insurance / any party?</label>
-        @yesNo("ClaimedFromInsurance", Model.ClaimedFromInsurance)
-    </div>
-    <div class="form-group">
-        <label asp-for="ClaimNotes" class="form-label"><i class="fas fa-note-sticky"></i> Claim notes</label>
-        <input asp-for="ClaimNotes" class="form-control" />
-    </div>
-</div>
-
-<!-- SECTION I -->
-<div class="section-band"><div class="section-letter">I</div><h3>Critical Factors Identified</h3><div class="rule"></div></div>
-<div class="form-grid">
-    <div class="form-group full-width">
-        <label asp-for="CriticalFactors" class="form-label"><i class="fas fa-list-check"></i> Critical factors (one per line)</label>
-        <textarea asp-for="CriticalFactors" class="form-control" rows="5"></textarea>
-    </div>
-</div>
-
-<!-- SECTION J -->
-<div class="section-band"><div class="section-letter">J</div><h3>Root Cause Analysis</h3><div class="rule"></div></div>
-<div class="form-grid">
-    <div class="form-group">
-        <label asp-for="ImmediateCause" class="form-label"><i class="fas fa-bolt"></i> Immediate cause(s)</label>
-        <textarea asp-for="ImmediateCause" class="form-control" rows="4"></textarea>
-    </div>
-    <div class="form-group">
-        <label asp-for="BasicCause" class="form-label"><i class="fas fa-layer-group"></i> Basic cause(s)</label>
-        <textarea asp-for="BasicCause" class="form-control" rows="4"></textarea>
-    </div>
-    <div class="form-group">
-        <label asp-for="RootCause" class="form-label"><i class="fas fa-seedling"></i> Root cause</label>
-        <textarea asp-for="RootCause" class="form-control" rows="4"></textarea>
-    </div>
-</div>
-
-<!-- SECTION L -->
-<div class="section-band"><div class="section-letter">L</div><h3>Lessons Learned</h3><div class="rule"></div></div>
-<div class="form-grid">
-    <div class="form-group full-width">
-        <label asp-for="LessonsLearned" class="form-label"><i class="fas fa-lightbulb"></i> Lessons learned (one per line)</label>
-        <textarea asp-for="LessonsLearned" class="form-control" rows="5"></textarea>
-    </div>
-</div>
-
-<!-- SECTIONS M / N / O -->
-<div class="section-band"><div class="section-letter">M</div><h3>Sign-off Comments</h3><div class="rule"></div></div>
-<div class="form-grid">
-    <div class="form-group span-2">
-        <label asp-for="DeptManagerComments" class="form-label"><i class="fas fa-user-tie"></i> Department Manager / Team Leader comments</label>
-        <textarea asp-for="DeptManagerComments" class="form-control" rows="3"></textarea>
-    </div>
-    <div class="form-group">
-        <label asp-for="DeptManagerCommentDate" class="form-label"><i class="fas fa-calendar"></i> Date</label>
-        <input asp-for="DeptManagerCommentDate" type="date" class="form-control" />
-    </div>
-    <div class="form-group span-2">
-        <label asp-for="QaComments" class="form-label"><i class="fas fa-clipboard-check"></i> Quality Assurance comments</label>
-        <textarea asp-for="QaComments" class="form-control" rows="3"></textarea>
-    </div>
-    <div class="form-group">
-        <label asp-for="QaCommentDate" class="form-label"><i class="fas fa-calendar"></i> Date</label>
-        <input asp-for="QaCommentDate" type="date" class="form-control" />
-    </div>
-    <div class="form-group span-2">
-        <label asp-for="GmComments" class="form-label"><i class="fas fa-user-shield"></i> General Manager comments <span class="field-hint">(major incidents)</span></label>
-        <textarea asp-for="GmComments" class="form-control" rows="3"></textarea>
-    </div>
-    <div class="form-group">
-        <label asp-for="GmCommentDate" class="form-label"><i class="fas fa-calendar"></i> Date</label>
-        <input asp-for="GmCommentDate" type="date" class="form-control" />
-    </div>
-</div>
+<span class="field-hint" style="margin-top:0.5rem;display:block;">
+    <i class="fas fa-info-circle"></i> Each ticked document reveals a file box — attach one or more files (up to 25 MB each).
+</span>
 
 <script>
     // Section F: reveal a document's upload box when it is ticked; clear the file box when unticked.
@@ -349,10 +544,283 @@
             if (!box) return;
             function sync() {
                 box.style.display = cb.checked ? 'block' : 'none';
-                if (!cb.checked) { var f = box.querySelector('input[type=file]'); if (f) f.value = ''; }
+                if (!cb.checked) {
+                    var f = box.querySelector('input[type=file]');
+                    if (f) f.value = '';
+                    var display = box.querySelector('.file-names-display');
+                    if (display) {
+                        display.textContent = '';
+                        display.style.display = 'none';
+                    }
+                }
             }
             cb.addEventListener('change', sync);
             sync();
         });
+
+        // File name display for doc file inputs
+        document.querySelectorAll('.doc-file .file-input').forEach(function(input) {
+            var display = input.closest('.doc-file').querySelector('.file-names-display');
+            if (display) {
+                input.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        var names = Array.from(this.files).map(f => f.name).join(', ');
+                        display.textContent = this.files.length + ' file(s): ' + names;
+                        display.style.display = 'block';
+                    } else {
+                        display.textContent = '';
+                        display.style.display = 'none';
+                    }
+                });
+            }
+        });
     })();
 </script>
+
+<!-- ===== SECTION H: Preventability & Claim ===== -->
+<div class="section-divider">
+    <span class="section-letter">H</span>
+    <div class="section-title">
+        <h3>Preventability &amp; Claim</h3>
+    </div>
+</div>
+
+<div class="form-grid">
+    <div class="form-group">
+        <label class="form-label">
+            <i class="fas fa-shield-halved"></i> Was the incident preventable?
+        </label>
+        @yesNo("Preventable", Model.Preventable)
+        <span asp-validation-for="Preventable" class="validation-error"></span>
+    </div>
+
+    <div class="form-group span-2">
+        <label asp-for="PreventableNotes" class="form-label">
+            <i class="fas fa-note-sticky"></i> Preventability notes
+        </label>
+        <input asp-for="PreventableNotes" class="form-control" placeholder="e.g. control of documents accessibility" />
+        <span asp-validation-for="PreventableNotes" class="validation-error"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">
+            <i class="fas fa-hand-holding-dollar"></i> Is the incident claimable?
+        </label>
+        @yesNo("Claimable", Model.Claimable)
+        <span asp-validation-for="Claimable" class="validation-error"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">
+            <i class="fas fa-file-invoice-dollar"></i> Claimed from insurance / any party?
+        </label>
+        @yesNo("ClaimedFromInsurance", Model.ClaimedFromInsurance)
+        <span asp-validation-for="ClaimedFromInsurance" class="validation-error"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="ClaimNotes" class="form-label">
+            <i class="fas fa-note-sticky"></i> Claim notes
+        </label>
+        <input asp-for="ClaimNotes" class="form-control" placeholder="Additional claim details..." />
+        <span asp-validation-for="ClaimNotes" class="validation-error"></span>
+    </div>
+</div>
+
+<!-- ===== SECTION I: Critical Factors ===== -->
+<div class="section-divider">
+    <span class="section-letter">I</span>
+    <div class="section-title">
+        <h3>Critical Factors Identified</h3>
+    </div>
+</div>
+
+<div class="form-grid">
+    <div class="form-group full-width">
+        <label asp-for="CriticalFactors" class="form-label">
+            <i class="fas fa-list-check"></i> Critical factors (one per line)
+        </label>
+        <textarea asp-for="CriticalFactors" class="form-control" rows="4" placeholder="List the critical factors that contributed to the incident..."></textarea>
+        <span asp-validation-for="CriticalFactors" class="validation-error"></span>
+    </div>
+</div>
+
+<!-- ===== SECTION J: Root Cause Analysis ===== -->
+<div class="section-divider">
+    <span class="section-letter">J</span>
+    <div class="section-title">
+        <h3>Root Cause Analysis</h3>
+    </div>
+</div>
+
+<div class="form-grid">
+    <div class="form-group">
+        <label asp-for="ImmediateCause" class="form-label">
+            <i class="fas fa-bolt"></i> Immediate cause(s)
+        </label>
+        <textarea asp-for="ImmediateCause" class="form-control" rows="4" placeholder="What immediately caused the incident..."></textarea>
+        <span asp-validation-for="ImmediateCause" class="validation-error"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="BasicCause" class="form-label">
+            <i class="fas fa-layer-group"></i> Basic cause(s)
+        </label>
+        <textarea asp-for="BasicCause" class="form-control" rows="4" placeholder="What are the basic underlying causes..."></textarea>
+        <span asp-validation-for="BasicCause" class="validation-error"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="RootCause" class="form-label">
+            <i class="fas fa-seedling"></i> Root cause
+        </label>
+        <textarea asp-for="RootCause" class="form-control" rows="4" placeholder="What is the root cause of the incident..."></textarea>
+        <span asp-validation-for="RootCause" class="validation-error"></span>
+    </div>
+</div>
+
+<!-- ===== SECTION L: Lessons Learned ===== -->
+<div class="section-divider">
+    <span class="section-letter">L</span>
+    <div class="section-title">
+        <h3>Lessons Learned</h3>
+    </div>
+</div>
+
+<div class="form-grid">
+    <div class="form-group full-width">
+        <label asp-for="LessonsLearned" class="form-label">
+            <i class="fas fa-lightbulb"></i> Lessons learned (one per line)
+        </label>
+        <textarea asp-for="LessonsLearned" class="form-control" rows="4" placeholder="What lessons were learned from this incident..."></textarea>
+        <span asp-validation-for="LessonsLearned" class="validation-error"></span>
+    </div>
+</div>
+
+<!-- ===== SECTIONS M / N / O: Sign-off Comments ===== -->
+<div class="section-divider">
+    <span class="section-letter">M</span>
+    <div class="section-title">
+        <h3>Sign-off Comments</h3>
+    </div>
+</div>
+
+<div class="form-grid">
+    <div class="form-group span-2">
+        <label asp-for="DeptManagerComments" class="form-label">
+            <i class="fas fa-user-tie"></i> Department Manager / Team Leader comments
+        </label>
+        <textarea asp-for="DeptManagerComments" class="form-control" rows="3" placeholder="Comments from the department manager..."></textarea>
+        <span asp-validation-for="DeptManagerComments" class="validation-error"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="DeptManagerCommentDate" class="form-label">
+            <i class="fas fa-calendar"></i> Date
+        </label>
+        <input asp-for="DeptManagerCommentDate" type="date" class="form-control" />
+        <span asp-validation-for="DeptManagerCommentDate" class="validation-error"></span>
+    </div>
+
+    <div class="form-group span-2">
+        <label asp-for="QaComments" class="form-label">
+            <i class="fas fa-clipboard-check"></i> Quality Assurance comments
+        </label>
+        <textarea asp-for="QaComments" class="form-control" rows="3" placeholder="Comments from Quality Assurance..."></textarea>
+        <span asp-validation-for="QaComments" class="validation-error"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="QaCommentDate" class="form-label">
+            <i class="fas fa-calendar"></i> Date
+        </label>
+        <input asp-for="QaCommentDate" type="date" class="form-control" />
+        <span asp-validation-for="QaCommentDate" class="validation-error"></span>
+    </div>
+
+    <div class="form-group span-2">
+        <label asp-for="GmComments" class="form-label">
+            <i class="fas fa-user-shield"></i> General Manager comments
+            <span class="field-hint">(major incidents)</span>
+        </label>
+        <textarea asp-for="GmComments" class="form-control" rows="3" placeholder="Comments from the General Manager..."></textarea>
+        <span asp-validation-for="GmComments" class="validation-error"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="GmCommentDate" class="form-label">
+            <i class="fas fa-calendar"></i> Date
+        </label>
+        <input asp-for="GmCommentDate" type="date" class="form-control" />
+        <span asp-validation-for="GmCommentDate" class="validation-error"></span>
+    </div>
+</div>
+
+<style>
+    /* ===== FILE UPLOAD STYLES ===== */
+    .file-upload-wrapper.small {
+        margin-top: 0.4rem;
+    }
+
+        .file-upload-wrapper.small .file-upload-label.tiny {
+            padding: 0.3rem 0.7rem;
+            border: 1.5px dashed var(--gray-200);
+            border-radius: 0.4rem;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--gray-50);
+            color: var(--gray-600);
+        }
+
+            .file-upload-wrapper.small .file-upload-label.tiny:hover {
+                border-color: var(--primary);
+                background: var(--gray-50);
+                color: var(--primary);
+            }
+
+            .file-upload-wrapper.small .file-upload-label.tiny i {
+                font-size: 0.7rem;
+                color: var(--primary);
+            }
+
+        .file-upload-wrapper.small .file-names-display {
+            display: none;
+            margin-top: 0.3rem;
+            padding: 0.2rem 0.6rem;
+            background: #e6f5e9;
+            color: var(--success);
+            border: 1px solid #c6e0c9;
+            border-radius: 0.4rem;
+            font-size: 0.7rem;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+    /* ===== DOCUMENT CELL ===== */
+    .doc-file .file-upload-wrapper.small .file-upload-label.tiny {
+        width: 100%;
+        justify-content: center;
+        padding: 0.4rem 0.7rem;
+    }
+
+    .doc-file .file-upload-wrapper.small .file-names-display {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.5rem;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .file-upload-wrapper.small .file-upload-label.tiny {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .file-upload-wrapper.small .file-names-display {
+            font-size: 0.6rem;
+        }
+    }
+</style>

@@ -5,48 +5,327 @@
 }
 
 <div class="page-container">
+    <!-- PAGE HEADER -->
     <div class="page-header">
-        <div class="d-flex align-items-center gap-3 mb-2">
-            <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a class="btn-back" asp-action="Index">
+                <i class="fas fa-arrow-left"></i>
+            </a>
             <div>
-                <h1 class="page-title"><i class="fas fa-triangle-exclamation me-2" style="color: var(--primary);"></i> Log Incident</h1>
-                <p class="page-subtitle">Complete the incident investigation report (Sections A–O). The investigation team, damage and remedial actions are added after saving.</p>
+                <h1 class="page-title">
+                    <i class="fas fa-triangle-exclamation me-2" style="color: var(--primary);"></i>
+                    Log Incident
+                </h1>
+                <p class="text-muted mt-2">
+                    Complete the incident investigation report (Sections A–O). The investigation team, damage and remedial actions are added after saving.
+                </p>
             </div>
         </div>
     </div>
 
+    <!-- FORM CARD -->
     <div class="data-card">
         <div class="card-header-custom">
-            <i class="fas fa-file-pen" style="color: var(--primary);"></i>
+            <i class="fas fa-file-pen me-2" style="color: var(--primary);"></i>
             <span>Incident Investigation Report</span>
             <span class="header-tag">ISO 9001 / 27001 · cl. 10</span>
         </div>
+
         <div class="card-body-custom">
             <form method="post" asp-action="Create" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
+
+                <!-- Form Fields -->
                 <partial name="_IncidentFields" model="Model" />
 
-                <div class="section-band"><div class="section-letter"><i class="fas fa-paperclip" style="font-size:0.8rem;"></i></div><h3>Supporting Attachments <span>· optional, add as many as you need</span></h3><div class="rule"></div></div>
-                <div class="form-grid">
-                    <div class="form-group full-width">
-                        <label class="form-label" for="attachments"><i class="fas fa-cloud-arrow-up"></i> Attach files</label>
-                        <input type="file" name="attachments" id="attachments" class="form-control" multiple
-                               accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt,.csv,.msg,.eml" />
-                        <span class="field-hint">You can select multiple files. Up to 25 MB each. You can also add more later from the incident page.</span>
+                <!-- Attachments Section -->
+                <div class="section-divider">
+                    <div class="section-icon">
+                        <i class="fas fa-paperclip"></i>
+                    </div>
+                    <div class="section-title">
+                        <h3>Supporting Attachments</h3>
+                        <span>· optional, add as many as you need</span>
                     </div>
                 </div>
 
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label class="form-label" for="attachments">
+                            <i class="fas fa-cloud-upload-alt"></i> Attach files
+                        </label>
+                        <div class="file-upload-wrapper">
+                            <input type="file" name="attachments" id="attachments" class="file-input" multiple
+                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt,.csv,.msg,.eml" />
+                            <label for="attachments" class="file-upload-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Choose files</span>
+                                <span class="file-hint">PDF, Word, Excel, Images, Text, CSV, MSG, EML</span>
+                            </label>
+                            <span id="fileNamesDisplay" class="file-names-display"></span>
+                        </div>
+                        <span class="field-hint">
+                            <i class="fas fa-info-circle"></i> You can select multiple files. Up to 25 MB each. You can also add more later from the incident page.
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
                 <div class="form-actions">
-                    <button type="submit" class="btn-primary-cta"><i class="fas fa-save"></i> Log Incident</button>
-                    <a asp-action="Index" class="btn-soft"><i class="fas fa-times"></i> Cancel</a>
+                    <button type="submit" class="btn-create-ticket">
+                        <i class="fas fa-save"></i>
+                        Log Incident
+                    </button>
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('attachments');
+        const fileNamesDisplay = document.getElementById('fileNamesDisplay');
+
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    const names = Array.from(this.files).map(f => f.name).join(', ');
+                    fileNamesDisplay.textContent = `${this.files.length} file(s) selected: ${names}`;
+                    fileNamesDisplay.style.display = 'block';
+                } else {
+                    fileNamesDisplay.textContent = '';
+                    fileNamesDisplay.style.display = 'none';
+                }
+            });
+        }
+    });
+</script>
+
 <partial name="_IncidentStyles" />
 
+<style>
+    /* ===== ADDITIONAL STYLES ===== */
+    .header-tag {
+        font-size: 0.65rem;
+        font-weight: 500;
+        color: var(--gray-500);
+        background: var(--gray-100);
+        padding: 0.15rem 0.6rem;
+        border-radius: 1rem;
+        border: 1px solid var(--gray-200);
+        margin-left: auto;
+        white-space: nowrap;
+    }
+
+    .section-divider {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        margin-bottom: 1.25rem;
+    }
+
+    .section-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 0.5rem;
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        font-size: 0.8rem;
+        flex-shrink: 0;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: baseline;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+    }
+
+        .section-title h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin: 0;
+        }
+
+        .section-title span {
+            font-size: 0.8rem;
+            color: var(--gray-400);
+        }
+
+    /* ===== FILE UPLOAD ===== */
+    .file-upload-wrapper {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .file-input {
+        position: absolute;
+        opacity: 0;
+        width: 0.1px;
+        height: 0.1px;
+        pointer-events: none;
+    }
+
+    .file-upload-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem 1rem;
+        border: 2px dashed var(--gray-200);
+        border-radius: 0.6rem;
+        background: var(--gray-50);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+
+        .file-upload-label:hover {
+            border-color: var(--primary);
+            background: var(--gray-50);
+        }
+
+        .file-upload-label i {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .file-upload-label span {
+            font-size: 0.875rem;
+            color: var(--gray-600);
+        }
+
+        .file-upload-label .file-hint {
+            font-size: 0.7rem;
+            color: var(--gray-400);
+            margin-top: 0.25rem;
+        }
+
+    .file-names-display {
+        display: none;
+        padding: 0.4rem 0.75rem;
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+        border-radius: 0.5rem;
+        font-size: 0.85rem;
+        font-weight: 500;
+        word-break: break-all;
+    }
+
+    .field-hint {
+        font-size: 0.75rem;
+        color: var(--gray-400);
+        margin-top: 0.3rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+        .field-hint i {
+            font-size: 0.65rem;
+            color: var(--gray-400);
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .card-header-custom {
+            flex-wrap: wrap;
+        }
+
+        .header-tag {
+            margin-left: 0;
+            width: 100%;
+            text-align: center;
+        }
+
+        .section-title h3 {
+            font-size: 0.85rem;
+        }
+
+        .section-title span {
+            font-size: 0.7rem;
+        }
+
+        .file-upload-label {
+            padding: 1rem;
+        }
+
+            .file-upload-label i {
+                font-size: 1.5rem;
+            }
+
+            .file-upload-label span {
+                font-size: 0.8rem;
+            }
+
+        .file-names-display {
+            font-size: 0.75rem;
+        }
+
+        .field-hint {
+            font-size: 0.7rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .header-tag {
+            font-size: 0.55rem;
+            padding: 0.1rem 0.4rem;
+        }
+
+        .section-divider {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.4rem;
+        }
+
+        .section-title {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .file-upload-label {
+            padding: 0.75rem;
+        }
+
+            .file-upload-label i {
+                font-size: 1.25rem;
+            }
+
+            .file-upload-label span {
+                font-size: 0.75rem;
+            }
+
+            .file-upload-label .file-hint {
+                font-size: 0.6rem;
+            }
+
+        .file-names-display {
+            font-size: 0.7rem;
+            padding: 0.3rem 0.5rem;
+        }
+    }
+</style>
+
 @section Scripts {
-    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

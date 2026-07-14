@@ -3,7 +3,7 @@
 @{
     Layout = null;
     string YesNo(bool? v) => v == true ? "Yes" : v == false ? "No" : "N/A";
-    string Mark(bool b) => b ? "X" : "";
+    string Mark(bool b) => b ? "✓" : "";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -12,67 +12,405 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@Model.Reference — Incident Investigation Report</title>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; color: #1a1a1a; font-size: 12px; line-height: 1.45; margin: 0; padding: 24px; background: #fff; }
-        .sheet { max-width: 900px; margin: 0 auto; }
-        .doc-head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #2563eb; padding-bottom: 10px; margin-bottom: 4px; }
-        .doc-head h1 { font-size: 18px; margin: 0; color: #1e293b; }
-        .doc-head .meta { text-align: right; font-size: 11px; color: #475569; }
-        .doc-head .ref { font-family: 'Consolas', monospace; font-weight: 700; color: #2563eb; font-size: 14px; }
-        .toolbar { text-align: right; margin-bottom: 12px; }
-        .toolbar button { font-size: 12px; padding: 6px 14px; border: 1px solid #2563eb; background: #2563eb; color: #fff; border-radius: 6px; cursor: pointer; }
-        .sec { margin-top: 14px; }
-        .sec-title { background: #eef2ff; border-left: 4px solid #2563eb; padding: 5px 10px; font-weight: 700; font-size: 12px; color: #1e293b; }
-        table { width: 100%; border-collapse: collapse; margin-top: 4px; }
-        th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; font-size: 11.5px; }
-        th { background: #f1f5f9; font-weight: 600; }
-        .kv td:nth-child(odd) { background: #f8fafc; font-weight: 600; width: 20%; }
-        .narrative { white-space: pre-wrap; min-height: 40px; }
-        .chk td { text-align: center; width: 6%; font-weight: 700; }
-        .chk td.lbl { text-align: left; width: 44%; font-weight: 400; }
-        .sign { height: 46px; }
-        @@media print { .toolbar { display: none; } body { padding: 0; } .sec { page-break-inside: avoid; } }
+            /* ===== RESET & BASE ===== */
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+                color: #1a1a1a;
+                font-size: 11.5px;
+                line-height: 1.5;
+                margin: 0;
+                padding: 24px;
+                background: #fff;
+            }
+
+            /* ===== SHEET ===== */
+            .sheet {
+                max-width: 900px;
+                margin: 0 auto;
+            }
+
+            /* ===== TOOLBAR ===== */
+            .toolbar {
+                text-align: right;
+                margin-bottom: 16px;
+            }
+
+                .toolbar button {
+                    font-size: 12px;
+                    padding: 8px 18px;
+                    border: none;
+                    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+                    color: #fff;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    font-family: inherit;
+                    transition: all 0.2s;
+                }
+
+                    .toolbar button:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+                    }
+
+            /* ===== DOCUMENT HEADER ===== */
+            .doc-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                border-bottom: 3px solid #2563eb;
+                padding-bottom: 12px;
+                margin-bottom: 6px;
+            }
+
+                .doc-head h1 {
+                    font-size: 20px;
+                    font-weight: 700;
+                    margin: 0;
+                    color: #1e293b;
+                    letter-spacing: -0.3px;
+                }
+
+                .doc-head .subtitle {
+                    font-size: 11px;
+                    color: #64748b;
+                    margin-top: 2px;
+                }
+
+                .doc-head .meta {
+                    text-align: right;
+                    font-size: 11px;
+                    color: #475569;
+                }
+
+                .doc-head .ref {
+                    font-family: 'Consolas', 'Courier New', monospace;
+                    font-weight: 700;
+                    color: #2563eb;
+                    font-size: 15px;
+                    letter-spacing: 0.5px;
+                }
+
+                .doc-head .status-badge {
+                    display: inline-block;
+                    padding: 2px 10px;
+                    border-radius: 12px;
+                    font-size: 10px;
+                    font-weight: 600;
+                    margin-top: 2px;
+                }
+
+                    .doc-head .status-badge.open {
+                        background: #dbeafe;
+                        color: #1d4ed8;
+                    }
+
+                    .doc-head .status-badge.actions {
+                        background: #fef3c7;
+                        color: #92400e;
+                    }
+
+                    .doc-head .status-badge.closed {
+                        background: #d1fae5;
+                        color: #065f46;
+                    }
+
+            /* ===== TITLE ===== */
+            .report-title {
+                font-size: 15px;
+                font-weight: 600;
+                color: #1e293b;
+                margin: 8px 0 12px 0;
+                padding: 8px 12px;
+                background: #f8fafc;
+                border-radius: 4px;
+                border-left: 3px solid #2563eb;
+            }
+
+            /* ===== SECTIONS ===== */
+            .sec {
+                margin-top: 16px;
+            }
+
+            .sec-title {
+                background: #f1f5f9;
+                border-left: 4px solid #2563eb;
+                padding: 5px 12px;
+                font-weight: 700;
+                font-size: 12px;
+                color: #1e293b;
+                text-transform: uppercase;
+                letter-spacing: 0.3px;
+            }
+
+            /* ===== TABLES ===== */
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 4px;
+            }
+
+            th, td {
+                border: 1px solid #d1d5db;
+                padding: 6px 8px;
+                text-align: left;
+                vertical-align: top;
+                font-size: 11px;
+            }
+
+            th {
+                background: #f8fafc;
+                font-weight: 600;
+                color: #1e293b;
+            }
+
+            .kv td:nth-child(odd) {
+                background: #fafbfc;
+                font-weight: 600;
+                width: 18%;
+            }
+
+            .kv td:nth-child(even) {
+                width: 32%;
+            }
+
+            .narrative {
+                white-space: pre-wrap;
+                min-height: 40px;
+                line-height: 1.6;
+            }
+
+            .chk td {
+                text-align: center;
+                width: 5%;
+                font-weight: 700;
+                font-size: 13px;
+                color: #2563eb;
+            }
+
+                .chk td.lbl {
+                    text-align: left;
+                    width: 45%;
+                    font-weight: 400;
+                    color: #1e293b;
+                }
+
+            .sign {
+                min-height: 40px;
+            }
+
+            /* ===== STATUS BADGE IN TABLE ===== */
+            .badge-pill {
+                display: inline-block;
+                padding: 1px 8px;
+                border-radius: 12px;
+                font-size: 9.5px;
+                font-weight: 600;
+            }
+
+                .badge-pill.bg-blue {
+                    background: #dbeafe;
+                    color: #1d4ed8;
+                }
+
+                .badge-pill.bg-amber {
+                    background: #fef3c7;
+                    color: #92400e;
+                }
+
+                .badge-pill.bg-green {
+                    background: #d1fae5;
+                    color: #065f46;
+                }
+
+                .badge-pill.bg-red {
+                    background: #fee2e2;
+                    color: #991b1b;
+                }
+
+                .badge-pill.bg-gray {
+                    background: #f1f5f9;
+                    color: #475569;
+                }
+
+            /* ===== ATTACHMENTS ===== */
+            .attachments-grid {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px 16px;
+                padding: 4px 0;
+            }
+
+                .attachments-grid .file {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-size: 10.5px;
+                    color: #1e293b;
+                }
+
+                    .attachments-grid .file i {
+                        color: #2563eb;
+                    }
+
+            /* ===== PRINT STYLES ===== */
+            @@media print {
+                .toolbar {
+                    display: none !important;
+                }
+
+                body {
+                    padding: 16px;
+                    background: #fff;
+                }
+
+                .sec {
+                    page-break-inside: avoid;
+                }
+
+                .doc-head {
+                    border-bottom-color: #1e293b;
+                }
+
+                    .doc-head .ref {
+                        color: #1e293b;
+                    }
+
+                .sec-title {
+                    background: #e5e7eb;
+                    border-left-color: #1e293b;
+                }
+
+                th {
+                    background: #f3f4f6;
+                }
+
+                .kv td:nth-child(odd) {
+                    background: #f9fafb;
+                }
+
+                .report-title {
+                    background: #f9fafb;
+                    border-left-color: #1e293b;
+                }
+            }
+
+            /* ===== RESPONSIVE ===== */
+            @@media (max-width: 600px) {
+                body {
+                    padding: 12px;
+                    font-size: 10.5px;
+                }
+
+                .doc-head {
+                    flex-direction: column;
+                    gap: 6px;
+                }
+
+                    .doc-head .meta {
+                        text-align: left;
+                        width: 100%;
+                    }
+
+                    .doc-head h1 {
+                        font-size: 17px;
+                    }
+
+                .kv td:nth-child(odd) {
+                    width: 30%;
+                }
+
+                .kv td:nth-child(even) {
+                    width: 70%;
+                }
+
+                th, td {
+                    padding: 4px 6px;
+                    font-size: 10px;
+                }
+
+                .report-title {
+                    font-size: 13px;
+                    padding: 6px 10px;
+                }
+
+                .sec-title {
+                    font-size: 10.5px;
+                    padding: 4px 8px;
+                }
+
+                .attachments-grid {
+                    flex-direction: column;
+                    gap: 2px;
+                }
+            }
     </style>
 </head>
 <body>
     <div class="sheet">
-        <div class="toolbar"><button onclick="window.print()">🖨 Print / Save as PDF</button></div>
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+            <button onclick="window.print()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px;">
+                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                    <path d="M18 9H6"></path>
+                    <path d="M18 13H6"></path>
+                    <path d="M18 17H6"></path>
+                    <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                </svg>
+                Print / Save as PDF
+            </button>
+        </div>
 
+        <!-- HEADER -->
         <div class="doc-head">
             <div>
                 <h1>Incident Investigation Report</h1>
-                <div style="font-size:11px;color:#475569;">Axis Solutions — Integrated Management System (ISO 9001 &amp; ISO/IEC 27001)</div>
+                <div class="subtitle">Axis Solutions — Integrated Management System (ISO 9001 &amp; ISO/IEC 27001)</div>
             </div>
             <div class="meta">
                 <div class="ref">@Model.Reference</div>
-                <div>Status: @Model.Status</div>
+                <div>
+                    Status:
+                    <span class="status-badge @(Model.Status == IncidentStatus.Closed ? "closed" : Model.Status == IncidentStatus.ActionsPending ? "actions" : "open")">
+                        @(Model.Status == IncidentStatus.UnderInvestigation ? "Under Investigation" : Model.Status == IncidentStatus.ActionsPending ? "Actions Pending" : Model.Status.ToString())
+                    </span>
+                </div>
                 <div>Severity: @Model.Severity</div>
             </div>
         </div>
-        <h2 style="font-size:14px;margin:8px 0;">@Model.Title</h2>
 
-        <!-- A -->
+        <!-- TITLE -->
+        <div class="report-title">@Model.Title</div>
+
+        <!-- SECTION A — Incident Details -->
         <div class="sec">
             <div class="sec-title">Section A — Incident Details</div>
             <table class="kv">
-                <tr><td>Date of Incident</td><td>@(Model.DateOfIncident?.ToString("dd/MM/yyyy") ?? "")</td><td>Location</td><td>@Model.LocationOfIncident</td></tr>
-                <tr><td>Time of Incident</td><td>@Model.TimeOfIncident</td><td>Function</td><td>@Model.Department?.Name</td></tr>
-                <tr><td>Reported By</td><td>@Model.ReportedByName</td><td>Date Reported</td><td>@(Model.DateReported?.ToString("dd/MM/yyyy") ?? "")</td></tr>
+                <tr><td>Date of Incident</td><td>@(Model.DateOfIncident?.ToString("dd/MM/yyyy") ?? "")</td><td>Location</td><td>@(Model.LocationOfIncident ?? "")</td></tr>
+                <tr><td>Time of Incident</td><td>@(Model.TimeOfIncident ?? "")</td><td>Function / Department</td><td>@(Model.Department?.Name ?? "")</td></tr>
+                <tr><td>Reported By</td><td>@(Model.ReportedByName ?? "")</td><td>Date Reported</td><td>@(Model.DateReported?.ToString("dd/MM/yyyy") ?? "")</td></tr>
             </table>
         </div>
 
-        <!-- B -->
+        <!-- SECTION B — Brief Description -->
         <div class="sec">
             <div class="sec-title">Section B — Brief Description of Incident</div>
-            <table><tr><td class="narrative">@Model.BriefDescription</td></tr></table>
+            <table><tr><td class="narrative">@(Model.BriefDescription ?? "")</td></tr></table>
         </div>
 
-        <!-- C police -->
+        <!-- SECTION C — Police Report -->
         <div class="sec">
             <div class="sec-title">Section C — Police Report</div>
             <table class="kv">
-                <tr><td>Reported to Police?</td><td>@YesNo(Model.ReportedToPolice)</td><td>Case Number</td><td>@Model.CaseNumber</td></tr>
-                <tr><td>Reported to Police at</td><td>@Model.ReportedToPoliceAt</td><td>Police details &amp; Tel</td><td>@Model.PoliceDetailsTel</td></tr>
+                <tr><td>Reported to Police?</td><td>@YesNo(Model.ReportedToPolice)</td><td>Case Number</td><td>@(Model.CaseNumber ?? "")</td></tr>
+                <tr><td>Reported to Police at</td><td>@(Model.ReportedToPoliceAt ?? "")</td><td>Police details &amp; Tel</td><td>@(Model.PoliceDetailsTel ?? "")</td></tr>
                 @{
                     var police = Model.Attachments.Where(a => a.Kind == IncidentAttachmentKind.PoliceReport).ToList();
                 }
@@ -80,16 +418,14 @@
             </table>
         </div>
 
-        @{
-            var supporting = Model.Attachments.Where(a => a.Kind == IncidentAttachmentKind.Supporting).ToList();
-        }
+        <!-- ATTACHMENTS -->
         @if (Model.Attachments.Any())
         {
             <div class="sec">
                 <div class="sec-title">Attachments</div>
                 <table>
-                    <tr><th>File</th><th>Type</th><th>Uploaded</th></tr>
-                    @foreach (var a in Model.Attachments)
+                    <tr><th style="width:40%;">File</th><th style="width:30%;">Type</th><th style="width:30%;">Uploaded</th></tr>
+                    @foreach (var a in Model.Attachments.OrderByDescending(a => a.UploadedAt))
                     {
                         var kindLabel = a.Kind == IncidentAttachmentKind.PoliceReport ? "Police Report"
                             : (string.IsNullOrEmpty(a.Category) ? "Supporting" : a.Category);
@@ -99,40 +435,43 @@
             </div>
         }
 
-        <!-- C team -->
+        <!-- SECTION C — Investigation Team -->
         <div class="sec">
             <div class="sec-title">Section C — Investigation Team</div>
             <table>
-                <tr><th>Name</th><th>Position / Title</th><th>Date of Investigation</th></tr>
-                @if (!Model.Investigators.Any()) { <tr><td colspan="3">&nbsp;</td></tr> }
+                <tr><th style="width:35%;">Name</th><th style="width:35%;">Position / Title</th><th style="width:30%;">Date of Investigation</th></tr>
+                @if (!Model.Investigators.Any())
+                {
+                    <tr><td colspan="3" style="color:#9ca3af;">No team members added.</td></tr>
+                }
                 @foreach (var m in Model.Investigators)
                 {
-                    <tr><td>@m.Name</td><td>@m.Position</td><td>@(m.InvestigationDate?.ToString("dd/MM/yyyy") ?? "")</td></tr>
+                    <tr><td>@m.Name</td><td>@(m.Position ?? "")</td><td>@(m.InvestigationDate?.ToString("dd/MM/yyyy") ?? "")</td></tr>
                 }
             </table>
         </div>
 
-        <!-- D -->
+        <!-- SECTION D — Detailed Description -->
         <div class="sec">
             <div class="sec-title">Section D — Detailed Description / Sequence of Events</div>
-            <table><tr><td class="narrative">@Model.DetailedDescription</td></tr></table>
+            <table><tr><td class="narrative">@(Model.DetailedDescription ?? "")</td></tr></table>
             <table class="kv" style="margin-top:6px;">
-                <tr><td>Evidence — People</td><td>@Model.EvidencePeople</td><td>Evidence — Paper</td><td>@Model.EvidencePaper</td></tr>
-                <tr><td>Evidence — Parts</td><td>@Model.EvidenceParts</td><td>Evidence — Positions</td><td>@Model.EvidencePositions</td></tr>
+                <tr><td>Evidence — People</td><td>@(Model.EvidencePeople ?? "")</td><td>Evidence — Paper</td><td>@(Model.EvidencePaper ?? "")</td></tr>
+                <tr><td>Evidence — Parts</td><td>@(Model.EvidenceParts ?? "")</td><td>Evidence — Positions</td><td>@(Model.EvidencePositions ?? "")</td></tr>
             </table>
         </div>
 
-        <!-- E -->
+        <!-- SECTION E — Classification -->
         <div class="sec">
             <div class="sec-title">Section E — Classification</div>
             <table class="kv">
-                <tr><td>Incident category</td><td colspan="3">@Model.Category</td></tr>
+                <tr><td>Incident category</td><td colspan="3">@(Model.Category ?? "")</td></tr>
                 <tr><td>Severity</td><td>@Model.Severity</td><td>Probability</td><td>@Model.Probability</td></tr>
                 <tr><td>Status of investigation report</td><td colspan="3">@Model.ReportStatus</td></tr>
             </table>
         </div>
 
-        <!-- F -->
+        <!-- SECTION F — Supporting Documents -->
         <div class="sec">
             <div class="sec-title">Section F — Supporting Documents</div>
             <table class="chk">
@@ -140,83 +479,120 @@
                 <tr><td>@Mark(Model.DocWrittenStatements)</td><td class="lbl">Written Statements</td><td>@Mark(Model.DocMotorInsurance)</td><td class="lbl">Motor Insurance Details</td></tr>
                 <tr><td>@Mark(Model.DocDeptOfLabour)</td><td class="lbl">Dept of Labour</td><td>@Mark(Model.DocDriversDetails)</td><td class="lbl">Driver's Details</td></tr>
                 <tr><td>@Mark(Model.DocInternalAudit)</td><td class="lbl">Internal Audit</td><td>@Mark(Model.DocWorkmenCompensation)</td><td class="lbl">Workmen Compensation</td></tr>
-                <tr><td>@Mark(Model.DocOther)</td><td class="lbl" colspan="3">Other: @Model.DocOtherText</td></tr>
+                <tr><td>@Mark(Model.DocOther)</td><td class="lbl" colspan="3">Other: @(Model.DocOtherText ?? "")</td></tr>
             </table>
         </div>
 
-        <!-- G -->
+        <!-- SECTION G — Damage -->
         <div class="sec">
             <div class="sec-title">Section G — Damage</div>
             <table>
-                <tr><th>Type of Damage</th><th>Description</th><th>Damage Payer</th><th>Cost (USD)</th></tr>
-                @if (!Model.Damages.Any()) { <tr><td colspan="4">&nbsp;</td></tr> }
+                <tr><th style="width:20%;">Type of Damage</th><th style="width:35%;">Description</th><th style="width:25%;">Damage Payer</th><th style="width:20%;">Cost (USD)</th></tr>
+                @if (!Model.Damages.Any())
+                {
+                    <tr><td colspan="4" style="color:#9ca3af;">No damage recorded.</td></tr>
+                }
                 @foreach (var d in Model.Damages)
                 {
-                    <tr><td>@d.Type</td><td>@d.Description</td><td>@d.Payer</td><td>@d.Cost</td></tr>
+                    <tr><td>@d.Type</td><td>@(d.Description ?? "")</td><td>@(d.Payer ?? "")</td><td>@(d.Cost ?? "")</td></tr>
                 }
             </table>
         </div>
 
-        <!-- H -->
+        <!-- SECTION H — Preventability & Claim -->
         <div class="sec">
             <div class="sec-title">Section H — Preventability &amp; Claim</div>
             <table class="kv">
-                <tr><td>Was the incident preventable?</td><td>@YesNo(Model.Preventable)</td><td>Notes</td><td>@Model.PreventableNotes</td></tr>
+                <tr><td>Was the incident preventable?</td><td>@YesNo(Model.Preventable)</td><td>Notes</td><td>@(Model.PreventableNotes ?? "")</td></tr>
                 <tr><td>Is the incident claimable?</td><td>@YesNo(Model.Claimable)</td><td>Claimed from insurance/party?</td><td>@YesNo(Model.ClaimedFromInsurance)</td></tr>
             </table>
         </div>
 
-        <!-- I -->
+        <!-- SECTION I — Critical Factors -->
         <div class="sec">
             <div class="sec-title">Section I — Critical Factors Identified</div>
-            <table><tr><td class="narrative">@Model.CriticalFactors</td></tr></table>
+            <table><tr><td class="narrative">@(Model.CriticalFactors ?? "")</td></tr></table>
         </div>
 
-        <!-- J -->
+        <!-- SECTION J — Root Cause Analysis -->
         <div class="sec">
             <div class="sec-title">Section J — Root Cause Analysis</div>
             <table>
-                <tr><th style="width:50%;">Immediate Cause(s)</th><th>Basic Cause(s)</th></tr>
-                <tr><td class="narrative">@Model.ImmediateCause</td><td class="narrative">@Model.BasicCause</td></tr>
+                <tr><th style="width:50%;">Immediate Cause(s)</th><th style="width:50%;">Basic Cause(s)</th></tr>
+                <tr><td class="narrative">@(Model.ImmediateCause ?? "")</td><td class="narrative">@(Model.BasicCause ?? "")</td></tr>
                 <tr><th colspan="2">Root Cause</th></tr>
-                <tr><td class="narrative" colspan="2">@Model.RootCause</td></tr>
+                <tr><td class="narrative" colspan="2">@(Model.RootCause ?? "")</td></tr>
             </table>
         </div>
 
-        <!-- K -->
+        <!-- SECTION K — Remedial Actions -->
         <div class="sec">
             <div class="sec-title">Section K — Recommended Remedial Actions</div>
             <table>
-                <tr><th>Action</th><th>Responsible Person</th><th>Planned Date</th><th>Status</th></tr>
-                @if (!Model.Actions.Any()) { <tr><td colspan="4">&nbsp;</td></tr> }
+                <tr><th style="width:35%;">Action</th><th style="width:25%;">Responsible Person</th><th style="width:20%;">Planned Date</th><th style="width:20%;">Status</th></tr>
+                @if (!Model.Actions.Any())
+                {
+                    <tr><td colspan="4" style="color:#9ca3af;">No remedial actions recorded.</td></tr>
+                }
                 @foreach (var a in Model.Actions)
                 {
-                    <tr><td>@a.Description</td><td>@a.ResponsiblePerson</td><td>@(a.PlannedDate?.ToString("dd/MM/yyyy") ?? "")</td><td>@a.Status</td></tr>
+                    <tr>
+                        <td>@a.Description</td>
+                        <td>@(a.ResponsiblePerson ?? "")</td>
+                        <td>@(a.PlannedDate?.ToString("dd/MM/yyyy") ?? "")</td>
+                        <td>
+                            <span class="badge-pill @(a.Status == IncidentActionStatus.Completed ? "bg-green" : a.IsOverdue ? "bg-red" : a.Status == IncidentActionStatus.InProgress ? "bg-blue" : "bg-amber")">
+                                @(a.IsOverdue && a.Status != IncidentActionStatus.Completed ? "Overdue" : a.Status.ToString())
+                            </span>
+                        </td>
+                    </tr>
                 }
             </table>
         </div>
 
-        <!-- L -->
+        <!-- SECTION L — Lessons Learned -->
         <div class="sec">
             <div class="sec-title">Section L — Lessons Learned</div>
-            <table><tr><td class="narrative">@Model.LessonsLearned</td></tr></table>
+            <table><tr><td class="narrative">@(Model.LessonsLearned ?? "")</td></tr></table>
         </div>
 
-        <!-- M/N/O -->
+        <!-- SECTION M — Dept Manager -->
         <div class="sec">
             <div class="sec-title">Section M — Department Manager / Team Leader Comments</div>
-            <table><tr><td class="narrative sign">@Model.DeptManagerComments</td></tr>
-                <tr><td>Date: @(Model.DeptManagerCommentDate?.ToString("dd/MM/yyyy") ?? "……………") &nbsp;&nbsp; Signature: ………………………</td></tr></table>
+            <table>
+                <tr><td class="narrative sign">@(Model.DeptManagerComments ?? "")</td></tr>
+                <tr>
+                    <td style="font-size:10.5px;color:#64748b;">
+                        Date: @(Model.DeptManagerCommentDate?.ToString("dd/MM/yyyy") ?? "……………") &nbsp;&nbsp; Signature: ………………………
+                    </td>
+                </tr>
+            </table>
         </div>
+
+        <!-- SECTION N — QA -->
         <div class="sec">
             <div class="sec-title">Section N — Quality Assurance Comments</div>
-            <table><tr><td class="narrative sign">@Model.QaComments</td></tr>
-                <tr><td>Date: @(Model.QaCommentDate?.ToString("dd/MM/yyyy") ?? "……………") &nbsp;&nbsp; Signature: ………………………</td></tr></table>
+            <table>
+                <tr><td class="narrative sign">@(Model.QaComments ?? "")</td></tr>
+                <tr>
+                    <td style="font-size:10.5px;color:#64748b;">
+                        Date: @(Model.QaCommentDate?.ToString("dd/MM/yyyy") ?? "……………") &nbsp;&nbsp; Signature: ………………………
+                    </td>
+                </tr>
+            </table>
         </div>
+
+        <!-- SECTION O — GM -->
         <div class="sec">
             <div class="sec-title">Section O — General Manager Comments (major incidents only)</div>
-            <table><tr><td class="narrative sign">@Model.GmComments</td></tr>
-                <tr><td>Date: @(Model.GmCommentDate?.ToString("dd/MM/yyyy") ?? "……………") &nbsp;&nbsp; Signature: ………………………</td></tr></table>
+            <table>
+                <tr><td class="narrative sign">@(Model.GmComments ?? "")</td></tr>
+                <tr>
+                    <td style="font-size:10.5px;color:#64748b;">
+                        Date: @(Model.GmCommentDate?.ToString("dd/MM/yyyy") ?? "……………") &nbsp;&nbsp; Signature: ………………………
+                    </td>
+                </tr>
+            </table>
         </div>
     </div>
 </body>

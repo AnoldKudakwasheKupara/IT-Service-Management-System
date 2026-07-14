@@ -6,16 +6,16 @@
 
     string SevBadge(IncidentSeverity s) => s switch
     {
-        IncidentSeverity.Major => "b-red",
-        IncidentSeverity.Serious => "b-amber",
-        _ => "b-gray"
+        IncidentSeverity.Major => "badge-critical",
+        IncidentSeverity.Serious => "badge-warning",
+        _ => "badge-gray"
     };
     string StatusBadge(IncidentStatus s) => s switch
     {
-        IncidentStatus.Closed => "b-green",
-        IncidentStatus.ActionsPending => "b-amber",
-        IncidentStatus.UnderInvestigation => "b-blue",
-        _ => "b-gray"
+        IncidentStatus.Closed => "badge-success",
+        IncidentStatus.ActionsPending => "badge-warning",
+        IncidentStatus.UnderInvestigation => "badge-primary",
+        _ => "badge-gray"
     };
     string StatusText(IncidentStatus s) => s switch
     {
@@ -26,58 +26,92 @@
 }
 
 <div class="page-container">
+    <!-- PAGE HEADER -->
     <div class="page-header">
-        <div class="d-flex justify-content-between align-items-center mb-2" style="flex-wrap:wrap;gap:1rem;">
+        <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1 class="page-title"><i class="fas fa-triangle-exclamation me-2" style="color: var(--primary);"></i> Incident Register</h1>
-                <p class="page-subtitle">Incident investigation reports across the management system (ISO 9001 / 27001 · Improvement).</p>
+                <h1 class="page-title">
+                    <i class="fas fa-triangle-exclamation me-2" style="color: var(--primary);"></i>
+                    Incident Register
+                </h1>
+                <p class="text-muted mt-2">Incident investigation reports across the management system (ISO 9001 / 27001 · Improvement).</p>
             </div>
             @if (canManage)
             {
-                <a asp-action="Create" class="btn-primary-cta"><i class="fas fa-plus"></i> Log Incident</a>
+                <a asp-action="Create" class="btn-create-ticket">
+                    <i class="fas fa-plus"></i> Log Incident
+                </a>
             }
         </div>
     </div>
 
+    <!-- FLASH MESSAGES -->
     @if (TempData["Success"] != null)
     {
-        <div class="flash success"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
+        <div class="alert-flash success">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
+        </div>
     }
     @if (TempData["Error"] != null)
     {
-        <div class="flash danger"><i class="fas fa-exclamation-circle"></i> @TempData["Error"]</div>
+        <div class="alert-flash danger">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+        </div>
     }
 
-    <!-- STATS -->
+    <!-- STATISTICS CARDS -->
     <div class="stats-cards">
         <a class="stat-card" asp-action="Index">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #60a5fa, #3b82f6);"><i class="fas fa-layer-group"></i></div>
-            <div class="stat-info"><h3>@ViewBag.Total</h3><p>Total Incidents</p></div>
+            <div class="stat-icon primary">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@ViewBag.Total</h3>
+                <p>Total Incidents</p>
+            </div>
         </a>
         <a class="stat-card" asp-action="Index" asp-route-status="@IncidentStatus.UnderInvestigation">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #38bdf8, #0ea5e9);"><i class="fas fa-magnifying-glass"></i></div>
-            <div class="stat-info"><h3>@ViewBag.UnderInvestigation</h3><p>Under Investigation</p></div>
+            <div class="stat-icon info">
+                <i class="fas fa-magnifying-glass"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@ViewBag.UnderInvestigation</h3>
+                <p>Under Investigation</p>
+            </div>
         </a>
         <a class="stat-card" asp-action="Index" asp-route-severity="@IncidentSeverity.Major">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #f87171, #e53e3e);"><i class="fas fa-fire"></i></div>
-            <div class="stat-info"><h3>@ViewBag.Major</h3><p>Open · Major</p></div>
+            <div class="stat-icon danger">
+                <i class="fas fa-fire"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@ViewBag.Major</h3>
+                <p>Open · Major</p>
+            </div>
         </a>
         <a class="stat-card" asp-action="Index" asp-route-status="@IncidentStatus.Closed">
-            <div class="stat-icon" style="background: linear-gradient(135deg, #34d399, #2c9e6e);"><i class="fas fa-circle-check"></i></div>
-            <div class="stat-info"><h3>@ViewBag.Closed</h3><p>Closed</p></div>
+            <div class="stat-icon success">
+                <i class="fas fa-circle-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@ViewBag.Closed</h3>
+                <p>Closed</p>
+            </div>
         </a>
     </div>
 
     <!-- FILTERS -->
     <div class="filters-card">
         <form method="get" asp-action="Index" class="filters-body">
-            <div class="form-group">
-                <label class="form-label"><i class="fas fa-search"></i> Search</label>
-                <input type="text" name="q" value="@ViewBag.Q" class="form-control" placeholder="Title, reporter, category, location…" />
+            <div class="filter-group">
+                <label><i class="fas fa-search"></i> Search</label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" value="@ViewBag.Q" class="search-input" placeholder="Title, reporter, category, location…" />
+                </div>
             </div>
-            <div class="form-group">
-                <label class="form-label"><i class="fas fa-chart-simple"></i> Status</label>
-                <select name="status" class="form-control">
+            <div class="filter-group">
+                <label><i class="fas fa-chart-simple"></i> Status</label>
+                <select name="status" class="filter-select">
                     <option value="">All statuses</option>
                     @foreach (IncidentStatus s in Enum.GetValues(typeof(IncidentStatus)))
                     {
@@ -85,9 +119,9 @@
                     }
                 </select>
             </div>
-            <div class="form-group">
-                <label class="form-label"><i class="fas fa-triangle-exclamation"></i> Severity</label>
-                <select name="severity" class="form-control">
+            <div class="filter-group">
+                <label><i class="fas fa-triangle-exclamation"></i> Severity</label>
+                <select name="severity" class="filter-select">
                     <option value="">All severities</option>
                     @foreach (IncidentSeverity s in Enum.GetValues(typeof(IncidentSeverity)))
                     {
@@ -95,55 +129,88 @@
                     }
                 </select>
             </div>
-            <button type="submit" class="btn-primary-cta" style="flex:0;"><i class="fas fa-filter"></i> Apply</button>
-            <a asp-action="Index" class="btn-soft"><i class="fas fa-undo-alt"></i> Clear</a>
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary);color:#fff;border:none;">
+                <i class="fas fa-filter"></i> Apply
+            </button>
+            <a asp-action="Index" class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+                <i class="fas fa-undo-alt"></i> Clear
+            </a>
         </form>
     </div>
 
-    <!-- TABLE -->
+    <!-- INCIDENTS TABLE -->
     <div class="data-card">
         <div class="card-header-custom">
-            <i class="fas fa-list" style="color: var(--primary);"></i>
-            <span>Incidents</span>
-            <span class="header-tag">@Model.Count shown</span>
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Incidents</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count</span> shown
+            </div>
         </div>
-        <div class="table-wrap">
+        <div class="card-body-custom" style="padding:0;">
             @if (Model.Any())
             {
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Ref</th>
-                            <th>Incident</th>
-                            <th>Category</th>
-                            <th>Severity</th>
-                            <th>Status</th>
-                            <th>Date</th>
-                            <th style="text-align:right;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var i in Model)
-                        {
+                <div class="table-responsive">
+                    <table class="tickets-table">
+                        <thead>
                             <tr>
-                                <td><span class="ref-chip">@i.Reference</span></td>
-                                <td>
-                                    <a class="row-link" asp-action="Details" asp-route-id="@i.Id">@i.Title</a>
-                                    <div style="font-size:0.72rem;color:var(--gray-400);">
-                                        @(i.Department?.Name ?? "—")@(string.IsNullOrEmpty(i.ReportedByName) ? "" : $" · {i.ReportedByName}")
-                                    </div>
-                                </td>
-                                <td>@(string.IsNullOrEmpty(i.Category) ? "—" : i.Category)</td>
-                                <td><span class="badge-pill @SevBadge(i.Severity)">@i.Severity</span></td>
-                                <td><span class="badge-pill @StatusBadge(i.Status)">@StatusText(i.Status)</span></td>
-                                <td>@(i.DateOfIncident?.ToString("dd MMM yyyy") ?? "—")</td>
-                                <td style="text-align:right;">
-                                    <a class="btn-soft btn-sm" asp-action="Details" asp-route-id="@i.Id"><i class="fas fa-eye"></i> Open</a>
-                                </td>
+                                <th><i class="fas fa-hashtag me-1"></i> Ref</th>
+                                <th><i class="fas fa-heading me-1"></i> Incident</th>
+                                <th><i class="fas fa-tag me-1"></i> Category</th>
+                                <th><i class="fas fa-triangle-exclamation me-1"></i> Severity</th>
+                                <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                                <th><i class="fas fa-calendar me-1"></i> Date</th>
+                                <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var i in Model.OrderByDescending(x => x.CreatedAt))
+                            {
+                                <tr>
+                                    <td><span class="doc-number">@i.Reference</span></td>
+                                    <td>
+                                        <div class="incident-cell">
+                                            <a asp-action="Details" asp-route-id="@i.Id" class="incident-link">
+                                                @i.Title
+                                            </a>
+                                            <div class="incident-meta">
+                                                @(i.Department?.Name ?? "—")
+                                                @if (!string.IsNullOrEmpty(i.ReportedByName))
+                                                {
+                                                    <text> · @i.ReportedByName</text>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="meta-text">@(string.IsNullOrEmpty(i.Category) ? "—" : i.Category)</td>
+                                    <td>
+                                        <span class="status-badge @SevBadge(i.Severity)">@i.Severity</span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge @StatusBadge(i.Status)">@StatusText(i.Status)</span>
+                                    </td>
+                                    <td class="meta-text">@(i.DateOfIncident?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    <td style="text-align:right;">
+                                        <div class="action-buttons">
+                                            <a asp-action="Details" asp-route-id="@i.Id" class="action-btn btn-view" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            @if (canManage)
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@i.Id" class="action-btn btn-edit" title="Edit Incident">
+                                                    <i class="fas fa-pen"></i>
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
             else
             {
@@ -153,7 +220,9 @@
                     <p>@(canManage ? "Log the first incident to start the register." : "No incidents match your filters.")</p>
                     @if (canManage)
                     {
-                        <a asp-action="Create" class="btn-primary-cta" style="margin-top:1rem;display:inline-flex;"><i class="fas fa-plus"></i> Log Incident</a>
+                        <a asp-action="Create" class="btn-create-ticket-sm">
+                            <i class="fas fa-plus"></i> Log Incident
+                        </a>
                     }
                 </div>
             }
@@ -162,3 +231,108 @@
 </div>
 
 <partial name="_IncidentStyles" />
+
+<style>
+    /* ===== ADDITIONAL STYLES ===== */
+    .incident-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 0.05rem;
+    }
+
+    .incident-link {
+        color: var(--gray-700);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+
+        .incident-link:hover {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+    .incident-meta {
+        font-size: 0.7rem;
+        color: var(--gray-400);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .stats-cards {
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .filters-body {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-group {
+            min-width: 100%;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.6rem 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.8rem;
+        }
+
+        .action-btn {
+            width: 30px;
+            height: 30px;
+            font-size: 0.7rem;
+        }
+
+        .incident-meta {
+            font-size: 0.6rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.4rem;
+        }
+
+        .doc-number {
+            font-size: 0.7rem;
+        }
+
+        .meta-text {
+            font-size: 0.7rem;
+        }
+
+        .btn-create-ticket-sm {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .incident-link {
+            font-size: 0.8rem;
+        }
+    }
+</style>
