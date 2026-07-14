@@ -40,6 +40,10 @@ namespace IT_Service_Management_System.Helpers.Ims
         ViewNonConformance,
         RaiseNonConformance,
 
+        // ── Incident management ──
+        ViewIncidents,
+        ManageIncidents,
+
         // ── Risk &amp; opportunity ──
         ViewRisk,
         ManageRisk,
@@ -109,7 +113,7 @@ namespace IT_Service_Management_System.Helpers.Ims
             ImsPermission.ViewNonConformance, ImsPermission.ViewRisk, ImsPermission.ViewSuppliers,
             ImsPermission.ViewTraining, ImsPermission.ViewManagementReview, ImsPermission.ViewObjectives,
             ImsPermission.ViewImprovements, ImsPermission.ViewCompliance, ImsPermission.ViewReports,
-            ImsPermission.ViewAuditTrail
+            ImsPermission.ViewAuditTrail, ImsPermission.ViewIncidents
         };
 
         /// <summary>
@@ -143,7 +147,7 @@ namespace IT_Service_Management_System.Helpers.Ims
                     or ImsPermission.RaiseNonConformance or ImsPermission.RaiseFinding
                     or ImsPermission.RaiseCapa or ImsPermission.AssignCapa
                     or ImsPermission.InvestigateCapa or ImsPermission.ManageObjectives
-                    or ImsPermission.ManageImprovements
+                    or ImsPermission.ManageImprovements or ImsPermission.ManageIncidents
                     || ReadOnlySet.Contains(p);
 
             // Auditor — plans/conducts audits, raises findings, NCs and CAPAs, verifies effectiveness.
@@ -151,7 +155,7 @@ namespace IT_Service_Management_System.Helpers.Ims
                 return p is ImsPermission.ConductAudit or ImsPermission.ManageAuditProgramme
                     or ImsPermission.RaiseFinding or ImsPermission.RaiseNonConformance
                     or ImsPermission.RaiseCapa or ImsPermission.VerifyCapa
-                    or ImsPermission.AcknowledgeDocument
+                    or ImsPermission.AcknowledgeDocument or ImsPermission.ManageIncidents
                     || ReadOnlySet.Contains(p);
 
             // Employee — self-service: read published material, acknowledge policies, view own training.

@@ -1,0 +1,52 @@
+@using IT_Service_Management_System.Models.Ims
+@model Incident
+@{
+    ViewData["Title"] = "Log Incident";
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-2">
+            <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+            <div>
+                <h1 class="page-title"><i class="fas fa-triangle-exclamation me-2" style="color: var(--primary);"></i> Log Incident</h1>
+                <p class="page-subtitle">Complete the incident investigation report (Sections A–O). The investigation team, damage and remedial actions are added after saving.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-file-pen" style="color: var(--primary);"></i>
+            <span>Incident Investigation Report</span>
+            <span class="header-tag">ISO 9001 / 27001 · cl. 10</span>
+        </div>
+        <div class="card-body-custom">
+            <form method="post" asp-action="Create" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <partial name="_IncidentFields" model="Model" />
+
+                <div class="section-band"><div class="section-letter"><i class="fas fa-paperclip" style="font-size:0.8rem;"></i></div><h3>Supporting Attachments <span>· optional, add as many as you need</span></h3><div class="rule"></div></div>
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label class="form-label" for="attachments"><i class="fas fa-cloud-arrow-up"></i> Attach files</label>
+                        <input type="file" name="attachments" id="attachments" class="form-control" multiple
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt,.csv,.msg,.eml" />
+                        <span class="field-hint">You can select multiple files. Up to 25 MB each. You can also add more later from the incident page.</span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary-cta"><i class="fas fa-save"></i> Log Incident</button>
+                    <a asp-action="Index" class="btn-soft"><i class="fas fa-times"></i> Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<partial name="_IncidentStyles" />
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

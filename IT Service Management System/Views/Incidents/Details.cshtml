@@ -1,0 +1,488 @@
+@using IT_Service_Management_System.Models.Ims
+@model Incident
+@{
+    ViewData["Title"] = Model.Reference;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+
+    string SevBadge(IncidentSeverity s) => s == IncidentSeverity.Major ? "b-red" : s == IncidentSeverity.Serious ? "b-amber" : "b-gray";
+    string StatusBadge(IncidentStatus s) => s switch
+    {
+        IncidentStatus.Closed => "b-green",
+        IncidentStatus.ActionsPending => "b-amber",
+        IncidentStatus.UnderInvestigation => "b-blue",
+        _ => "b-gray"
+    };
+    string StatusText(IncidentStatus s) => s == IncidentStatus.UnderInvestigation ? "Under Investigation"
+        : s == IncidentStatus.ActionsPending ? "Actions Pending" : s.ToString();
+    string YesNo(bool? v) => v == true ? "Yes" : v == false ? "No" : "N/A";
+    string YesNoClass(bool? v) => v == true ? "b-green" : v == false ? "b-gray" : "b-gray";
+    string Size(long b) => b >= 1048576 ? $"{b / 1048576.0:0.#} MB" : b >= 1024 ? $"{b / 1024.0:0.#} KB" : $"{b} B";
+    string FileIcon(string? name)
+    {
+        var e = System.IO.Path.GetExtension(name ?? "").ToLowerInvariant();
+        return e switch
+        {
+            ".pdf" => "fa-file-pdf",
+            ".doc" or ".docx" => "fa-file-word",
+            ".xls" or ".xlsx" or ".csv" => "fa-file-excel",
+            ".png" or ".jpg" or ".jpeg" => "fa-file-image",
+            ".msg" or ".eml" => "fa-envelope",
+            _ => "fa-file"
+        };
+    }
+
+    Func<string, string?, Microsoft.AspNetCore.Html.IHtmlContent> prose = (label, text) =>
+        new Microsoft.AspNetCore.Html.HtmlString(
+            $"<div class='detail-item' style='grid-column:1/-1;'><label>{label}</label>" +
+            (string.IsNullOrWhiteSpace(text)
+                ? "<span style='color:var(--gray-400);'>—</span>"
+                : $"<div class='prose-block'>{System.Net.WebUtility.HtmlEncode(text)}</div>") + "</div>");
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-start mb-2" style="flex-wrap:wrap;gap:1rem;">
+            <div class="d-flex align-items-center gap-3">
+                <a class="btn-back" asp-action="Index"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <h1 class="page-title" style="font-size:1.55rem;">
+                        <span class="ref-chip" style="font-size:1rem;">@Model.Reference</span> &nbsp;@Model.Title
+                    </h1>
+                    <p class="page-subtitle">
+                        <span class="badge-pill @StatusBadge(Model.Status)">@StatusText(Model.Status)</span>
+                        <span class="badge-pill @SevBadge(Model.Severity)">@Model.Severity</span>
+                        <span class="badge-pill b-violet">@IsoStandards.Label(Model.Standard)</span>
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex gap-2" style="flex-wrap:wrap;">
+                <a asp-action="Print" asp-route-id="@Model.Id" target="_blank" class="btn-soft"><i class="fas fa-print"></i> Print / PDF</a>
+                @if (canManage)
+                {
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-primary-cta"><i class="fas fa-pen"></i> Edit</a>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="flash success"><i class="fas fa-check-circle"></i> @TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="flash danger"><i class="fas fa-exclamation-circle"></i> @TempData["Error"]</div>
+    }
+    @if (Model.PoliceReportMissing)
+    {
+        <div class="flash danger">
+            <i class="fas fa-triangle-exclamation"></i>
+            This incident was reported to the police but no police report is attached. Upload the police report in the Attachments section below.
+        </div>
+    }
+
+    @if (canManage)
+    {
+        <div class="data-card">
+            <div class="card-header-custom"><i class="fas fa-bolt" style="color:var(--primary);"></i><span>Workflow</span></div>
+            <div class="card-body-custom" style="display:flex;gap:0.6rem;flex-wrap:wrap;align-items:center;">
+                @foreach (IncidentStatus s in Enum.GetValues(typeof(IncidentStatus)))
+                {
+                    <form asp-action="ChangeStatus" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="@s" />
+                        <button type="submit" class="btn-soft btn-sm @(Model.Status == s ? "" : "")" @(Model.Status == s ? "disabled style=opacity:.5" : "")>
+                            <i class="fas fa-arrow-right"></i> @StatusText(s)
+                        </button>
+                    </form>
+                }
+                <form asp-action="Delete" method="post" class="inline-form" onsubmit="return confirm('Delete this incident and all its investigation data?');" style="margin-left:auto;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button type="submit" class="btn-soft btn-sm btn-danger-soft"><i class="fas fa-trash"></i> Delete</button>
+                </form>
+            </div>
+        </div>
+    }
+
+    <!-- SECTIONS A / C(police) -->
+    <div class="data-card">
+        <div class="card-header-custom"><span class="section-letter">A</span><span>Incident Details</span></div>
+        <div class="card-body-custom">
+            <div class="detail-grid">
+                <div class="detail-item"><label>Date of Incident</label><span>@(Model.DateOfIncident?.ToString("dd MMM yyyy") ?? "—")</span></div>
+                <div class="detail-item"><label>Time</label><span>@(Model.TimeOfIncident ?? "—")</span></div>
+                <div class="detail-item"><label>Location</label><span>@(Model.LocationOfIncident ?? "—")</span></div>
+                <div class="detail-item"><label>Function / Department</label><span>@(Model.Department?.Name ?? "—")</span></div>
+                <div class="detail-item"><label>Reported By</label><span>@(Model.ReportedByName ?? "—")</span></div>
+                <div class="detail-item"><label>Date Reported</label><span>@(Model.DateReported?.ToString("dd MMM yyyy") ?? "—")</span></div>
+                <div class="detail-item"><label>Reported to Police?</label><span><span class="badge-pill @YesNoClass(Model.ReportedToPolice)">@YesNo(Model.ReportedToPolice)</span></span></div>
+                <div class="detail-item"><label>Reported to Police at</label><span>@(Model.ReportedToPoliceAt ?? "—")</span></div>
+                <div class="detail-item"><label>Police details &amp; Tel</label><span>@(Model.PoliceDetailsTel ?? "—")</span></div>
+                <div class="detail-item"><label>Case Number</label><span>@(Model.CaseNumber ?? "—")</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION B -->
+    <div class="data-card">
+        <div class="card-header-custom"><span class="section-letter">B</span><span>Brief Description</span></div>
+        <div class="card-body-custom"><div class="detail-grid">@prose("Brief description of incident", Model.BriefDescription)</div></div>
+    </div>
+
+    <!-- SECTION C — investigation team -->
+    <div class="data-card">
+        <div class="card-header-custom"><span class="section-letter">C</span><span>Investigation Team</span><span class="header-tag">@Model.Investigators.Count</span></div>
+        <div class="card-body-custom">
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>Name</th><th>Position / Title</th><th>Date of Investigation</th>@if (canManage){<th></th>}</tr></thead>
+                    <tbody>
+                        @if (!Model.Investigators.Any())
+                        {
+                            <tr><td colspan="4" style="color:var(--gray-400);">No team members added yet.</td></tr>
+                        }
+                        @foreach (var m in Model.Investigators)
+                        {
+                            <tr>
+                                <td style="font-weight:600;color:var(--gray-800);">@m.Name</td>
+                                <td>@(m.Position ?? "—")</td>
+                                <td>@(m.InvestigationDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                                @if (canManage)
+                                {
+                                    <td style="text-align:right;">
+                                        <form asp-action="RemoveInvestigator" method="post" class="inline-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@Model.Id" />
+                                            <input type="hidden" name="memberId" value="@m.Id" />
+                                            <button class="btn-soft btn-sm btn-danger-soft"><i class="fas fa-xmark"></i></button>
+                                        </form>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (canManage)
+            {
+                <form asp-action="AddInvestigator" method="post" class="mini-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="form-group"><label class="form-label">Name</label><input name="Name" class="form-control" required /></div>
+                    <div class="form-group"><label class="form-label">Position / Title</label><input name="Position" class="form-control" /></div>
+                    <div class="form-group"><label class="form-label">Date</label><input name="InvestigationDate" type="date" class="form-control" /></div>
+                    <button class="btn-primary-cta btn-sm"><i class="fas fa-plus"></i> Add</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <!-- ATTACHMENTS -->
+    <div class="data-card">
+        <div class="card-header-custom"><i class="fas fa-paperclip" style="color:var(--primary);"></i><span>Attachments</span><span class="header-tag">@Model.Attachments.Count</span></div>
+        <div class="card-body-custom">
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>File</th><th>Type</th><th>Size</th><th>Uploaded</th>@if (canManage){<th></th>}</tr></thead>
+                    <tbody>
+                        @if (!Model.Attachments.Any())
+                        {
+                            <tr><td colspan="5" style="color:var(--gray-400);">No files attached.</td></tr>
+                        }
+                        @foreach (var f in Model.Attachments.OrderByDescending(a => a.UploadedAt))
+                        {
+                            <tr>
+                                <td>
+                                    <a class="row-link" asp-action="DownloadAttachment" asp-route-id="@Model.Id" asp-route-attachmentId="@f.Id">
+                                        <i class="fas @FileIcon(f.OriginalFileName)" style="color:var(--primary);margin-right:0.4rem;"></i>@f.OriginalFileName
+                                    </a>
+                                    @if (!string.IsNullOrEmpty(f.Description))
+                                    {
+                                        <div style="font-size:0.72rem;color:var(--gray-400);">@f.Description</div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (f.Kind == IncidentAttachmentKind.PoliceReport)
+                                    {
+                                        <span class="badge-pill b-blue"><i class="fas fa-building-shield"></i> Police Report</span>
+                                    }
+                                    else if (!string.IsNullOrEmpty(f.Category))
+                                    {
+                                        <span class="badge-pill b-violet">@f.Category</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-pill b-gray">Supporting</span>
+                                    }
+                                </td>
+                                <td>@Size(f.FileSize)</td>
+                                <td>@f.UploadedAt.ToString("dd MMM yyyy")<div style="font-size:0.72rem;color:var(--gray-400);">@(f.UploadedBy?.FullName ?? "")</div></td>
+                                @if (canManage)
+                                {
+                                    <td style="text-align:right;">
+                                        <div style="display:inline-flex;gap:0.3rem;">
+                                            <a class="btn-soft btn-sm" asp-action="DownloadAttachment" asp-route-id="@Model.Id" asp-route-attachmentId="@f.Id"><i class="fas fa-download"></i></a>
+                                            <form asp-action="RemoveAttachment" method="post" class="inline-form" onsubmit="return confirm('Remove this attachment?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@Model.Id" />
+                                                <input type="hidden" name="attachmentId" value="@f.Id" />
+                                                <button class="btn-soft btn-sm btn-danger-soft"><i class="fas fa-xmark"></i></button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (canManage)
+            {
+                <form asp-action="UploadAttachments" method="post" enctype="multipart/form-data" class="mini-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="form-group" style="flex:2;">
+                        <label class="form-label"><i class="fas fa-cloud-arrow-up"></i> Add files (select as many as you need)</label>
+                        <input type="file" name="files" class="form-control" multiple required
+                               accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt,.csv,.msg,.eml" />
+                    </div>
+                    <div class="form-group" style="max-width:170px;">
+                        <label class="form-label">Type</label>
+                        <select name="kind" class="form-control" asp-items="Html.GetEnumSelectList<IncidentAttachmentKind>()"></select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Description (optional)</label>
+                        <input name="description" class="form-control" />
+                    </div>
+                    <button class="btn-primary-cta btn-sm"><i class="fas fa-upload"></i> Upload</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <!-- SECTION D -->
+    <div class="data-card">
+        <div class="card-header-custom"><span class="section-letter">D</span><span>Detailed Description &amp; Evidence</span></div>
+        <div class="card-body-custom">
+            <div class="detail-grid">
+                @prose("Detailed description / sequence of events", Model.DetailedDescription)
+                <div class="detail-item"><label>Evidence — People</label><span>@(Model.EvidencePeople ?? "—")</span></div>
+                <div class="detail-item"><label>Evidence — Paper</label><span>@(Model.EvidencePaper ?? "—")</span></div>
+                <div class="detail-item"><label>Evidence — Parts</label><span>@(Model.EvidenceParts ?? "—")</span></div>
+                <div class="detail-item"><label>Evidence — Positions</label><span>@(Model.EvidencePositions ?? "—")</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION E / F -->
+    <div class="data-card">
+        <div class="card-header-custom"><span class="section-letter">E</span><span>Classification &amp; Supporting Documents</span></div>
+        <div class="card-body-custom">
+            <div class="detail-grid">
+                <div class="detail-item"><label>Category</label><span>@(Model.Category ?? "—")</span></div>
+                <div class="detail-item"><label>Severity</label><span><span class="badge-pill @SevBadge(Model.Severity)">@Model.Severity</span></span></div>
+                <div class="detail-item"><label>Probability</label><span>@Model.Probability</span></div>
+                <div class="detail-item"><label>Report Status</label><span>@Model.ReportStatus</span></div>
+            </div>
+            <div class="section-band" style="margin-top:1.25rem;"><span style="font-size:0.72rem;font-weight:700;color:var(--gray-500);">SUPPORTING DOCUMENTS (F)</span><div class="rule"></div></div>
+            @{
+                var docs = new List<(bool on, string label)>
+                {
+                    (Model.DocPollutionReport, "Pollution Report"), (Model.DocSketchDiagram, "Sketch Diagram"),
+                    (Model.DocWrittenStatements, "Written Statements"), (Model.DocMotorInsurance, "Motor Insurance Details"),
+                    (Model.DocDeptOfLabour, "Dept of Labour"), (Model.DocDriversDetails, "Driver's Details"),
+                    (Model.DocInternalAudit, "Internal Audit"), (Model.DocWorkmenCompensation, "Workmen Compensation")
+                };
+            }
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                @foreach (var d in docs.Where(x => x.on))
+                {
+                    <span class="badge-pill b-blue"><i class="fas fa-check"></i> @d.label</span>
+                }
+                @if (Model.DocOther && !string.IsNullOrWhiteSpace(Model.DocOtherText))
+                {
+                    <span class="badge-pill b-blue"><i class="fas fa-check"></i> @Model.DocOtherText</span>
+                }
+                @if (!docs.Any(x => x.on) && !Model.DocOther)
+                {
+                    <span style="color:var(--gray-400);font-size:0.85rem;">None ticked.</span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION G — damage -->
+    <div class="data-card">
+        <div class="card-header-custom"><span class="section-letter">G</span><span>Damage</span><span class="header-tag">@Model.Damages.Count</span></div>
+        <div class="card-body-custom">
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>Type</th><th>Description</th><th>Payer</th><th>Cost (USD)</th>@if (canManage){<th></th>}</tr></thead>
+                    <tbody>
+                        @if (!Model.Damages.Any())
+                        {
+                            <tr><td colspan="5" style="color:var(--gray-400);">No damage recorded.</td></tr>
+                        }
+                        @foreach (var d in Model.Damages)
+                        {
+                            <tr>
+                                <td><span class="badge-pill b-gray">@d.Type</span></td>
+                                <td>@(d.Description ?? "—")</td>
+                                <td>@(d.Payer ?? "—")</td>
+                                <td>@(d.Cost ?? "—")</td>
+                                @if (canManage)
+                                {
+                                    <td style="text-align:right;">
+                                        <form asp-action="RemoveDamage" method="post" class="inline-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@Model.Id" />
+                                            <input type="hidden" name="damageId" value="@d.Id" />
+                                            <button class="btn-soft btn-sm btn-danger-soft"><i class="fas fa-xmark"></i></button>
+                                        </form>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (canManage)
+            {
+                <form asp-action="AddDamage" method="post" class="mini-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="form-group" style="max-width:170px;"><label class="form-label">Type</label>
+                        <select name="Type" class="form-control" asp-items="Html.GetEnumSelectList<IncidentDamageType>()"></select></div>
+                    <div class="form-group"><label class="form-label">Description</label><input name="Description" class="form-control" /></div>
+                    <div class="form-group"><label class="form-label">Payer</label><input name="Payer" class="form-control" /></div>
+                    <div class="form-group" style="max-width:130px;"><label class="form-label">Cost (USD)</label><input name="Cost" class="form-control" /></div>
+                    <button class="btn-primary-cta btn-sm"><i class="fas fa-plus"></i> Add</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <!-- SECTION H -->
+    <div class="data-card">
+        <div class="card-header-custom"><span class="section-letter">H</span><span>Preventability &amp; Claim</span></div>
+        <div class="card-body-custom">
+            <div class="detail-grid">
+                <div class="detail-item"><label>Preventable?</label><span><span class="badge-pill @YesNoClass(Model.Preventable)">@YesNo(Model.Preventable)</span></span></div>
+                <div class="detail-item"><label>Preventability notes</label><span>@(Model.PreventableNotes ?? "—")</span></div>
+                <div class="detail-item"><label>Claimable?</label><span><span class="badge-pill @YesNoClass(Model.Claimable)">@YesNo(Model.Claimable)</span></span></div>
+                <div class="detail-item"><label>Claimed from insurance / party?</label><span><span class="badge-pill @YesNoClass(Model.ClaimedFromInsurance)">@YesNo(Model.ClaimedFromInsurance)</span></span></div>
+                <div class="detail-item"><label>Claim notes</label><span>@(Model.ClaimNotes ?? "—")</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION I / J -->
+    <div class="data-card">
+        <div class="card-header-custom"><span class="section-letter">I</span><span>Critical Factors &amp; Root Cause (J)</span></div>
+        <div class="card-body-custom">
+            <div class="detail-grid">
+                @prose("Critical factors identified", Model.CriticalFactors)
+                @prose("Immediate cause(s)", Model.ImmediateCause)
+                @prose("Basic cause(s)", Model.BasicCause)
+                @prose("Root cause", Model.RootCause)
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION K — remedial actions -->
+    <div class="data-card">
+        <div class="card-header-custom"><span class="section-letter">K</span><span>Recommended Remedial Actions</span><span class="header-tag">@Model.Actions.Count</span></div>
+        <div class="card-body-custom">
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>Action</th><th>Responsible</th><th>Planned</th><th>Status</th>@if (canManage){<th></th>}</tr></thead>
+                    <tbody>
+                        @if (!Model.Actions.Any())
+                        {
+                            <tr><td colspan="5" style="color:var(--gray-400);">No remedial actions yet.</td></tr>
+                        }
+                        @foreach (var a in Model.Actions)
+                        {
+                            var stCls = a.Status == IncidentActionStatus.Completed ? "b-green" : a.IsOverdue ? "b-red" : a.Status == IncidentActionStatus.InProgress ? "b-blue" : "b-amber";
+                            <tr>
+                                <td>@a.Description</td>
+                                <td>@(a.ResponsiblePerson ?? "—")</td>
+                                <td>@(a.PlannedDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                                <td>
+                                    <span class="badge-pill @stCls">@(a.IsOverdue && a.Status != IncidentActionStatus.Completed ? "Overdue" : a.Status.ToString())</span>
+                                    @if (canManage)
+                                    {
+                                        <form asp-action="UpdateActionStatus" method="post" class="inline-form" style="margin-top:0.35rem;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@Model.Id" />
+                                            <input type="hidden" name="actionId" value="@a.Id" />
+                                            <select name="status" class="form-control" style="padding:0.25rem 0.5rem;font-size:0.72rem;" onchange="this.form.submit()">
+                                                @foreach (IncidentActionStatus s in Enum.GetValues(typeof(IncidentActionStatus)))
+                                                {
+                                                    <option value="@s" selected="@(a.Status == s)">@s</option>
+                                                }
+                                            </select>
+                                        </form>
+                                    }
+                                </td>
+                                @if (canManage)
+                                {
+                                    <td style="text-align:right;">
+                                        <form asp-action="RemoveAction" method="post" class="inline-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@Model.Id" />
+                                            <input type="hidden" name="actionId" value="@a.Id" />
+                                            <button class="btn-soft btn-sm btn-danger-soft"><i class="fas fa-xmark"></i></button>
+                                        </form>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (canManage)
+            {
+                <form asp-action="AddAction" method="post" class="mini-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="form-group" style="flex:2;"><label class="form-label">Recommended action</label><input name="Description" class="form-control" required /></div>
+                    <div class="form-group"><label class="form-label">Responsible person</label><input name="ResponsiblePerson" class="form-control" /></div>
+                    <div class="form-group" style="max-width:160px;"><label class="form-label">Planned date</label><input name="PlannedDate" type="date" class="form-control" /></div>
+                    <button class="btn-primary-cta btn-sm"><i class="fas fa-plus"></i> Add</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <!-- SECTION L -->
+    <div class="data-card">
+        <div class="card-header-custom"><span class="section-letter">L</span><span>Lessons Learned</span></div>
+        <div class="card-body-custom"><div class="detail-grid">@prose("Lessons learned", Model.LessonsLearned)</div></div>
+    </div>
+
+    <!-- SECTIONS M / N / O -->
+    <div class="data-card">
+        <div class="card-header-custom"><span class="section-letter">M</span><span>Sign-off Comments (M · N · O)</span></div>
+        <div class="card-body-custom">
+            <div class="detail-grid">
+                <div class="detail-item" style="grid-column:1/-1;">
+                    <label>Department Manager / Team Leader @(Model.DeptManagerCommentDate != null ? $"· {Model.DeptManagerCommentDate:dd MMM yyyy}" : "")</label>
+                    @if (string.IsNullOrWhiteSpace(Model.DeptManagerComments)) { <span style="color:var(--gray-400);">—</span> } else { <div class="prose-block">@Model.DeptManagerComments</div> }
+                </div>
+                <div class="detail-item" style="grid-column:1/-1;">
+                    <label>Quality Assurance @(Model.QaCommentDate != null ? $"· {Model.QaCommentDate:dd MMM yyyy}" : "")</label>
+                    @if (string.IsNullOrWhiteSpace(Model.QaComments)) { <span style="color:var(--gray-400);">—</span> } else { <div class="prose-block">@Model.QaComments</div> }
+                </div>
+                <div class="detail-item" style="grid-column:1/-1;">
+                    <label>General Manager @(Model.GmCommentDate != null ? $"· {Model.GmCommentDate:dd MMM yyyy}" : "") (major incidents)</label>
+                    @if (string.IsNullOrWhiteSpace(Model.GmComments)) { <span style="color:var(--gray-400);">—</span> } else { <div class="prose-block">@Model.GmComments</div> }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<partial name="_IncidentStyles" />

@@ -4,6 +4,7 @@ using IT_Service_Management_System.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IT_Service_Management_System.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260710190547_AddIncidentManagement")]
+    partial class AddIncidentManagement
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3091,9 +3094,6 @@ namespace IT_Service_Management_System.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<bool?>("ReportedToPolice")
-                        .HasColumnType("bit");
-
                     b.Property<string>("ReportedToPoliceAt")
                         .HasMaxLength(250)
                         .HasColumnType("nvarchar(250)");
@@ -3176,65 +3176,6 @@ namespace IT_Service_Management_System.Migrations
                     b.HasIndex("IncidentId");
 
                     b.ToTable("IncidentActions");
-                });
-
-            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IncidentAttachment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Category")
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
-
-                    b.Property<string>("ContentType")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(300)
-                        .HasColumnType("nvarchar(300)");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<int>("IncidentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Kind")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OriginalFileName")
-                        .IsRequired()
-                        .HasMaxLength(260)
-                        .HasColumnType("nvarchar(260)");
-
-                    b.Property<string>("StorageProvider")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("StoredFileName")
-                        .IsRequired()
-                        .HasMaxLength(260)
-                        .HasColumnType("nvarchar(260)");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("UploadedById")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IncidentId");
-
-                    b.HasIndex("UploadedById");
-
-                    b.ToTable("IncidentAttachments");
                 });
 
             modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IncidentDamage", b =>
@@ -6910,24 +6851,6 @@ namespace IT_Service_Management_System.Migrations
                     b.Navigation("Incident");
                 });
 
-            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IncidentAttachment", b =>
-                {
-                    b.HasOne("IT_Service_Management_System.Models.Ims.Incident", "Incident")
-                        .WithMany("Attachments")
-                        .HasForeignKey("IncidentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("IT_Service_Management_System.Models.User", "UploadedBy")
-                        .WithMany()
-                        .HasForeignKey("UploadedById")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Incident");
-
-                    b.Navigation("UploadedBy");
-                });
-
             modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IncidentDamage", b =>
                 {
                     b.HasOne("IT_Service_Management_System.Models.Ims.Incident", "Incident")
@@ -7777,8 +7700,6 @@ namespace IT_Service_Management_System.Migrations
             modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Incident", b =>
                 {
                     b.Navigation("Actions");
-
-                    b.Navigation("Attachments");
 
                     b.Navigation("Damages");
 

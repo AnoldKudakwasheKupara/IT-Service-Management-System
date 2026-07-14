@@ -1,0 +1,41 @@
+@using IT_Service_Management_System.Models.Ims
+@model Incident
+@{
+    ViewData["Title"] = $"Edit {Model.Reference}";
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-2">
+            <a class="btn-back" asp-action="Details" asp-route-id="@Model.Id"><i class="fas fa-arrow-left"></i></a>
+            <div>
+                <h1 class="page-title"><i class="fas fa-pen-to-square me-2" style="color: var(--primary);"></i> Edit @Model.Reference</h1>
+                <p class="page-subtitle">@Model.Title</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-file-pen" style="color: var(--primary);"></i>
+            <span>Incident Investigation Report</span>
+            <span class="header-tag">@Model.Reference</span>
+        </div>
+        <div class="card-body-custom">
+            <form method="post" asp-action="Edit" asp-route-id="@Model.Id" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <partial name="_IncidentFields" model="Model" />
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary-cta"><i class="fas fa-save"></i> Save Changes</button>
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn-soft"><i class="fas fa-times"></i> Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<partial name="_IncidentStyles" />
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

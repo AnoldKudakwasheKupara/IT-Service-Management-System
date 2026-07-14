@@ -98,6 +98,12 @@ namespace IT_Service_Management_System.DbContexts
         // CAPA & Non-Conformance
         public DbSet<Capa> Capas { get; set; }
         public DbSet<NonConformance> NonConformances { get; set; }
+        // Incident Management (Improvement)
+        public DbSet<Incident> Incidents { get; set; }
+        public DbSet<IncidentInvestigator> IncidentInvestigators { get; set; }
+        public DbSet<IncidentDamage> IncidentDamages { get; set; }
+        public DbSet<IncidentAction> IncidentActions { get; set; }
+        public DbSet<IncidentAttachment> IncidentAttachments { get; set; }
         // Risk & Opportunity
         public DbSet<Risk> Risks { get; set; }
         public DbSet<Opportunity> Opportunities { get; set; }
@@ -572,6 +578,35 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<Risk>().HasIndex(r => r.Category);
             modelBuilder.Entity<Capa>().HasIndex(c => new { c.Status, c.DueDate });
             modelBuilder.Entity<NonConformance>().HasIndex(n => n.Status);
+
+            // Incidents: children cascade with the parent; department link must not cascade.
+            modelBuilder.Entity<Incident>().HasIndex(i => new { i.Year, i.IncidentNo });
+            modelBuilder.Entity<Incident>().HasIndex(i => i.Status);
+            modelBuilder.Entity<Incident>()
+                .HasOne(i => i.Department).WithMany().HasForeignKey(i => i.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Incident>()
+                .HasOne(i => i.CreatedBy).WithMany().HasForeignKey(i => i.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Incident>()
+                .HasOne(i => i.Capa).WithMany().HasForeignKey(i => i.CapaId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<IncidentInvestigator>()
+                .HasOne(x => x.Incident).WithMany(i => i.Investigators).HasForeignKey(x => x.IncidentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<IncidentDamage>()
+                .HasOne(x => x.Incident).WithMany(i => i.Damages).HasForeignKey(x => x.IncidentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<IncidentAction>()
+                .HasOne(x => x.Incident).WithMany(i => i.Actions).HasForeignKey(x => x.IncidentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<IncidentAttachment>()
+                .HasOne(x => x.Incident).WithMany(i => i.Attachments).HasForeignKey(x => x.IncidentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<IncidentAttachment>()
+                .HasOne(x => x.UploadedBy).WithMany().HasForeignKey(x => x.UploadedById)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<IncidentAttachment>().HasIndex(x => x.IncidentId);
             modelBuilder.Entity<AuditFinding>().HasIndex(f => f.Status);
             modelBuilder.Entity<Audit>().HasIndex(a => new { a.Status, a.ActualEndDate });
             modelBuilder.Entity<TrainingRecord>().HasIndex(t => t.Status);
