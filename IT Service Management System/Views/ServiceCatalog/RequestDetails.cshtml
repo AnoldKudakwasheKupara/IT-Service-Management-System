@@ -1,0 +1,49 @@
+@model IT_Service_Management_System.Models.Itsm.ServiceRequest
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Itsm
+@using IT_Service_Management_System.Helpers
+@{
+    ViewData["Title"] = Model.Reference;
+    var canManage = Roles.IsFullAccess(Context.Session.GetString("UserRole"));
+    var agents = ViewBag.Agents as List<User> ?? new();
+    var nextStatuses = Model.Status switch
+    {
+        ServiceRequestStatus.Approved => new[] { ServiceRequestStatus.InFulfillment, ServiceRequestStatus.Cancelled },
+        ServiceRequestStatus.InFulfillment => new[] { ServiceRequestStatus.OnHold, ServiceRequestStatus.Fulfilled, ServiceRequestStatus.Cancelled },
+        ServiceRequestStatus.OnHold => new[] { ServiceRequestStatus.InFulfillment, ServiceRequestStatus.Cancelled },
+        _ => Array.Empty<ServiceRequestStatus>()
+    };
+}
+<partial name="_Styles" />
+<div class="catalog-shell">
+    <a asp-action="@(canManage ? "Queue" : "MyRequests")" class="btn btn-link px-0 mb-3"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div><h1 class="h2 mb-1">@Model.Reference · @Model.Subject</h1><p class="text-muted mb-0">@Model.ServiceCatalogItem?.Name</p></div>
+        <span class="catalog-badge status-@Model.Status">@Model.Status</span>
+    </div>
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="catalog-panel mb-4"><h2 class="h5">Request details</h2><p style="white-space:pre-line">@Model.Details</p>@if (!string.IsNullOrWhiteSpace(Model.BusinessJustification)) { <hr /><h3 class="h6">Business justification</h3><p style="white-space:pre-line">@Model.BusinessJustification</p> }</div>
+            @if (!string.IsNullOrWhiteSpace(Model.ApprovalNotes)) { <div class="catalog-panel mb-4"><h2 class="h5">Approval notes</h2><p>@Model.ApprovalNotes</p></div> }
+            @if (!string.IsNullOrWhiteSpace(Model.HoldReason)) { <div class="alert alert-warning"><strong>On hold:</strong> @Model.HoldReason</div> }
+            @if (!string.IsNullOrWhiteSpace(Model.FulfillmentNotes)) { <div class="catalog-panel"><h2 class="h5">Fulfilment notes</h2><p style="white-space:pre-line">@Model.FulfillmentNotes</p></div> }
+        </div>
+        <div class="col-lg-4">
+            <div class="catalog-panel mb-4">
+                <dl class="row mb-0"><dt class="col-5">Requester</dt><dd class="col-7">@Model.RequestedBy?.FullName</dd><dt class="col-5">Assigned</dt><dd class="col-7">@(Model.AssignedTo?.FullName ?? "Unassigned")</dd><dt class="col-5">Created</dt><dd class="col-7">@Model.CreatedAt.ToString("dd MMM yyyy HH:mm")</dd><dt class="col-5">Due</dt><dd class="col-7 @(Model.IsOverdue ? "text-danger fw-semibold" : "")">@(Model.DueAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd><dt class="col-5">Priority</dt><dd class="col-7">@Model.Priority</dd></dl>
+            </div>
+            @if (canManage && Model.Status == ServiceRequestStatus.AwaitingApproval)
+            {
+                <form asp-action="Decide" method="post" class="catalog-panel mb-4"><input type="hidden" name="id" value="@Model.Id" /><h2 class="h5">Approval decision</h2><textarea name="notes" class="form-control mb-3" rows="3" placeholder="Decision notes"></textarea><div class="d-flex gap-2"><button name="approve" value="true" class="btn btn-success flex-grow-1">Approve</button><button name="approve" value="false" class="btn btn-danger flex-grow-1">Reject</button></div></form>
+            }
+            @if (canManage && nextStatuses.Any())
+            {
+                <form asp-action="UpdateRequest" method="post" class="catalog-panel mb-4"><input type="hidden" name="id" value="@Model.Id" /><h2 class="h5">Update fulfilment</h2><label class="form-label">Next status</label><select name="status" class="form-select mb-3">@foreach (var status in nextStatuses) { <option value="@status">@status</option> }</select><label class="form-label">Assigned agent</label><select name="assignedToId" class="form-select mb-3"><option value="">Unassigned</option>@foreach (var agent in agents) { <option value="@agent.Id" selected="@(Model.AssignedToId == agent.Id)">@agent.FullName</option> }</select><label class="form-label">Hold reason</label><textarea name="holdReason" class="form-control mb-3" rows="2"></textarea><label class="form-label">Fulfilment notes</label><textarea name="fulfillmentNotes" class="form-control mb-3" rows="3">@Model.FulfillmentNotes</textarea><button class="btn btn-primary w-100">Save update</button></form>
+            }
+            @if (!Model.IsClosed)
+            {
+                <form asp-action="Cancel" method="post" onsubmit="return confirm('Cancel this request?');"><input type="hidden" name="id" value="@Model.Id" /><button class="btn btn-outline-danger w-100">Cancel request</button></form>
+            }
+        </div>
+    </div>
+</div>

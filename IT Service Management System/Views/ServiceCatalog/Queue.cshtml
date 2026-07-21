@@ -1,0 +1,36 @@
+@model List<IT_Service_Management_System.Models.Itsm.ServiceRequest>
+@using IT_Service_Management_System.Models.Itsm
+@{
+    ViewData["Title"] = "Service Request Queue";
+    var selected = ViewBag.Status as ServiceRequestStatus?;
+}
+<partial name="_Styles" />
+<div class="catalog-shell">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div><h1 class="h2 mb-1">Fulfilment Queue</h1><p class="text-muted mb-0">Approve, assign and deliver catalogue requests.</p></div>
+        <div class="d-flex gap-2"><a asp-action="Manage" class="btn btn-outline-secondary">Manage catalogue</a><a asp-action="Index" class="btn btn-primary">Open catalogue</a></div>
+    </div>
+    <form method="get" class="catalog-panel mb-3">
+        <div class="row g-2 align-items-end"><div class="col-md-4"><label class="form-label">Status</label><select name="status" class="form-select"><option value="">All statuses</option>@foreach (var value in Enum.GetValues<ServiceRequestStatus>()) { <option value="@value" selected="@(selected == value)">@value</option> }</select></div><div class="col-md-2"><button class="btn btn-primary w-100">Filter</button></div></div>
+    </form>
+    <div class="catalog-panel table-responsive">
+        <table class="catalog-table">
+            <thead><tr><th>Reference</th><th>Requester</th><th>Service</th><th>Assigned</th><th>Status</th><th>Due</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var request in Model)
+            {
+                <tr>
+                    <td><strong>@request.Reference</strong><div class="catalog-meta">@request.CreatedAt.ToString("dd MMM HH:mm")</div></td>
+                    <td>@request.RequestedBy?.FullName</td>
+                    <td>@request.ServiceCatalogItem?.Name<div class="catalog-meta">@request.Subject</div></td>
+                    <td>@(request.AssignedTo?.FullName ?? "Unassigned")</td>
+                    <td><span class="catalog-badge status-@request.Status">@request.Status</span></td>
+                    <td class="@(request.IsOverdue ? "text-danger fw-semibold" : "")">@(request.DueAt?.ToString("dd MMM HH:mm") ?? "—")</td>
+                    <td><a asp-action="RequestDetails" asp-route-id="@request.Id" class="btn btn-sm btn-outline-primary">Open</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        @if (!Model.Any()) { <div class="text-center text-muted py-5">No requests match this filter.</div> }
+    </div>
+</div>

@@ -72,6 +72,8 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<Problem> Problems { get; set; }
         public DbSet<ChangeRequest> ChangeRequests { get; set; }
         public DbSet<SlaPolicy> SlaPolicies { get; set; }
+        public DbSet<ServiceCatalogItem> ServiceCatalogItems { get; set; }
+        public DbSet<ServiceRequest> ServiceRequests { get; set; }
 
         // ── Meeting Minutes (Operations) ───────────────────────────────────────────
         public DbSet<Meeting> Meetings { get; set; }
@@ -395,6 +397,25 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<ChangeRequest>().HasIndex(c => c.Status);
 
             modelBuilder.Entity<SlaPolicy>().HasIndex(s => new { s.Priority, s.IsActive });
+
+            modelBuilder.Entity<ServiceCatalogItem>().Property(i => i.DefaultPriority).HasConversion<string>();
+            modelBuilder.Entity<ServiceCatalogItem>()
+                .HasOne(i => i.Owner).WithMany().HasForeignKey(i => i.OwnerId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<ServiceCatalogItem>().HasIndex(i => new { i.IsPublished, i.Category });
+
+            modelBuilder.Entity<ServiceRequest>().Property(r => r.Priority).HasConversion<string>();
+            modelBuilder.Entity<ServiceRequest>().Property(r => r.Status).HasConversion<string>();
+            modelBuilder.Entity<ServiceRequest>()
+                .HasOne(r => r.ServiceCatalogItem).WithMany(i => i.Requests)
+                .HasForeignKey(r => r.ServiceCatalogItemId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<ServiceRequest>()
+                .HasOne(r => r.RequestedBy).WithMany().HasForeignKey(r => r.RequestedById).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ServiceRequest>()
+                .HasOne(r => r.AssignedTo).WithMany().HasForeignKey(r => r.AssignedToId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ServiceRequest>()
+                .HasOne(r => r.ApprovedBy).WithMany().HasForeignKey(r => r.ApprovedById).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<ServiceRequest>().HasIndex(r => new { r.Status, r.DueAt });
+            modelBuilder.Entity<ServiceRequest>().HasIndex(r => new { r.RequestedById, r.CreatedAt });
 
             // ── Meeting Minutes relationships ──────────────────────────────────────────
             // Store enums as readable strings (matches the Ticket/User convention above).

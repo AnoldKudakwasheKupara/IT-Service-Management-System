@@ -607,6 +607,16 @@
                     <span class="nav-badge">@(ViewBag.OpenTicketCount ?? 0)</span>
                 </a>
 
+                <a class="nav-item @(currentController == "ServiceCatalog" && currentAction == "Index" ? "active" : "")"
+                   asp-controller="ServiceCatalog" asp-action="Index">
+                    <i class="fas fa-store"></i> Service Catalogue
+                </a>
+
+                <a class="nav-item @(currentController == "ServiceCatalog" && (currentAction == "MyRequests" || currentAction == "RequestDetails") ? "active" : "")"
+                   asp-controller="ServiceCatalog" asp-action="MyRequests">
+                    <i class="fas fa-list-check"></i> My Requests
+                </a>
+
                 <a class="nav-item @(currentController == "Activity" ? "active" : "")"
                    asp-controller="Activity" asp-action="Index">
                     <i class="fas fa-tasks"></i> Activity Tracker
@@ -663,6 +673,10 @@
                     <a class="nav-item @(currentController == "SlaPolicies" ? "active" : "")"
                        asp-controller="SlaPolicies" asp-action="Index">
                         <i class="fas fa-gauge-high"></i> SLA Policies
+                    </a>
+                    <a class="nav-item @(currentController == "ServiceCatalog" && (currentAction == "Queue" || currentAction == "Manage") ? "active" : "")"
+                       asp-controller="ServiceCatalog" asp-action="Queue">
+                        <i class="fas fa-inbox"></i> Request Queue
                     </a>
                 }
 

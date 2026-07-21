@@ -1,0 +1,71 @@
+@model IT_Service_Management_System.ViewModels.Itsm.ServiceCatalogIndexVm
+@{
+    ViewData["Title"] = "Service Catalogue";
+}
+<partial name="_Styles" />
+<div class="catalog-shell">
+    <section class="catalog-hero">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="mb-2"><i class="fas fa-store me-2"></i>Service Catalogue</h1>
+                <p class="mb-0 opacity-75">Request approved IT services through a consistent, trackable workflow.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-action="MyRequests" class="btn btn-light"><i class="fas fa-list-check me-1"></i>My Requests</a>
+                @if (Model.CanManage)
+                {
+                    <a asp-action="Queue" class="btn btn-outline-light"><i class="fas fa-inbox me-1"></i>Fulfilment Queue</a>
+                    <a asp-action="Manage" class="btn btn-outline-light"><i class="fas fa-sliders me-1"></i>Manage</a>
+                }
+            </div>
+        </div>
+    </section>
+
+    <form method="get" class="catalog-panel mb-4">
+        <div class="row g-2">
+            <div class="col-md-7"><input name="q" value="@Model.Query" class="form-control" placeholder="Search services..." /></div>
+            <div class="col-md-3">
+                <select name="category" class="form-select">
+                    <option value="">All categories</option>
+                    @foreach (var category in Model.Categories)
+                    {
+                        <option value="@category" selected="@(Model.Category == category)">@category</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2"><button class="btn btn-primary w-100"><i class="fas fa-search me-1"></i>Search</button></div>
+        </div>
+    </form>
+
+    <div class="row g-4">
+        @foreach (var item in Model.Items)
+        {
+            <div class="col-md-6 col-xl-4">
+                <article class="catalog-card d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="catalog-icon"><i class="fas @item.Icon"></i></div>
+                        <span class="catalog-badge">@item.Category</span>
+                    </div>
+                    <h3 class="h5">@item.Name</h3>
+                    <p class="text-muted flex-grow-1">@item.Summary</p>
+                    <div class="catalog-meta mb-3">
+                        <i class="fas fa-clock me-1"></i>Target: @TimeSpan.FromMinutes(item.FulfillmentTargetMinutes).TotalHours.ToString("0.#") hours
+                        @if (item.RequiresApproval) { <span class="ms-2"><i class="fas fa-user-check me-1"></i>Approval required</span> }
+                    </div>
+                    @if (item.IsPublished)
+                    {
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-primary">View service</a>
+                    }
+                    else
+                    {
+                        <span class="btn btn-secondary disabled">Hidden draft</span>
+                    }
+                </article>
+            </div>
+        }
+    </div>
+    @if (!Model.Items.Any())
+    {
+        <div class="catalog-panel text-center py-5 text-muted"><i class="fas fa-search fa-3x mb-3"></i><h3>No matching services</h3></div>
+    }
+</div>
