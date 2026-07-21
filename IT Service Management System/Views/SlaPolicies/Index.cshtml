@@ -4,6 +4,7 @@
 @{
     ViewData["Title"] = "SLA Policies - Axis IT Helpdesk";
     var categories = ViewBag.Categories as List<string> ?? new List<string>();
+    var calendars = ViewBag.Calendars as List<SlaCalendar> ?? new List<SlaCalendar>();
 
     string Duration(int minutes)
     {
@@ -32,9 +33,10 @@
                 </h1>
                 <p class="text-muted mt-2">Configure response &amp; resolution targets per priority and category.</p>
             </div>
-            <button class="btn-create-ticket" onclick="openSla()">
-                <i class="fas fa-plus"></i> New Policy
-            </button>
+            <div class="d-flex gap-2">
+                <a asp-controller="SlaCalendars" asp-action="Index" class="btn btn-outline-primary"><i class="fas fa-calendar-check me-1"></i>Calendars</a>
+                <button class="btn-create-ticket" onclick="openSla()"><i class="fas fa-plus"></i> New Policy</button>
+            </div>
         </div>
     </div>
 
@@ -60,6 +62,8 @@
                         <th><i class="fas fa-reply me-1"></i> Response target</th>
                         <th><i class="fas fa-check-double me-1"></i> Resolution target</th>
                         <th><i class="fas fa-business-time me-1"></i> Business hours</th>
+                        <th><i class="fas fa-calendar me-1"></i> Calendar</th>
+                        <th><i class="fas fa-bell me-1"></i> Warning</th>
                         <th><i class="fas fa-chart-simple me-1"></i> Status</th>
                         <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
                     </tr>
@@ -99,6 +103,8 @@
                                     <span class="status-badge badge-gray">24×7</span>
                                 }
                             </td>
+                            <td>@(p.Calendar?.Name ?? (p.BusinessHoursOnly ? "Default" : "—"))</td>
+                            <td><span class="status-badge badge-primary">@p.WarningThresholdPercent%</span></td>
                             <td>
                                 @if (p.IsActive)
                                 {
@@ -112,7 +118,7 @@
                             <td style="text-align:right;">
                                 <div class="action-buttons">
                                     <button class="action-btn btn-edit" title="Edit Policy"
-                                            onclick="openSla(@p.Id, '@Html.Raw(Encode(p.Name))', '@(p.Priority?.ToString() ?? "")', '@Html.Raw(Encode(p.Category ?? ""))', @p.ResponseMinutes, @p.ResolutionMinutes, @p.BusinessHoursOnly.ToString().ToLower(), @p.IsActive.ToString().ToLower())">
+                                            onclick="openSla(@p.Id, '@Html.Raw(Encode(p.Name))', '@(p.Priority?.ToString() ?? "")', '@Html.Raw(Encode(p.Category ?? ""))', @p.ResponseMinutes, @p.ResolutionMinutes, @p.BusinessHoursOnly.ToString().ToLower(), @p.IsActive.ToString().ToLower(), '@(p.SlaCalendarId?.ToString() ?? "")', @p.WarningThresholdPercent)">
                                         <i class="fas fa-pen"></i>
                                     </button>
                                     <form asp-action="Toggle" method="post" style="display:inline;">
@@ -197,6 +203,20 @@
                             <label class="form-label fw-semibold">Resolution target (minutes) <span class="required">*</span></label>
                             <input type="number" name="resolutionMinutes" id="slaResolution" class="form-control" min="1" required placeholder="e.g. 480" />
                         </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Business calendar</label>
+                            <select name="slaCalendarId" id="slaCalendar" class="form-control form-select">
+                                <option value="">Default Mon–Fri 08:00–17:00</option>
+                                @foreach (var calendar in calendars)
+                                {
+                                    <option value="@calendar.Id">@calendar.Name (@calendar.WorkHoursLabel)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Warning threshold (%)</label>
+                            <input type="number" name="warningThresholdPercent" id="slaWarning" class="form-control" min="1" max="99" value="75" required />
+                        </div>
                         <div class="col-12">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="businessHoursOnly" id="slaBusiness" value="true" />
@@ -230,7 +250,7 @@
 }
 
 <script>
-    function openSla(id, name, priority, category, response, resolution, business, active) {
+    function openSla(id, name, priority, category, response, resolution, business, active, calendarId, warning) {
         document.getElementById('slaId').value = id || 0;
         document.getElementById('slaName').value = name || '';
         document.getElementById('slaPriority').value = priority || '';
@@ -239,6 +259,8 @@
         document.getElementById('slaResolution').value = resolution || '';
         document.getElementById('slaBusiness').checked = !!business;
         document.getElementById('slaActive').checked = id ? !!active : true;
+        document.getElementById('slaCalendar').value = calendarId || '';
+        document.getElementById('slaWarning').value = warning || 75;
         document.getElementById('slaModalTitle').textContent = id ? 'Edit Policy' : 'New Policy';
         bootstrap.Modal.getOrCreateInstance(document.getElementById('slaModal')).show();
     }

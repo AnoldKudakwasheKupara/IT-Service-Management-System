@@ -37,6 +37,14 @@ namespace IT_Service_Management_System.Models
         /// <summary>SLA target first-response time, set from the applicable SLA policy at creation.</summary>
         public DateTime? ResponseDueAt { get; set; }
 
+        /// <summary>The policy selected when SLA targets were calculated.</summary>
+        public int? SlaPolicyId { get; set; }
+        [ValidateNever]
+        public Itsm.SlaPolicy? SlaPolicy { get; set; }
+
+        [ValidateNever]
+        public ICollection<Itsm.SlaEvent> SlaEvents { get; set; } = new List<Itsm.SlaEvent>();
+
         // ── On-hold (SLA pause) &amp; escalation ────────────────────────────────────
         /// <summary>When the ticket was placed on hold (SLA paused); null when not on hold.</summary>
         public DateTime? OnHoldSince { get; set; }

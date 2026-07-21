@@ -129,6 +129,7 @@ namespace IT_Service_Management_System.Controllers
 
             // SLA targets from the configurable policy (response + resolution).
             var targets = await _sla.ComputeAsync(ticket.Priority, ticket.Category, ticket.CreatedAt);
+            ticket.SlaPolicyId = targets.PolicyId;
             ticket.ResponseDueAt = targets.ResponseDueAt;
             ticket.DueAt = targets.ResolutionDueAt ?? TicketSla.DueFrom(ticket.CreatedAt, ticket.Priority);
 
@@ -170,6 +171,8 @@ namespace IT_Service_Management_System.Controllers
             var ticket = await _context.Tickets
                 .Include(t => t.CreatedBy)
                 .Include(t => t.AssignedTo)
+                .Include(t => t.SlaPolicy).ThenInclude(p => p!.Calendar)
+                .Include(t => t.SlaEvents)
                 .Include(t => t.Attachments)
                 .Include(t => t.Messages).ThenInclude(m => m.Sender)
                 .Include(t => t.Messages).ThenInclude(m => m.Attachments)

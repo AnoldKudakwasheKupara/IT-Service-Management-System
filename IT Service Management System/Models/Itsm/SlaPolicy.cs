@@ -31,6 +31,13 @@ namespace IT_Service_Management_System.Models.Itsm
         /// <summary>When true, targets are measured in business hours (Mon–Fri, working hours) only.</summary>
         public bool BusinessHoursOnly { get; set; }
 
+        public int? SlaCalendarId { get; set; }
+        public SlaCalendar? Calendar { get; set; }
+
+        /// <summary>Percentage of the available SLA window at which a proactive warning is raised.</summary>
+        [Range(1, 99)]
+        public int WarningThresholdPercent { get; set; } = 75;
+
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;

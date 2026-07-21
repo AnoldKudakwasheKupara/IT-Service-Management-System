@@ -72,6 +72,9 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<Problem> Problems { get; set; }
         public DbSet<ChangeRequest> ChangeRequests { get; set; }
         public DbSet<SlaPolicy> SlaPolicies { get; set; }
+        public DbSet<SlaCalendar> SlaCalendars { get; set; }
+        public DbSet<SlaHoliday> SlaHolidays { get; set; }
+        public DbSet<SlaEvent> SlaEvents { get; set; }
         public DbSet<ServiceCatalogItem> ServiceCatalogItems { get; set; }
         public DbSet<ServiceRequest> ServiceRequests { get; set; }
 
@@ -397,6 +400,23 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<ChangeRequest>().HasIndex(c => c.Status);
 
             modelBuilder.Entity<SlaPolicy>().HasIndex(s => new { s.Priority, s.IsActive });
+            modelBuilder.Entity<SlaPolicy>().Property(s => s.WarningThresholdPercent).HasDefaultValue(75);
+            modelBuilder.Entity<SlaPolicy>()
+                .HasOne(s => s.Calendar).WithMany(c => c.Policies).HasForeignKey(s => s.SlaCalendarId)
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<SlaCalendar>().HasIndex(c => c.Name).IsUnique();
+            modelBuilder.Entity<SlaHoliday>()
+                .HasOne(h => h.SlaCalendar).WithMany(c => c.Holidays).HasForeignKey(h => h.SlaCalendarId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<SlaHoliday>().HasIndex(h => new { h.SlaCalendarId, h.Date }).IsUnique();
+            modelBuilder.Entity<SlaEvent>().Property(e => e.Type).HasConversion<string>();
+            modelBuilder.Entity<SlaEvent>()
+                .HasOne(e => e.Ticket).WithMany(t => t.SlaEvents).HasForeignKey(e => e.TicketId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<SlaEvent>().HasIndex(e => new { e.TicketId, e.Type }).IsUnique();
+            modelBuilder.Entity<Ticket>()
+                .HasOne(t => t.SlaPolicy).WithMany().HasForeignKey(t => t.SlaPolicyId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<ServiceCatalogItem>().Property(i => i.DefaultPriority).HasConversion<string>();
             modelBuilder.Entity<ServiceCatalogItem>()

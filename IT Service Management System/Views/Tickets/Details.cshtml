@@ -200,6 +200,30 @@
                 </div>
             </div>
 
+            @if (Model.SlaEvents.Any() || Model.SlaPolicy != null)
+            {
+                <div class="description-section">
+                    <h3 class="section-title"><i class="fas fa-stopwatch"></i>Proactive SLA</h3>
+                    @if (Model.SlaPolicy != null)
+                    {
+                        <p class="text-muted mb-3">Policy: <strong>@Model.SlaPolicy.Name</strong> · Warning at @Model.SlaPolicy.WarningThresholdPercent% · Calendar: @(Model.SlaPolicy.Calendar?.Name ?? (Model.SlaPolicy.BusinessHoursOnly ? "Default business hours" : "24×7"))</p>
+                    }
+                    @if (Model.SlaEvents.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var slaEvent in Model.SlaEvents.OrderByDescending(e => e.OccurredAt))
+                            {
+                                var breach = slaEvent.Type.ToString().Contains("Breached");
+                                <div class="list-group-item px-0 d-flex justify-content-between gap-3">
+                                    <span class="@(breach ? "text-danger fw-semibold" : "text-warning-emphasis")"><i class="fas @(breach ? "fa-triangle-exclamation" : "fa-bell") me-2"></i>@slaEvent.Message</span>
+                                    <small class="text-muted text-nowrap">@slaEvent.OccurredAt.ToString("dd MMM HH:mm")</small>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
             <!-- Staff toolbar -->
             @if (isStaff && !isClosed)
             {

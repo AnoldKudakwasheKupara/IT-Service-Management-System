@@ -18,19 +18,26 @@ namespace IT_Service_Management_System.Controllers
         {
             ViewBag.Categories = await _db.Tickets.Where(t => t.Category != null && t.Category != "")
                 .Select(t => t.Category).Distinct().OrderBy(c => c).ToListAsync();
-            var policies = await _db.SlaPolicies.OrderBy(p => p.Priority).ThenBy(p => p.Name).ToListAsync();
+            ViewBag.Calendars = await _db.SlaCalendars.OrderByDescending(c => c.IsDefault).ThenBy(c => c.Name).ToListAsync();
+            var policies = await _db.SlaPolicies.Include(p => p.Calendar)
+                .OrderBy(p => p.Priority).ThenBy(p => p.Name).ToListAsync();
             return View(policies);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Save(int id, string name, TicketPriority? priority, string? category,
-            int responseMinutes, int resolutionMinutes, bool businessHoursOnly, bool isActive)
+            int responseMinutes, int resolutionMinutes, bool businessHoursOnly, bool isActive,
+            int? slaCalendarId, int warningThresholdPercent = 75)
         {
             if (string.IsNullOrWhiteSpace(name))
             { TempData["Error"] = "Policy name is required."; return RedirectToAction(nameof(Index)); }
             if (responseMinutes < 1 || resolutionMinutes < 1)
             { TempData["Error"] = "Response and resolution targets must be positive."; return RedirectToAction(nameof(Index)); }
+            if (warningThresholdPercent is < 1 or > 99)
+            { TempData["Error"] = "Warning threshold must be between 1 and 99 percent."; return RedirectToAction(nameof(Index)); }
+            if (slaCalendarId.HasValue && !await _db.SlaCalendars.AnyAsync(c => c.Id == slaCalendarId.Value))
+                return NotFound();
 
             category = string.IsNullOrWhiteSpace(category) ? null : category.Trim();
 
@@ -40,7 +47,8 @@ namespace IT_Service_Management_System.Controllers
                 {
                     Name = name.Trim(), Priority = priority, Category = category,
                     ResponseMinutes = responseMinutes, ResolutionMinutes = resolutionMinutes,
-                    BusinessHoursOnly = businessHoursOnly, IsActive = isActive, CreatedAt = DateTime.Now
+                    BusinessHoursOnly = businessHoursOnly, IsActive = isActive, CreatedAt = DateTime.Now,
+                    SlaCalendarId = slaCalendarId, WarningThresholdPercent = warningThresholdPercent
                 });
                 TempData["Success"] = $"SLA policy '{name}' created.";
             }
@@ -51,6 +59,7 @@ namespace IT_Service_Management_System.Controllers
                 p.Name = name.Trim(); p.Priority = priority; p.Category = category;
                 p.ResponseMinutes = responseMinutes; p.ResolutionMinutes = resolutionMinutes;
                 p.BusinessHoursOnly = businessHoursOnly; p.IsActive = isActive;
+                p.SlaCalendarId = slaCalendarId; p.WarningThresholdPercent = warningThresholdPercent;
                 TempData["Success"] = $"SLA policy '{name}' updated.";
             }
             await _db.SaveChangesAsync();
