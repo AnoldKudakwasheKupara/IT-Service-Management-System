@@ -24,6 +24,22 @@ namespace IT_Service_Management_System.Tests
         }
 
         [Fact]
+        public void GeneralManager_can_sign_and_view_but_cannot_manage_incidents()
+        {
+            Assert.True(ImsAccess.Can("GeneralManager", ImsPermission.ManagementApprove));
+            Assert.True(ImsAccess.Can("GeneralManager", ImsPermission.ViewIncidents));
+            Assert.False(ImsAccess.Can("GeneralManager", ImsPermission.ManageIncidents));
+            Assert.False(ImsAccess.Can("GeneralManager", ImsPermission.ManageConfiguration));
+        }
+
+        [Fact]
+        public void DepartmentManager_can_manage_incidents_subject_to_record_scope()
+        {
+            Assert.True(ImsAccess.Can("DepartmentManager", ImsPermission.ViewIncidents));
+            Assert.True(ImsAccess.Can("DepartmentManager", ImsPermission.ManageIncidents));
+        }
+
+        [Fact]
         public void ExternalAuditor_is_read_only()
         {
             Assert.True(ImsAccess.Can("ExternalAuditor", ImsPermission.ViewDocuments));
@@ -69,6 +85,7 @@ namespace IT_Service_Management_System.Tests
         [Theory]
         [InlineData("Admin", true)]
         [InlineData("QualityManager", true)]
+        [InlineData("GeneralManager", true)]
         [InlineData("Auditor", true)]
         [InlineData("Employee", true)]
         [InlineData("Finance", false)]

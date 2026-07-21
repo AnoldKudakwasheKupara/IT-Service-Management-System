@@ -34,6 +34,9 @@ namespace IT_Service_Management_System.Services.Ims
         public Task<Stream> OpenFileAsync(string storedKey, CancellationToken ct = default)
             => _storage.OpenReadAsync(storedKey, ct);
 
+        public Task<bool> DeleteFileAsync(string storedKey, CancellationToken ct = default)
+            => _storage.DeleteAsync(storedKey, ct);
+
         /// <summary>Appends a new (immutable) version to a document. Never overwrites prior versions.</summary>
         public async Task<IsoDocumentVersion> AddVersionAsync(IsoDocument doc, StoredFileResult? file,
             string? originalFileName, string versionNumber, string? revisionNotes, int? userId)

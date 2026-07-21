@@ -563,7 +563,8 @@
                 <tr><td class="narrative sign">@(Model.DeptManagerComments ?? "")</td></tr>
                 <tr>
                     <td style="font-size:10.5px;color:#64748b;">
-                        Date: @(Model.DeptManagerCommentDate?.ToString("dd/MM/yyyy") ?? "……………") &nbsp;&nbsp; Signature: ………………………
+                        Date: @(Model.DeptManagerCommentDate?.ToString("dd/MM/yyyy") ?? "……………") &nbsp;&nbsp;
+                        Signed by: @(Model.DeptManagerSignedBy?.FullName ?? "Not signed")
                     </td>
                 </tr>
             </table>
@@ -576,7 +577,8 @@
                 <tr><td class="narrative sign">@(Model.QaComments ?? "")</td></tr>
                 <tr>
                     <td style="font-size:10.5px;color:#64748b;">
-                        Date: @(Model.QaCommentDate?.ToString("dd/MM/yyyy") ?? "……………") &nbsp;&nbsp; Signature: ………………………
+                        Date: @(Model.QaCommentDate?.ToString("dd/MM/yyyy") ?? "……………") &nbsp;&nbsp;
+                        Signed by: @(Model.QaSignedBy?.FullName ?? "Not signed")
                     </td>
                 </tr>
             </table>
@@ -589,7 +591,8 @@
                 <tr><td class="narrative sign">@(Model.GmComments ?? "")</td></tr>
                 <tr>
                     <td style="font-size:10.5px;color:#64748b;">
-                        Date: @(Model.GmCommentDate?.ToString("dd/MM/yyyy") ?? "……………") &nbsp;&nbsp; Signature: ………………………
+                        Date: @(Model.GmCommentDate?.ToString("dd/MM/yyyy") ?? "……………") &nbsp;&nbsp;
+                        Signed by: @(Model.GmSignedBy?.FullName ?? "Not signed")
                     </td>
                 </tr>
             </table>

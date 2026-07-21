@@ -3,6 +3,9 @@
 @{
     ViewData["Title"] = Model.Reference;
     var canManage = (bool)(ViewBag.CanManage ?? false);
+    var canSignDepartment = (bool)(ViewBag.CanSignDepartment ?? false);
+    var canSignQuality = (bool)(ViewBag.CanSignQuality ?? false);
+    var canSignGeneral = (bool)(ViewBag.CanSignGeneral ?? false);
 
     string SevBadge(IncidentSeverity s) => s == IncidentSeverity.Major ? "badge-critical" : s == IncidentSeverity.Serious ? "badge-warning" : "badge-gray";
     string StatusBadge(IncidentStatus s) => s switch
@@ -728,6 +731,19 @@
                         }
                     </div>
                     <div class="signoff-text">@(string.IsNullOrWhiteSpace(Model.DeptManagerComments) ? "—" : Model.DeptManagerComments)</div>
+                    @if (Model.DeptManagerSignedBy != null)
+                    {
+                        <div class="signoff-signer"><i class="fas fa-user-check"></i> Signed by @Model.DeptManagerSignedBy.FullName</div>
+                    }
+                    @if (canSignDepartment)
+                    {
+                        <form asp-action="SignDepartment" method="post" class="signoff-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <textarea name="comments" class="form-control" rows="2" required placeholder="Department manager comments">@Model.DeptManagerComments</textarea>
+                            <button type="submit" class="btn-add-item"><i class="fas fa-signature"></i> Record department sign-off</button>
+                        </form>
+                    }
                 </div>
                 <div class="signoff-item">
                     <div class="signoff-label">
@@ -738,6 +754,19 @@
                         }
                     </div>
                     <div class="signoff-text">@(string.IsNullOrWhiteSpace(Model.QaComments) ? "—" : Model.QaComments)</div>
+                    @if (Model.QaSignedBy != null)
+                    {
+                        <div class="signoff-signer"><i class="fas fa-user-check"></i> Signed by @Model.QaSignedBy.FullName</div>
+                    }
+                    @if (canSignQuality)
+                    {
+                        <form asp-action="SignQuality" method="post" class="signoff-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <textarea name="comments" class="form-control" rows="2" required placeholder="Quality assurance comments">@Model.QaComments</textarea>
+                            <button type="submit" class="btn-add-item"><i class="fas fa-signature"></i> Record QA sign-off</button>
+                        </form>
+                    }
                 </div>
                 <div class="signoff-item" style="margin-bottom:0;">
                     <div class="signoff-label">
@@ -749,6 +778,19 @@
                         <span class="signoff-note">(major incidents)</span>
                     </div>
                     <div class="signoff-text">@(string.IsNullOrWhiteSpace(Model.GmComments) ? "—" : Model.GmComments)</div>
+                    @if (Model.GmSignedBy != null)
+                    {
+                        <div class="signoff-signer"><i class="fas fa-user-check"></i> Signed by @Model.GmSignedBy.FullName</div>
+                    }
+                    @if (canSignGeneral && Model.Severity == IncidentSeverity.Major)
+                    {
+                        <form asp-action="SignGeneral" method="post" class="signoff-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <textarea name="comments" class="form-control" rows="2" required placeholder="General manager comments">@Model.GmComments</textarea>
+                            <button type="submit" class="btn-add-item"><i class="fas fa-signature"></i> Record GM sign-off</button>
+                        </form>
+                    }
                 </div>
             </div>
         </div>
@@ -911,6 +953,9 @@
     .signoff-date { font-weight: 400; color: var(--gray-400); text-transform: none; }
     .signoff-note { font-weight: 400; color: var(--gray-400); text-transform: none; font-size: 0.65rem; }
     .signoff-text { font-size: 0.9rem; color: var(--gray-700); line-height: 1.7; white-space: pre-wrap; }
+    .signoff-signer { margin-top: 0.3rem; color: var(--success); font-size: 0.75rem; font-weight: 600; }
+    .signoff-form { display: flex; gap: 0.75rem; align-items: flex-end; margin-top: 0.75rem; }
+    .signoff-form textarea { flex: 1; }
 
     .action-description { font-size: 0.85rem; color: var(--gray-700); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .action-status { display: flex; flex-direction: column; gap: 0.2rem; align-items: flex-start; }

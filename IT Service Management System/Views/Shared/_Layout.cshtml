@@ -590,8 +590,9 @@
                     var navRole = Context.Session.GetString("UserRole");
                     var navFull = navRole == "Admin" || navRole == "SystemsAdmin";
                     var navHr = navRole == "HR";
+                    var navGeneralManager = navRole == "GeneralManager";
                     // IMS / ISO working roles (see Helpers/Ims/ImsAccess) — who sees the ISO management nav.
-                    var navIms = navFull || navRole is "QualityManager" or "DocumentController" or "DepartmentManager" or "Auditor" or "ExternalAuditor";
+                    var navIms = navFull || navRole is "QualityManager" or "GeneralManager" or "DocumentController" or "DepartmentManager" or "Auditor" or "ExternalAuditor";
                 }
 
                 <div class="nav-group">Core</div>
@@ -668,6 +669,8 @@
                 @if (navIms)
                 {
                     <div class="nav-group">ISO / Compliance</div>
+                    @if (!navGeneralManager)
+                    {
                     <a class="nav-item @(currentController == "Ecie" ? "active" : "")"
                        asp-controller="Ecie" asp-action="Index">
                         <i class="fas fa-brain"></i> Intelligence Engine
@@ -692,10 +695,13 @@
                        asp-controller="NonConformances" asp-action="Index">
                         <i class="fas fa-bug"></i> Non-Conformance
                     </a>
+                    }
                     <a class="nav-item @(currentController == "Incidents" ? "active" : "")"
                        asp-controller="Incidents" asp-action="Index">
                         <i class="fas fa-triangle-exclamation"></i> Incidents
                     </a>
+                    @if (!navGeneralManager)
+                    {
                     <a class="nav-item @(currentController == "Risk" ? "active" : "")"
                        asp-controller="Risk" asp-action="Index">
                         <i class="fas fa-gauge-high"></i> Risk Register
@@ -736,6 +742,7 @@
                        asp-controller="IsoAssistant" asp-action="Index">
                         <i class="fas fa-robot"></i> AI Assistant
                     </a>
+                    }
                 }
 
                 @if (navFull)

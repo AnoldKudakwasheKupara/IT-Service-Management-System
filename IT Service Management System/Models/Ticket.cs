@@ -134,6 +134,7 @@ namespace IT_Service_Management_System.Models
             Employee,
             // ── IMS / ISO roles (Integrated Management System module) ──
             QualityManager,
+            GeneralManager,
             DepartmentManager,
             Auditor,
             DocumentController,

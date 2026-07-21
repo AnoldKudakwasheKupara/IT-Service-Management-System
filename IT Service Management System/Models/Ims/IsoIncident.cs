@@ -182,14 +182,20 @@ namespace IT_Service_Management_System.Models.Ims
         [Display(Name = "Department Manager / Team Leader comments"), StringLength(4000)]
         public string? DeptManagerComments { get; set; }
         [DataType(DataType.Date)] public DateTime? DeptManagerCommentDate { get; set; }
+        public int? DeptManagerSignedById { get; set; }
+        [ValidateNever] public User? DeptManagerSignedBy { get; set; }
 
         [Display(Name = "Quality Assurance comments"), StringLength(4000)]
         public string? QaComments { get; set; }
         [DataType(DataType.Date)] public DateTime? QaCommentDate { get; set; }
+        public int? QaSignedById { get; set; }
+        [ValidateNever] public User? QaSignedBy { get; set; }
 
         [Display(Name = "General Manager comments (major incidents)"), StringLength(4000)]
         public string? GmComments { get; set; }
         [DataType(DataType.Date)] public DateTime? GmCommentDate { get; set; }
+        public int? GmSignedById { get; set; }
+        [ValidateNever] public User? GmSignedBy { get; set; }
 
         // ── Audit / lifecycle ─────────────────────────────────────────────────────
         public DateTime CreatedAt { get; set; } = DateTime.Now;

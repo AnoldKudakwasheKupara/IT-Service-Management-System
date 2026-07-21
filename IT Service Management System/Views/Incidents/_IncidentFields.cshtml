@@ -4,6 +4,7 @@
 @{
     var departments = ViewBag.Departments as List<Department> ?? new();
     const string fileAccept = ".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt,.csv,.msg,.eml";
+    var hasExistingPoliceReport = Model.Attachments?.Any(a => a.Kind == IncidentAttachmentKind.PoliceReport) == true;
 
     // Lists files already attached under a given category (shown on Edit so the user sees what's on file).
     Func<string, Microsoft.AspNetCore.Html.IHtmlContent> onFile = (label) =>
@@ -198,12 +199,13 @@
         function syncPolice() {
             var yes = document.querySelector('input[name="ReportedToPolice"][value="true"]');
             var on = yes && yes.checked;
+            var hasExisting = @(hasExistingPoliceReport ? "true" : "false");
             var req = document.getElementById('policeReportReq');
             var input = document.getElementById('policeReport');
             var hint = document.getElementById('policeReportHint');
-            if (req) req.style.display = on ? 'inline' : 'none';
-            if (input) input.required = !!on;
-            if (hint) hint.style.display = on ? 'block' : 'none';
+            if (req) req.style.display = on && !hasExisting ? 'inline' : 'none';
+            if (input) input.required = !!on && !hasExisting;
+            if (hint) hint.style.display = on && !hasExisting ? 'block' : 'none';
         }
         document.querySelectorAll('input[name="ReportedToPolice"]').forEach(function (r) {
             r.addEventListener('change', syncPolice);
@@ -705,55 +707,9 @@
     </div>
 </div>
 
-<div class="form-grid">
-    <div class="form-group span-2">
-        <label asp-for="DeptManagerComments" class="form-label">
-            <i class="fas fa-user-tie"></i> Department Manager / Team Leader comments
-        </label>
-        <textarea asp-for="DeptManagerComments" class="form-control" rows="3" placeholder="Comments from the department manager..."></textarea>
-        <span asp-validation-for="DeptManagerComments" class="validation-error"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="DeptManagerCommentDate" class="form-label">
-            <i class="fas fa-calendar"></i> Date
-        </label>
-        <input asp-for="DeptManagerCommentDate" type="date" class="form-control" />
-        <span asp-validation-for="DeptManagerCommentDate" class="validation-error"></span>
-    </div>
-
-    <div class="form-group span-2">
-        <label asp-for="QaComments" class="form-label">
-            <i class="fas fa-clipboard-check"></i> Quality Assurance comments
-        </label>
-        <textarea asp-for="QaComments" class="form-control" rows="3" placeholder="Comments from Quality Assurance..."></textarea>
-        <span asp-validation-for="QaComments" class="validation-error"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="QaCommentDate" class="form-label">
-            <i class="fas fa-calendar"></i> Date
-        </label>
-        <input asp-for="QaCommentDate" type="date" class="form-control" />
-        <span asp-validation-for="QaCommentDate" class="validation-error"></span>
-    </div>
-
-    <div class="form-group span-2">
-        <label asp-for="GmComments" class="form-label">
-            <i class="fas fa-user-shield"></i> General Manager comments
-            <span class="field-hint">(major incidents)</span>
-        </label>
-        <textarea asp-for="GmComments" class="form-control" rows="3" placeholder="Comments from the General Manager..."></textarea>
-        <span asp-validation-for="GmComments" class="validation-error"></span>
-    </div>
-
-    <div class="form-group">
-        <label asp-for="GmCommentDate" class="form-label">
-            <i class="fas fa-calendar"></i> Date
-        </label>
-        <input asp-for="GmCommentDate" type="date" class="form-control" />
-        <span asp-validation-for="GmCommentDate" class="validation-error"></span>
-    </div>
+<div class="alert-flash" style="background:var(--gray-50);border-color:var(--gray-200);color:var(--gray-600);">
+    <i class="fas fa-shield-check"></i>
+    Role-verified sign-offs are recorded from the incident details page after the report is saved.
 </div>
 
 <style>

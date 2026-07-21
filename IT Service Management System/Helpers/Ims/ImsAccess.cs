@@ -74,10 +74,11 @@ namespace IT_Service_Management_System.Helpers.Ims
     }
 
     /// <summary>
-    /// Central permission map for the IMS module. Maps the application's session roles onto the seven ISO
+    /// Central permission map for the IMS module. Maps the application's session roles onto the ISO
     /// role tiers from the specification:
     ///   Admin / SystemsAdmin → System Administrator (full control, including configuration)
     ///   QualityManager       → Quality Manager (runs the whole ISO system except system configuration)
+    ///   GeneralManager       → incident visibility and management sign-off
     ///   DocumentController    → owns the document lifecycle; read-only elsewhere
     ///   DepartmentManager     → department-level review &amp; sign-off; raises issues in their area
     ///   Auditor               → plans/conducts audits, raises findings, NCs and CAPAs
@@ -89,6 +90,7 @@ namespace IT_Service_Management_System.Helpers.Ims
         // ── Session-role predicates (strings mirror Helpers.Roles constants) ──
         public static bool IsAdministrator(string? role) => role is "Admin" or "SystemsAdmin";
         public static bool IsQualityManager(string? role) => role == "QualityManager";
+        public static bool IsGeneralManager(string? role) => role == "GeneralManager";
         public static bool IsDocumentController(string? role) => role == "DocumentController";
         public static bool IsDepartmentManager(string? role) => role == "DepartmentManager";
         public static bool IsAuditor(string? role) => role == "Auditor";
@@ -100,7 +102,7 @@ namespace IT_Service_Management_System.Helpers.Ims
 
         /// <summary>Every role permitted to open the IMS / ISO module at all.</summary>
         public static bool CanAccessModule(string? role) =>
-            IsImsManager(role) || IsDocumentController(role) || IsDepartmentManager(role)
+            IsImsManager(role) || IsGeneralManager(role) || IsDocumentController(role) || IsDepartmentManager(role)
             || IsAuditor(role) || IsExternalAuditor(role) || IsEmployee(role);
 
         /// <summary>
@@ -127,6 +129,10 @@ namespace IT_Service_Management_System.Helpers.Ims
             // Quality Manager — runs the ISO system end to end, except system configuration.
             if (IsQualityManager(role))
                 return p != ImsPermission.ManageConfiguration;
+
+            // General Manager — incident visibility plus management approval/sign-off authority.
+            if (IsGeneralManager(role))
+                return p is ImsPermission.ManagementApprove or ImsPermission.ViewIncidents;
 
             // External Auditor — may view everything, change nothing.
             if (IsExternalAuditor(role))

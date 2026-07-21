@@ -580,7 +580,7 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<NonConformance>().HasIndex(n => n.Status);
 
             // Incidents: children cascade with the parent; department link must not cascade.
-            modelBuilder.Entity<Incident>().HasIndex(i => new { i.Year, i.IncidentNo });
+            modelBuilder.Entity<Incident>().HasIndex(i => new { i.Year, i.IncidentNo }).IsUnique();
             modelBuilder.Entity<Incident>().HasIndex(i => i.Status);
             modelBuilder.Entity<Incident>()
                 .HasOne(i => i.Department).WithMany().HasForeignKey(i => i.DepartmentId)
@@ -591,6 +591,15 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<Incident>()
                 .HasOne(i => i.Capa).WithMany().HasForeignKey(i => i.CapaId)
                 .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Incident>()
+                .HasOne(i => i.DeptManagerSignedBy).WithMany().HasForeignKey(i => i.DeptManagerSignedById)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Incident>()
+                .HasOne(i => i.QaSignedBy).WithMany().HasForeignKey(i => i.QaSignedById)
+                .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Incident>()
+                .HasOne(i => i.GmSignedBy).WithMany().HasForeignKey(i => i.GmSignedById)
+                .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<IncidentInvestigator>()
                 .HasOne(x => x.Incident).WithMany(i => i.Investigators).HasForeignKey(x => x.IncidentId)
                 .OnDelete(DeleteBehavior.Cascade);

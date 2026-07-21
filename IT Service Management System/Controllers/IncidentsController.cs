@@ -4,8 +4,10 @@ using IT_Service_Management_System.Helpers.Ims;
 using IT_Service_Management_System.Models.Ims;
 using IT_Service_Management_System.Services;
 using IT_Service_Management_System.Services.Ims;
+using IT_Service_Management_System.Services.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace IT_Service_Management_System.Controllers
 {
@@ -15,22 +17,25 @@ namespace IT_Service_Management_System.Controllers
     /// actions → sign-off → close. Narrative sections are captured on the Create/Edit form; the
     /// investigation team, damage and remedial-action tables are managed from the Details page.
     /// </summary>
-    [RoleAuthorize("Admin", "SystemsAdmin", "QualityManager", "DocumentController", "DepartmentManager", "Auditor", "ExternalAuditor")]
+    [RoleAuthorize("Admin", "SystemsAdmin", "QualityManager", "GeneralManager", "DocumentController", "DepartmentManager", "Auditor", "ExternalAuditor")]
     public class IncidentsController : Controller
     {
         private readonly ApplicationDbContext _db;
         private readonly AuditService _audit;
         private readonly IsoDocumentService _docs;
+        private readonly IMalwareScanner _scanner;
 
         private static readonly string[] AllowedExtensions =
             { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".png", ".jpg", ".jpeg", ".txt", ".csv", ".msg", ".eml" };
         private const long MaxFileBytes = 25 * 1024 * 1024; // 25 MB/file
 
-        public IncidentsController(ApplicationDbContext db, AuditService audit, IsoDocumentService docs)
+        public IncidentsController(ApplicationDbContext db, AuditService audit, IsoDocumentService docs,
+            IMalwareScanner scanner)
         {
             _db = db;
             _audit = audit;
             _docs = docs;
+            _scanner = scanner;
         }
 
         private bool ValidateFile(IFormFile file, out string? error)
@@ -43,11 +48,29 @@ namespace IT_Service_Management_System.Controllers
             return true;
         }
 
-        // Persists an uploaded file to shared storage and returns the attachment row (not yet saved).
-        private async Task<IncidentAttachment> StoreAsync(int incidentId, IFormFile file, IncidentAttachmentKind kind,
-            string? description, string? category = null)
+        private async Task<(byte[]? Content, string? Error)> VetFileAsync(IFormFile file)
         {
-            using var stream = file.OpenReadStream();
+            if (!ValidateFile(file, out var validationError)) return (null, validationError);
+
+            byte[] content;
+            await using (var input = file.OpenReadStream())
+            using (var buffer = new MemoryStream())
+            {
+                await input.CopyToAsync(buffer);
+                content = buffer.ToArray();
+            }
+
+            var scan = await _scanner.ScanAsync(content, file.FileName);
+            return scan.IsClean
+                ? (content, null)
+                : (null, $"'{file.FileName}' was rejected: malware detected ({scan.Threat}).");
+        }
+
+        // Persists already-vetted bytes to shared storage and returns the attachment row (not yet saved).
+        private async Task<IncidentAttachment> StoreAsync(int incidentId, IFormFile file, byte[] content,
+            IncidentAttachmentKind kind, string? description, string? category = null)
+        {
+            using var stream = new MemoryStream(content, writable: false);
             var stored = await _docs.SaveFileAsync(stream, file.FileName, file.ContentType ?? "application/octet-stream");
             return new IncidentAttachment
             {
@@ -80,18 +103,62 @@ namespace IT_Service_Management_System.Controllers
         private string? Role => HttpContext.Session.GetString("UserRole");
         private bool Can(ImsPermission p) => ImsAccess.Can(Role, p);
         private bool CanManage => Can(ImsPermission.ManageIncidents);
+        private bool IsDepartmentManager => ImsAccess.IsDepartmentManager(Role);
+        private bool IsAdministrator => ImsAccess.IsAdministrator(Role);
+        private bool CanSignQuality => IsAdministrator || ImsAccess.IsQualityManager(Role);
+        private bool CanSignGeneral => IsAdministrator || ImsAccess.IsGeneralManager(Role);
         private IActionResult Denied() => RedirectToAction("AccessDenied", "Home");
 
-        private void LoadLookups()
+        private Task<int?> CurrentDepartmentIdAsync()
         {
-            ViewBag.Departments = _db.Departments.OrderBy(d => d.Name).ToList();
-            ViewBag.Users = _db.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToList();
+            if (Uid == null) return Task.FromResult<int?>(null);
+            return _db.Users.AsNoTracking().Where(u => u.Id == Uid.Value)
+                .Select(u => u.DepartmentId).FirstOrDefaultAsync();
+        }
+
+        private async Task<bool> IsInDepartmentScopeAsync(int incidentId)
+        {
+            if (!IsDepartmentManager) return true;
+            var departmentId = await CurrentDepartmentIdAsync();
+            return departmentId.HasValue && await _db.Incidents
+                .AnyAsync(i => i.Id == incidentId && i.DepartmentId == departmentId.Value);
+        }
+
+        private async Task<bool> CanManageIncidentAsync(int incidentId) =>
+            CanManage && await IsInDepartmentScopeAsync(incidentId);
+
+        private async Task<bool> CanSignDepartmentAsync(int incidentId) =>
+            IsAdministrator || (IsDepartmentManager && await IsInDepartmentScopeAsync(incidentId));
+
+        private async Task LoadLookupsAsync()
+        {
+            var departments = _db.Departments.AsNoTracking().AsQueryable();
+            if (IsDepartmentManager)
+            {
+                var departmentId = await CurrentDepartmentIdAsync();
+                departments = departmentId.HasValue
+                    ? departments.Where(d => d.Id == departmentId.Value)
+                    : departments.Where(d => false);
+            }
+
+            ViewBag.Departments = await departments.OrderBy(d => d.Name).ToListAsync();
+            ViewBag.Users = await _db.Users.AsNoTracking().Where(u => u.IsActive)
+                .OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
         }
 
         // ── LIST ─────────────────────────────────────────────────────────────────
         public async Task<IActionResult> Index(IncidentStatus? status, IncidentSeverity? severity, string? q)
         {
-            var query = _db.Incidents.Include(i => i.Department).Include(i => i.CreatedBy).AsQueryable();
+            var baseQuery = _db.Incidents.AsQueryable();
+            if (IsDepartmentManager)
+            {
+                var departmentId = await CurrentDepartmentIdAsync();
+                baseQuery = departmentId.HasValue
+                    ? baseQuery.Where(i => i.DepartmentId == departmentId.Value)
+                    : baseQuery.Where(i => false);
+            }
+
+            IQueryable<Incident> query = baseQuery.Include(i => i.Department).Include(i => i.CreatedBy);
 
             if (status.HasValue) query = query.Where(i => i.Status == status.Value);
             if (severity.HasValue) query = query.Where(i => i.Severity == severity.Value);
@@ -109,11 +176,11 @@ namespace IT_Service_Management_System.Controllers
             ViewBag.Status = status;
             ViewBag.Severity = severity;
             ViewBag.Q = q;
-            ViewBag.Total = await _db.Incidents.CountAsync();
-            ViewBag.Open = await _db.Incidents.CountAsync(i => i.Status != IncidentStatus.Closed);
-            ViewBag.UnderInvestigation = await _db.Incidents.CountAsync(i => i.Status == IncidentStatus.UnderInvestigation);
-            ViewBag.Major = await _db.Incidents.CountAsync(i => i.Severity == IncidentSeverity.Major && i.Status != IncidentStatus.Closed);
-            ViewBag.Closed = await _db.Incidents.CountAsync(i => i.Status == IncidentStatus.Closed);
+            ViewBag.Total = await baseQuery.CountAsync();
+            ViewBag.Open = await baseQuery.CountAsync(i => i.Status != IncidentStatus.Closed);
+            ViewBag.UnderInvestigation = await baseQuery.CountAsync(i => i.Status == IncidentStatus.UnderInvestigation);
+            ViewBag.Major = await baseQuery.CountAsync(i => i.Severity == IncidentSeverity.Major && i.Status != IncidentStatus.Closed);
+            ViewBag.Closed = await baseQuery.CountAsync(i => i.Status == IncidentStatus.Closed);
             ViewBag.CanManage = CanManage;
             return View(list);
         }
@@ -123,8 +190,13 @@ namespace IT_Service_Management_System.Controllers
         {
             var incident = await LoadFullAsync(id);
             if (incident == null) return NotFound();
-            ViewBag.CanManage = CanManage;
-            ViewBag.Users = _db.Users.Where(u => u.IsActive).OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToList();
+            if (!await IsInDepartmentScopeAsync(id)) return Denied();
+            ViewBag.CanManage = await CanManageIncidentAsync(id);
+            ViewBag.CanSignDepartment = await CanSignDepartmentAsync(id);
+            ViewBag.CanSignQuality = CanSignQuality;
+            ViewBag.CanSignGeneral = CanSignGeneral;
+            ViewBag.Users = await _db.Users.AsNoTracking().Where(u => u.IsActive)
+                .OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
             return View(incident);
         }
 
@@ -133,6 +205,7 @@ namespace IT_Service_Management_System.Controllers
         {
             var incident = await LoadFullAsync(id);
             if (incident == null) return NotFound();
+            if (!await IsInDepartmentScopeAsync(id)) return Denied();
             return View(incident);
         }
 
@@ -140,6 +213,9 @@ namespace IT_Service_Management_System.Controllers
             .Include(i => i.Department)
             .Include(i => i.CreatedBy)
             .Include(i => i.Capa)
+            .Include(i => i.DeptManagerSignedBy)
+            .Include(i => i.QaSignedBy)
+            .Include(i => i.GmSignedBy)
             .Include(i => i.Investigators)
             .Include(i => i.Damages)
             .Include(i => i.Actions)
@@ -147,15 +223,17 @@ namespace IT_Service_Management_System.Controllers
             .FirstOrDefaultAsync(i => i.Id == id);
 
         // ── CREATE ───────────────────────────────────────────────────────────────
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
             if (!CanManage) return Denied();
-            LoadLookups();
+            await LoadLookupsAsync();
             var model = new Incident
             {
                 DateReported = DateTime.Today,
                 ReportedByName = HttpContext.Session.GetString("UserName")
             };
+            if (IsDepartmentManager)
+                model.DepartmentId = await CurrentDepartmentIdAsync();
             return View(model);
         }
 
@@ -165,36 +243,76 @@ namespace IT_Service_Management_System.Controllers
         {
             if (!CanManage) return Denied();
 
+            if (IsDepartmentManager)
+            {
+                var departmentId = await CurrentDepartmentIdAsync();
+                if (!departmentId.HasValue) return Denied();
+                model.DepartmentId = departmentId.Value;
+            }
+
+            // Workflow and sign-off state is always established by server-controlled actions.
+            model.Status = IncidentStatus.Reported;
+            model.ClosedAt = null;
+            model.CapaId = null;
+            model.DeptManagerComments = null;
+            model.DeptManagerCommentDate = null;
+            model.DeptManagerSignedById = null;
+            model.QaComments = null;
+            model.QaCommentDate = null;
+            model.QaSignedById = null;
+            model.GmComments = null;
+            model.GmCommentDate = null;
+            model.GmSignedById = null;
+
             // Police report is mandatory when the incident was reported to the police.
             if (model.ReportedToPolice == true && (policeReport == null || policeReport.Length == 0))
                 ModelState.AddModelError(nameof(model.ReportedToPolice),
                     "A police report file must be uploaded when the incident was reported to the police.");
 
             var files = CollectFiles(policeReport, attachments);
+            var vettedFiles = new List<(IFormFile File, IncidentAttachmentKind Kind, byte[] Content)>();
             foreach (var f in files)
-                if (!ValidateFile(f.file, out var err)) ModelState.AddModelError("", err!);
+            {
+                var vetted = await VetFileAsync(f.file);
+                if (vetted.Error != null) ModelState.AddModelError("", vetted.Error);
+                else vettedFiles.Add((f.file, f.kind, vetted.Content!));
+            }
 
             var categoryFiles = CollectCategoryFiles();
+            var vettedCategoryFiles = new List<(IFormFile File, string Category, byte[] Content)>();
             foreach (var f in categoryFiles)
-                if (!ValidateFile(f.file, out var cerr)) ModelState.AddModelError("", cerr!);
+            {
+                var vetted = await VetFileAsync(f.file);
+                if (vetted.Error != null) ModelState.AddModelError("", vetted.Error);
+                else vettedCategoryFiles.Add((f.file, f.category, vetted.Content!));
+            }
 
-            if (!ModelState.IsValid) { LoadLookups(); return View(model); }
+            if (!ModelState.IsValid) { await LoadLookupsAsync(); return View(model); }
 
             var year = (model.DateOfIncident ?? DateTime.Now).Year;
-            var lastNo = await _db.Incidents.Where(i => i.Year == year).MaxAsync(i => (int?)i.IncidentNo) ?? 0;
             model.Year = year;
-            model.IncidentNo = lastNo + 1;
             model.CreatedById = Uid;
             model.CreatedAt = DateTime.Now;
 
-            _db.Incidents.Add(model);
-            await _db.SaveChangesAsync();
+            // Serializable allocation plus the unique database index guarantees one reference per year.
+            var strategy = _db.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+                var lastNo = await _db.Incidents.Where(i => i.Year == year)
+                    .MaxAsync(i => (int?)i.IncidentNo) ?? 0;
+                model.IncidentNo = lastNo + 1;
+                _db.Incidents.Add(model);
+                await _db.SaveChangesAsync();
+                await transaction.CommitAsync();
+            });
 
-            foreach (var f in files)
-                _db.IncidentAttachments.Add(await StoreAsync(model.Id, f.file, f.kind, null));
-            foreach (var f in categoryFiles)
-                _db.IncidentAttachments.Add(await StoreAsync(model.Id, f.file, IncidentAttachmentKind.Supporting, null, f.category));
-            if (files.Count > 0 || categoryFiles.Count > 0) await _db.SaveChangesAsync();
+            foreach (var f in vettedFiles)
+                _db.IncidentAttachments.Add(await StoreAsync(model.Id, f.File, f.Content, f.Kind, null));
+            foreach (var f in vettedCategoryFiles)
+                _db.IncidentAttachments.Add(await StoreAsync(model.Id, f.File, f.Content,
+                    IncidentAttachmentKind.Supporting, null, f.Category));
+            if (vettedFiles.Count > 0 || vettedCategoryFiles.Count > 0) await _db.SaveChangesAsync();
 
             await _audit.LogAsync("Created", "Incident", model.Id, $"{model.Reference} — {model.Title}");
             TempData["Success"] = $"Incident {model.Reference} logged. Add the investigation team, damage and remedial actions below.";
@@ -216,10 +334,10 @@ namespace IT_Service_Management_System.Controllers
         // ── EDIT ───────────────────────────────────────────────────────────────────
         public async Task<IActionResult> Edit(int id)
         {
-            if (!CanManage) return Denied();
+            if (!await CanManageIncidentAsync(id)) return Denied();
             var incident = await _db.Incidents.Include(i => i.Attachments).FirstOrDefaultAsync(i => i.Id == id);
             if (incident == null) return NotFound();
-            LoadLookups();
+            await LoadLookupsAsync();
             return View(incident);
         }
 
@@ -227,9 +345,10 @@ namespace IT_Service_Management_System.Controllers
         [RequestSizeLimit(long.MaxValue)]
         public async Task<IActionResult> Edit(int id, Incident model, IFormFile? policeReport)
         {
-            if (!CanManage) return Denied();
+            if (!await CanManageIncidentAsync(id)) return Denied();
             var i = await _db.Incidents.FindAsync(id);
             if (i == null) return NotFound();
+            if (IsDepartmentManager) model.DepartmentId = i.DepartmentId;
 
             // Police report mandatory when reported to police — unless one is already on file or is being uploaded now.
             var hasPoliceReport = await _db.IncidentAttachments
@@ -237,14 +356,33 @@ namespace IT_Service_Management_System.Controllers
             if (model.ReportedToPolice == true && !hasPoliceReport && (policeReport == null || policeReport.Length == 0))
                 ModelState.AddModelError(nameof(model.ReportedToPolice),
                     "A police report file must be uploaded when the incident was reported to the police.");
-            if (policeReport != null && policeReport.Length > 0 && !ValidateFile(policeReport, out var prErr))
-                ModelState.AddModelError("", prErr!);
+            byte[]? policeReportContent = null;
+            if (policeReport != null && policeReport.Length > 0)
+            {
+                var vetted = await VetFileAsync(policeReport);
+                if (vetted.Error != null) ModelState.AddModelError("", vetted.Error);
+                else policeReportContent = vetted.Content;
+            }
 
             var categoryFiles = CollectCategoryFiles();
+            var vettedCategoryFiles = new List<(IFormFile File, string Category, byte[] Content)>();
             foreach (var f in categoryFiles)
-                if (!ValidateFile(f.file, out var cerr)) ModelState.AddModelError("", cerr!);
+            {
+                var vetted = await VetFileAsync(f.file);
+                if (vetted.Error != null) ModelState.AddModelError("", vetted.Error);
+                else vettedCategoryFiles.Add((f.file, f.category, vetted.Content!));
+            }
 
-            if (!ModelState.IsValid) { LoadLookups(); return View(model); }
+            if (!ModelState.IsValid)
+            {
+                model.Id = i.Id;
+                model.Year = i.Year;
+                model.IncidentNo = i.IncidentNo;
+                model.Attachments = await _db.IncidentAttachments.AsNoTracking()
+                    .Where(a => a.IncidentId == id).ToListAsync();
+                await LoadLookupsAsync();
+                return View(model);
+            }
 
             // Section A
             i.Title = model.Title;
@@ -298,18 +436,12 @@ namespace IT_Service_Management_System.Controllers
             i.RootCause = model.RootCause;
             // Section L
             i.LessonsLearned = model.LessonsLearned;
-            // Sections M/N/O
-            i.DeptManagerComments = model.DeptManagerComments;
-            i.DeptManagerCommentDate = model.DeptManagerCommentDate;
-            i.QaComments = model.QaComments;
-            i.QaCommentDate = model.QaCommentDate;
-            i.GmComments = model.GmComments;
-            i.GmCommentDate = model.GmCommentDate;
-
-            if (policeReport != null && policeReport.Length > 0)
-                _db.IncidentAttachments.Add(await StoreAsync(id, policeReport, IncidentAttachmentKind.PoliceReport, "Police report"));
-            foreach (var f in categoryFiles)
-                _db.IncidentAttachments.Add(await StoreAsync(id, f.file, IncidentAttachmentKind.Supporting, null, f.category));
+            if (policeReport != null && policeReportContent != null)
+                _db.IncidentAttachments.Add(await StoreAsync(id, policeReport, policeReportContent,
+                    IncidentAttachmentKind.PoliceReport, "Police report"));
+            foreach (var f in vettedCategoryFiles)
+                _db.IncidentAttachments.Add(await StoreAsync(id, f.File, f.Content,
+                    IncidentAttachmentKind.Supporting, null, f.Category));
 
             await _db.SaveChangesAsync();
             await _audit.LogAsync("Updated", "Incident", i.Id, $"{i.Reference} — {i.Title}");
@@ -321,7 +453,8 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangeStatus(int id, IncidentStatus status)
         {
-            if (!CanManage) return Denied();
+            if (!await CanManageIncidentAsync(id)) return Denied();
+            if (!Enum.IsDefined(status)) return BadRequest();
             var i = await _db.Incidents.FindAsync(id);
             if (i == null) return NotFound();
 
@@ -334,16 +467,79 @@ namespace IT_Service_Management_System.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> SignDepartment(int id, string comments)
+        {
+            if (!await CanSignDepartmentAsync(id) || Uid == null) return Denied();
+            if (string.IsNullOrWhiteSpace(comments))
+            { TempData["Error"] = "Department sign-off comments are required."; return RedirectToAction(nameof(Details), new { id }); }
+
+            var incident = await _db.Incidents.FindAsync(id);
+            if (incident == null) return NotFound();
+            incident.DeptManagerComments = comments.Trim();
+            incident.DeptManagerCommentDate = DateTime.Today;
+            incident.DeptManagerSignedById = Uid.Value;
+            await _db.SaveChangesAsync();
+            await _audit.LogAsync("DepartmentSignOff", "Incident", id, $"{incident.Reference} department sign-off recorded.");
+            TempData["Success"] = "Department manager sign-off recorded.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> SignQuality(int id, string comments)
+        {
+            if (!CanSignQuality || Uid == null) return Denied();
+            if (string.IsNullOrWhiteSpace(comments))
+            { TempData["Error"] = "Quality sign-off comments are required."; return RedirectToAction(nameof(Details), new { id }); }
+
+            var incident = await _db.Incidents.FindAsync(id);
+            if (incident == null) return NotFound();
+            incident.QaComments = comments.Trim();
+            incident.QaCommentDate = DateTime.Today;
+            incident.QaSignedById = Uid.Value;
+            await _db.SaveChangesAsync();
+            await _audit.LogAsync("QualitySignOff", "Incident", id, $"{incident.Reference} quality sign-off recorded.");
+            TempData["Success"] = "Quality assurance sign-off recorded.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> SignGeneral(int id, string comments)
+        {
+            if (!CanSignGeneral || Uid == null) return Denied();
+            if (string.IsNullOrWhiteSpace(comments))
+            { TempData["Error"] = "General manager sign-off comments are required."; return RedirectToAction(nameof(Details), new { id }); }
+
+            var incident = await _db.Incidents.FindAsync(id);
+            if (incident == null) return NotFound();
+            if (incident.Severity != IncidentSeverity.Major)
+            { TempData["Error"] = "General manager sign-off applies only to major incidents."; return RedirectToAction(nameof(Details), new { id }); }
+
+            incident.GmComments = comments.Trim();
+            incident.GmCommentDate = DateTime.Today;
+            incident.GmSignedById = Uid.Value;
+            await _db.SaveChangesAsync();
+            await _audit.LogAsync("GeneralManagerSignOff", "Incident", id, $"{incident.Reference} general manager sign-off recorded.");
+            TempData["Success"] = "General manager sign-off recorded.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            if (!CanManage) return Denied();
-            var i = await _db.Incidents.FindAsync(id);
+            if (!await CanManageIncidentAsync(id)) return Denied();
+            var i = await _db.Incidents.Include(x => x.Attachments).FirstOrDefaultAsync(x => x.Id == id);
             if (i == null) return NotFound();
             var reference = i.Reference;
+            var storedKeys = i.Attachments.Where(a => !string.IsNullOrEmpty(a.StoredFileName))
+                .Select(a => a.StoredFileName).ToList();
             _db.Incidents.Remove(i);   // children cascade
             await _db.SaveChangesAsync();
+            var cleanupFailed = false;
+            foreach (var key in storedKeys)
+                cleanupFailed |= !await _docs.DeleteFileAsync(key);
             await _audit.LogAsync("Deleted", "Incident", id, $"{reference} deleted.");
             TempData["Success"] = $"Incident {reference} deleted.";
+            if (cleanupFailed) TempData["Error"] = "The incident was deleted, but one or more stored files could not be removed. Administrators have been notified in the logs.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -351,7 +547,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> AddInvestigator(int id, IncidentInvestigator investigator)
         {
-            if (!CanManage) return Denied();
+            if (!await CanManageIncidentAsync(id)) return Denied();
             if (!await _db.Incidents.AnyAsync(i => i.Id == id)) return NotFound();
             if (string.IsNullOrWhiteSpace(investigator.Name))
             { TempData["Error"] = "Investigator name is required."; return RedirectToAction(nameof(Details), new { id }); }
@@ -368,7 +564,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveInvestigator(int id, int memberId)
         {
-            if (!CanManage) return Denied();
+            if (!await CanManageIncidentAsync(id)) return Denied();
             var m = await _db.IncidentInvestigators.FirstOrDefaultAsync(x => x.Id == memberId && x.IncidentId == id);
             if (m != null) { _db.IncidentInvestigators.Remove(m); await _db.SaveChangesAsync(); }
             TempData["Success"] = "Team member removed.";
@@ -379,7 +575,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> AddDamage(int id, IncidentDamage damage)
         {
-            if (!CanManage) return Denied();
+            if (!await CanManageIncidentAsync(id)) return Denied();
             if (!await _db.Incidents.AnyAsync(i => i.Id == id)) return NotFound();
             damage.Id = 0;   // the route's "id" must not bind to the child identity column
             damage.IncidentId = id;
@@ -392,7 +588,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveDamage(int id, int damageId)
         {
-            if (!CanManage) return Denied();
+            if (!await CanManageIncidentAsync(id)) return Denied();
             var d = await _db.IncidentDamages.FirstOrDefaultAsync(x => x.Id == damageId && x.IncidentId == id);
             if (d != null) { _db.IncidentDamages.Remove(d); await _db.SaveChangesAsync(); }
             TempData["Success"] = "Damage line removed.";
@@ -405,7 +601,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> AddAction(int id, IncidentAction remedialAction)
         {
-            if (!CanManage) return Denied();
+            if (!await CanManageIncidentAsync(id)) return Denied();
             if (!await _db.Incidents.AnyAsync(i => i.Id == id)) return NotFound();
             if (string.IsNullOrWhiteSpace(remedialAction.Description))
             { TempData["Error"] = "An action description is required."; return RedirectToAction(nameof(Details), new { id }); }
@@ -421,7 +617,8 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateActionStatus(int id, int actionId, IncidentActionStatus status)
         {
-            if (!CanManage) return Denied();
+            if (!await CanManageIncidentAsync(id)) return Denied();
+            if (!Enum.IsDefined(status)) return BadRequest();
             var a = await _db.IncidentActions.FirstOrDefaultAsync(x => x.Id == actionId && x.IncidentId == id);
             if (a == null) return NotFound();
             a.Status = status;
@@ -434,7 +631,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveAction(int id, int actionId)
         {
-            if (!CanManage) return Denied();
+            if (!await CanManageIncidentAsync(id)) return Denied();
             var a = await _db.IncidentActions.FirstOrDefaultAsync(x => x.Id == actionId && x.IncidentId == id);
             if (a != null) { _db.IncidentActions.Remove(a); await _db.SaveChangesAsync(); }
             TempData["Success"] = "Action removed.";
@@ -446,7 +643,8 @@ namespace IT_Service_Management_System.Controllers
         [RequestSizeLimit(long.MaxValue)]
         public async Task<IActionResult> UploadAttachments(int id, List<IFormFile> files, IncidentAttachmentKind kind, string? description)
         {
-            if (!CanManage) return Denied();
+            if (!await CanManageIncidentAsync(id)) return Denied();
+            if (!Enum.IsDefined(kind)) return BadRequest();
             if (!await _db.Incidents.AnyAsync(i => i.Id == id)) return NotFound();
 
             var valid = (files ?? new()).Where(f => f != null && f.Length > 0).ToList();
@@ -457,8 +655,9 @@ namespace IT_Service_Management_System.Controllers
             int saved = 0;
             foreach (var f in valid)
             {
-                if (!ValidateFile(f, out var err)) { skipped.Add(err!); continue; }
-                _db.IncidentAttachments.Add(await StoreAsync(id, f, kind, description));
+                var vetted = await VetFileAsync(f);
+                if (vetted.Error != null) { skipped.Add(vetted.Error); continue; }
+                _db.IncidentAttachments.Add(await StoreAsync(id, f, vetted.Content!, kind, description));
                 saved++;
             }
             if (saved > 0) await _db.SaveChangesAsync();
@@ -471,6 +670,7 @@ namespace IT_Service_Management_System.Controllers
 
         public async Task<IActionResult> DownloadAttachment(int id, int attachmentId)
         {
+            if (!await IsInDepartmentScopeAsync(id)) return Denied();
             var a = await _db.IncidentAttachments.FirstOrDefaultAsync(x => x.Id == attachmentId && x.IncidentId == id);
             if (a == null || string.IsNullOrEmpty(a.StoredFileName)) return NotFound();
             var stream = await _docs.OpenFileAsync(a.StoredFileName);
@@ -480,9 +680,17 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> RemoveAttachment(int id, int attachmentId)
         {
-            if (!CanManage) return Denied();
+            if (!await CanManageIncidentAsync(id)) return Denied();
             var a = await _db.IncidentAttachments.FirstOrDefaultAsync(x => x.Id == attachmentId && x.IncidentId == id);
-            if (a != null) { _db.IncidentAttachments.Remove(a); await _db.SaveChangesAsync(); }
+            if (a == null) return NotFound();
+            if (!string.IsNullOrEmpty(a.StoredFileName) && !await _docs.DeleteFileAsync(a.StoredFileName))
+            {
+                TempData["Error"] = "The stored file could not be removed; its record was retained so an administrator can retry.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+            _db.IncidentAttachments.Remove(a);
+            await _db.SaveChangesAsync();
+            await _audit.LogAsync("AttachmentRemoved", "Incident", id, $"Removed attachment '{a.OriginalFileName}'.");
             TempData["Success"] = "Attachment removed.";
             return RedirectToAction(nameof(Details), new { id });
         }

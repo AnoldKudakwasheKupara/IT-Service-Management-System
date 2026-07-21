@@ -12,6 +12,7 @@ namespace IT_Service_Management_System.Helpers
 
         // ── IMS / ISO roles (Integrated Management System module) ──
         public const string QualityManager = "QualityManager";
+        public const string GeneralManager = "GeneralManager";
         public const string DepartmentManager = "DepartmentManager";
         public const string Auditor = "Auditor";
         public const string DocumentController = "DocumentController";
@@ -29,8 +30,8 @@ namespace IT_Service_Management_System.Helpers
         /// <summary>Roles that create &amp; maintain ISO records (documents, audits, CAPAs, risks, suppliers…).</summary>
         public static readonly string[] ImsContributors = { Admin, SystemsAdmin, QualityManager, DocumentController, DepartmentManager, Auditor };
 
-        /// <summary>Every role permitted to open the IMS / ISO module (contributors + Employee self-service + read-only external auditor).</summary>
-        public static readonly string[] ImsAll = { Admin, SystemsAdmin, QualityManager, DocumentController, DepartmentManager, Auditor, Employee, ExternalAuditor };
+        /// <summary>Every role permitted to open an IMS / ISO surface, including signatories and read-only users.</summary>
+        public static readonly string[] ImsAll = { Admin, SystemsAdmin, QualityManager, GeneralManager, DocumentController, DepartmentManager, Auditor, Employee, ExternalAuditor };
 
         public static bool IsFullAccess(string? role) => role == Admin || role == SystemsAdmin;
         public static bool IsHr(string? role) => role == HR;
