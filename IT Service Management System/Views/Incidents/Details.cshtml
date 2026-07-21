@@ -755,6 +755,8 @@
     </div>
 </div>
 
+@* Self-contained styles below — this view does NOT include _IncidentStyles (it would load
+   afterwards and override these carefully-tuned rules). *@
 <style>
     /* ===== ROOT VARIABLES (from Dashboard) ===== */
     :root {
@@ -953,5 +955,3 @@
         .ticket-count { font-size: 0.6rem; padding: 0.05rem 0.4rem; }
     }
 </style>
-
-<partial name="_IncidentStyles" />
