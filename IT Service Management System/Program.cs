@@ -249,6 +249,8 @@ builder.Services.AddScoped<IT_Service_Management_System.Services.Itsm.ISlaServic
     IT_Service_Management_System.Services.Itsm.SlaService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Itsm.SlaMonitoringService>();
 builder.Services.AddHostedService<IT_Service_Management_System.Services.Itsm.SlaMonitoringHostedService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Itsm.IMyWorkService,
+    IT_Service_Management_System.Services.Itsm.MyWorkService>();
 
 // QuestPDF community licence (free for this use); required before any PDF is generated.
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;

@@ -601,6 +601,11 @@
                     <i class="fas fa-chart-line"></i> Dashboard
                 </a>
 
+                <a class="nav-item @(currentController == "MyWork" ? "active" : "")"
+                   asp-controller="MyWork" asp-action="Index">
+                    <i class="fas fa-briefcase"></i> My Work
+                </a>
+
                 <a class="nav-item @(currentController == "Tickets" ? "active" : "")"
                    asp-controller="Tickets" asp-action="Index">
                     <i class="fas fa-ticket-alt"></i> Tickets

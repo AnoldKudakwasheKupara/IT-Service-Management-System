@@ -1,0 +1,48 @@
+@model IT_Service_Management_System.ViewModels.Itsm.MyWorkVm
+@{
+    ViewData["Title"] = "My Work";
+    string BucketClass(string bucket) => Model.Bucket == bucket ? "border-primary bg-primary-subtle" : "";
+}
+<style>
+    .work-shell{max-width:1450px;margin:0 auto}.work-hero{background:linear-gradient(120deg,#172554,#2563eb);color:#fff;border-radius:1rem;padding:1.75rem;margin-bottom:1.5rem}.work-stat{background:#fff;border:1px solid #e2e8f0;border-radius:.9rem;padding:1rem;text-decoration:none;color:#0f172a;display:block;height:100%}.work-stat:hover{border-color:#60a5fa;transform:translateY(-1px)}.work-stat strong{font-size:1.6rem;display:block}.work-panel{background:#fff;border:1px solid #e2e8f0;border-radius:1rem;overflow:hidden}.work-table{width:100%;border-collapse:collapse}.work-table th,.work-table td{padding:.9rem 1rem;border-bottom:1px solid #e2e8f0;vertical-align:middle}.work-table th{font-size:.72rem;text-transform:uppercase;color:#64748b;background:#f8fafc}.work-badge{display:inline-flex;padding:.25rem .65rem;border-radius:999px;background:#f1f5f9;color:#475569;font-size:.74rem;font-weight:600}.work-overdue{border-left:4px solid #dc2626}.work-approval{border-left:4px solid #7c3aed}.work-sla{border-left:4px solid #f59e0b}
+</style>
+<div class="work-shell">
+    <section class="work-hero d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div><h1 class="mb-2"><i class="fas fa-briefcase me-2"></i>My Work</h1><p class="mb-0 opacity-75">One prioritised queue for assignments, approvals and time-sensitive work.</p></div>
+        <a asp-action="Index" class="btn btn-light"><i class="fas fa-rotate me-1"></i>Refresh</a>
+    </section>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg"><a asp-action="Index" class="work-stat @(string.IsNullOrEmpty(Model.Bucket) ? "border-primary bg-primary-subtle" : "")"><span class="text-muted">All work</span><strong>@Model.Total</strong></a></div>
+        <div class="col-6 col-lg"><a asp-action="Index" asp-route-bucket="overdue" class="work-stat @BucketClass("overdue")"><span class="text-muted">Overdue</span><strong class="text-danger">@Model.Overdue</strong></a></div>
+        <div class="col-6 col-lg"><a asp-action="Index" asp-route-bucket="today" class="work-stat @BucketClass("today")"><span class="text-muted">Due today</span><strong>@Model.DueToday</strong></a></div>
+        <div class="col-6 col-lg"><a asp-action="Index" asp-route-bucket="approvals" class="work-stat @BucketClass("approvals")"><span class="text-muted">Decisions</span><strong class="text-primary">@Model.Approvals</strong></a></div>
+        <div class="col-6 col-lg"><a asp-action="Index" asp-route-bucket="sla" class="work-stat @BucketClass("sla")"><span class="text-muted">SLA risk</span><strong class="text-warning">@Model.SlaRisk</strong></a></div>
+    </div>
+
+    <form method="get" class="card border-0 shadow-sm mb-3"><div class="card-body row g-2">
+        <input type="hidden" name="bucket" value="@Model.Bucket" />
+        <div class="col-md-6"><input name="q" value="@Model.Query" class="form-control" placeholder="Search reference, title or source..." /></div>
+        <div class="col-md-4"><select name="kind" class="form-select"><option value="">All work types</option>@foreach(var kind in Model.Kinds){<option value="@kind" selected="@(Model.Kind == kind)">@kind</option>}</select></div>
+        <div class="col-md-2"><button class="btn btn-primary w-100">Filter</button></div>
+    </div></form>
+
+    <div class="work-panel table-responsive">
+        <table class="work-table">
+            <thead><tr><th>Work item</th><th>Type</th><th>Source</th><th>Status</th><th>Due</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var item in Model.Items)
+            {
+                var overdue = item.IsOverdue(DateTime.Now);
+                <tr class="@(overdue ? "work-overdue" : item.RequiresDecision ? "work-approval" : item.IsSlaRisk ? "work-sla" : "")">
+                    <td><strong>@item.Reference</strong><div>@item.Title</div>@if(item.RequiresDecision){<small class="text-primary"><i class="fas fa-user-check me-1"></i>Decision required</small>}else if(item.IsSlaRisk){<small class="text-warning-emphasis"><i class="fas fa-stopwatch me-1"></i>SLA attention</small>}</td>
+                    <td><span class="work-badge">@item.Kind</span></td><td>@item.Source</td><td>@item.Status</td>
+                    <td class="@(overdue ? "text-danger fw-semibold" : "")">@(item.DueAt?.ToString("dd MMM yyyy HH:mm") ?? "—")</td>
+                    <td><a href="@item.Url" class="btn btn-sm btn-outline-primary">Open</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        @if (!Model.Items.Any()) { <div class="text-center text-muted py-5"><i class="fas fa-circle-check fa-3x text-success mb-3"></i><h2 class="h5">Nothing requires your attention</h2><p class="mb-0">Your current filter has no outstanding work.</p></div> }
+    </div>
+</div>
