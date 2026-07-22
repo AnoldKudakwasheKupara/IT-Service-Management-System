@@ -9,14 +9,14 @@ namespace IT_Service_Management_System.Models
         public int Id { get; set; }
 
         [ValidateNever]
-        public string UserId { get; set; } 
+        public string UserId { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(100)]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         [MaxLength(500)]
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         [Required]
         public DateTime StartTime { get; set; }
@@ -36,7 +36,7 @@ namespace IT_Service_Management_System.Models
 
         public int CategoryId { get; set; }
         [ValidateNever]
-        public ActivityCategory Category { get; set; }
+        public ActivityCategory? Category { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }

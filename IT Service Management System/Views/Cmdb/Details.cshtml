@@ -1,0 +1,290 @@
+@model IT_Service_Management_System.Models.Itsm.ConfigurationItem
+@using IT_Service_Management_System.Models.Itsm
+@{
+    ViewData["Title"] = $"{Model.CiCode} — {Model.Name}";
+    var incidents = ViewBag.Incidents as List<IT_Service_Management_System.Models.Ticket> ?? new();
+    var problems = ViewBag.Problems as List<Problem> ?? new();
+    var changes = ViewBag.Changes as List<ChangeRequest> ?? new();
+
+    string CritBadge(CiCriticality c) => c switch
+    {
+        CiCriticality.Critical => "badge-red",
+        CiCriticality.High => "badge-amber",
+        CiCriticality.Medium => "badge-blue",
+        _ => "badge-gray"
+    };
+    string StatusBadge(CiStatus s) => s switch
+    {
+        CiStatus.Active => "badge-green",
+        CiStatus.UnderMaintenance => "badge-amber",
+        _ => "badge-gray"
+    };
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <a asp-action="Index" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to CMDB
+        </a>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-sitemap me-2" style="color: var(--primary);"></i>
+                    @Model.Name
+                </h1>
+                <p class="text-muted mt-2 mb-0">
+                    <span class="ci-code-inline">@Model.CiCode</span>
+                    <span class="status-badge badge-gray">@Model.Type</span>
+                    <span class="status-badge badge-blue">@Model.Environment</span>
+                    <span class="status-badge @CritBadge(Model.Criticality)">@Model.Criticality</span>
+                    <span class="status-badge @StatusBadge(Model.Status)">@Model.Status</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- DETAILS CARD -->
+    <div class="data-card mb-4">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-circle-info me-2"></i>
+                <span>Configuration Item Details</span>
+            </div>
+        </div>
+        <div class="ci-details-grid">
+            <div class="ci-field">
+                <span class="ci-field-label"><i class="fas fa-user me-1"></i> Owner</span>
+                <span class="ci-field-value">@(Model.Owner?.FullName ?? "—")</span>
+            </div>
+            <div class="ci-field">
+                <span class="ci-field-label"><i class="fas fa-location-dot me-1"></i> Location</span>
+                <span class="ci-field-value">@(string.IsNullOrWhiteSpace(Model.Location) ? "—" : Model.Location)</span>
+            </div>
+            <div class="ci-field">
+                <span class="ci-field-label"><i class="fas fa-industry me-1"></i> Vendor</span>
+                <span class="ci-field-value">@(string.IsNullOrWhiteSpace(Model.Vendor) ? "—" : Model.Vendor)</span>
+            </div>
+            <div class="ci-field">
+                <span class="ci-field-label"><i class="fas fa-code-branch me-1"></i> Version</span>
+                <span class="ci-field-value">@(string.IsNullOrWhiteSpace(Model.Version) ? "—" : Model.Version)</span>
+            </div>
+            <div class="ci-field">
+                <span class="ci-field-label"><i class="fas fa-network-wired me-1"></i> IP / Hostname</span>
+                <span class="ci-field-value">@(string.IsNullOrWhiteSpace(Model.IpOrHostname) ? "—" : Model.IpOrHostname)</span>
+            </div>
+            <div class="ci-field">
+                <span class="ci-field-label"><i class="fas fa-box me-1"></i> Linked Asset</span>
+                <span class="ci-field-value">
+                    @if (Model.Asset != null)
+                    {
+                        <a asp-controller="Assets" asp-action="Details" asp-route-id="@Model.Asset.Id">@Model.Asset.ItemName</a>
+                    }
+                    else
+                    {
+                        <text>—</text>
+                    }
+                </span>
+            </div>
+            <div class="ci-field">
+                <span class="ci-field-label"><i class="fas fa-calendar me-1"></i> Created</span>
+                <span class="ci-field-value">@Model.CreatedAt.ToString("MMM dd, yyyy HH:mm")</span>
+            </div>
+            <div class="ci-field ci-field-wide">
+                <span class="ci-field-label"><i class="fas fa-align-left me-1"></i> Description</span>
+                <span class="ci-field-value">@(string.IsNullOrWhiteSpace(Model.Description) ? "—" : Model.Description)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- LINKED INCIDENTS -->
+    <div class="data-card mb-4">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-ticket-alt me-2"></i>
+                <span>Linked Incidents</span>
+            </div>
+            <div class="record-count"><span>@incidents.Count</span> incidents</div>
+        </div>
+        @if (incidents.Any())
+        {
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag me-1"></i> Reference</th>
+                            <th><i class="fas fa-heading me-1"></i> Title</th>
+                            <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                            <th><i class="fas fa-calendar me-1"></i> Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in incidents)
+                        {
+                            <tr>
+                                <td><a href="/Tickets/Details/@t.Id" class="ref-link">TKT-@t.Id.ToString("D5")</a></td>
+                                <td>@t.Title</td>
+                                <td><span class="status-badge badge-blue">@t.Status</span></td>
+                                <td class="date-cell">@t.CreatedAt.ToString("MMM dd, yyyy")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-ticket-alt"></i>
+                <h3>No linked incidents</h3>
+                <p>No incidents reference this configuration item.</p>
+            </div>
+        }
+    </div>
+
+    <!-- RELATED PROBLEMS -->
+    <div class="data-card mb-4">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-triangle-exclamation me-2"></i>
+                <span>Related Problems</span>
+            </div>
+            <div class="record-count"><span>@problems.Count</span> problems</div>
+        </div>
+        @if (problems.Any())
+        {
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag me-1"></i> Reference</th>
+                            <th><i class="fas fa-heading me-1"></i> Title</th>
+                            <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in problems)
+                        {
+                            <tr>
+                                <td><a href="/Problems/Details/@p.Id" class="ref-link">@p.ProblemRef</a></td>
+                                <td>@p.Title</td>
+                                <td><span class="status-badge badge-amber">@p.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-triangle-exclamation"></i>
+                <h3>No related problems</h3>
+                <p>No problems reference this configuration item.</p>
+            </div>
+        }
+    </div>
+
+    <!-- RELATED CHANGES -->
+    <div class="data-card mb-4">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-code-pull-request me-2"></i>
+                <span>Related Changes</span>
+            </div>
+            <div class="record-count"><span>@changes.Count</span> changes</div>
+        </div>
+        @if (changes.Any())
+        {
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-hashtag me-1"></i> Reference</th>
+                            <th><i class="fas fa-heading me-1"></i> Title</th>
+                            <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ch in changes)
+                        {
+                            <tr>
+                                <td><a href="/Changes/Details/@ch.Id" class="ref-link">@ch.ChangeRef</a></td>
+                                <td>@ch.Title</td>
+                                <td><span class="status-badge badge-gray">@ch.Status</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-code-pull-request"></i>
+                <h3>No related changes</h3>
+                <p>No change requests reference this configuration item.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .ci-code-inline {
+        font-weight: 700;
+        color: var(--primary, #3b82f6);
+        letter-spacing: 0.5px;
+        margin-right: 0.5rem;
+    }
+
+    .ci-details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.25rem 2rem;
+        padding: 1.5rem;
+    }
+
+    .ci-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .ci-field-wide {
+        grid-column: 1 / -1;
+    }
+
+    .ci-field-label {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--gray-500, #64748b);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ci-field-value {
+        font-size: 0.95rem;
+        color: var(--gray-800, #1e293b);
+        word-break: break-word;
+    }
+
+        .ci-field-value a {
+            color: var(--primary, #3b82f6);
+            text-decoration: none;
+        }
+
+            .ci-field-value a:hover {
+                text-decoration: underline;
+            }
+
+    .ref-link {
+        font-weight: 700;
+        color: var(--primary, #3b82f6);
+        text-decoration: none;
+        letter-spacing: 0.5px;
+    }
+
+        .ref-link:hover {
+            text-decoration: underline;
+        }
+</style>

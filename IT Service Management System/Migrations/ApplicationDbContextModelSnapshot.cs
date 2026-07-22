@@ -22,6 +22,103 @@ namespace IT_Service_Management_System.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("IT_Service_Management_System.Models.ActionItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssignedToId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AssigneeLabel")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Details")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MeetingId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedToId");
+
+                    b.HasIndex("MeetingId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ActionItems");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.ActionItemUpdate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActionItemId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("MeetingId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("StatusAtUpdate")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UpdatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActionItemId");
+
+                    b.HasIndex("MeetingId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("ActionItemUpdates");
+                });
+
             modelBuilder.Entity("IT_Service_Management_System.Models.Activity", b =>
                 {
                     b.Property<int>("Id")
@@ -81,6 +178,122 @@ namespace IT_Service_Management_System.Migrations
                     b.ToTable("ActivityCategories");
                 });
 
+            modelBuilder.Entity("IT_Service_Management_System.Models.AppConfiguration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AlertEmailRecipients")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("AlertOnBackupFailure")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AlertOnDatabaseFailure")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AlertOnLargeDataExport")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AlertOnMultipleFailedLogins")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AlertOnNewAdminAccount")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AlertOnPrivilegeEscalation")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AlertOnSuspiciousLocation")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("BackupEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("BackupFrequency")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("BackupPath")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<int>("BackupRetentionCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BackupTime")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("nvarchar(5)");
+
+                    b.Property<int>("LockoutDurationMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LockoutMaxFailedAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("MfaEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MfaOtpValidityMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("MfaRequiredForAdmins")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("PasswordExpiryDays")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PasswordMinLength")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("PasswordRequireDigit")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PasswordRequireLowercase")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PasswordRequireSpecial")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PasswordRequireUppercase")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SenderEmail")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("SenderName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("SessionIdleTimeoutMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SmtpPort")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SmtpServer")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AppConfigurations");
+                });
+
             modelBuilder.Entity("IT_Service_Management_System.Models.Asset", b =>
                 {
                     b.Property<int>("Id")
@@ -94,7 +307,8 @@ namespace IT_Service_Management_System.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("AssetTag")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Condition")
                         .IsRequired()
@@ -108,13 +322,16 @@ namespace IT_Service_Management_System.Migrations
 
                     b.Property<string>("IssuedBy")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ItemName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<decimal?>("PurchaseCost")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("PurchaseDate")
@@ -122,11 +339,13 @@ namespace IT_Service_Management_System.Migrations
 
                     b.Property<string>("Remarks")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("SerialNumber")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Status")
                         .HasColumnType("nvarchar(max)");
@@ -221,7 +440,7 @@ namespace IT_Service_Management_System.Migrations
 
                     b.Property<string>("UserId")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("UserName")
                         .IsRequired()
@@ -229,7 +448,37 @@ namespace IT_Service_Management_System.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("UserId", "Timestamp");
+
                     b.ToTable("AuditLogs");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.CannedResponse", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CannedResponses");
                 });
 
             modelBuilder.Entity("IT_Service_Management_System.Models.ClearanceWorkflow", b =>
@@ -350,6 +599,1356 @@ namespace IT_Service_Management_System.Migrations
                     b.ToTable("DevelopmentClearances");
                 });
 
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentApproval", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApproverRole")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("ApproverUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Comments")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DecidedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DecidedByName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("DocumentVersionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EmployeeDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeDocumentId");
+
+                    b.ToTable("DocumentApprovals");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentAuditLog", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("Action")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("EmployeeDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int?>("PerformedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PerformedByName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeDocumentId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("Timestamp");
+
+                    b.ToTable("DocumentAuditLogs");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DefaultFolderId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DefaultRetentionYears")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsExpiryTracked")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DefaultFolderId");
+
+                    b.ToTable("DocumentCategories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 1,
+                            IsActive = true,
+                            IsExpiryTracked = true,
+                            Name = "Passport"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 1,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "National ID"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 1,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Birth Certificate"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 1,
+                            IsActive = true,
+                            IsExpiryTracked = true,
+                            Name = "Driver's License"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 1,
+                            IsActive = true,
+                            IsExpiryTracked = true,
+                            Name = "Police Clearance"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 2,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "CV"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 2,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Offer Letter"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 8,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Employment Contract"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 8,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "NDA"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 5,
+                            IsActive = true,
+                            IsExpiryTracked = true,
+                            Name = "Medical Aid Card"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 6,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "NSSA"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 7,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Tax Certificate"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 3,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Degree Certificate"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 3,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Diploma"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 4,
+                            IsActive = true,
+                            IsExpiryTracked = true,
+                            Name = "Professional License"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 10,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Performance Review"
+                        },
+                        new
+                        {
+                            Id = 17,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 11,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Training Certificate"
+                        },
+                        new
+                        {
+                            Id = 18,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 16,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Warning Letter"
+                        },
+                        new
+                        {
+                            Id = 19,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 13,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Promotion Letter"
+                        },
+                        new
+                        {
+                            Id = 20,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 17,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Termination Letter"
+                        },
+                        new
+                        {
+                            Id = 21,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 19,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Retirement Letter"
+                        },
+                        new
+                        {
+                            Id = 22,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DefaultFolderId = 20,
+                            IsActive = true,
+                            IsExpiryTracked = false,
+                            Name = "Other"
+                        });
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentComment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AuthorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AuthorName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeDocumentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeDocumentId");
+
+                    b.ToTable("DocumentComments");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentFolder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Icon")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsSystem")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DocumentFolders");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Icon = "fa-id-card",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Personal Documents",
+                            SortOrder = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Icon = "fa-briefcase",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Employment Documents",
+                            SortOrder = 2
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Icon = "fa-graduation-cap",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Academic Qualifications",
+                            SortOrder = 3
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Icon = "fa-certificate",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Professional Certifications",
+                            SortOrder = 4
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Icon = "fa-notes-medical",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Medical Records",
+                            SortOrder = 5
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Icon = "fa-money-check-dollar",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Payroll Documents",
+                            SortOrder = 6
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Icon = "fa-file-invoice-dollar",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Tax Documents",
+                            SortOrder = 7
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Icon = "fa-file-contract",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Contracts",
+                            SortOrder = 8
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Icon = "fa-gavel",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Disciplinary Records",
+                            SortOrder = 9
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Icon = "fa-chart-line",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Performance Reviews",
+                            SortOrder = 10
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Icon = "fa-chalkboard-user",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Training Records",
+                            SortOrder = 11
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Icon = "fa-plane-departure",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Leave Documents",
+                            SortOrder = 12
+                        },
+                        new
+                        {
+                            Id = 13,
+                            Icon = "fa-arrow-up-right-dots",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Promotion Documents",
+                            SortOrder = 13
+                        },
+                        new
+                        {
+                            Id = 14,
+                            Icon = "fa-right-left",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Transfer Documents",
+                            SortOrder = 14
+                        },
+                        new
+                        {
+                            Id = 15,
+                            Icon = "fa-award",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Awards",
+                            SortOrder = 15
+                        },
+                        new
+                        {
+                            Id = 16,
+                            Icon = "fa-triangle-exclamation",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Warnings",
+                            SortOrder = 16
+                        },
+                        new
+                        {
+                            Id = 17,
+                            Icon = "fa-door-open",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Exit Documents",
+                            SortOrder = 17
+                        },
+                        new
+                        {
+                            Id = 18,
+                            Icon = "fa-file-signature",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Resignation Documents",
+                            SortOrder = 18
+                        },
+                        new
+                        {
+                            Id = 19,
+                            Icon = "fa-umbrella-beach",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Retirement Documents",
+                            SortOrder = 19
+                        },
+                        new
+                        {
+                            Id = 20,
+                            Icon = "fa-folder",
+                            IsActive = true,
+                            IsSystem = true,
+                            Name = "Other Documents",
+                            SortOrder = 20
+                        });
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("EmployeeDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("RecipientUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecipientUserId", "IsRead");
+
+                    b.ToTable("DocumentNotifications");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CancelledByName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FulfilledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("FulfilledDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Instructions")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("LastReminderAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("RequestedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RequestedByName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("FulfilledDocumentId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("EmployeeId", "Status");
+
+                    b.ToTable("DocumentRequests");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentShare", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedByName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("DocumentVersionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DownloadCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EmployeeDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsReadOnly")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("MaxDownloads")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeDocumentId");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.ToTable("DocumentShares");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentTag", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("DocumentTags");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentTagMap", b =>
+                {
+                    b.Property<int>("EmployeeDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DocumentTagId")
+                        .HasColumnType("int");
+
+                    b.HasKey("EmployeeDocumentId", "DocumentTagId");
+
+                    b.HasIndex("DocumentTagId");
+
+                    b.ToTable("DocumentTagMaps");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentVersion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ChangeNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("EmployeeDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsCurrent")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("OcrText")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Sha256")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<int>("StorageProvider")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StoredKey")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UploadedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UploadedByName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeDocumentId");
+
+                    b.ToTable("DocumentVersions");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.EmployeeDocument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ConfidentialityLevel")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CreatedByName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("CurrentVersionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("DocumentNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FolderId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("IssueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Keywords")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("RetentionUntil")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ViewCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("CurrentVersionId");
+
+                    b.HasIndex("ExpiryDate");
+
+                    b.HasIndex("FolderId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("EmployeeId", "FolderId");
+
+                    b.ToTable("EmployeeDocuments");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.ExpiryAlert", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Acknowledged")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("AlertedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ThresholdDays")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeDocumentId");
+
+                    b.ToTable("ExpiryAlerts");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.RequiredDocument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AppliesToDepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AppliesToRole")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsMandatory")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppliesToDepartmentId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("RequiredDocuments");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.RetentionPolicy", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Action")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("FolderId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("RetentionYears")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("FolderId");
+
+                    b.ToTable("RetentionPolicies");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.StorageProvider", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("RootLocation")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("StorageProviders");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            IsDefault = true,
+                            Name = "Local Disk",
+                            RootLocation = "employee-documents",
+                            Type = 0
+                        });
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.EmployeeFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StoredName")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UploadedBy")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("EmployeeFiles");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.EngagementStayInterview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BSCSystemComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("BSCSystemRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CareerOpportunitiesComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CareerOpportunitiesRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ChangesToWorkingAtAxis")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CommunicationChannelsComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CommunicationChannelsRating")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("CurrentPositionStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CurrentPrioritiesAndOverallWellbeing")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DateJoinedAxis")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DemotivatingFactors")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("DevelopmentOpportunitiesComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DevelopmentOpportunitiesRating")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DiscussionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool?>("FeelsSupported")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("HasDevelopmentPlan")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ImprovementIdeas")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InterviewerOverallComments")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JobSatisfactionComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("JobSatisfactionRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("JobTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LeadershipQualityComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("LeadershipQualityRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ManagerName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ManagerRelationshipComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ManagerRelationshipRating")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MotivationAndEngagementFactors")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NameAndSurname")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NextCareerMilestone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OrganizationGeneralComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrganizationGeneralRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OtherComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OtherRating")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OverallStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PayAndBenefitsComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PayAndBenefitsRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReasonsPeopleLeave")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReasonsPeopleStay")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RewardForPerformanceComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RewardForPerformanceRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SkillsUtilizationFeedback")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TeamRelationshipComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("TeamRelationshipRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WellbeingComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("WellbeingRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WorkingConditionsComment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("WorkingConditionsRating")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EngagementStayInterviews");
+                });
+
             modelBuilder.Entity("IT_Service_Management_System.Models.ExitClearance", b =>
                 {
                     b.Property<int>("Id")
@@ -446,6 +2045,144 @@ namespace IT_Service_Management_System.Migrations
                     b.ToTable("ExitClearanceEmployeeDetails");
                 });
 
+            modelBuilder.Entity("IT_Service_Management_System.Models.ExitInterview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdditionalComments")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("AdequateTrainingAndResources")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("CareerGrowthOpportunities")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Client")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CommunicationCollaborationSuggestions")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CompanyCultureWorkEnvironment")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CompensationAndBenefits")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CompensationMarketCompetitiveness")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CultureImprovementSuggestions")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DateOfResignation")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EmployeeName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmployeeRetentionRecommendations")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmployeeSignature")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("FeltValuedAndRecognized")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("HRRepresentativeSignature")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InterviewConductedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("InterviewDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("JobResponsibilities")
+                        .HasColumnType("int");
+
+                    b.Property<string>("JobSatisfactionComments")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LastWorkingDay")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ManagementLeadershipStyle")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MostLikedAboutCompany")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("OtherRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OtherReasonDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Position")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PrimaryReasonForDeparture")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RelationshipWithManagerDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("RelationshipWithManagerRating")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ResignationPreventionSuggestions")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("ResponsibilitiesClearlyDefined")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("RoleMetExpectations")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("SatisfiedWithSalaryAndBenefits")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("SignOffDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool?>("SupportedByTeamAndLeadership")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("WorkLifeBalanceComments")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("WorkLifeBalanceRating")
+                        .HasColumnType("int");
+
+                    b.Property<bool?>("WouldRecommendCompany")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("WouldReturnToCompany")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ExitInterviews");
+                });
+
             modelBuilder.Entity("IT_Service_Management_System.Models.FinanceClearance", b =>
                 {
                     b.Property<int>("Id")
@@ -540,8 +2277,8 @@ namespace IT_Service_Management_System.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("Approved")
-                        .HasColumnType("bit");
+                    b.Property<int?>("ApprovedById")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("ApprovedDate")
                         .HasColumnType("datetime2");
@@ -555,30 +2292,3169 @@ namespace IT_Service_Management_System.Migrations
                     b.Property<bool>("ExitInterviewCompleted")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("ExitInterviewDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExitInterviewReceivedBy")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("FuneralPolicyCancelled")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("FuneralPolicyDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FuneralPolicyReceivedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("HandoverReportDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HandoverReportReceivedBy")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("HandoverReportSubmitted")
                         .HasColumnType("bit");
 
-                    b.Property<int>("HrUserId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("MedicalAidCancelled")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("MedicalAidDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MedicalAidReceivedBy")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("NSSACancelled")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("NSSADate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NSSAReceivedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ResignationLetterDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("ResignationLetterReceived")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("StaffIdCardReturned")
+                    b.Property<string>("ResignationLetterReceivedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("StaffIdDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("StaffIdReceivedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("StaffIdReturned")
                         .HasColumnType("bit");
 
                     b.HasKey("Id");
 
                     b.ToTable("HrApprovals");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Audit", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ActualEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ActualStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("AuditProgrammeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Conclusion")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Criteria")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("LeadAuditorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Objectives")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("PlannedEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PlannedStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Scope")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuditProgrammeId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("LeadAuditorId");
+
+                    b.HasIndex("Status", "ActualEndDate");
+
+                    b.ToTable("Audits");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.AuditChecklistItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuditId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ClauseReference")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Evidence")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Question")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuditId");
+
+                    b.ToTable("AuditChecklistItems");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.AuditFinding", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssignedToId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AuditId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CapaId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ClauseReference")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Evidence")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("RaisedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedToId");
+
+                    b.HasIndex("AuditId");
+
+                    b.HasIndex("CapaId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("RaisedById");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("AuditFindings");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.AuditProgramme", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Objectives")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.ToTable("AuditProgrammes");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.AuditTeamMember", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuditId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RoleOnTeam")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuditId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AuditTeamMembers");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Capa", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Containment")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("Correction")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("CorrectiveAction")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EffectivenessReview")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<DateTime?>("EffectivenessReviewDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("Escalated")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("EscalatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("NonConformanceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PreventiveAction")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<int?>("ResponsibleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RootCause")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SourceReference")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VerificationNotes")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("VerifiedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("NonConformanceId");
+
+                    b.HasIndex("ResponsibleId");
+
+                    b.HasIndex("VerifiedById");
+
+                    b.HasIndex("Status", "DueDate");
+
+                    b.ToTable("Capas");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Competency", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Competencies");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ComplianceObligation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Authority")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("EvidenceNotes")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<DateTime?>("LastAssessedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LegalReference")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime?>("NextReviewDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Requirement")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ComplianceObligations");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Improvement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActualBenefit")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("ExpectedBenefit")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProposedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("TargetDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("ProposedById");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Improvements");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Incident", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BasicCause")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("BriefDescription")
+                        .HasMaxLength(6000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("CapaId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CaseNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ClaimNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool?>("Claimable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool?>("ClaimedFromInsurance")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CriticalFactors")
+                        .HasMaxLength(6000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DateOfIncident")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("DateReported")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeptManagerCommentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeptManagerComments")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int?>("DeptManagerSignedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DetailedDescription")
+                        .HasMaxLength(12000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("DocDeptOfLabour")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("DocDriversDetails")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("DocInternalAudit")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("DocMotorInsurance")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("DocOther")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("DocOtherText")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("DocPollutionReport")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("DocSketchDiagram")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("DocWorkmenCompensation")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("DocWrittenStatements")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("EvidencePaper")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("EvidenceParts")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("EvidencePeople")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("EvidencePositions")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime?>("GmCommentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GmComments")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int?>("GmSignedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImmediateCause")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int>("IncidentNo")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LessonsLearned")
+                        .HasMaxLength(6000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LocationOfIncident")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("PoliceDetailsTel")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<bool?>("Preventable")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("PreventableNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Probability")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("QaCommentDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("QaComments")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int?>("QaSignedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReportStatus")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReportedByName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<bool?>("ReportedToPolice")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ReportedToPoliceAt")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("RootCause")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("TimeOfIncident")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CapaId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DeptManagerSignedById");
+
+                    b.HasIndex("GmSignedById");
+
+                    b.HasIndex("QaSignedById");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("Year", "IncidentNo")
+                        .IsUnique();
+
+                    b.ToTable("Incidents");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IncidentAction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("IncidentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PlannedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ResponsiblePerson")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IncidentId");
+
+                    b.ToTable("IncidentActions");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IncidentAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("IncidentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<string>("StorageProvider")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("StoredFileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UploadedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IncidentId");
+
+                    b.HasIndex("UploadedById");
+
+                    b.ToTable("IncidentAttachments");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IncidentDamage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Cost")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("IncidentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Payer")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IncidentId");
+
+                    b.ToTable("IncidentDamages");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IncidentInvestigator", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("IncidentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("InvestigationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Position")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IncidentId");
+
+                    b.ToTable("IncidentInvestigators");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoClause", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClauseNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Standard", "ClauseNumber");
+
+                    b.ToTable("IsoClauses");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ClauseNumber = "4",
+                            Standard = "Iso9001",
+                            Title = "Context of the organization"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            ClauseNumber = "5",
+                            Standard = "Iso9001",
+                            Title = "Leadership"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            ClauseNumber = "6",
+                            Standard = "Iso9001",
+                            Title = "Planning"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            ClauseNumber = "6.2",
+                            Standard = "Iso9001",
+                            Title = "Quality objectives and planning to achieve them"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            ClauseNumber = "7",
+                            Standard = "Iso9001",
+                            Title = "Support"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            ClauseNumber = "7.2",
+                            Standard = "Iso9001",
+                            Title = "Competence"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            ClauseNumber = "7.5",
+                            Standard = "Iso9001",
+                            Title = "Documented information"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            ClauseNumber = "8",
+                            Standard = "Iso9001",
+                            Title = "Operation"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            ClauseNumber = "8.4",
+                            Standard = "Iso9001",
+                            Title = "Control of externally provided processes, products and services"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            ClauseNumber = "8.5",
+                            Standard = "Iso9001",
+                            Title = "Production and service provision"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            ClauseNumber = "9",
+                            Standard = "Iso9001",
+                            Title = "Performance evaluation"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            ClauseNumber = "9.2",
+                            Standard = "Iso9001",
+                            Title = "Internal audit"
+                        },
+                        new
+                        {
+                            Id = 13,
+                            ClauseNumber = "9.3",
+                            Standard = "Iso9001",
+                            Title = "Management review"
+                        },
+                        new
+                        {
+                            Id = 14,
+                            ClauseNumber = "10",
+                            Standard = "Iso9001",
+                            Title = "Improvement"
+                        },
+                        new
+                        {
+                            Id = 15,
+                            ClauseNumber = "10.2",
+                            Standard = "Iso9001",
+                            Title = "Nonconformity and corrective action"
+                        },
+                        new
+                        {
+                            Id = 16,
+                            ClauseNumber = "4",
+                            Standard = "Iso27001",
+                            Title = "Context of the organization"
+                        },
+                        new
+                        {
+                            Id = 17,
+                            ClauseNumber = "5",
+                            Standard = "Iso27001",
+                            Title = "Leadership"
+                        },
+                        new
+                        {
+                            Id = 18,
+                            ClauseNumber = "6",
+                            Standard = "Iso27001",
+                            Title = "Planning"
+                        },
+                        new
+                        {
+                            Id = 19,
+                            ClauseNumber = "6.1.2",
+                            Standard = "Iso27001",
+                            Title = "Information security risk assessment"
+                        },
+                        new
+                        {
+                            Id = 20,
+                            ClauseNumber = "6.1.3",
+                            Standard = "Iso27001",
+                            Title = "Information security risk treatment"
+                        },
+                        new
+                        {
+                            Id = 21,
+                            ClauseNumber = "7",
+                            Standard = "Iso27001",
+                            Title = "Support"
+                        },
+                        new
+                        {
+                            Id = 22,
+                            ClauseNumber = "7.5",
+                            Standard = "Iso27001",
+                            Title = "Documented information"
+                        },
+                        new
+                        {
+                            Id = 23,
+                            ClauseNumber = "8",
+                            Standard = "Iso27001",
+                            Title = "Operation"
+                        },
+                        new
+                        {
+                            Id = 24,
+                            ClauseNumber = "9",
+                            Standard = "Iso27001",
+                            Title = "Performance evaluation"
+                        },
+                        new
+                        {
+                            Id = 25,
+                            ClauseNumber = "9.2",
+                            Standard = "Iso27001",
+                            Title = "Internal audit"
+                        },
+                        new
+                        {
+                            Id = 26,
+                            ClauseNumber = "9.3",
+                            Standard = "Iso27001",
+                            Title = "Management review"
+                        },
+                        new
+                        {
+                            Id = 27,
+                            ClauseNumber = "10",
+                            Standard = "Iso27001",
+                            Title = "Improvement"
+                        },
+                        new
+                        {
+                            Id = 28,
+                            ClauseNumber = "10.2",
+                            Standard = "Iso27001",
+                            Title = "Nonconformity and corrective action"
+                        });
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ApproverId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Classification")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CurrentVersion")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("CurrentVersionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DocumentNumber")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime?>("EffectiveDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("IsoClause")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime?>("IssueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Keywords")
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ReviewDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewFrequency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApproverId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("CurrentVersionId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DocumentNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ExpiryDate");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("ReviewDate");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("IsoDocuments");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocumentAcknowledgement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Accepted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("AcknowledgedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Comments")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("DownloadedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("IsoDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IsoDocumentVersionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("OpenedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SignatureHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
+
+                    b.Property<string>("SignatureName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("SignedIp")
+                        .HasMaxLength(45)
+                        .HasColumnType("nvarchar(45)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsoDocumentId");
+
+                    b.HasIndex("IsoDocumentVersionId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("IsoDocumentAcknowledgements");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocumentApproval", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ApproverId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ApproverRole")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("Comments")
+                        .HasMaxLength(1500)
+                        .HasColumnType("nvarchar(1500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DecisionAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("IsoDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("IsoDocumentVersionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Stage")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApproverId");
+
+                    b.HasIndex("IsoDocumentId");
+
+                    b.HasIndex("IsoDocumentVersionId");
+
+                    b.ToTable("IsoDocumentApprovals");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocumentCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("IsoDocumentCategories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Code = "QMS",
+                            IsActive = true,
+                            Name = "Quality Management"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Code = "ISMS",
+                            IsActive = true,
+                            Name = "Information Security"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Code = "HR",
+                            IsActive = true,
+                            Name = "Human Resources"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Code = "IT",
+                            IsActive = true,
+                            Name = "Information Technology"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Code = "OPS",
+                            IsActive = true,
+                            Name = "Operations"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Code = "FIN",
+                            IsActive = true,
+                            Name = "Finance"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Code = "HSE",
+                            IsActive = true,
+                            Name = "Health, Safety & Environment"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Code = "GEN",
+                            IsActive = true,
+                            Name = "General / Administration"
+                        });
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocumentDistribution", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("IsoDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("RequiresAcknowledgement")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("RoleName")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("IsoDocumentId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("IsoDocumentDistributions");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocumentReview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ActualDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("IsoDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("NextReviewDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ReviewerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ScheduledDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsoDocumentId");
+
+                    b.HasIndex("ReviewerId");
+
+                    b.ToTable("IsoDocumentReviews");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocumentVersion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ApprovedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<bool>("IsCurrent")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("IsoDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<string>("RevisionNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StorageProvider")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("StoredFileName")
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<string>("VersionNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("IsoDocumentId");
+
+                    b.ToTable("IsoDocumentVersions");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoEvidence", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("IsoClause")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int?>("LinkedEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LinkedEntityType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StorageProvider")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("StoredFileName")
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("UploadedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UploadedById");
+
+                    b.ToTable("IsoEvidences");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("RecipientId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RecipientUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RelatedEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RelatedEntityType")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RecipientId");
+
+                    b.ToTable("IsoNotifications");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ManagementReview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AgendaNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int?>("ChairId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Conclusions")
+                        .HasMaxLength(6000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Decisions")
+                        .HasMaxLength(6000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("MeetingDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChairId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("Status", "MeetingDate");
+
+                    b.ToTable("ManagementReviews");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ManagementReviewAction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssignedToId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ManagementReviewId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedToId");
+
+                    b.HasIndex("ManagementReviewId");
+
+                    b.HasIndex("Status", "DueDate");
+
+                    b.ToTable("ManagementReviewActions");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ManagementReviewAttendee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ManagementReviewId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Present")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Role")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ManagementReviewId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ManagementReviewAttendees");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ManagementReviewInput", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int>("ManagementReviewId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ManagementReviewId");
+
+                    b.ToTable("ManagementReviewInputs");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.NonConformance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssignedToId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<DateTime>("DetectedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Evidence")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("RaisedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RootCause")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedToId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("RaisedById");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("NonConformances");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Objective", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal?>("BaselineValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("CurrentValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Frequency")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<decimal?>("TargetValue")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Objectives");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ObjectiveMeasurement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("ObjectiveId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PeriodLabel")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<int?>("RecordedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RecordedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ObjectiveId");
+
+                    b.HasIndex("RecordedById");
+
+                    b.ToTable("ObjectiveMeasurements");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Opportunity", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionPlan")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("Benefit")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("BenefitScore")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2500)
+                        .HasColumnType("nvarchar(2500)");
+
+                    b.Property<int>("Likelihood")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("TargetDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Opportunities");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Risk", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssetId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2500)
+                        .HasColumnType("nvarchar(2500)");
+
+                    b.Property<int>("Impact")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Likelihood")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ResidualImpact")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ResidualLikelihood")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReviewDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Threat")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Treatment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TreatmentPlan")
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("Vulnerability")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("Category");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Risks");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Supplier", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<DateTime?>("ApprovedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("CertificateExpiry")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CertificateName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("ContactName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime?>("ContractEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ContractStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<string>("ProductsServices")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Suppliers");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.SupplierEvaluation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comments")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("ComplianceScore")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DeliveryScore")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EvaluatedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EvaluationDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Period")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PricingScore")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QualityScore")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SupplierId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SupportScore")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EvaluatedById");
+
+                    b.HasIndex("SupplierId");
+
+                    b.ToTable("SupplierEvaluations");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.TrainingCourse", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<decimal>("DurationHours")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("LinkedDocumentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Provider")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Standard")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("LinkedDocumentId");
+
+                    b.ToTable("TrainingCourses");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.TrainingRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("CertificateExpiry")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CertificateName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ScheduledDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("Score")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("TrainingCourseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CertificateExpiry");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TrainingCourseId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("TrainingRecords");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.UserCompetency", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssessedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("AssessedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CompetencyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Level")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("RequiredLevel")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssessedById");
+
+                    b.HasIndex("CompetencyId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("UserCompetencies");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Itsm.ChangeRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApprovalNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ApprovedById")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AssignedToId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BackoutPlan")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ConfigurationItemId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Impact")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImplementationPlan")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<bool?>("ImplementedSuccessfully")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("ProblemId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Risk")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ScheduledEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ScheduledStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TestPlan")
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("AssignedToId");
+
+                    b.HasIndex("ConfigurationItemId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("ProblemId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ChangeRequests");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Itsm.ConfigurationItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssetId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Criticality")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Environment")
+                        .HasColumnType("int");
+
+                    b.Property<string>("IpOrHostname")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Vendor")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Version")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ConfigurationItems");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Itsm.Problem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssignedToId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ConfigurationItemId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RootCause")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Workaround")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignedToId");
+
+                    b.HasIndex("ConfigurationItemId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Problems");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Itsm.SlaPolicy", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("BusinessHoursOnly")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int?>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ResolutionMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ResponseMinutes")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Priority", "IsActive");
+
+                    b.ToTable("SlaPolicies");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            BusinessHoursOnly = false,
+                            CreatedAt = new DateTime(2026, 7, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            Name = "Critical Priority",
+                            Priority = 3,
+                            ResolutionMinutes = 240,
+                            ResponseMinutes = 30
+                        },
+                        new
+                        {
+                            Id = 2,
+                            BusinessHoursOnly = false,
+                            CreatedAt = new DateTime(2026, 7, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            Name = "High Priority",
+                            Priority = 2,
+                            ResolutionMinutes = 480,
+                            ResponseMinutes = 60
+                        },
+                        new
+                        {
+                            Id = 3,
+                            BusinessHoursOnly = false,
+                            CreatedAt = new DateTime(2026, 7, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            Name = "Medium Priority",
+                            Priority = 1,
+                            ResolutionMinutes = 1440,
+                            ResponseMinutes = 240
+                        },
+                        new
+                        {
+                            Id = 4,
+                            BusinessHoursOnly = false,
+                            CreatedAt = new DateTime(2026, 7, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            Name = "Low Priority",
+                            Priority = 0,
+                            ResolutionMinutes = 4320,
+                            ResponseMinutes = 480
+                        });
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.MaintenanceRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AssetName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Comments")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("EmployeeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("MaintenanceDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MaintenanceType")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("NextMaintenanceDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PartsReplaced")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProblemDescription")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SoftwareInstalled")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("WorkDone")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MaintenanceRecords");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Meeting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<int?>("FacilitatorId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MinuteTakerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("NextMeetingDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Objective")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Summary")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Venue")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("FacilitatorId");
+
+                    b.HasIndex("MinuteTakerId");
+
+                    b.ToTable("Meetings");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.MeetingAttendance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("MeetingId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("MeetingId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("MeetingAttendances");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.MeetingRosterMember", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("DepartmentId", "UserId")
+                        .IsUnique()
+                        .HasFilter("[DepartmentId] IS NOT NULL");
+
+                    b.ToTable("MeetingRosterMembers");
                 });
 
             modelBuilder.Entity("IT_Service_Management_System.Models.Payment", b =>
@@ -590,6 +5466,7 @@ namespace IT_Service_Management_System.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("DueDate")
@@ -625,6 +5502,7 @@ namespace IT_Service_Management_System.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Departments")
@@ -846,6 +5724,232 @@ namespace IT_Service_Management_System.Migrations
                     b.ToTable("SystemsAdminClearances");
                 });
 
+            modelBuilder.Entity("IT_Service_Management_System.Models.TalentDevelopmentAction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("DevelopmentAction")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Objective")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TalentIdentificationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Timeline")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TalentIdentificationId");
+
+                    b.ToTable("TalentDevelopmentActions");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.TalentDirectReportAssessment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comments")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmployeeName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("PerformanceRating")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TalentIdentificationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TalentIdentificationId");
+
+                    b.ToTable("TalentDirectReportAssessments");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.TalentIdentification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("CanOccupyHigherGrade")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("CareerAspirations")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ChallengesApplyingAxisValues")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("CourageConvictions")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CourageRiskTaking")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeliverySetbacks")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Department")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("EmployeeName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("HireDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JobTitle")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("KPI2023")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("KPI2024")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("KPI2025")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("KPI2026")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("KeyProjectsLed")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LeadershipDevelopmentAreas")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LeadershipOverallComments")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("LearningAgility")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LongTermBusinessInitiatives")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Mobility")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NextCareerMilestone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NineBoxAssessment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("OpenToFeedback")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Readiness")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Resilience")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("RiskOfLeaving")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("SelfAwareness")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("SelfDevelopmentActions")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SelfInitiatedLeadershipDevelopment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("StructuredOneOnOnes")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TeamCapabilityDevelopment")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TerminatedPoorPerformers")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("ThinkingComplexity")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ThinkingJudgement")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ThinkingScale")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("WillingToImprove")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("WisdomFastJudgement")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("WisdomLongTermImpact")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("WisdomWhenToAct")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TalentIdentifications");
+                });
+
             modelBuilder.Entity("IT_Service_Management_System.Models.Ticket", b =>
                 {
                     b.Property<int>("Id")
@@ -861,33 +5965,91 @@ namespace IT_Service_Management_System.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ConfigurationItemId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("CreatedById")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("DueAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EscalatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FirstRespondedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("OnHoldSince")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PausedMinutes")
+                        .HasColumnType("int");
+
                     b.Property<string>("Priority")
                         .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int?>("ProblemId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ResponseDueAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("SatisfactionComment")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("SatisfactionRating")
+                        .HasColumnType("int");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AssignedToId");
 
+                    b.HasIndex("ConfigurationItemId");
+
                     b.HasIndex("CreatedById");
+
+                    b.HasIndex("ProblemId");
+
+                    b.HasIndex("Status", "AssignedToId");
+
+                    b.HasIndex("Status", "Priority");
 
                     b.ToTable("Tickets");
                 });
@@ -941,6 +6103,9 @@ namespace IT_Service_Management_System.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("IsInternal")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Message")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -981,6 +6146,9 @@ namespace IT_Service_Management_System.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int>("FailedLoginCount")
+                        .HasColumnType("int");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -989,13 +6157,41 @@ namespace IT_Service_Management_System.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<DateTime?>("LockoutEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("MfaEnabled")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MfaMethod")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MfaOtpCodeHash")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("MfaOtpExpiry")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MfaRecoveryCodes")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PasswordChangedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("ResetToken")
                         .HasColumnType("nvarchar(max)");
@@ -1004,11 +6200,17 @@ namespace IT_Service_Management_System.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int?>("SupervisorId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("TokenExpiry")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("TotpSecret")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -1020,6 +6222,193 @@ namespace IT_Service_Management_System.Migrations
                     b.HasIndex("SupervisorId");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.UserAccessRight", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApprovedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ApprovedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ApprovedSignature")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AssignedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("AssignedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("AssignedSignature")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ProductionServerId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReviewedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ReviewedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ReviewedSignature")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SolutionSoftware")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SystemsAdmin")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VersionReleaseNo")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UserAccessRights");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.UserAccessRightItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AccountManagement")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Approval")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Confirmation")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Initiate")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Reports")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UserAccessRightsId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("UserManagement")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserAccessRightsId");
+
+                    b.ToTable("UserAccessRightItems");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.UserSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Device")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IpAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("LastSeenAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Location")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RevokedReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SessionToken")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SessionToken");
+
+                    b.HasIndex("UserId", "RevokedAt");
+
+                    b.ToTable("UserSessions");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.ActionItem", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedToId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Meeting", "Meeting")
+                        .WithMany("ActionItems")
+                        .HasForeignKey("MeetingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedTo");
+
+                    b.Navigation("Meeting");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.ActionItemUpdate", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.ActionItem", "ActionItem")
+                        .WithMany("Updates")
+                        .HasForeignKey("ActionItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.Meeting", "Meeting")
+                        .WithMany()
+                        .HasForeignKey("MeetingId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ActionItem");
+
+                    b.Navigation("Meeting");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("IT_Service_Management_System.Models.Activity", b =>
@@ -1036,7 +6425,7 @@ namespace IT_Service_Management_System.Migrations
             modelBuilder.Entity("IT_Service_Management_System.Models.Asset", b =>
                 {
                     b.HasOne("IT_Service_Management_System.Models.User", "User")
-                        .WithMany()
+                        .WithMany("Assets")
                         .HasForeignKey("UserId");
 
                     b.Navigation("User");
@@ -1088,6 +6477,196 @@ namespace IT_Service_Management_System.Migrations
                     b.Navigation("Hod");
                 });
 
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentApproval", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Efm.EmployeeDocument", "Document")
+                        .WithMany("Approvals")
+                        .HasForeignKey("EmployeeDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentCategory", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Efm.DocumentFolder", "DefaultFolder")
+                        .WithMany()
+                        .HasForeignKey("DefaultFolderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("DefaultFolder");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentComment", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Efm.EmployeeDocument", "Document")
+                        .WithMany("Comments")
+                        .HasForeignKey("EmployeeDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentRequest", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Efm.DocumentCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.Efm.EmployeeDocument", "FulfilledDocument")
+                        .WithMany()
+                        .HasForeignKey("FulfilledDocumentId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("FulfilledDocument");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentShare", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Efm.EmployeeDocument", "Document")
+                        .WithMany()
+                        .HasForeignKey("EmployeeDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentTagMap", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Efm.DocumentTag", "Tag")
+                        .WithMany("Documents")
+                        .HasForeignKey("DocumentTagId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.Efm.EmployeeDocument", "Document")
+                        .WithMany("Tags")
+                        .HasForeignKey("EmployeeDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+
+                    b.Navigation("Tag");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentVersion", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Efm.EmployeeDocument", "Document")
+                        .WithMany("Versions")
+                        .HasForeignKey("EmployeeDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.EmployeeDocument", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Efm.DocumentCategory", "Category")
+                        .WithMany("Documents")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.Efm.DocumentVersion", "CurrentVersion")
+                        .WithMany()
+                        .HasForeignKey("CurrentVersionId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.Efm.DocumentFolder", "Folder")
+                        .WithMany("Documents")
+                        .HasForeignKey("FolderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("CurrentVersion");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Folder");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.ExpiryAlert", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Efm.EmployeeDocument", "Document")
+                        .WithMany()
+                        .HasForeignKey("EmployeeDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.RequiredDocument", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Department", "AppliesToDepartment")
+                        .WithMany()
+                        .HasForeignKey("AppliesToDepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Efm.DocumentCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AppliesToDepartment");
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.RetentionPolicy", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Efm.DocumentCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Efm.DocumentFolder", "Folder")
+                        .WithMany()
+                        .HasForeignKey("FolderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Folder");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.EmployeeFile", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
             modelBuilder.Entity("IT_Service_Management_System.Models.ExitClearance", b =>
                 {
                     b.HasOne("IT_Service_Management_System.Models.User", "Employee")
@@ -1110,6 +6689,913 @@ namespace IT_Service_Management_System.Migrations
                     b.Navigation("ExitClearance");
                 });
 
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Audit", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.AuditProgramme", "AuditProgramme")
+                        .WithMany("Audits")
+                        .HasForeignKey("AuditProgrammeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "LeadAuditor")
+                        .WithMany()
+                        .HasForeignKey("LeadAuditorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("AuditProgramme");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("LeadAuditor");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.AuditChecklistItem", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.Audit", "Audit")
+                        .WithMany("ChecklistItems")
+                        .HasForeignKey("AuditId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Audit");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.AuditFinding", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedToId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.Audit", "Audit")
+                        .WithMany("Findings")
+                        .HasForeignKey("AuditId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.Capa", "Capa")
+                        .WithMany("Findings")
+                        .HasForeignKey("CapaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "RaisedBy")
+                        .WithMany()
+                        .HasForeignKey("RaisedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("AssignedTo");
+
+                    b.Navigation("Audit");
+
+                    b.Navigation("Capa");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("RaisedBy");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.AuditProgramme", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.AuditTeamMember", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.Audit", "Audit")
+                        .WithMany("TeamMembers")
+                        .HasForeignKey("AuditId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Audit");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Capa", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.NonConformance", "NonConformance")
+                        .WithMany("Capas")
+                        .HasForeignKey("NonConformanceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "Responsible")
+                        .WithMany()
+                        .HasForeignKey("ResponsibleId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "VerifiedBy")
+                        .WithMany()
+                        .HasForeignKey("VerifiedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("NonConformance");
+
+                    b.Navigation("Responsible");
+
+                    b.Navigation("VerifiedBy");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ComplianceObligation", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Improvement", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "ProposedBy")
+                        .WithMany()
+                        .HasForeignKey("ProposedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("ProposedBy");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Incident", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.Capa", "Capa")
+                        .WithMany()
+                        .HasForeignKey("CapaId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "DeptManagerSignedBy")
+                        .WithMany()
+                        .HasForeignKey("DeptManagerSignedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "GmSignedBy")
+                        .WithMany()
+                        .HasForeignKey("GmSignedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "QaSignedBy")
+                        .WithMany()
+                        .HasForeignKey("QaSignedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Capa");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("DeptManagerSignedBy");
+
+                    b.Navigation("GmSignedBy");
+
+                    b.Navigation("QaSignedBy");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IncidentAction", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.Incident", "Incident")
+                        .WithMany("Actions")
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Incident");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IncidentAttachment", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.Incident", "Incident")
+                        .WithMany("Attachments")
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "UploadedBy")
+                        .WithMany()
+                        .HasForeignKey("UploadedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Incident");
+
+                    b.Navigation("UploadedBy");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IncidentDamage", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.Incident", "Incident")
+                        .WithMany("Damages")
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Incident");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IncidentInvestigator", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.Incident", "Incident")
+                        .WithMany("Investigators")
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Incident");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocument", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApproverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.IsoDocumentCategory", "Category")
+                        .WithMany("Documents")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.IsoDocumentVersion", "CurrentVersionRef")
+                        .WithMany()
+                        .HasForeignKey("CurrentVersionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Approver");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("CurrentVersionRef");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocumentAcknowledgement", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.IsoDocument", "Document")
+                        .WithMany("Acknowledgements")
+                        .HasForeignKey("IsoDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.IsoDocumentVersion", "Version")
+                        .WithMany()
+                        .HasForeignKey("IsoDocumentVersionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Document");
+
+                    b.Navigation("User");
+
+                    b.Navigation("Version");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocumentApproval", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApproverId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.IsoDocument", "Document")
+                        .WithMany("Approvals")
+                        .HasForeignKey("IsoDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.IsoDocumentVersion", "Version")
+                        .WithMany()
+                        .HasForeignKey("IsoDocumentVersionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Approver");
+
+                    b.Navigation("Document");
+
+                    b.Navigation("Version");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocumentDistribution", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.IsoDocument", "Document")
+                        .WithMany("Distributions")
+                        .HasForeignKey("IsoDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Document");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocumentReview", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.IsoDocument", "Document")
+                        .WithMany("Reviews")
+                        .HasForeignKey("IsoDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Document");
+
+                    b.Navigation("Reviewer");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocumentVersion", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.IsoDocument", "Document")
+                        .WithMany("Versions")
+                        .HasForeignKey("IsoDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Document");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoEvidence", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "UploadedBy")
+                        .WithMany()
+                        .HasForeignKey("UploadedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("UploadedBy");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoNotification", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "Recipient")
+                        .WithMany()
+                        .HasForeignKey("RecipientId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Recipient");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ManagementReview", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "Chair")
+                        .WithMany()
+                        .HasForeignKey("ChairId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Chair");
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ManagementReviewAction", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedToId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.ManagementReview", "ManagementReview")
+                        .WithMany("Actions")
+                        .HasForeignKey("ManagementReviewId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssignedTo");
+
+                    b.Navigation("ManagementReview");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ManagementReviewAttendee", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.ManagementReview", "ManagementReview")
+                        .WithMany("Attendees")
+                        .HasForeignKey("ManagementReviewId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ManagementReview");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ManagementReviewInput", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.ManagementReview", "ManagementReview")
+                        .WithMany("Inputs")
+                        .HasForeignKey("ManagementReviewId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ManagementReview");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.NonConformance", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedToId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "RaisedBy")
+                        .WithMany()
+                        .HasForeignKey("RaisedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("AssignedTo");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("RaisedBy");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Objective", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ObjectiveMeasurement", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.Objective", "Objective")
+                        .WithMany("Measurements")
+                        .HasForeignKey("ObjectiveId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "RecordedBy")
+                        .WithMany()
+                        .HasForeignKey("RecordedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Objective");
+
+                    b.Navigation("RecordedBy");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Opportunity", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Risk", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Supplier", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.SupplierEvaluation", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "EvaluatedBy")
+                        .WithMany()
+                        .HasForeignKey("EvaluatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.Supplier", "Supplier")
+                        .WithMany("Evaluations")
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("EvaluatedBy");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.TrainingCourse", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.IsoDocument", "LinkedDocument")
+                        .WithMany()
+                        .HasForeignKey("LinkedDocumentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("LinkedDocument");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.TrainingRecord", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Ims.TrainingCourse", "TrainingCourse")
+                        .WithMany("Records")
+                        .HasForeignKey("TrainingCourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("TrainingCourse");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.UserCompetency", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "AssessedBy")
+                        .WithMany()
+                        .HasForeignKey("AssessedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.Ims.Competency", "Competency")
+                        .WithMany("Assessments")
+                        .HasForeignKey("CompetencyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AssessedBy");
+
+                    b.Navigation("Competency");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Itsm.ChangeRequest", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedToId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("IT_Service_Management_System.Models.Itsm.ConfigurationItem", "ConfigurationItem")
+                        .WithMany("Changes")
+                        .HasForeignKey("ConfigurationItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.Itsm.Problem", "Problem")
+                        .WithMany("Changes")
+                        .HasForeignKey("ProblemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("AssignedTo");
+
+                    b.Navigation("ConfigurationItem");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Problem");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Itsm.ConfigurationItem", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Itsm.Problem", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedToId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("IT_Service_Management_System.Models.Itsm.ConfigurationItem", "ConfigurationItem")
+                        .WithMany("Problems")
+                        .HasForeignKey("ConfigurationItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("AssignedTo");
+
+                    b.Navigation("ConfigurationItem");
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Meeting", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "Facilitator")
+                        .WithMany()
+                        .HasForeignKey("FacilitatorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "MinuteTaker")
+                        .WithMany()
+                        .HasForeignKey("MinuteTakerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Facilitator");
+
+                    b.Navigation("MinuteTaker");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.MeetingAttendance", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Meeting", "Meeting")
+                        .WithMany("Attendances")
+                        .HasForeignKey("MeetingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Meeting");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.MeetingRosterMember", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("IT_Service_Management_System.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("IT_Service_Management_System.Models.Payment", b =>
                 {
                     b.HasOne("IT_Service_Management_System.Models.PaymentSchedule", "PaymentSchedule")
@@ -1121,6 +7607,28 @@ namespace IT_Service_Management_System.Migrations
                     b.Navigation("PaymentSchedule");
                 });
 
+            modelBuilder.Entity("IT_Service_Management_System.Models.TalentDevelopmentAction", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.TalentIdentification", "TalentIdentification")
+                        .WithMany("DevelopmentActions")
+                        .HasForeignKey("TalentIdentificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TalentIdentification");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.TalentDirectReportAssessment", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.TalentIdentification", "TalentIdentification")
+                        .WithMany("DirectReports")
+                        .HasForeignKey("TalentIdentificationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TalentIdentification");
+                });
+
             modelBuilder.Entity("IT_Service_Management_System.Models.Ticket", b =>
                 {
                     b.HasOne("IT_Service_Management_System.Models.User", "AssignedTo")
@@ -1128,15 +7636,29 @@ namespace IT_Service_Management_System.Migrations
                         .HasForeignKey("AssignedToId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("IT_Service_Management_System.Models.Itsm.ConfigurationItem", "ConfigurationItem")
+                        .WithMany("Incidents")
+                        .HasForeignKey("ConfigurationItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("IT_Service_Management_System.Models.User", "CreatedBy")
                         .WithMany("TicketsCreated")
                         .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("IT_Service_Management_System.Models.Itsm.Problem", "Problem")
+                        .WithMany("Incidents")
+                        .HasForeignKey("ProblemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("AssignedTo");
 
+                    b.Navigation("ConfigurationItem");
+
                     b.Navigation("CreatedBy");
+
+                    b.Navigation("Problem");
                 });
 
             modelBuilder.Entity("IT_Service_Management_System.Models.TicketAttachment", b =>
@@ -1192,6 +7714,33 @@ namespace IT_Service_Management_System.Migrations
                     b.Navigation("Supervisor");
                 });
 
+            modelBuilder.Entity("IT_Service_Management_System.Models.UserAccessRightItem", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.UserAccessRight", "UserAccessRight")
+                        .WithMany("Users")
+                        .HasForeignKey("UserAccessRightsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserAccessRight");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.UserSession", b =>
+                {
+                    b.HasOne("IT_Service_Management_System.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.ActionItem", b =>
+                {
+                    b.Navigation("Updates");
+                });
+
             modelBuilder.Entity("IT_Service_Management_System.Models.ActivityCategory", b =>
                 {
                     b.Navigation("Activities");
@@ -1207,9 +7756,147 @@ namespace IT_Service_Management_System.Migrations
                     b.Navigation("Users");
                 });
 
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentCategory", b =>
+                {
+                    b.Navigation("Documents");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentFolder", b =>
+                {
+                    b.Navigation("Documents");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.DocumentTag", b =>
+                {
+                    b.Navigation("Documents");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Efm.EmployeeDocument", b =>
+                {
+                    b.Navigation("Approvals");
+
+                    b.Navigation("Comments");
+
+                    b.Navigation("Tags");
+
+                    b.Navigation("Versions");
+                });
+
             modelBuilder.Entity("IT_Service_Management_System.Models.ExitClearance", b =>
                 {
                     b.Navigation("Workflows");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Audit", b =>
+                {
+                    b.Navigation("ChecklistItems");
+
+                    b.Navigation("Findings");
+
+                    b.Navigation("TeamMembers");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.AuditProgramme", b =>
+                {
+                    b.Navigation("Audits");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Capa", b =>
+                {
+                    b.Navigation("Findings");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Competency", b =>
+                {
+                    b.Navigation("Assessments");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Incident", b =>
+                {
+                    b.Navigation("Actions");
+
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Damages");
+
+                    b.Navigation("Investigators");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocument", b =>
+                {
+                    b.Navigation("Acknowledgements");
+
+                    b.Navigation("Approvals");
+
+                    b.Navigation("Distributions");
+
+                    b.Navigation("Reviews");
+
+                    b.Navigation("Versions");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.IsoDocumentCategory", b =>
+                {
+                    b.Navigation("Documents");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.ManagementReview", b =>
+                {
+                    b.Navigation("Actions");
+
+                    b.Navigation("Attendees");
+
+                    b.Navigation("Inputs");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.NonConformance", b =>
+                {
+                    b.Navigation("Capas");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Objective", b =>
+                {
+                    b.Navigation("Measurements");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.Supplier", b =>
+                {
+                    b.Navigation("Evaluations");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Ims.TrainingCourse", b =>
+                {
+                    b.Navigation("Records");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Itsm.ConfigurationItem", b =>
+                {
+                    b.Navigation("Changes");
+
+                    b.Navigation("Incidents");
+
+                    b.Navigation("Problems");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Itsm.Problem", b =>
+                {
+                    b.Navigation("Changes");
+
+                    b.Navigation("Incidents");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.Meeting", b =>
+                {
+                    b.Navigation("ActionItems");
+
+                    b.Navigation("Attendances");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.TalentIdentification", b =>
+                {
+                    b.Navigation("DevelopmentActions");
+
+                    b.Navigation("DirectReports");
                 });
 
             modelBuilder.Entity("IT_Service_Management_System.Models.Ticket", b =>
@@ -1226,11 +7913,18 @@ namespace IT_Service_Management_System.Migrations
 
             modelBuilder.Entity("IT_Service_Management_System.Models.User", b =>
                 {
+                    b.Navigation("Assets");
+
                     b.Navigation("Messages");
 
                     b.Navigation("Subordinates");
 
                     b.Navigation("TicketsCreated");
+                });
+
+            modelBuilder.Entity("IT_Service_Management_System.Models.UserAccessRight", b =>
+                {
+                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }

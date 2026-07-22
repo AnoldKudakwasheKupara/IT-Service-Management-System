@@ -1,64 +1,226 @@
-﻿@model IT_Service_Management_System.Models.Ticket
+@model IT_Service_Management_System.Models.Ticket
 
 @{
     ViewData["Title"] = "Close Ticket";
 }
 
 <div class="page-container">
-
-    <h2 class="mb-4">
-        🔒 Close Ticket #@Model.Id
-    </h2>
-
-    <!-- WARNING -->
-    <div class="alert alert-warning">
-        <strong>Warning:</strong> Closing this ticket will prevent further replies.
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn-back" title="Back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-lock me-2" style="color: var(--danger);"></i>
+                    Close Ticket #@Model.Id
+                </h1>
+                <p class="text-muted mt-2">Closing this ticket will prevent further replies</p>
+            </div>
+        </div>
     </div>
 
-    <!-- TICKET SUMMARY -->
-    <div class="card mb-4">
-        <div class="card-body">
+    <div class="warning-banner">
+        <i class="fas fa-triangle-exclamation"></i>
+        <span><strong>Warning:</strong> Once closed, this ticket can no longer receive replies.</span>
+    </div>
+
+    <div class="form-card mb-4">
+        <div class="ticket-summary">
             <h4>@Model.Title</h4>
-            <p class="text-muted">@Model.Description</p>
-
-            <small>
-                Created by: @Model.CreatedBy?.FirstName @Model.CreatedBy?.LastName
-            </small>
+            <p>@Model.Description</p>
+            <div class="ticket-meta">
+                <i class="fas fa-user"></i>
+                Created by @Model.CreatedBy?.FirstName @Model.CreatedBy?.LastName
+            </div>
         </div>
     </div>
 
-    <!-- FORM -->
-    <form asp-action="Close" method="post">
+    <div class="form-card">
+        <form asp-action="Close" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
 
-        <input type="hidden" name="id" value="@Model.Id" />
+            <div class="form-group">
+                <label class="form-label">Closing Notes <span class="optional">(optional)</span></label>
+                <textarea name="closingNotes" class="form-control-modern" rows="4"
+                          placeholder="Add any notes about the resolution..."></textarea>
+            </div>
 
-        <!-- OPTIONAL NOTES -->
-        <div class="mb-3">
-            <label class="form-label">Closing Notes (Optional)</label>
-            <textarea name="closingNotes" class="form-control" rows="4"
-                      placeholder="Add any notes about resolution..."></textarea>
-        </div>
-
-        <!-- CONFIRM -->
-        <div class="form-check mb-3">
-            <input type="checkbox" id="confirmClose" class="form-check-input" required />
-            <label class="form-check-label">
-                I confirm that this ticket should be closed
+            <label class="confirm-check">
+                <input type="checkbox" id="confirmClose" required />
+                <span>I confirm that this ticket should be closed</span>
             </label>
-        </div>
 
-        <!-- ACTIONS -->
-        <button type="submit" class="btn btn-danger" id="closeBtn" disabled>
-            🔒 Close Ticket
-        </button>
-
-        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">
-            Cancel
-        </a>
-
-    </form>
-
+            <div class="form-actions">
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn-cancel">Cancel</a>
+                <button type="submit" class="btn-danger-modern" id="closeBtn" disabled>
+                    <i class="fas fa-lock"></i> Close Ticket
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
+
+<style>
+    .page-container { max-width: 760px; margin: 0 auto; }
+
+    .page-title {
+        font-size: 1.6rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        letter-spacing: -0.4px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-back {
+        width: 42px;
+        height: 42px;
+        border-radius: var(--radius-sm);
+        background: var(--bg-card);
+        border: 1px solid var(--gray-200);
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        transition: var(--transition-smooth);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+    .warning-banner {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--warning-light);
+        color: #b45309;
+        border: 1px solid #fcd9a3;
+        padding: 0.85rem 1.25rem;
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .form-card {
+        background: var(--bg-card);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+        padding: 1.5rem;
+    }
+
+    .ticket-summary h4 {
+        margin: 0 0 0.5rem 0;
+        font-weight: 700;
+        color: var(--gray-800);
+        font-size: 1.1rem;
+    }
+
+    .ticket-summary p {
+        color: var(--gray-600);
+        margin: 0 0 0.85rem 0;
+        font-size: 0.9rem;
+    }
+
+    .ticket-meta {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .form-group { margin-bottom: 1.25rem; }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: var(--gray-700);
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+
+        .form-label .optional { color: var(--gray-400); font-weight: 400; }
+
+    .form-control-modern {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-sm);
+        font-size: 0.9rem;
+        font-family: inherit;
+        color: var(--gray-800);
+        transition: var(--transition-smooth);
+        resize: vertical;
+    }
+
+        .form-control-modern:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+        }
+
+    .confirm-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.9rem;
+        color: var(--gray-700);
+        cursor: pointer;
+        margin-bottom: 1.5rem;
+    }
+
+        .confirm-check input { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .btn-cancel, .btn-danger-modern {
+        padding: 0.65rem 1.4rem;
+        border-radius: 40px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: var(--transition-smooth);
+        text-decoration: none;
+    }
+
+    .btn-cancel {
+        background: var(--gray-100);
+        color: var(--gray-700);
+    }
+
+        .btn-cancel:hover { background: var(--gray-200); color: var(--gray-800); }
+
+    .btn-danger-modern {
+        background: linear-gradient(135deg, var(--danger), #c53030);
+        color: #fff;
+    }
+
+        .btn-danger-modern:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-danger-modern:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+</style>
 
 <script>
     const checkbox = document.getElementById("confirmClose");

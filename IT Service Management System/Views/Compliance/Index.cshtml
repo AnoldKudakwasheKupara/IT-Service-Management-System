@@ -1,0 +1,609 @@
+@{
+    ViewData["Title"] = "Compliance Reports - Axis IT Operations";
+    var reports = ViewBag.Reports as Dictionary<string, (string Title, string Icon, string[] Actions, string Desc)>
+        ?? new Dictionary<string, (string, string, string[], string)>();
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-scale-balanced me-2" style="color: var(--primary);"></i>
+                    Compliance Reports
+                </h1>
+                <p class="text-muted mt-2">Audit-grade reports for governance &amp; investigations</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn-create-ticket" asp-controller="Security" asp-action="Index" style="background: var(--gray-100); color: var(--gray-700);">
+                    <i class="fas fa-shield-halved"></i>
+                    Security Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATISTICS CARDS -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--primary-light), var(--primary));">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@reports.Count</h3>
+                <p>Available Reports</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@reports.Count(r => r.Value.Actions.Contains("export"))</h3>
+                <p>Exportable Reports</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>24/7</h3>
+                <p>Available On-Demand</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-shield-halved"></i>
+            </div>
+            <div class="stat-info">
+                <h3>GDPR</h3>
+                <p>Compliant</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- REPORTS GRID -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-scale-balanced me-2"></i>
+                <span>Report Catalog</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@reports.Count</span> reports available
+            </div>
+        </div>
+
+        <div class="card-body-custom">
+            <div class="report-grid">
+                @foreach (var kv in reports)
+                {
+                    <a class="report-card-link" asp-action="Report" asp-route-type="@kv.Key">
+                        <div class="report-card-item">
+                            <div class="report-icon @(kv.Value.Icon.Contains("user") ? "icon-user" :
+                                                                                      kv.Value.Icon.Contains("lock") ? "icon-lock" :
+                                                                                      kv.Value.Icon.Contains("bell") ? "icon-bell" :
+                                                                                      kv.Value.Icon.Contains("file") ? "icon-file" :
+                                                                                      kv.Value.Icon.Contains("globe") ? "icon-globe" :
+                                                                                      kv.Value.Icon.Contains("chart") ? "icon-chart" : "icon-default")">
+                                <i class="fas @kv.Value.Icon"></i>
+                            </div>
+                            <div class="report-content">
+                                <h3 class="report-title-item">@kv.Value.Title</h3>
+                                <p class="report-description">@kv.Value.Desc</p>
+                                @if (kv.Value.Actions != null && kv.Value.Actions.Any())
+                                {
+                                    <div class="report-actions">
+                                        @foreach (var action in kv.Value.Actions)
+                                        {
+                                            <span class="report-action-badge">
+                                                @if (action == "view")
+                                                {
+                                                    <i class="fas fa-eye"></i>
+                                                }
+                                                else if (action == "export")
+                                                {
+                                                    <i class="fas fa-download"></i>
+                                                }
+                                                else if (action == "print")
+                                                {
+                                                    <i class="fas fa-print"></i>
+                                                }
+                                                else if (action == "schedule")
+                                                {
+                                                    <i class="fas fa-clock"></i>
+                                                }
+                                                @action
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            <div class="report-arrow">
+                                <i class="fas fa-chevron-right"></i>
+                            </div>
+                        </div>
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPLIANCE INFO CARD -->
+    <div class="data-card mt-4">
+        <div class="card-header-custom">
+            <i class="fas fa-circle-info me-2"></i>
+            <span>About Compliance Reports</span>
+        </div>
+        <div class="card-body-custom" style="font-size:0.85rem;color:var(--gray-600);line-height:1.8;">
+            <div class="compliance-info-grid">
+                <div class="compliance-info-item">
+                    <i class="fas fa-gavel" style="color:var(--primary);"></i>
+                    <div>
+                        <strong>Audit Ready</strong>
+                        <p>All reports are designed to meet audit requirements for GDPR, SOC2, and ISO 27001 compliance.</p>
+                    </div>
+                </div>
+                <div class="compliance-info-item">
+                    <i class="fas fa-lock" style="color:var(--success);"></i>
+                    <div>
+                        <strong>Data Secure</strong>
+                        <p>Reports are generated on-demand with role-based access control and data encryption.</p>
+                    </div>
+                </div>
+                <div class="compliance-info-item">
+                    <i class="fas fa-clock-rotate-left" style="color:var(--warning);"></i>
+                    <div>
+                        <strong>Retention Policy</strong>
+                        <p>Report history is maintained for 90 days with automated archiving and purging.</p>
+                    </div>
+                </div>
+                <div class="compliance-info-item">
+                    <i class="fas fa-file-export" style="color:var(--info);"></i>
+                    <div>
+                        <strong>Export Options</strong>
+                        <p>Reports can be exported in PDF, Excel, or CSV formats for external use and sharing.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== STATISTICS CARDS ===== */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .stat-info h3 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+        .data-card.mt-4 {
+            margin-top: 1.5rem;
+        }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== REPORT GRID ===== */
+    .report-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 1rem;
+    }
+
+    .report-card-link {
+        text-decoration: none;
+        display: block;
+        transition: all 0.2s;
+    }
+
+        .report-card-link:hover {
+            text-decoration: none;
+        }
+
+    .report-card-item {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        padding: 1.1rem 1.25rem;
+        background: white;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.9rem;
+        transition: all 0.25s ease;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .report-card-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.03), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+    .report-card-link:hover .report-card-item {
+        border-color: var(--primary);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-3px);
+    }
+
+        .report-card-link:hover .report-card-item::before {
+            opacity: 1;
+        }
+
+    .report-card-link:hover .report-arrow {
+        transform: translateX(4px);
+        color: var(--primary);
+    }
+
+    /* Report Icon */
+    .report-icon {
+        width: 48px;
+        height: 48px;
+        flex-shrink: 0;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: white;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 1;
+    }
+
+    .report-card-link:hover .report-icon {
+        transform: scale(1.05);
+    }
+
+    .icon-user {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+    }
+
+    .icon-lock {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    }
+
+    .icon-bell {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .icon-file {
+        background: linear-gradient(135deg, #2c9e6e, #227a55);
+    }
+
+    .icon-globe {
+        background: linear-gradient(135deg, #06b6d4, #0891b2);
+    }
+
+    .icon-chart {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .icon-default {
+        background: linear-gradient(135deg, var(--gray-500), var(--gray-600));
+    }
+
+    /* Report Content */
+    .report-content {
+        flex: 1;
+        min-width: 0;
+        position: relative;
+        z-index: 1;
+    }
+
+    .report-title-item {
+        font-weight: 700;
+        color: var(--gray-800);
+        font-size: 0.98rem;
+        margin: 0 0 0.2rem 0;
+        transition: color 0.2s;
+    }
+
+    .report-card-link:hover .report-title-item {
+        color: var(--primary);
+    }
+
+    .report-description {
+        font-size: 0.78rem;
+        color: var(--gray-500);
+        margin: 0;
+        line-height: 1.4;
+    }
+
+    /* Report Actions */
+    .report-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .report-action-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.6rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--gray-500);
+        background: var(--gray-100);
+        padding: 0.1rem 0.5rem;
+        border-radius: 1rem;
+        border: 1px solid var(--gray-200);
+    }
+
+        .report-action-badge i {
+            font-size: 0.55rem;
+        }
+
+    /* Report Arrow */
+    .report-arrow {
+        flex-shrink: 0;
+        color: var(--gray-300);
+        transition: all 0.25s ease;
+        position: relative;
+        z-index: 1;
+        font-size: 0.9rem;
+    }
+
+    /* ===== COMPLIANCE INFO ===== */
+    .compliance-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.25rem;
+    }
+
+    .compliance-info-item {
+        display: flex;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        background: var(--gray-50);
+        border-radius: 0.6rem;
+        border-left: 3px solid var(--primary-light);
+    }
+
+        .compliance-info-item i {
+            font-size: 1.1rem;
+            margin-top: 0.1rem;
+            flex-shrink: 0;
+        }
+
+        .compliance-info-item strong {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--gray-700);
+        }
+
+        .compliance-info-item p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            line-height: 1.5;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .stats-cards {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .report-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .report-card-item {
+            padding: 0.9rem 1rem;
+        }
+
+        .compliance-info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .report-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+
+        .report-title-item {
+            font-size: 0.85rem;
+        }
+
+        .report-description {
+            font-size: 0.7rem;
+        }
+
+        .report-action-badge {
+            font-size: 0.55rem;
+        }
+
+        .compliance-info-item {
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+            .compliance-info-item i {
+                margin-top: 0;
+            }
+    }
+</style>

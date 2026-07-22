@@ -32,7 +32,7 @@
     {
         var dayTotal = dayGroup
             .Where(a => a.Duration.HasValue)
-            .Sum(a => a.Duration.Value.TotalMinutes);
+            .Sum(a => a.Duration!.Value.TotalMinutes);
 
         grandTotalMinutes += dayTotal;
     }
@@ -76,7 +76,7 @@
                 {
                     var dayMinutes = day
                         .Where(a => a.Duration.HasValue)
-                        .Sum(a => a.Duration.Value.TotalMinutes);
+                        .Sum(a => a.Duration!.Value.TotalMinutes);
 
                     var hours = (int)(dayMinutes / 60);
                     var minutes = (int)(dayMinutes % 60);
@@ -166,7 +166,7 @@
                                                 {
                                                     <span>
                                                         <i class="far fa-clock"></i>
-                                                        @item.EndTime.Value.ToString("HH:mm")
+                                                        @item.EndTime!.Value.ToString("HH:mm")
                                                     </span>
                                                 }
                                             </td>
@@ -218,9 +218,9 @@
 <style>
     /* Weekly Report Page Specific Styles */
     :root {
-        --primary-dark: #1e4c6b;
-        --primary: #2c7da0;
-        --primary-light: #61a5c2;
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
         --success: #2c9e6e;
         --warning: #f5b042;
         --danger: #e53e3e;
@@ -507,7 +507,7 @@
         }
 
         .activities-table tr.ongoing-row {
-            background-color: rgba(44, 125, 160, 0.03);
+            background-color: rgba(59,130,246, 0.03);
         }
 
     .title-cell {

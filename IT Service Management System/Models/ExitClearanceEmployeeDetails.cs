@@ -5,23 +5,23 @@
         public int Id { get; set; }
 
         public int ExitClearanceId { get; set; }
-        public ExitClearance ExitClearance { get; set; }
+        public ExitClearance? ExitClearance { get; set; }
 
-        public string Surname { get; set; }
+        public string Surname { get; set; } = string.Empty;
 
-        public string Department { get; set; }
+        public string Department { get; set; } = string.Empty;
 
-        public string Supervisor { get; set; }
+        public string Supervisor { get; set; } = string.Empty;
 
-        public string PositionHeld { get; set; }
+        public string PositionHeld { get; set; } = string.Empty;
 
-        public string LengthOfService { get; set; }
+        public string LengthOfService { get; set; } = string.Empty;
 
         public DateTime? DateOfNotice { get; set; }
 
         public DateTime? LastDayOfWork { get; set; }
 
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         public string? ForwardingAddress { get; set; }
 

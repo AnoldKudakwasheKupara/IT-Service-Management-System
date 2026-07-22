@@ -1,0 +1,461 @@
+@using IT_Service_Management_System.Models.Ims
+@model List<Risk>
+@{
+    ViewData["Title"] = "Risk Assessment Matrix";
+    // cell[impact,likelihood] -> risks
+    var cells = new Dictionary<(int i, int l), List<Risk>>();
+    foreach (var r in Model)
+    {
+        var key = (Math.Clamp(r.Impact, 1, 5), Math.Clamp(r.Likelihood, 1, 5));
+        if (!cells.TryGetValue(key, out var lst)) cells[key] = lst = new();
+        lst.Add(r);
+    }
+    string Bg(RiskBand b) => b == RiskBand.Critical ? "#fdecea" : b == RiskBand.High ? "#fdf3e1" : b == RiskBand.Medium ? "#eff6ff" : "#f1f5f9";
+    string Fg(RiskBand b) => b == RiskBand.Critical ? "#b3261e" : b == RiskBand.High ? "#9a5b00" : b == RiskBand.Medium ? "#1d4ed8" : "#64748b";
+    string Border(RiskBand b) => b == RiskBand.Critical ? "1px solid #fecaca" : b == RiskBand.High ? "1px solid #fde68a" : b == RiskBand.Medium ? "1px solid #bfdbfe" : "1px solid var(--gray-200)";
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a class="btn-back" asp-action="Index">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-fire me-2" style="color: var(--primary);"></i>
+                    Risk Assessment Matrix
+                </h1>
+                <p class="text-muted mt-2">@Model.Count open risk(s) plotted by likelihood × impact</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MATRIX CARD -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-th me-2" style="color: var(--primary);"></i>
+            <span>Risk Matrix</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="matrix-grid">
+                <!-- Header Row -->
+                <div class="matrix-header"></div>
+                @for (int l = 1; l <= 5; l++)
+                {
+                    <div class="matrix-header" style="text-align:center;font-size:0.75rem;font-weight:700;color:var(--gray-500);">
+                        Likelihood @l
+                    </div>
+                }
+
+                <!-- Matrix Rows -->
+                @for (int i = 5; i >= 1; i--)
+                {
+                    <div class="matrix-label" style="font-size:0.75rem;font-weight:700;color:var(--gray-500);display:flex;align-items:center;justify-content:flex-end;padding-right:6px;">
+                        Impact @i
+                    </div>
+                    @for (int l = 1; l <= 5; l++)
+                    {
+                        var band = RiskScoring.BandFor(l * i);
+                        var list = cells.TryGetValue((i, l), out var v) ? v : new List<Risk>();
+                        <div class="matrix-cell" style="background:@Bg(band);color:@Fg(band);border:@Border(band);">
+                            <div class="matrix-score">@(l * i)</div>
+                            @foreach (var r in list)
+                            {
+                                <a asp-action="Details" asp-route-id="@r.Id" title="@r.Title" class="matrix-risk-link">
+                                    • @r.Reference
+                                </a>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Legend -->
+            <div class="matrix-legend">
+                <span class="status-badge badge-gray">Low (1–4)</span>
+                <span class="status-badge badge-primary">Medium (5–9)</span>
+                <span class="status-badge badge-warning">High (10–15)</span>
+                <span class="status-badge badge-critical">Critical (16–25)</span>
+            </div>
+
+            @if (!Model.Any())
+            {
+                <div class="empty-state-mini" style="padding:2rem;margin-top:0.5rem;">
+                    <i class="fas fa-shield-halved"></i>
+                    <span>No open risks to display in the matrix.</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* ===== MATRIX GRID ===== */
+    .matrix-grid {
+        display: grid;
+        grid-template-columns: auto repeat(5, 1fr);
+        gap: 6px;
+        align-items: stretch;
+    }
+
+    .matrix-header {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--gray-500);
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.25rem 0;
+    }
+
+    .matrix-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 6px;
+    }
+
+    .matrix-cell {
+        min-height: 70px;
+        border-radius: 0.5rem;
+        padding: 0.4rem;
+        transition: all 0.2s ease;
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+        .matrix-cell:hover {
+            transform: scale(1.02);
+            box-shadow: var(--shadow-md);
+            z-index: 1;
+            position: relative;
+        }
+
+    .matrix-score {
+        font-weight: 700;
+        font-size: 0.7rem;
+        opacity: 0.7;
+        margin-bottom: 0.1rem;
+    }
+
+    .matrix-risk-link {
+        display: block;
+        font-size: 0.7rem;
+        color: inherit;
+        text-decoration: none;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: all 0.2s ease;
+        padding: 0.05rem 0.1rem;
+        border-radius: 0.2rem;
+    }
+
+        .matrix-risk-link:hover {
+            text-decoration: underline;
+            background: rgba(255, 255, 255, 0.3);
+            color: inherit;
+        }
+
+    /* ===== LEGEND ===== */
+    .matrix-legend {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .badge-primary {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    /* ===== EMPTY STATE MINI ===== */
+    .empty-state-mini {
+        text-align: center;
+        padding: 1.5rem;
+        color: var(--gray-500);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+    }
+
+        .empty-state-mini i {
+            font-size: 1.5rem;
+            color: var(--gray-300);
+        }
+
+        .empty-state-mini span {
+            font-size: 0.9rem;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-wrap: wrap;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .matrix-grid {
+            gap: 4px;
+        }
+
+        .matrix-cell {
+            min-height: 56px;
+            padding: 0.3rem;
+        }
+
+        .matrix-score {
+            font-size: 0.6rem;
+        }
+
+        .matrix-risk-link {
+            font-size: 0.6rem;
+        }
+
+        .matrix-header {
+            font-size: 0.65rem;
+        }
+
+        .matrix-label {
+            font-size: 0.65rem;
+        }
+
+        .matrix-legend {
+            gap: 0.5rem;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .matrix-grid {
+            gap: 3px;
+        }
+
+        .matrix-cell {
+            min-height: 48px;
+            padding: 0.2rem;
+            border-radius: 0.3rem;
+        }
+
+        .matrix-score {
+            font-size: 0.55rem;
+        }
+
+        .matrix-risk-link {
+            font-size: 0.55rem;
+        }
+
+        .matrix-header {
+            font-size: 0.55rem;
+        }
+
+        .matrix-label {
+            font-size: 0.55rem;
+            padding-right: 3px;
+        }
+
+        .matrix-legend {
+            flex-direction: column;
+            gap: 0.25rem;
+            align-items: center;
+        }
+
+        .status-badge {
+            font-size: 0.55rem;
+            padding: 0.1rem 0.4rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .empty-state-mini i {
+            font-size: 1.2rem;
+        }
+
+        .empty-state-mini span {
+            font-size: 0.8rem;
+        }
+    }
+
+    /* ===== PRINT STYLES ===== */
+    @@media print {
+        .btn-back {
+            display: none !important;
+        }
+
+        .data-card {
+            box-shadow: none !important;
+            border: 1px solid var(--gray-300) !important;
+            page-break-inside: avoid;
+        }
+
+        .matrix-cell:hover {
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .matrix-risk-link:hover {
+            background: transparent !important;
+        }
+    }
+</style>

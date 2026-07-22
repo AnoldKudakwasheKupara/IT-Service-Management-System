@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.Controllers
 {
+    [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin")]
     public class ActivityCategoriesController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -15,13 +16,14 @@ namespace IT_Service_Management_System.Controllers
             _context = context;
         }
 
-        private IActionResult CheckAccess()
+        private IActionResult? CheckAccess()
         {
             if (HttpContext.Session.GetInt32("UserId") == null)
                 return RedirectToAction("Login", "Account");
 
-            if (HttpContext.Session.GetString("UserRole") != "Admin")
-                return Forbid();
+            var role = HttpContext.Session.GetString("UserRole");
+            if (role != "Admin" && role != "SystemsAdmin")
+                return RedirectToAction("AccessDenied", "Home"); // Forbid() throws under session auth
 
             return null;
         }
@@ -81,6 +83,7 @@ namespace IT_Service_Management_System.Controllers
             _context.ActivityCategories.Add(category);
             await _context.SaveChangesAsync();
 
+            TempData["Success"] = "Activity category created.";
             return RedirectToAction("Index");
         }
 
@@ -117,6 +120,7 @@ namespace IT_Service_Management_System.Controllers
             _context.ActivityCategories.Update(category);
             await _context.SaveChangesAsync();
 
+            TempData["Success"] = "Activity category updated.";
             return RedirectToAction("Index");
         }
 

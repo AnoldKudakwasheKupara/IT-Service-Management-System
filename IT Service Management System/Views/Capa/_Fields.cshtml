@@ -1,0 +1,396 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@model Capa
+@{
+    var users = ViewBag.Users as List<User> ?? new();
+    var departments = ViewBag.Departments as List<Department> ?? new();
+    var ncs = ViewBag.NonConformances as List<NonConformance> ?? new();
+    var isEdit = (bool)(ViewData["IsEdit"] ?? false);
+}
+
+<div class="capa-form-container">
+    <div class="form-grid">
+        <!-- Title -->
+        <div class="form-group full-width">
+            <label class="form-label" asp-for="Title">
+                <i class="fas fa-heading"></i> Title <span class="required">*</span>
+            </label>
+            <input class="form-control" asp-for="Title" required placeholder="Enter CAPA title..." />
+            <span asp-validation-for="Title" class="validation-error"></span>
+        </div>
+
+        <!-- Type & Source -->
+        <div class="form-group">
+            <label class="form-label" asp-for="Type">
+                <i class="fas fa-layer-group"></i> Type
+            </label>
+            <select class="form-control" asp-for="Type" asp-items="Html.GetEnumSelectList<CapaType>()"></select>
+            <span asp-validation-for="Type" class="validation-error"></span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" asp-for="Source">
+                <i class="fas fa-diagram-project"></i> Source
+            </label>
+            <select class="form-control" asp-for="Source" asp-items="Html.GetEnumSelectList<CapaSource>()"></select>
+            <span asp-validation-for="Source" class="validation-error"></span>
+        </div>
+
+        <!-- Source Reference -->
+        <div class="form-group">
+            <label class="form-label" asp-for="SourceReference">
+                <i class="fas fa-hashtag"></i> Source Reference
+            </label>
+            <input class="form-control" asp-for="SourceReference" placeholder="e.g. AUD-00003 / complaint no." />
+            <span asp-validation-for="SourceReference" class="validation-error"></span>
+        </div>
+
+        <!-- ISO Standard -->
+        <div class="form-group">
+            <label class="form-label" asp-for="Standard">
+                <i class="fas fa-certificate"></i> ISO Standard
+            </label>
+            <select class="form-control" asp-for="Standard" asp-items="Html.GetEnumSelectList<IsoStandard>()"></select>
+            <span asp-validation-for="Standard" class="validation-error"></span>
+        </div>
+
+        <!-- Responsible Person -->
+        <div class="form-group">
+            <label class="form-label" asp-for="ResponsibleId">
+                <i class="fas fa-user"></i> Responsible Person
+            </label>
+            <select class="form-control" asp-for="ResponsibleId">
+                <option value="">— None —</option>
+                @foreach (var u in users)
+                {
+                    <option value="@u.Id" selected="@(Model.ResponsibleId == u.Id)">@u.FullName</option>
+                }
+            </select>
+            <span asp-validation-for="ResponsibleId" class="validation-error"></span>
+        </div>
+
+        <!-- Department -->
+        <div class="form-group">
+            <label class="form-label" asp-for="DepartmentId">
+                <i class="fas fa-building"></i> Department
+            </label>
+            <select class="form-control" asp-for="DepartmentId">
+                <option value="">— None —</option>
+                @foreach (var d in departments)
+                {
+                    <option value="@d.Id" selected="@(Model.DepartmentId == d.Id)">@d.Name</option>
+                }
+            </select>
+            <span asp-validation-for="DepartmentId" class="validation-error"></span>
+        </div>
+
+        <!-- Due Date -->
+        <div class="form-group">
+            <label class="form-label" asp-for="DueDate">
+                <i class="fas fa-calendar-day"></i> Due Date
+            </label>
+            <input class="form-control" type="date" asp-for="DueDate" />
+            <span asp-validation-for="DueDate" class="validation-error"></span>
+        </div>
+
+        <!-- Linked Non-Conformance -->
+        <div class="form-group">
+            <label class="form-label" asp-for="NonConformanceId">
+                <i class="fas fa-bug"></i> Linked Non-Conformance
+            </label>
+            <select class="form-control" asp-for="NonConformanceId">
+                <option value="">— None —</option>
+                @foreach (var n in ncs)
+                {
+                    <option value="@n.Id" selected="@(Model.NonConformanceId == n.Id)">@n.Reference — @n.Title</option>
+                }
+            </select>
+            <span asp-validation-for="NonConformanceId" class="validation-error"></span>
+        </div>
+
+        <!-- Status (Edit only) -->
+        @if (isEdit)
+        {
+            <div class="form-group">
+                <label class="form-label" asp-for="Status">
+                    <i class="fas fa-flag"></i> Status
+                </label>
+                <select class="form-control" asp-for="Status" asp-items="Html.GetEnumSelectList<CapaStatus>()"></select>
+                <span asp-validation-for="Status" class="validation-error"></span>
+            </div>
+        }
+
+        <!-- Description -->
+        <div class="form-group full-width">
+            <label class="form-label" asp-for="Description">
+                <i class="fas fa-align-left"></i> Description <span class="required">*</span>
+            </label>
+            <textarea class="form-control" asp-for="Description" rows="3" placeholder="Describe the issue in detail..."></textarea>
+            <span asp-validation-for="Description" class="validation-error"></span>
+        </div>
+
+        <!-- Containment / Immediate Action -->
+        <div class="form-group full-width">
+            <label class="form-label" asp-for="Containment">
+                <i class="fas fa-hand"></i> Containment / Immediate Action
+            </label>
+            <textarea class="form-control" asp-for="Containment" rows="3" placeholder="What immediate actions were taken to contain the issue?"></textarea>
+            <span asp-validation-for="Containment" class="validation-error"></span>
+        </div>
+
+        <!-- Correction -->
+        <div class="form-group full-width">
+            <label class="form-label" asp-for="Correction">
+                <i class="fas fa-wrench"></i> Correction
+            </label>
+            <textarea class="form-control" asp-for="Correction" rows="3" placeholder="What correction was applied to fix the issue?"></textarea>
+            <span asp-validation-for="Correction" class="validation-error"></span>
+        </div>
+
+        <!-- Root Cause -->
+        <div class="form-group full-width">
+            <label class="form-label" asp-for="RootCause">
+                <i class="fas fa-magnifying-glass-chart"></i> Root Cause
+            </label>
+            <textarea class="form-control" asp-for="RootCause" rows="3" placeholder="What is the underlying root cause of the issue?"></textarea>
+            <span asp-validation-for="RootCause" class="validation-error"></span>
+        </div>
+
+        <!-- Corrective Action -->
+        <div class="form-group full-width">
+            <label class="form-label" asp-for="CorrectiveAction">
+                <i class="fas fa-screwdriver-wrench"></i> Corrective Action
+            </label>
+            <textarea class="form-control" asp-for="CorrectiveAction" rows="3" placeholder="What corrective actions are being taken?"></textarea>
+            <span asp-validation-for="CorrectiveAction" class="validation-error"></span>
+        </div>
+
+        <!-- Preventive Action -->
+        <div class="form-group full-width">
+            <label class="form-label" asp-for="PreventiveAction">
+                <i class="fas fa-shield"></i> Preventive Action
+            </label>
+            <textarea class="form-control" asp-for="PreventiveAction" rows="3" placeholder="What preventive actions will prevent recurrence?"></textarea>
+            <span asp-validation-for="PreventiveAction" class="validation-error"></span>
+        </div>
+
+        <!-- Effectiveness Review (Edit only) -->
+        @if (isEdit)
+        {
+            <div class="form-group full-width">
+                <label class="form-label" asp-for="EffectivenessReview">
+                    <i class="fas fa-clipboard-check"></i> Effectiveness Review
+                </label>
+                <textarea class="form-control" asp-for="EffectivenessReview" rows="3" placeholder="Review the effectiveness of the corrective actions..."></textarea>
+                <span asp-validation-for="EffectivenessReview" class="validation-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" asp-for="EffectivenessReviewDate">
+                    <i class="fas fa-calendar-check"></i> Effectiveness Review Date
+                </label>
+                <input class="form-control" type="date" asp-for="EffectivenessReviewDate" />
+                <span asp-validation-for="EffectivenessReviewDate" class="validation-error"></span>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== FORM CONTAINER ===== */
+    .capa-form-container {
+        padding: 0.5rem 0;
+    }
+
+    /* ===== FORM GRID ===== */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    /* ===== FORM GROUP ===== */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    /* ===== FORM LABEL ===== */
+    .form-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+        .form-label i {
+            font-size: 0.7rem;
+            color: var(--gray-400);
+            width: 16px;
+            text-align: center;
+        }
+
+        .form-label .required {
+            color: var(--danger);
+            font-weight: 700;
+            margin-left: 0.15rem;
+        }
+
+    /* ===== FORM CONTROL ===== */
+    .form-control {
+        padding: 0.55rem 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.6rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        font-family: inherit;
+        background: white;
+        transition: all 0.2s ease;
+        width: 100%;
+        color: var(--gray-800);
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: var(--gray-400);
+            font-size: 0.8rem;
+        }
+
+        .form-control[type="date"] {
+            min-height: 42px;
+            cursor: pointer;
+        }
+
+            .form-control[type="date"]::-webkit-calendar-picker-indicator {
+                opacity: 0.5;
+                cursor: pointer;
+            }
+
+            .form-control[type="date"]:hover::-webkit-calendar-picker-indicator {
+                opacity: 1;
+            }
+
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 0.75rem;
+        padding-right: 2rem;
+        cursor: pointer;
+    }
+
+        select.form-control:focus {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233b82f6' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 60px;
+        font-family: inherit;
+        line-height: 1.5;
+    }
+
+        textarea.form-control:focus {
+            resize: vertical;
+        }
+
+    /* ===== VALIDATION ===== */
+    .validation-error {
+        font-size: 0.72rem;
+        color: var(--danger);
+        font-weight: 500;
+        margin-top: 0.1rem;
+    }
+
+        .validation-error:empty {
+            display: none;
+        }
+
+    .form-control.input-validation-error {
+        border-color: var(--danger) !important;
+    }
+
+        .form-control.input-validation-error:focus {
+            box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1) !important;
+        }
+
+    @@media (max-width: 768px) {
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1;
+        }
+
+        .form-control {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.65rem;
+        }
+
+        .form-label {
+            font-size: 0.7rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .form-grid {
+            gap: 0.75rem;
+        }
+
+        .form-control {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.55rem;
+            border-radius: 0.5rem;
+        }
+
+        .form-label {
+            font-size: 0.65rem;
+        }
+
+        textarea.form-control {
+            min-height: 50px;
+        }
+    }
+</style>

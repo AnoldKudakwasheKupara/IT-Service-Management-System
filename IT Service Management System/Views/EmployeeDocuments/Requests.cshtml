@@ -1,0 +1,613 @@
+@model IT_Service_Management_System.ViewModels.Efm.DocumentRequestsVm
+@using IT_Service_Management_System.Models.Efm
+@{
+    ViewData["Title"] = "Document Requests - Axis IT Operations";
+    string StatusPill(DocumentRequest r) =>
+        r.Status == DocumentRequestStatus.Fulfilled ? "badge-green"
+        : r.Status == DocumentRequestStatus.Cancelled ? "badge-gray"
+        : r.IsOverdue ? "badge-red" : "badge-amber";
+    string StatusLabel(DocumentRequest r) =>
+        r.Status == DocumentRequestStatus.Fulfilled ? "Fulfilled"
+        : r.Status == DocumentRequestStatus.Cancelled ? "Cancelled"
+        : r.IsOverdue ? "Overdue" : "Pending";
+    string StatusIcon(DocumentRequest r) =>
+        r.Status == DocumentRequestStatus.Fulfilled ? "fa-circle-check"
+        : r.Status == DocumentRequestStatus.Cancelled ? "fa-ban"
+        : r.IsOverdue ? "fa-triangle-exclamation" : "fa-clock";
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-file-circle-question me-2" style="color: var(--primary);"></i>
+                    Document Requests
+                </h1>
+                <p class="text-muted mt-2">
+                    <i class="fas fa-info-circle me-1" style="color: var(--primary);"></i>
+                    Ask employees to supply documents. They upload from My Documents and the file goes through HR approval.
+                </p>
+            </div>
+            <button class="btn-create-ticket" data-bs-toggle="modal" data-bs-target="#newRequestModal">
+                <i class="fas fa-paper-plane me-2"></i>
+                New Request
+            </button>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- STATISTICS CARDS -->
+    <div class="stats-cards mb-4">
+        <a class="stat-card stat-link" asp-action="Requests" asp-route-status="pending">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.PendingCount</h3>
+                <p>Pending</p>
+            </div>
+        </a>
+        <a class="stat-card stat-link" asp-action="Requests" asp-route-status="overdue">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f87171, #e53e3e);">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.OverdueCount</h3>
+                <p>Overdue</p>
+            </div>
+        </a>
+        <a class="stat-card stat-link" asp-action="Requests" asp-route-status="fulfilled">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-circle-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.FulfilledCount</h3>
+                <p>Fulfilled</p>
+            </div>
+        </a>
+        <a class="stat-card stat-link" asp-action="Requests" asp-route-status="cancelled">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #94a3b8, #64748b);">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.CancelledCount</h3>
+                <p>Cancelled</p>
+            </div>
+        </a>
+    </div>
+
+    <!-- FILTERS CARD -->
+    <div class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Filter Requests</span>
+        </div>
+        <form method="get" asp-action="Requests" class="filters-body">
+            <div class="filter-group" style="flex: 1.5;">
+                <label>Search</label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" value="@Model.Q" placeholder="Search by title, employee or category..." class="search-input">
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Employee</label>
+                <select name="employeeId" class="filter-select">
+                    <option value="">All Employees</option>
+                    @foreach (var u in Model.Employees)
+                    {
+                        <option value="@u.Id" selected="@(Model.EmployeeId == u.Id)">@u.FullName</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status" class="filter-select">
+                    <option value="">All Status</option>
+                    <option value="pending" selected="@(Model.Status == "pending")">Pending</option>
+                    <option value="overdue" selected="@(Model.Status == "overdue")">Overdue</option>
+                    <option value="fulfilled" selected="@(Model.Status == "fulfilled")">Fulfilled</option>
+                    <option value="cancelled" selected="@(Model.Status == "cancelled")">Cancelled</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary,#3b82f6);color:#fff;border:none;">
+                <i class="fas fa-search"></i>
+                Apply
+            </button>
+            <a asp-action="Requests" class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+                <i class="fas fa-undo-alt"></i>
+                Clear
+            </a>
+        </form>
+    </div>
+
+    <!-- MAIN DATA CARD -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list-check me-2"></i>
+                <span>Requests</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                @Model.Requests.Count request(s) shown
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            @if (Model.Requests.Any())
+            {
+                <table class="data-table tickets-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user me-1"></i> Employee</th>
+                            <th><i class="fas fa-file me-1"></i> Requested Document</th>
+                            <th><i class="fas fa-calendar-day me-1"></i> Due</th>
+                            <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                            <th><i class="fas fa-user-pen me-1"></i> Requested By</th>
+                            <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.Requests)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="document-info">
+                                        <i class="fas fa-user-circle document-icon"></i>
+                                        <div>
+                                            <span class="document-title">@r.Employee?.FullName</span>
+                                            <span class="document-description">@r.Employee?.Department?.Name</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="document-title">@r.Title</span>
+                                    <div><span class="category-badge">@r.Category?.Name</span></div>
+                                    @if (!string.IsNullOrEmpty(r.Instructions))
+                                    {
+                                        <span class="document-description" title="@r.Instructions">
+                                            <i class="fas fa-comment-dots me-1"></i>@r.Instructions
+                                        </span>
+                                    }
+                                </td>
+                                <td class="date-cell">
+                                    @if (r.DueDate.HasValue)
+                                    {
+                                        <i class="far fa-calendar-alt"></i>
+                                        @r.DueDate.Value.ToString("MMM dd, yyyy")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="status-badge @StatusPill(r)">
+                                        <i class="fas @StatusIcon(r)"></i>
+                                        @StatusLabel(r)
+                                    </span>
+                                    @if (r.Status == DocumentRequestStatus.Fulfilled && r.FulfilledAt.HasValue)
+                                    {
+                                        <span class="document-description">on @r.FulfilledAt.Value.ToString("MMM dd, yyyy")</span>
+                                    }
+                                    @if (r.Status == DocumentRequestStatus.Pending && r.LastReminderAt.HasValue)
+                                    {
+                                        <span class="document-description">reminded @r.LastReminderAt.Value.ToString("MMM dd")</span>
+                                    }
+                                </td>
+                                <td class="date-cell">
+                                    <span class="document-title" style="font-weight:500;">@(r.RequestedByName ?? "—")</span>
+                                    <span class="document-description">@r.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                </td>
+                                <td style="text-align:right;">
+                                    <div class="action-buttons">
+                                        @if (r.Status == DocumentRequestStatus.Fulfilled && r.FulfilledDocumentId.HasValue)
+                                        {
+                                            <a class="action-btn btn-preview" asp-action="Details" asp-route-id="@r.FulfilledDocumentId"
+                                               title="View uploaded document">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        }
+                                        @if (r.Status == DocumentRequestStatus.Pending)
+                                        {
+                                            <form asp-action="RemindRequest" method="post" style="display:inline;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@r.Id" />
+                                                <button type="submit" class="action-btn btn-remind" title="Send reminder">
+                                                    <i class="fas fa-bell"></i>
+                                                </button>
+                                            </form>
+                                            <form asp-action="CancelRequest" method="post" style="display:inline;"
+                                                  onsubmit="return confirm('Cancel this document request?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@r.Id" />
+                                                <button type="submit" class="action-btn btn-cancel-req" title="Cancel request">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-file-circle-question"></i>
+                    <h3>No document requests</h3>
+                    <p>Ask an employee to supply a document — they'll be notified in-app and by email.</p>
+                    <button class="btn-create-ticket-sm" data-bs-toggle="modal" data-bs-target="#newRequestModal">
+                        <i class="fas fa-paper-plane"></i>
+                        Create your first request
+                    </button>
+                </div>
+            }
+        </div>
+        @await Html.PartialAsync("_Pagination", ViewBag.Paging as IT_Service_Management_System.Helpers.PagingInfo)
+    </div>
+</div>
+
+<!-- NEW REQUEST MODAL -->
+<div class="modal fade" id="newRequestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="CreateRequest" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-paper-plane me-2" style="color: var(--primary);"></i>
+                        Request a Document
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="upload-grid-modal">
+                        <div class="upload-field full-width">
+                            <label class="field-label">
+                                <i class="fas fa-users"></i>
+                                Employees <span class="required">*</span>
+                            </label>
+                            <select name="employeeIds" class="filter-select" multiple required size="6">
+                                @foreach (var u in Model.Employees)
+                                {
+                                    <option value="@u.Id">@u.FullName — @u.Email</option>
+                                }
+                            </select>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle"></i>
+                                Hold Ctrl (or Cmd) to select multiple employees.
+                            </div>
+                        </div>
+                        <div class="upload-field full-width">
+                            <label class="field-label">
+                                <i class="fas fa-heading"></i>
+                                What do you need? <span class="required">*</span>
+                            </label>
+                            <input type="text" name="title" class="search-input" required maxlength="200"
+                                   placeholder="e.g. National ID copy, Signed contract, Degree certificate..." />
+                        </div>
+                        <div class="upload-field">
+                            <label class="field-label">
+                                <i class="fas fa-tag"></i>
+                                Category <span class="required">*</span>
+                            </label>
+                            <select name="categoryId" class="filter-select" required>
+                                @foreach (var c in Model.Categories)
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="upload-field">
+                            <label class="field-label">
+                                <i class="fas fa-calendar-day"></i>
+                                Due date (optional)
+                            </label>
+                            <input type="date" name="dueDate" class="filter-select" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="upload-field full-width">
+                            <label class="field-label">
+                                <i class="fas fa-comment-dots"></i>
+                                Instructions (optional)
+                            </label>
+                            <textarea name="instructions" class="search-input" rows="3" maxlength="1000"
+                                      placeholder="Any details the employee should know (e.g. certified copy, both sides, PDF preferred)..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-upload-modal">
+                        <i class="fas fa-paper-plane"></i>
+                        Send Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    .page-container { max-width: 1400px; margin: 0 auto; }
+    .page-header { margin-bottom: 2rem; }
+    .page-title { font-size: 1.875rem; font-weight: 700; color: var(--gray-800); margin: 0; }
+
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+    .stat-link { text-decoration: none; }
+    .stat-link:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); text-decoration: none; }
+
+    .stat-icon {
+        width: 48px; height: 48px;
+        border-radius: 1rem;
+        display: flex; align-items: center; justify-content: center;
+        color: white; font-size: 1.5rem; flex-shrink: 0;
+    }
+
+    .stat-info h3 { font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--gray-800); }
+    .stat-info p { margin: 0; color: var(--gray-500); font-size: 0.875rem; }
+
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem;
+        font-weight: 600; text-decoration: none;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        transition: all 0.3s ease; box-shadow: var(--shadow-sm);
+        border: none; cursor: pointer;
+        font-family: 'Inter', sans-serif; font-size: 0.875rem;
+    }
+    .btn-create-ticket:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); color: white; }
+
+    .btn-create-ticket-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white; padding: 0.5rem 1rem; border-radius: 0.5rem;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        font-size: 0.875rem; transition: all 0.2s;
+        border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+    }
+    .btn-create-ticket-sm:hover { transform: translateY(-2px); color: white; }
+
+    .filters-card {
+        background: white; border-radius: 1rem; overflow: hidden;
+        box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+    .filters-header {
+        background: var(--gray-50); padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600; color: var(--gray-700);
+        display: flex; align-items: center; gap: 0.5rem;
+    }
+    .filters-body { padding: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
+    .filter-group { flex: 1; min-width: 180px; }
+    .filter-group label {
+        display: block; font-size: 0.75rem; font-weight: 600; color: var(--gray-600);
+        margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .filter-select {
+        width: 100%; padding: 0.625rem;
+        border: 1.5px solid var(--gray-200); border-radius: 0.5rem;
+        font-size: 0.875rem; transition: all 0.2s;
+        font-family: 'Inter', sans-serif; background: white; cursor: pointer;
+    }
+    .filter-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246, 0.1); }
+
+    .search-wrapper { position: relative; }
+    .search-wrapper i {
+        position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%);
+        color: var(--gray-400); font-size: 0.875rem;
+    }
+    .search-input {
+        width: 100%; padding: 0.625rem 0.75rem 0.625rem 2rem;
+        border: 1.5px solid var(--gray-200); border-radius: 0.5rem;
+        font-size: 0.875rem; transition: all 0.2s; font-family: 'Inter', sans-serif;
+    }
+    .upload-field .search-input { padding-left: 0.75rem; }
+    .search-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246, 0.1); }
+
+    .btn-clear-filters {
+        background: white; color: var(--gray-600);
+        padding: 0.625rem 1rem; border-radius: 0.5rem;
+        border: 1.5px solid var(--gray-200); cursor: pointer;
+        transition: all 0.2s; font-size: 0.875rem;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        font-family: 'Inter', sans-serif; font-weight: 500;
+    }
+    .btn-clear-filters:hover { background: var(--gray-50); border-color: var(--gray-300); text-decoration: none; }
+
+    .data-card {
+        background: white; border-radius: 1rem; overflow: hidden;
+        box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200);
+    }
+    .card-header-custom {
+        background: var(--gray-50); padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600; color: var(--gray-700);
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 1rem;
+    }
+    .ticket-count { font-size: 0.875rem; font-weight: normal; color: var(--gray-500); }
+    .table-responsive { overflow-x: auto; }
+
+    .data-table.tickets-table { width: 100%; border-collapse: collapse; }
+    .data-table.tickets-table thead { background: var(--gray-50); border-bottom: 2px solid var(--gray-200); }
+    .data-table.tickets-table th {
+        padding: 1rem 1.5rem; text-align: left; font-weight: 600;
+        color: var(--gray-600); font-size: 0.875rem;
+        text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .data-table.tickets-table td { padding: 1rem 1.5rem; border-bottom: 1px solid var(--gray-200); vertical-align: middle; }
+    .data-table.tickets-table tbody tr { transition: background-color 0.2s; }
+    .data-table.tickets-table tbody tr:hover { background-color: var(--gray-50); }
+
+    .document-info { display: flex; align-items: center; gap: 0.75rem; }
+    .document-icon { font-size: 1.25rem; color: var(--primary); width: 24px; text-align: center; }
+    .document-title { font-weight: 600; color: var(--gray-800); display: block; }
+    .document-description {
+        font-size: 0.7rem; color: var(--gray-500); display: block; margin-top: 0.1rem;
+        max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .category-badge {
+        display: inline-flex; align-items: center; gap: 0.35rem;
+        background: #eff6ff; color: var(--primary-dark);
+        border: 1px solid #cce4ff; padding: 0.2rem 0.6rem;
+        border-radius: 2rem; font-size: 0.72rem; font-weight: 600;
+        margin-top: 0.2rem;
+    }
+
+    .status-badge {
+        display: inline-flex; align-items: center; gap: 0.4rem;
+        padding: 0.25rem 0.75rem; border-radius: 2rem;
+        font-size: 0.75rem; font-weight: 600; white-space: nowrap;
+    }
+    .badge-green { background: #e6f5e9; color: var(--success); border: 1px solid #c6e0c9; }
+    .badge-amber { background: #fff5e6; color: var(--warning); border: 1px solid #ffe0b3; }
+    .badge-red { background: #fee; color: var(--danger); border: 1px solid #fed7d7; }
+    .badge-gray { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-300); }
+
+    .date-cell { color: var(--gray-500); font-size: 0.875rem; }
+    .date-cell i { margin-right: 0.3rem; }
+
+    .action-buttons { display: flex; gap: 0.5rem; justify-content: flex-end; }
+    .action-btn {
+        width: 32px; height: 32px;
+        display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 0.5rem; text-decoration: none;
+        transition: all 0.2s; font-size: 0.875rem; border: none; cursor: pointer;
+    }
+    .btn-preview { background: var(--gray-100); color: var(--info); }
+    .btn-preview:hover { background: var(--info); color: white; transform: translateY(-2px); text-decoration: none; }
+    .btn-remind { background: var(--gray-100); color: var(--warning); }
+    .btn-remind:hover { background: var(--warning); color: white; transform: translateY(-2px); }
+    .btn-cancel-req { background: var(--gray-100); color: var(--danger); }
+    .btn-cancel-req:hover { background: var(--danger); color: white; transform: translateY(-2px); }
+
+    .empty-state { text-align: center; padding: 3rem; color: var(--gray-500); }
+    .empty-state i { font-size: 4rem; color: var(--gray-300); margin-bottom: 1rem; }
+    .empty-state h3 { font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--gray-600); }
+    .empty-state p { margin-bottom: 1.5rem; }
+
+    .modal-content { border-radius: 1rem; border: 1px solid var(--gray-200); box-shadow: var(--shadow-lg); overflow: hidden; }
+    .modal-header { background: var(--gray-50); padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--gray-200); }
+    .modal-header .modal-title { font-weight: 700; color: var(--gray-800); font-size: 1.125rem; }
+    .modal-body { padding: 1.5rem; }
+    .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--gray-200); display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+    .btn-cancel {
+        background: white; color: var(--gray-600);
+        padding: 0.625rem 1.25rem; border-radius: 0.5rem;
+        border: 1.5px solid var(--gray-200); cursor: pointer;
+        transition: all 0.2s; font-weight: 500;
+        font-family: 'Inter', sans-serif; font-size: 0.875rem;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-cancel:hover { background: var(--gray-50); border-color: var(--gray-300); }
+
+    .btn-upload-modal {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white; padding: 0.625rem 1.25rem; border-radius: 0.5rem;
+        border: none; cursor: pointer; transition: all 0.2s;
+        font-weight: 600; font-family: 'Inter', sans-serif; font-size: 0.875rem;
+        display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-upload-modal:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+    .upload-grid-modal { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .upload-field { display: flex; flex-direction: column; gap: 0.5rem; }
+    .upload-field.full-width { grid-column: 1 / -1; }
+    .field-label {
+        font-size: 0.75rem; font-weight: 600; color: var(--gray-600);
+        text-transform: uppercase; letter-spacing: 0.5px;
+        display: flex; align-items: center; gap: 0.4rem;
+    }
+    .field-label i { color: var(--primary); font-size: 0.7rem; }
+    .field-label .required { color: var(--danger); font-size: 0.7rem; }
+    .form-text { font-size: 0.75rem; color: var(--gray-500); margin-top: 0.25rem; display: flex; align-items: center; gap: 0.3rem; }
+    .form-text i { color: var(--primary); }
+
+    textarea.search-input { resize: vertical; }
+
+    @@media (max-width: 1024px) {
+        .upload-grid-modal { grid-template-columns: 1fr; }
+        .upload-field.full-width { grid-column: 1; }
+    }
+
+    @@media (max-width: 768px) {
+        .stats-cards { grid-template-columns: 1fr 1fr; }
+        .filters-body { flex-direction: column; align-items: stretch; }
+        .filter-group { min-width: 100%; }
+        .data-table.tickets-table th, .data-table.tickets-table td { padding: 0.75rem 1rem; }
+        .card-header-custom { flex-direction: column; align-items: flex-start; }
+        .page-title { font-size: 1.5rem; }
+        .page-header .d-flex { flex-direction: column; align-items: stretch; }
+        .btn-create-ticket { justify-content: center; }
+        .modal-dialog { margin: 0.5rem; }
+    }
+
+    @@media (max-width: 576px) {
+        .stats-cards { grid-template-columns: 1fr; }
+    }
+</style>

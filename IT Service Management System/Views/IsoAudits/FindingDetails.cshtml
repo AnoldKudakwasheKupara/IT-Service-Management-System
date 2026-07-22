@@ -1,0 +1,528 @@
+@using IT_Service_Management_System.Models.Ims
+@model AuditFinding
+@{
+    ViewData["Title"] = Model.Reference;
+    var canCapa = (bool)(ViewBag.CanRaiseCapa ?? false);
+    var canEdit = (bool)(ViewBag.CanEdit ?? false);
+    string FindClass(FindingType t) => t switch { FindingType.MajorNonConformance => "badge-critical", FindingType.MinorNonConformance => "badge-warning", FindingType.OpportunityForImprovement => "badge-primary", FindingType.Conformity => "badge-success", _ => "badge-gray" };
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <a class="btn-back" asp-action="Findings">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <span class="doc-number" style="font-size:1rem;font-weight:600;color:var(--primary);">@Model.Reference</span>
+                    </h1>
+                    <div class="page-subtitle">
+                        <span class="status-badge @FindClass(Model.Type)">@Model.Type</span>
+                        <span class="meta-separator">·</span>
+                        <span class="meta-text">@Model.Status</span>
+                        @if (Model.IsOverdue)
+                        {
+                            <span class="status-badge badge-overdue">
+                                <i class="fas fa-clock"></i> Overdue
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DETAILS CARD -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-circle-info me-2" style="color: var(--primary);"></i>
+            <span>Finding Details</span>
+        </div>
+        <div class="card-body-custom">
+            <div class="details-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Audit</div>
+                    <div class="detail-value">@(Model.Audit?.Reference ?? "—")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">ISO Clause</div>
+                    <div class="detail-value">@(Model.ClauseReference ?? "—")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Department</div>
+                    <div class="detail-value">@(Model.Department?.Name ?? "—")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Raised By</div>
+                    <div class="detail-value">@(Model.RaisedBy?.FullName ?? "—")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Assigned To</div>
+                    <div class="detail-value">@(Model.AssignedTo?.FullName ?? "—")</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Due</div>
+                    <div class="detail-value @(Model.IsOverdue ? "text-danger" : "")">
+                        @(Model.DueDate?.ToString("dd MMM yyyy") ?? "—")
+                        @if (Model.IsOverdue)
+                        {
+                            <span class="status-badge badge-overdue" style="margin-left:0.5rem;">
+                                <i class="fas fa-exclamation-circle"></i> Overdue
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="description-section">
+                <div class="detail-label">Description</div>
+                <div class="description-text">@Model.Description</div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Evidence))
+            {
+                <div class="description-section" style="border-top:1px solid var(--gray-200);padding-top:1rem;margin-top:1rem;">
+                    <div class="detail-label">Evidence</div>
+                    <div class="description-text">@Model.Evidence</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- CORRECTIVE ACTION CARD -->
+    <div class="data-card">
+        <div class="card-header-custom" style="border-left: 4px solid var(--primary);">
+            <i class="fas fa-screwdriver-wrench me-2" style="color: var(--primary);"></i>
+            <span>Corrective Action</span>
+        </div>
+        <div class="card-body-custom">
+            @if (Model.CapaId.HasValue)
+            {
+                <div class="capa-linked">
+                    <i class="fas fa-link" style="color: var(--primary);"></i>
+                    <span>A CAPA has been generated for this finding:</span>
+                    <a asp-controller="Capa" asp-action="Details" asp-route-id="@Model.CapaId" class="capa-link">
+                        <span class="doc-number">@(Model.Capa?.Reference)</span>
+                    </a>
+                </div>
+            }
+            else if (Model.IsNonConformance && canCapa)
+            {
+                <div class="capa-actions">
+                    <p class="capa-hint">This non-conformity needs a corrective action.</p>
+                    <form method="post" asp-action="GenerateCapa" asp-route-id="@Model.Id">
+                        @Html.AntiForgeryToken()
+                        <button class="btn-generate-capa" type="submit">
+                            <i class="fas fa-wand-magic-sparkles"></i> Generate CAPA
+                        </button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <p class="capa-hint" style="margin:0;color:var(--gray-500);">No corrective action required.</p>
+            }
+
+            @if (canEdit && Model.Status != FindingStatus.Closed)
+            {
+                <form method="post" asp-action="CloseFinding" asp-route-id="@Model.Id" class="close-form" onsubmit="return confirm('Close this finding?');">
+                    @Html.AntiForgeryToken()
+                    <button class="btn-close-finding" type="submit">
+                        <i class="fas fa-lock"></i> Close Finding
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 1rem;
+    }
+
+    .page-subtitle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.3rem;
+    }
+
+    .meta-separator {
+        color: var(--gray-300);
+    }
+
+    .meta-text {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* ===== DETAILS GRID ===== */
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1rem 1.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
+    .detail-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .detail-value {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+        .detail-value.text-danger {
+            color: var(--danger);
+        }
+
+    .description-section {
+        padding-top: 1rem;
+        border-top: 1px solid var(--gray-200);
+        margin-top: 1rem;
+    }
+
+    .description-text {
+        font-size: 0.9rem;
+        color: var(--gray-700);
+        line-height: 1.6;
+        margin-top: 0.3rem;
+        white-space: pre-wrap;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .badge-primary {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    .badge-overdue {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    /* ===== CAPA LINKED ===== */
+    .capa-linked {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        padding: 0.5rem 0.75rem;
+        background: #f0fdf4;
+        border-radius: 0.5rem;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+    }
+
+        .capa-linked i {
+            font-size: 1rem;
+        }
+
+    .capa-link {
+        text-decoration: none;
+        font-weight: 600;
+        transition: color 0.2s;
+    }
+
+        .capa-link:hover {
+            text-decoration: none;
+        }
+
+        .capa-link .doc-number {
+            color: var(--primary);
+            transition: color 0.2s;
+        }
+
+        .capa-link:hover .doc-number {
+            color: var(--primary-dark);
+        }
+
+    /* ===== CAPA ACTIONS ===== */
+    .capa-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .capa-hint {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--gray-600);
+    }
+
+    .btn-generate-capa {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        border: none;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        font-family: inherit;
+    }
+
+        .btn-generate-capa:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    /* ===== CLOSE FORM ===== */
+    .close-form {
+        margin-top: 1rem;
+        border-top: 1px solid var(--gray-200);
+        padding-top: 1rem;
+    }
+
+    .btn-close-finding {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.5rem;
+        background: var(--gray-100);
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+
+        .btn-close-finding:hover {
+            background: var(--gray-200);
+            border-color: var(--gray-300);
+            transform: translateY(-1px);
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .capa-linked {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .btn-generate-capa,
+        .btn-close-finding {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .description-text {
+            font-size: 0.85rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.1rem;
+        }
+
+        .doc-number {
+            font-size: 0.85rem;
+        }
+
+        .status-badge {
+            font-size: 0.65rem;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .meta-text {
+            font-size: 0.75rem;
+        }
+
+        .detail-value {
+            font-size: 0.8rem;
+        }
+
+        .description-text {
+            font-size: 0.8rem;
+        }
+
+        .btn-generate-capa,
+        .btn-close-finding {
+            font-size: 0.8rem;
+            padding: 0.5rem 1rem;
+        }
+    }
+</style>

@@ -1,0 +1,1555 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@using IT_Service_Management_System.Services.Ims
+@model IsoDocument
+@{
+    ViewData["Title"] = Model.DocumentNumber;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    var canApprove = (bool)(ViewBag.CanApprove ?? false);
+    int ackTotal = ViewBag.AckTotal ?? 0;
+    int ackDone = ViewBag.AckDone ?? 0;
+    int ackPct = ackTotal == 0 ? 0 : (int)Math.Round(ackDone * 100.0 / ackTotal);
+    var departments = ViewBag.Departments as List<Department> ?? new();
+    var users = ViewBag.Users as List<User> ?? new();
+
+    var steps = new[] { "Draft", "Department Review", "Quality Review", "Management Approval", "Published", "Archived" };
+    int current = Model.Status switch
+    {
+        DocumentStatus.Draft or DocumentStatus.Rejected or DocumentStatus.Revision => 0,
+        DocumentStatus.DepartmentReview => 1,
+        DocumentStatus.QualityReview => 2,
+        DocumentStatus.ManagementApproval => 3,
+        DocumentStatus.Published or DocumentStatus.UnderReview => 4,
+        _ => 5
+    };
+    var pendingStage = IsoDocumentService.StageForCurrent(Model);
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <a class="btn-back" asp-action="Index" asp-route-type="@Model.Type">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <span class="doc-number" style="font-size:1rem;font-weight:600;color:var(--primary);">@Model.DocumentNumber</span>
+                        <span style="font-weight:700;color:var(--gray-800);">@Model.Title</span>
+                    </h1>
+                    <div class="page-subtitle">
+                        <span class="status-badge @ImsBadges.DocStatusClass(Model.Status)">@ImsBadges.DocStatusLabel(Model.Status)</span>
+                        <span class="status-badge @ImsBadges.ClassificationClass(Model.Classification)">@Model.Classification</span>
+                        <span class="meta-separator">·</span>
+                        <span class="meta-text">@Model.Type · v@Model.CurrentVersion</span>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                @if (Model.CurrentVersionId != null)
+                {
+                    <a class="btn-create-ticket" asp-action="Download" asp-route-versionId="@Model.CurrentVersionId" style="background:var(--gray-100);color:var(--gray-700);">
+                        <i class="fas fa-download"></i> Current File
+                    </a>
+                }
+                @if (canManage && Model.Status != DocumentStatus.Archived)
+                {
+                    <a class="btn-create-ticket" asp-action="Edit" asp-route-id="@Model.Id" style="background:var(--gray-100);color:var(--gray-700);">
+                        <i class="fas fa-pen"></i> Edit
+                    </a>
+                }
+                <a class="btn-create-ticket" asp-action="AckReport" asp-route-id="@Model.Id" style="background:var(--gray-100);color:var(--gray-700);">
+                    <i class="fas fa-chart-pie"></i> Ack Report
+                </a>
+                <a class="btn-create-ticket" asp-controller="Ecie" asp-action="Graph" asp-route-id="@Model.Id" style="background:var(--gray-100);color:var(--gray-700);">
+                    <i class="fas fa-diagram-project"></i> Evidence Map
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- WORKFLOW STEPPER -->
+    <div class="data-card">
+        <div class="card-body-custom">
+            <div class="workflow-stepper">
+                @for (int i = 0; i < steps.Length; i++)
+                {
+                    var cls = i < current ? "completed" : (i == current ? "active" : "");
+                    <div class="step @cls">
+                        <span class="step-number">
+                            <i class="fas @(i < current ? "fa-check" : "fa-circle")"></i>
+                        </span>
+                        <span class="step-label">@steps[i]</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- WORKFLOW ACTIONS -->
+    @if (canManage || canApprove)
+    {
+        <div class="data-card">
+            <div class="card-header-custom" style="border-left:4px solid var(--primary);">
+                <i class="fas fa-bolt me-2" style="color:var(--primary);"></i>
+                <span>Workflow Actions</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="workflow-actions-row">
+                    @if (canManage && Model.Status is DocumentStatus.Draft or DocumentStatus.Revision or DocumentStatus.Rejected)
+                    {
+                        <form method="post" asp-action="Submit" asp-route-id="@Model.Id">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-primary" type="submit">
+                                <i class="fas fa-paper-plane"></i> Submit for Review
+                            </button>
+                        </form>
+                    }
+                    @if (Model.Status == DocumentStatus.Published)
+                    {
+                        <form method="post" asp-action="Revise" asp-route-id="@Model.Id">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-outline" type="submit">
+                                <i class="fas fa-code-branch"></i> Open for Revision
+                            </button>
+                        </form>
+                        <form method="post" asp-action="Archive" asp-route-id="@Model.Id" onsubmit="return confirm('Archive this document?');">
+                            @Html.AntiForgeryToken()
+                            <button class="btn-danger" type="submit">
+                                <i class="fas fa-box-archive"></i> Archive
+                            </button>
+                        </form>
+                    }
+                </div>
+
+                @if (pendingStage != null && canApprove)
+                {
+                    <form method="post" asp-action="Decision" asp-route-id="@Model.Id" class="decision-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="stage" value="@pendingStage" />
+                        <div class="form-group">
+                            <label class="form-label-sm">
+                                <i class="fas fa-gavel"></i> @ImsBadges.DocStatusLabel(Model.Status) — record decision
+                            </label>
+                            <textarea class="form-control" name="comments" rows="2" placeholder="Reviewer comments (optional)"></textarea>
+                        </div>
+                        <div class="decision-buttons">
+                            <button class="btn-success" type="submit" name="decision" value="Approved">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button class="btn-outline" type="submit" name="decision" value="ReturnedForChanges">
+                                <i class="fas fa-rotate-left"></i> Return for Changes
+                            </button>
+                            <button class="btn-danger" type="submit" name="decision" value="Rejected">
+                                <i class="fas fa-xmark"></i> Reject
+                            </button>
+                        </div>
+                        <span class="decision-hint">
+                            <i class="fas fa-info-circle"></i>
+                            Approving the Management Approval stage publishes the document and distributes it for acknowledgement.
+                        </span>
+                    </form>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- TWO COLUMN GRID: Metadata & Acknowledgement -->
+    <div class="two-col-grid">
+        <!-- METADATA CARD -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-circle-info me-2" style="color:var(--primary);"></i>
+                <span>Details</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Category</div>
+                        <div class="detail-value">@(Model.Category?.Name ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Department</div>
+                        <div class="detail-value">@(Model.Department?.Name ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Owner</div>
+                        <div class="detail-value">@(Model.Owner?.FullName ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Approver</div>
+                        <div class="detail-value">@(Model.Approver?.FullName ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ISO Standard</div>
+                        <div class="detail-value">@IsoStandards.Label(Model.Standard)</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ISO Clause</div>
+                        <div class="detail-value">@(Model.IsoClause ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Issue Date</div>
+                        <div class="detail-value">@(Model.IssueDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Effective Date</div>
+                        <div class="detail-value">@(Model.EffectiveDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Review Frequency</div>
+                        <div class="detail-value">@Model.ReviewFrequency</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Next Review</div>
+                        <div class="detail-value @(Model.IsReviewDue ? "text-danger" : "")">
+                            @(Model.ReviewDate?.ToString("dd MMM yyyy") ?? "—")
+                            @if (Model.IsReviewDue)
+                            {
+                                <span class="status-badge badge-overdue" style="margin-left:0.5rem;">
+                                    <i class="fas fa-exclamation-circle"></i> Due
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Expiry</div>
+                        <div class="detail-value @(Model.IsExpired ? "text-danger" : "")">
+                            @(Model.ExpiryDate?.ToString("dd MMM yyyy") ?? "—")
+                            @if (Model.IsExpired)
+                            {
+                                <span class="status-badge badge-overdue" style="margin-left:0.5rem;">
+                                    <i class="fas fa-exclamation-circle"></i> Expired
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Created</div>
+                        <div class="detail-value">@Model.CreatedAt.ToString("dd MMM yyyy")</div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.Summary))
+                {
+                    <div class="description-section">
+                        <div class="detail-label">Summary</div>
+                        <div class="description-text">@Model.Summary</div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.Keywords))
+                {
+                    <div class="keywords-section">
+                        <i class="fas fa-tags" style="color:var(--gray-400);font-size:0.7rem;"></i>
+                        <span class="keywords-text">@Model.Keywords</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- ACKNOWLEDGEMENT CARD -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-user-check me-2" style="color:var(--primary);"></i>
+                <span>Acknowledgement</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="acknowledgement-stats">
+                    <span class="ack-label">Completion</span>
+                    <strong class="ack-percentage">@ackPct%</strong>
+                </div>
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill success" style="width: @ackPct%;"></div>
+                </div>
+                <div class="ack-hint">
+                    @ackDone of @ackTotal acknowledged · @(ackTotal - ackDone) pending
+                </div>
+
+                @if (canManage)
+                {
+                    <form method="post" asp-action="AddDistribution" asp-route-id="@Model.Id" class="distribution-form">
+                        @Html.AntiForgeryToken()
+                        <div class="distribution-form-header">
+                            <label class="form-label-sm">
+                                <i class="fas fa-share-nodes"></i> Add distribution target
+                            </label>
+                        </div>
+                        <div class="distribution-form-row">
+                            <select class="form-control" name="targetType" style="width:auto;flex-shrink:0;" onchange="imsDistToggle(this.value)">
+                                <option value="AllStaff">All Staff</option>
+                                <option value="Department">Department</option>
+                                <option value="Role">Role</option>
+                                <option value="User">User</option>
+                            </select>
+                            <select class="form-control" name="departmentId" id="dist-dept" style="width:auto;display:none;">
+                                @foreach (var d in departments)
+                                {
+                                    <option value="@d.Id">@d.Name</option>
+                                }
+                            </select>
+                            <select class="form-control" name="userId" id="dist-user" style="width:auto;display:none;">
+                                @foreach (var u in users)
+                                {
+                                    <option value="@u.Id">@u.FullName</option>
+                                }
+                            </select>
+                            <input class="form-control" name="roleName" id="dist-role" style="width:auto;display:none;" placeholder="Role e.g. Employee" />
+                            <button class="btn-add-distribution" type="submit">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    @if (Model.Distributions.Any())
+                    {
+                        <div class="distribution-list">
+                            @foreach (var dist in Model.Distributions)
+                            {
+                                var label = dist.TargetType switch
+                                {
+                                    DistributionTargetType.AllStaff => "All Staff",
+                                    DistributionTargetType.Department => "Dept: " + (dist.Department?.Name ?? "?"),
+                                    DistributionTargetType.Role => "Role: " + dist.RoleName,
+                                    _ => "User: " + (dist.User?.FullName ?? "?")
+                                };
+                                <div class="distribution-item">
+                                    <span class="status-badge badge-internal">@label</span>
+                                    <form method="post" asp-action="RemoveDistribution" asp-route-id="@Model.Id">
+                                        <input type="hidden" name="distributionId" value="@dist.Id" />
+                                        @Html.AntiForgeryToken()
+                                        <button class="btn-remove-distribution" type="submit">
+                                            <i class="fas fa-xmark"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- VERSION HISTORY -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-code-branch me-2" style="color:var(--primary);"></i>
+            <span>Version History</span>
+        </div>
+        <div class="card-body-custom" style="padding:0;">
+            <div class="table-responsive">
+                <table class="tickets-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-code-branch me-1"></i> Version</th>
+                            <th><i class="fas fa-sticky-note me-1"></i> Notes</th>
+                            <th><i class="fas fa-user me-1"></i> By</th>
+                            <th><i class="fas fa-calendar me-1"></i> When</th>
+                            <th><i class="fas fa-tag me-1"></i> Status</th>
+                            <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var v in Model.Versions.OrderByDescending(v => v.Id))
+                        {
+                            <tr>
+                                <td>
+                                    <span class="version-number">v@v.VersionNumber</span>
+                                    @if (v.IsCurrent)
+                                    {
+                                        <span class="status-badge badge-current">Current</span>
+                                    }
+                                </td>
+                                <td class="version-notes">@(v.RevisionNotes ?? "—")</td>
+                                <td class="meta-text">@(v.CreatedBy?.FullName ?? "—")</td>
+                                <td class="meta-text">@v.CreatedAt.ToString("dd MMM yyyy HH:mm")</td>
+                                <td>
+                                    <span class="status-badge @ImsBadges.DocStatusClass(v.Status)">@ImsBadges.DocStatusLabel(v.Status)</span>
+                                </td>
+                                <td style="text-align:right;">
+                                    <div class="action-buttons">
+                                        @if (v.HasFile)
+                                        {
+                                            <a class="action-btn btn-view" asp-action="Download" asp-route-versionId="@v.Id" title="Download">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        }
+                                        @if (canManage && !v.IsCurrent)
+                                        {
+                                            <form method="post" asp-action="RestoreVersion" asp-route-id="@Model.Id" onsubmit="return confirm('Restore this version?');" style="display:inline;">
+                                                <input type="hidden" name="versionId" value="@v.Id" />
+                                                @Html.AntiForgeryToken()
+                                                <button class="action-btn btn-restore" title="Restore" type="submit">
+                                                    <i class="fas fa-clock-rotate-left"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (canManage && Model.Status != DocumentStatus.Archived)
+            {
+                <form method="post" asp-action="AddVersion" asp-route-id="@Model.Id" enctype="multipart/form-data" class="add-version-form">
+                    @Html.AntiForgeryToken()
+                    <div class="add-version-row">
+                        <input class="form-control" type="file" name="file" style="width:auto;flex-shrink:0;" />
+                        <input class="form-control" type="text" name="notes" placeholder="Revision notes" style="flex:1;min-width:200px;" />
+                        <label class="version-major-check">
+                            <input type="checkbox" name="major" value="true" /> Major version
+                        </label>
+                        <button class="btn-add-version" type="submit">
+                            <i class="fas fa-plus"></i> Add Version
+                        </button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+
+    <!-- TWO COLUMN GRID: Approval History & Reviews -->
+    <div class="two-col-grid">
+        <!-- APPROVAL HISTORY -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-stamp me-2" style="color:var(--primary);"></i>
+                <span>Approval History</span>
+            </div>
+            <div class="card-body-custom" style="padding:0;">
+                @if (Model.Approvals.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="tickets-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-layer-group me-1"></i> Stage</th>
+                                    <th><i class="fas fa-gavel me-1"></i> Decision</th>
+                                    <th><i class="fas fa-user me-1"></i> By</th>
+                                    <th><i class="fas fa-calendar me-1"></i> When</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var a in Model.Approvals.OrderBy(a => a.Sequence).ThenBy(a => a.Id))
+                                {
+                                    var decisionClass = a.Decision == ApprovalDecision.Approved ? "badge-success" :
+                                                       a.Decision == ApprovalDecision.Pending ? "badge-gray" : "badge-critical";
+                                    <tr>
+                                        <td class="approval-stage">@a.Stage</td>
+                                        <td>
+                                            <span class="status-badge @decisionClass">@a.Decision</span>
+                                        </td>
+                                        <td class="meta-text">@(a.Approver?.FullName ?? "—")</td>
+                                        <td class="meta-text">@(a.DecisionAt?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state-mini">
+                        <i class="fas fa-stamp"></i>
+                        <span>Not yet in workflow</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- REVIEWS -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-calendar-check me-2" style="color:var(--primary);"></i>
+                <span>Reviews</span>
+            </div>
+            <div class="card-body-custom" style="padding:0;">
+                @if (Model.Reviews.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="tickets-table">
+                            <thead>
+                                <tr>
+                                    <th><i class="fas fa-calendar me-1"></i> Scheduled</th>
+                                    <th><i class="fas fa-flag me-1"></i> Outcome</th>
+                                    <th><i class="fas fa-user me-1"></i> By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in Model.Reviews.OrderByDescending(r => r.ScheduledDate))
+                                {
+                                    <tr>
+                                        <td class="@(r.IsOverdue ? "date-overdue" : "meta-text")">
+                                            @r.ScheduledDate.ToString("dd MMM yyyy")
+                                            @if (r.IsOverdue)
+                                            {
+                                                <span class="overdue-badge"><i class="fas fa-exclamation-circle"></i></span>
+                                            }
+                                        </td>
+                                        <td class="meta-text">@r.Outcome</td>
+                                        <td class="meta-text">@(r.Reviewer?.FullName ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state-mini">
+                        <i class="fas fa-calendar"></i>
+                        <span>No reviews</span>
+                    </div>
+                }
+
+                @if (canManage)
+                {
+                    <form method="post" asp-action="ScheduleReview" asp-route-id="@Model.Id" class="schedule-review-form">
+                        @Html.AntiForgeryToken()
+                        <div class="schedule-review-row">
+                            <input class="form-control" type="date" name="scheduledDate" required style="width:auto;flex-shrink:0;" />
+                            <button class="btn-schedule-review" type="submit">
+                                <i class="fas fa-calendar-plus"></i> Schedule Review
+                            </button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function imsDistToggle(v) {
+        document.getElementById('dist-dept').style.display = v === 'Department' ? '' : 'none';
+        document.getElementById('dist-user').style.display = v === 'User' ? '' : 'none';
+        document.getElementById('dist-role').style.display = v === 'Role' ? '' : 'none';
+    }
+</script>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 1rem;
+    }
+
+    .page-subtitle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.3rem;
+    }
+
+    .meta-separator {
+        color: var(--gray-300);
+    }
+
+    .meta-text {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-primary {
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-success {
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        background: linear-gradient(100deg, #227a55, var(--success));
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-outline {
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        background: white;
+        color: var(--gray-600);
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+        font-family: inherit;
+    }
+
+        .btn-outline:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            transform: translateY(-1px);
+        }
+
+    .btn-danger {
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        background: linear-gradient(100deg, #dc2626, var(--danger));
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-add-distribution,
+    .btn-add-version,
+    .btn-schedule-review {
+        padding: 0.4rem 0.8rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.8rem;
+        background: var(--gray-100);
+        color: var(--primary);
+        border: 1px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+        .btn-add-distribution:hover,
+        .btn-add-version:hover,
+        .btn-schedule-review:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+    .btn-remove-distribution {
+        background: none;
+        border: none;
+        color: var(--gray-400);
+        cursor: pointer;
+        padding: 0.1rem 0.3rem;
+        transition: color 0.2s;
+        font-size: 0.8rem;
+    }
+
+        .btn-remove-distribution:hover {
+            color: var(--danger);
+        }
+
+    .btn-restore {
+        background: var(--gray-100);
+        color: var(--warning);
+        border: none;
+        border-radius: 0.5rem;
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.8rem;
+    }
+
+        .btn-restore:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* ===== TWO COLUMN GRID ===== */
+    .two-col-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ===== DETAILS GRID ===== */
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem 1.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .detail-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .detail-value {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+        .detail-value.text-danger {
+            color: var(--danger);
+        }
+
+    .description-section {
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--gray-200);
+        margin-top: 0.75rem;
+    }
+
+    .description-text {
+        font-size: 0.85rem;
+        color: var(--gray-700);
+        line-height: 1.6;
+        margin-top: 0.2rem;
+        white-space: pre-wrap;
+    }
+
+    .keywords-section {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .keywords-text {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+    }
+
+    /* ===== WORKFLOW STEPPER ===== */
+    .workflow-stepper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .step {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--gray-400);
+        padding: 0.25rem 0.5rem;
+        border-radius: 2rem;
+        transition: all 0.3s ease;
+    }
+
+    .step-number {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: var(--gray-100);
+        color: var(--gray-400);
+        font-size: 0.7rem;
+        transition: all 0.3s ease;
+    }
+
+    .step.completed .step-number {
+        background: var(--success);
+        color: white;
+    }
+
+    .step.active .step-number {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+
+    .step.completed .step-label {
+        color: var(--gray-600);
+    }
+
+    .step.active .step-label {
+        color: var(--primary);
+        font-weight: 600;
+    }
+
+    /* ===== WORKFLOW ACTIONS ===== */
+    .workflow-actions-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        align-items: center;
+    }
+
+    .decision-form {
+        margin-top: 1rem;
+        border-top: 1px solid var(--gray-200);
+        padding-top: 1rem;
+    }
+
+        .decision-form .form-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .decision-form .form-label-sm {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .decision-form .form-control {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 0.5rem;
+            font-size: 0.85rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            resize: vertical;
+            min-height: 50px;
+        }
+
+            .decision-form .form-control:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+    .decision-buttons {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        margin: 0.5rem 0 0.25rem;
+    }
+
+    .decision-hint {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        margin-top: 0.5rem;
+    }
+
+        .decision-hint i {
+            color: var(--gray-400);
+        }
+
+    /* ===== ACKNOWLEDGEMENT ===== */
+    .acknowledgement-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+    }
+
+    .ack-label {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+    }
+
+    .ack-percentage {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+    }
+
+    .progress-bar-track {
+        width: 100%;
+        height: 8px;
+        background: var(--gray-100);
+        border-radius: 1rem;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 1rem;
+        transition: width 0.6s ease;
+        min-width: 4px;
+    }
+
+        .progress-bar-fill.success {
+            background: linear-gradient(90deg, #6ee7b7, var(--success));
+        }
+
+    .ack-hint {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+    }
+
+    /* ===== DISTRIBUTION ===== */
+    .distribution-form {
+        margin-top: 1rem;
+        border-top: 1px solid var(--gray-200);
+        padding-top: 1rem;
+    }
+
+    .distribution-form-header {
+        margin-bottom: 0.5rem;
+    }
+
+    .distribution-form .form-label-sm {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .distribution-form-row {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .distribution-form .form-control {
+        padding: 0.4rem 0.6rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.8rem;
+        font-family: inherit;
+        transition: all 0.2s;
+        background: white;
+    }
+
+        .distribution-form .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+    .distribution-list {
+        margin-top: 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .distribution-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+    }
+
+    .badge-internal {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    /* ===== VERSION HISTORY ===== */
+    .version-number {
+        font-weight: 700;
+        color: var(--gray-800);
+        font-size: 0.9rem;
+    }
+
+    .badge-current {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+        font-size: 0.6rem;
+        padding: 0.1rem 0.4rem;
+        border-radius: 1rem;
+        margin-left: 0.3rem;
+    }
+
+    .version-notes {
+        color: var(--gray-500);
+        font-size: 0.85rem;
+    }
+
+    .add-version-form {
+        padding: 1rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .add-version-row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+        .add-version-row .form-control {
+            padding: 0.4rem 0.6rem;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: white;
+        }
+
+            .add-version-row .form-control:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+    .version-major-check {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        cursor: pointer;
+    }
+
+        .version-major-check input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+    /* ===== APPROVAL HISTORY ===== */
+    .approval-stage {
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    /* ===== REVIEWS ===== */
+    .schedule-review-form {
+        padding: 1rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .schedule-review-row {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+        .schedule-review-row .form-control {
+            padding: 0.4rem 0.6rem;
+            border: 1.5px solid var(--gray-200);
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: white;
+        }
+
+            .schedule-review-row .form-control:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+    .date-overdue {
+        color: var(--danger);
+        font-weight: 600;
+    }
+
+    .overdue-badge {
+        display: inline-flex;
+        align-items: center;
+        color: var(--danger);
+        margin-left: 0.25rem;
+        font-size: 0.65rem;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .badge-primary {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    .badge-overdue {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    /* ===== ACTION BUTTONS ===== */
+    .action-buttons {
+        display: flex;
+        gap: 0.25rem;
+        justify-content: flex-end;
+    }
+
+    .action-btn {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.8rem;
+        border: none;
+        cursor: pointer;
+        background: transparent;
+    }
+
+    .btn-view {
+        background: var(--gray-100);
+        color: var(--info);
+    }
+
+        .btn-view:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== EMPTY STATE MINI ===== */
+    .empty-state-mini {
+        text-align: center;
+        padding: 1.5rem;
+        color: var(--gray-500);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+        .empty-state-mini i {
+            font-size: 1.5rem;
+            color: var(--gray-300);
+        }
+
+        .empty-state-mini span {
+            font-size: 0.9rem;
+        }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 0.75rem 1.2rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.65rem 1.2rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .two-col-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .workflow-stepper {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 0.25rem;
+        }
+
+        .step {
+            justify-content: center;
+            padding: 0.3rem 0.5rem;
+            background: var(--gray-50);
+            border-radius: 0.5rem;
+        }
+
+        .decision-buttons {
+            flex-direction: column;
+        }
+
+            .decision-buttons .btn-success,
+            .decision-buttons .btn-outline,
+            .decision-buttons .btn-danger {
+                width: 100%;
+                justify-content: center;
+            }
+
+        .distribution-form-row,
+        .add-version-row,
+        .schedule-review-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+            .distribution-form-row .form-control,
+            .add-version-row .form-control,
+            .schedule-review-row .form-control {
+                width: 100% !important;
+            }
+
+            .distribution-form-row .btn-add-distribution,
+            .add-version-row .btn-add-version,
+            .schedule-review-row .btn-schedule-review {
+                width: 100%;
+                justify-content: center;
+            }
+
+        .workflow-actions-row {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+            .workflow-actions-row .btn-primary,
+            .workflow-actions-row .btn-outline,
+            .workflow-actions-row .btn-danger {
+                width: 100%;
+                justify-content: center;
+            }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.5rem 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.8rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .meta-text {
+            font-size: 0.75rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.1rem;
+        }
+
+        .doc-number {
+            font-size: 0.85rem;
+        }
+
+        .btn-create-ticket {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .d-flex.gap-2 {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .status-badge {
+            font-size: 0.55rem;
+            padding: 0.1rem 0.35rem;
+        }
+
+        .ack-percentage {
+            font-size: 1.25rem;
+        }
+
+        .version-number {
+            font-size: 0.8rem;
+        }
+
+        .version-notes {
+            font-size: 0.75rem;
+        }
+
+        .distribution-item {
+            flex-wrap: wrap;
+            gap: 0.25rem;
+        }
+
+        .decision-hint {
+            font-size: 0.7rem;
+        }
+
+        .add-version-row .version-major-check {
+            font-size: 0.7rem;
+        }
+    }
+</style>

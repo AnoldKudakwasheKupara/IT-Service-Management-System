@@ -1,0 +1,923 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model Objective
+@{
+    ViewData["Title"] = Model.Reference;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    var pct = Model.ProgressPercent ?? 0;
+
+    string statusClass = Model.Status switch
+    {
+        ObjectiveStatus.Achieved or ObjectiveStatus.OnTrack => "badge-success",
+        ObjectiveStatus.AtRisk or ObjectiveStatus.NotAchieved => "badge-critical",
+        ObjectiveStatus.Active => "badge-warning",
+        _ => "badge-gray"
+    };
+    string barClass = Model.Status switch
+    {
+        ObjectiveStatus.AtRisk or ObjectiveStatus.NotAchieved => "danger",
+        _ => "success"
+    };
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <a class="btn-back" asp-action="Index">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <span class="doc-number" style="font-size:1rem;font-weight:600;color:var(--primary);">@Model.Reference</span>
+                        <span style="font-weight:700;color:var(--gray-800);">@Model.Title</span>
+                    </h1>
+                    <div class="page-subtitle">
+                        <span class="status-badge @statusClass">@Model.Status</span>
+                        <span class="meta-separator">·</span>
+                        <span class="meta-text">@IsoStandards.Label(Model.Standard) · @Model.Frequency</span>
+                    </div>
+                </div>
+            </div>
+            @if (canManage)
+            {
+                <div class="d-flex gap-2">
+                    <a class="btn-create-ticket" asp-action="Edit" asp-route-id="@Model.Id" style="background:var(--gray-100);color:var(--gray-700);">
+                        <i class="fas fa-pen"></i> Edit
+                    </a>
+                    <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this objective and its measurements?');" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button class="btn-danger" type="submit">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- FLASH MESSAGES -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-flash success">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-flash danger">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+        </div>
+    }
+
+    <!-- PROGRESS CARD -->
+    <div class="data-card">
+        <div class="card-body-custom">
+            <div class="progress-header">
+                <span class="progress-label">Progress toward target (@Model.Direction)</span>
+                <strong class="progress-value">@pct%</strong>
+            </div>
+            <div class="progress-bar-track @barClass">
+                <div class="progress-bar-fill @barClass" style="width: @pct%;"></div>
+            </div>
+            <div class="progress-details">
+                Baseline @(Model.BaselineValue?.ToString("0.##") ?? "—") ·
+                Current <strong>@(Model.CurrentValue?.ToString("0.##") ?? "—")</strong> @Model.Unit ·
+                Target <strong>@(Model.TargetValue?.ToString("0.##") ?? "—")</strong> @Model.Unit
+            </div>
+        </div>
+    </div>
+
+    <!-- TWO COLUMN GRID: Details & Record Measurement -->
+    <div class="two-col-grid">
+        <!-- DETAILS CARD -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-circle-info me-2" style="color:var(--primary);"></i>
+                <span>Details</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Department</div>
+                        <div class="detail-value">@(Model.Department?.Name ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Owner</div>
+                        <div class="detail-value">@(Model.Owner?.FullName ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ISO Standard</div>
+                        <div class="detail-value">@IsoStandards.Label(Model.Standard)</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">KPI Direction</div>
+                        <div class="detail-value">@Model.Direction</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Frequency</div>
+                        <div class="detail-value">@Model.Frequency</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Target</div>
+                        <div class="detail-value">@(Model.TargetValue?.ToString("0.##") ?? "—") @Model.Unit</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Start Date</div>
+                        <div class="detail-value">@(Model.StartDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Due Date</div>
+                        <div class="detail-value">@(Model.DueDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Created</div>
+                        <div class="detail-value">@Model.CreatedAt.ToString("dd MMM yyyy")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Created By</div>
+                        <div class="detail-value">@(Model.CreatedBy?.FullName ?? "—")</div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <div class="description-section">
+                        <div class="detail-label">Description</div>
+                        <div class="description-text">@Model.Description</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- RECORD MEASUREMENT CARD -->
+        <div class="data-card">
+            <div class="card-header-custom" style="border-left:4px solid var(--primary);">
+                <i class="fas fa-plus me-2" style="color:var(--primary);"></i>
+                <span>Record Measurement</span>
+            </div>
+            <div class="card-body-custom">
+                @if (canManage)
+                {
+                    <form method="post" asp-action="RecordMeasurement" asp-route-id="@Model.Id">
+                        @Html.AntiForgeryToken()
+
+                        <div class="form-group">
+                            <label class="form-label-sm">
+                                <i class="fas fa-calendar"></i> Period <span class="required">*</span>
+                            </label>
+                            <input class="form-control" name="PeriodLabel" required placeholder="e.g. Q1 2026" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label-sm">
+                                <i class="fas fa-gauge"></i> Value <span class="required">*</span>
+                            </label>
+                            <input class="form-control" type="number" step="any" name="Value" required />
+                            <span class="form-hint">Saving updates the objective's current value.</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label-sm">
+                                <i class="fas fa-calendar-day"></i> Recorded Date
+                            </label>
+                            <input class="form-control" type="date" name="RecordedDate" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label-sm">
+                                <i class="fas fa-note-sticky"></i> Notes
+                            </label>
+                            <textarea class="form-control" name="Notes" rows="2" placeholder="Optional notes about this measurement"></textarea>
+                        </div>
+
+                        <button class="btn-record-measurement" type="submit">
+                            <i class="fas fa-save"></i> Record
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <div class="no-permission-message">
+                        <i class="fas fa-lock"></i>
+                        <span>You do not have permission to record measurements.</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- MEASUREMENT HISTORY -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-chart-line me-2" style="color:var(--primary);"></i>
+            <span>Measurement History</span>
+        </div>
+        <div class="card-body-custom" style="padding:0;">
+            @if (Model.Measurements.Any())
+            {
+                <div class="table-responsive">
+                    <table class="tickets-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-calendar me-1"></i> Period</th>
+                                <th><i class="fas fa-gauge me-1"></i> Value</th>
+                                <th><i class="fas fa-calendar-check me-1"></i> Recorded</th>
+                                <th><i class="fas fa-user me-1"></i> By</th>
+                                <th><i class="fas fa-sticky-note me-1"></i> Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var m in Model.Measurements.OrderByDescending(m => m.RecordedDate).ThenByDescending(m => m.Id))
+                            {
+                                <tr>
+                                    <td><span class="measurement-period">@m.PeriodLabel</span></td>
+                                    <td><span class="measurement-value">@m.Value.ToString("0.##") @Model.Unit</span></td>
+                                    <td class="meta-text">@m.RecordedDate.ToString("dd MMM yyyy")</td>
+                                    <td class="meta-text">@(m.RecordedBy?.FullName ?? "—")</td>
+                                    <td class="meta-text">@(m.Notes ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-mini">
+                    <i class="fas fa-chart-line"></i>
+                    <span>No measurements yet</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 1rem;
+    }
+
+    .page-subtitle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.3rem;
+    }
+
+    .meta-separator {
+        color: var(--gray-300);
+    }
+
+    .meta-text {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-danger {
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        background: linear-gradient(100deg, #dc2626, var(--danger));
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-record-measurement {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        border: none;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        font-family: inherit;
+        width: 100%;
+        justify-content: center;
+    }
+
+        .btn-record-measurement:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    /* ===== ALERT FLASH ===== */
+    .alert-flash {
+        padding: 0.9rem 1.2rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: 1px solid transparent;
+    }
+
+        .alert-flash.success {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .alert-flash.danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+        .alert-flash i {
+            font-size: 1.1rem;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* ===== TWO COLUMN GRID ===== */
+    .two-col-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ===== PROGRESS ===== */
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+    }
+
+    .progress-label {
+        font-size: 0.85rem;
+        color: var(--gray-500);
+    }
+
+    .progress-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+    }
+
+    .progress-bar-track {
+        width: 100%;
+        height: 8px;
+        background: var(--gray-100);
+        border-radius: 1rem;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+
+        .progress-bar-track.success .progress-bar-fill {
+            background: linear-gradient(90deg, #6ee7b7, var(--success));
+        }
+
+        .progress-bar-track.danger .progress-bar-fill {
+            background: linear-gradient(90deg, #fca5a5, var(--danger));
+        }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 1rem;
+        transition: width 0.6s ease;
+        min-width: 4px;
+    }
+
+    .progress-details {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+    }
+
+        .progress-details strong {
+            color: var(--gray-700);
+        }
+
+    /* ===== DETAILS GRID ===== */
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem 1.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .detail-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .detail-value {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .description-section {
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--gray-200);
+        margin-top: 0.75rem;
+    }
+
+    .description-text {
+        font-size: 0.85rem;
+        color: var(--gray-700);
+        line-height: 1.6;
+        margin-top: 0.2rem;
+        white-space: pre-wrap;
+    }
+
+    /* ===== RECORD MEASUREMENT ===== */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        margin-bottom: 0.75rem;
+    }
+
+        .form-group:last-of-type {
+            margin-bottom: 0;
+        }
+
+    .form-label-sm {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+        .form-label-sm .required {
+            color: var(--danger);
+            font-weight: 700;
+            margin-left: 0.15rem;
+        }
+
+        .form-label-sm i {
+            font-size: 0.65rem;
+            color: var(--gray-400);
+        }
+
+    .form-control {
+        padding: 0.5rem 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.6rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        font-family: inherit;
+        background: white;
+        transition: all 0.2s ease;
+        width: 100%;
+        color: var(--gray-800);
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: var(--gray-400);
+            font-size: 0.8rem;
+        }
+
+        .form-control[type="date"],
+        .form-control[type="number"] {
+            min-height: 42px;
+        }
+
+            .form-control[type="date"]::-webkit-calendar-picker-indicator {
+                opacity: 0.5;
+                cursor: pointer;
+            }
+
+            .form-control[type="date"]:hover::-webkit-calendar-picker-indicator {
+                opacity: 1;
+            }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 50px;
+        font-family: inherit;
+        line-height: 1.5;
+    }
+
+        textarea.form-control:focus {
+            resize: vertical;
+        }
+
+    .form-hint {
+        font-size: 0.7rem;
+        color: var(--gray-400);
+    }
+
+    .no-permission-message {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        background: var(--gray-50);
+        border-radius: 0.5rem;
+        color: var(--gray-500);
+        font-size: 0.85rem;
+    }
+
+        .no-permission-message i {
+            color: var(--gray-400);
+        }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    /* ===== MEASUREMENT HISTORY ===== */
+    .measurement-period {
+        font-weight: 600;
+        color: var(--gray-700);
+        font-size: 0.9rem;
+    }
+
+    .measurement-value {
+        font-weight: 600;
+        color: var(--gray-800);
+        font-size: 0.9rem;
+    }
+
+    /* ===== EMPTY STATE MINI ===== */
+    .empty-state-mini {
+        text-align: center;
+        padding: 1.5rem;
+        color: var(--gray-500);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+        .empty-state-mini i {
+            font-size: 1.5rem;
+            color: var(--gray-300);
+        }
+
+        .empty-state-mini span {
+            font-size: 0.9rem;
+        }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 0.75rem 1.2rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.65rem 1.2rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .two-col-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .btn-create-ticket,
+        .btn-danger {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-record-measurement {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .progress-value {
+            font-size: 1.25rem;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.5rem 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.8rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .meta-text {
+            font-size: 0.75rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.1rem;
+        }
+
+        .doc-number {
+            font-size: 0.85rem;
+        }
+
+        .btn-create-ticket,
+        .btn-danger {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .d-flex.gap-2 {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .status-badge {
+            font-size: 0.55rem;
+            padding: 0.1rem 0.35rem;
+        }
+
+        .progress-label {
+            font-size: 0.75rem;
+        }
+
+        .progress-value {
+            font-size: 1.1rem;
+        }
+
+        .progress-details {
+            font-size: 0.7rem;
+        }
+
+        .form-control {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.6rem;
+        }
+
+        .form-label-sm {
+            font-size: 0.65rem;
+        }
+
+        .measurement-period,
+        .measurement-value {
+            font-size: 0.75rem;
+        }
+    }
+</style>

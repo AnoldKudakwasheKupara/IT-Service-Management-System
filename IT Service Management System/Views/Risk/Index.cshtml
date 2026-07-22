@@ -1,0 +1,695 @@
+@using IT_Service_Management_System.Models.Ims
+@model List<Risk>
+@{
+    ViewData["Title"] = "Risk Register";
+    var canEdit = (bool)(ViewBag.CanEdit ?? false);
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-gauge-high me-2" style="color: var(--primary);"></i>
+                    Risk Register
+                </h1>
+                <p class="text-muted mt-2">ISO 9001/27001 clause 6.1 — risks &amp; treatment</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn-create-ticket" asp-action="Matrix" style="background: var(--gray-100); color: var(--gray-700);">
+                    <i class="fas fa-fire"></i> Heat Map
+                </a>
+                <a class="btn-create-ticket" asp-action="Opportunities" style="background: var(--gray-100); color: var(--gray-700);">
+                    <i class="fas fa-arrow-trend-up"></i> Opportunities
+                </a>
+                @if (canEdit)
+                {
+                    <a class="btn-create-ticket" asp-action="Create">
+                        <i class="fas fa-plus"></i> New Risk
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- STATISTICS CARDS -->
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-icon primary">
+                <i class="fas fa-list"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@ViewBag.Total</h3>
+                <p>Total</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon warning">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@ViewBag.Open</h3>
+                <p>Open</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon danger">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@ViewBag.Critical</h3>
+                <p>Critical</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon info">
+                <i class="fas fa-clock-rotate-left"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@ViewBag.ReviewDue</h3>
+                <p>Review Due</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTERS -->
+    <div class="filters-card">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Filter Risks</span>
+        </div>
+        <form method="get" class="filters-body">
+            <div class="filter-group">
+                <label>Category</label>
+                <select class="filter-select" name="category" onchange="this.form.submit()">
+                    <option value="">All categories</option>
+                    @foreach (RiskCategory c in Enum.GetValues(typeof(RiskCategory)))
+                    {
+                        <option value="@c" selected="@(ViewBag.Category as RiskCategory? == c)">@c</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select class="filter-select" name="status" onchange="this.form.submit()">
+                    <option value="">All statuses</option>
+                    @foreach (RiskStatus s in Enum.GetValues(typeof(RiskStatus)))
+                    {
+                        <option value="@s" selected="@(ViewBag.Status as RiskStatus? == s)">@s</option>
+                    }
+                </select>
+            </div>
+            <button class="btn-clear-filters" type="submit" style="background:var(--primary);color:#fff;border:none;">
+                <i class="fas fa-magnifying-glass"></i> Filter
+            </button>
+            <a asp-action="Index" class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+                <i class="fas fa-undo-alt"></i> Clear
+            </a>
+        </form>
+    </div>
+
+    <!-- RISKS TABLE -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Risks</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Count</span> records
+            </div>
+        </div>
+        <div class="card-body-custom" style="padding:0;">
+            @if (Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="tickets-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-hashtag me-1"></i> Ref</th>
+                                <th><i class="fas fa-heading me-1"></i> Title</th>
+                                <th><i class="fas fa-tag me-1"></i> Category</th>
+                                <th><i class="fas fa-dice me-1"></i> L×I</th>
+                                <th><i class="fas fa-gauge-high me-1"></i> Score</th>
+                                <th><i class="fas fa-chart-simple me-1"></i> Band</th>
+                                <th><i class="fas fa-shield me-1"></i> Residual</th>
+                                <th><i class="fas fa-user me-1"></i> Owner</th>
+                                <th><i class="fas fa-tag me-1"></i> Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.OrderByDescending(x => x.Score))
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-action="Details" asp-route-id="@r.Id" class="risk-link">
+                                            <span class="doc-number">@r.Reference</span>
+                                        </a>
+                                    </td>
+                                    <td class="risk-title">@r.Title</td>
+                                    <td class="meta-text">@r.Category</td>
+                                    <td class="meta-text">@r.Likelihood × @r.Impact</td>
+                                    <td><strong class="risk-score">@r.Score</strong></td>
+                                    <td>
+                                        <span class="status-badge @RiskScoring.CssClass(r.Band)">@r.Band</span>
+                                    </td>
+                                    <td class="meta-text">@(r.ResidualScore?.ToString() ?? "—")</td>
+                                    <td class="meta-text">@(r.Owner?.FullName ?? "—")</td>
+                                    <td class="meta-text">@r.Status</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-shield-halved"></i>
+                    <h3>No risks recorded</h3>
+                    <p>@(ViewBag.Category != null || ViewBag.Status != null ? "No risks match your filter criteria." : "Get started by creating your first risk.")</p>
+                    @if (canEdit)
+                    {
+                        <a asp-action="Create" class="btn-create-ticket-sm">
+                            <i class="fas fa-plus"></i> New Risk
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-create-ticket-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-create-ticket-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== STATISTICS CARDS ===== */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+        .stat-icon.primary {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        }
+
+        .stat-icon.success {
+            background: linear-gradient(135deg, #2c9e6e, #227a55);
+        }
+
+        .stat-icon.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .stat-icon.warning {
+            background: linear-gradient(135deg, #f5b042, #e6a017);
+        }
+
+        .stat-icon.info {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+        }
+
+        .stat-icon.violet {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ===== FILTERS CARD ===== */
+    .filters-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .filters-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filters-body {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 180px;
+    }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 0.75rem;
+        padding-right: 2rem;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .btn-clear-filters {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-clear-filters:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.9rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+    /* ===== RISK SPECIFIC ===== */
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 0.85rem;
+    }
+
+    .risk-link {
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+        .risk-link:hover {
+            text-decoration: none;
+        }
+
+            .risk-link:hover .doc-number {
+                color: var(--primary-dark);
+            }
+
+    .risk-title {
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .risk-score {
+        font-size: 1rem;
+        color: var(--gray-800);
+    }
+
+    .meta-text {
+        color: var(--gray-500);
+        font-size: 0.85rem;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .badge-primary {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .page-header .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .stats-cards {
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .filters-body {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-group {
+            min-width: 100%;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.6rem 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.8rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.4rem;
+        }
+
+        .doc-number {
+            font-size: 0.7rem;
+        }
+
+        .meta-text {
+            font-size: 0.7rem;
+        }
+
+        .risk-score {
+            font-size: 0.85rem;
+        }
+
+        .btn-create-ticket-sm {
+            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+        }
+    }
+</style>

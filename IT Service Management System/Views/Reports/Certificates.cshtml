@@ -1,0 +1,676 @@
+@model IT_Service_Management_System.ViewModels.Reports.CertificatesReportVM
+@{
+    ViewData["Title"] = "SSL Certificates Report - Axis IT Operations";
+    var now = DateTime.Now;
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-shield-alt me-2" style="color: var(--primary);"></i>
+                    SSL Certificates
+                </h1>
+                <p class="text-muted mt-2">Certificate expiry health</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a class="btn-create-ticket" asp-action="Index" style="background: var(--gray-100); color: var(--gray-700);">
+                    <i class="fas fa-arrow-left"></i>
+                    All Reports
+                </a>
+                <button class="btn-create-ticket" onclick="window.print()">
+                    <i class="fas fa-print"></i>
+                    Print
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <div class="kpi-icon primary">
+                <i class="fas fa-certificate"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.Total</div>
+                <div class="kpi-label">Total Certificates</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon danger">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.Expired</div>
+                <div class="kpi-label">Expired</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon warning">
+                <i class="fas fa-hourglass-end"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.Within30</div>
+                <div class="kpi-label">Expiring ≤ 30 days</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon violet">
+                <i class="fas fa-hourglass-half"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.Within90</div>
+                <div class="kpi-label">Expiring 31–90 days</div>
+            </div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-icon success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="kpi-body">
+                <div class="kpi-value">@Model.Healthy</div>
+                <div class="kpi-label">Healthy (&gt; 90 days)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ATTENTION CERTIFICATES -->
+    <div class="data-card">
+        <div class="card-header-custom" style="border-left: 4px solid var(--danger);">
+            <div>
+                <i class="fas fa-triangle-exclamation me-2" style="color: var(--danger);"></i>
+                <span style="color: var(--danger);">Needs Attention</span>
+                <span style="font-weight: 400; color: var(--gray-500); font-size: 0.8rem; margin-left: 0.5rem;">
+                    (expired or expiring within 30 days)
+                </span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@Model.Attention.Count</span> certificates need attention
+            </div>
+        </div>
+        <div class="card-body-custom" style="padding:0;">
+            @if (Model.Attention.Any())
+            {
+                <div class="table-responsive">
+                    <table class="tickets-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-server me-1"></i> System</th>
+                                <th><i class="fas fa-link me-1"></i> URL</th>
+                                <th><i class="fas fa-calendar me-1"></i> Expiry Date</th>
+                                <th><i class="fas fa-clock me-1"></i> Days</th>
+                                <th><i class="fas fa-tag me-1"></i> Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.Attention.OrderBy(x => x.ExpiryDate))
+                            {
+                                var days = (c.ExpiryDate - now).Days;
+                                var expired = c.ExpiryDate < now;
+                                var rowClass = expired ? "cert-expired" : "cert-expiring";
+                                <tr class="@rowClass">
+                                    <td><span class="system-name">@c.SystemName</span></td>
+                                    <td class="cert-url" title="@c.URL">@c.URL</td>
+                                    <td class="cert-date @(expired ? "expired" : "expiring")">@c.ExpiryDate.ToString("MMM dd, yyyy")</td>
+                                    <td>
+                                        <span class="days-badge @(expired ? "days-expired" : "days-expiring")">
+                                            <i class="fas @(expired ? "fa-arrow-down" : "fa-clock")"></i>
+                                            @(expired ? $"{Math.Abs(days)} days ago" : $"{days} days left")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge @(expired ? "status-expired" : "status-expiring")">
+                                            @(expired ? "Expired" : "Expiring")
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-mini success">
+                    <i class="fas fa-check-circle" style="color: var(--success); font-size: 1.5rem;"></i>
+                    <span style="font-size: 1rem; font-weight: 500; color: var(--success);">All certificates are healthy 🎉</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- HEALTHY CERTIFICATES SUMMARY -->
+    @if (Model.Healthy > 0)
+    {
+        <div class="data-card mt-4">
+            <div class="card-header-custom" style="border-left: 4px solid var(--success);">
+                <div>
+                    <i class="fas fa-check-circle me-2" style="color: var(--success);"></i>
+                    <span style="color: var(--success);">Healthy Certificates</span>
+                    <span style="font-weight: 400; color: var(--gray-500); font-size: 0.8rem; margin-left: 0.5rem;">
+                        (expiring after 90+ days)
+                    </span>
+                </div>
+                <div class="ticket-count">
+                    <i class="fas fa-chart-simple"></i>
+                    <span>@Model.Healthy</span> healthy certificates
+                </div>
+            </div>
+            <div class="card-body-custom" style="padding: 1rem 1.5rem;">
+                <div class="healthy-summary">
+                    <div class="healthy-icon">
+                        <i class="fas fa-shield-halved" style="color: var(--success); font-size: 2rem;"></i>
+                    </div>
+                    <div class="healthy-text">
+                        <p style="margin: 0; color: var(--gray-600); font-size: 0.9rem;">
+                            All <strong>@Model.Healthy</strong> certificates are valid for more than 90 days.
+                            No action required at this time.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== KPI CARDS ===== */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .kpi-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+    }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .kpi-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+        .kpi-icon.primary {
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        }
+
+        .kpi-icon.success {
+            background: linear-gradient(135deg, #2c9e6e, #227a55);
+        }
+
+        .kpi-icon.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .kpi-icon.warning {
+            background: linear-gradient(135deg, #f5b042, #e6a017);
+        }
+
+        .kpi-icon.violet {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+
+        .kpi-icon.slate {
+            background: linear-gradient(135deg, var(--gray-500), var(--gray-600));
+        }
+
+    .kpi-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .kpi-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        line-height: 1.2;
+    }
+
+    .kpi-label {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-top: 0.05rem;
+    }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+        .data-card.mt-4 {
+            margin-top: 1.5rem;
+        }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .card-body-custom {
+        padding: 1.25rem 1.5rem;
+    }
+
+    .ticket-count {
+        font-size: 0.8rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 0.75rem 1.2rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.65rem 1.2rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+    /* ===== CERTIFICATE SPECIFIC ===== */
+    .system-name {
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .cert-url {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--gray-500);
+        font-size: 0.8rem;
+    }
+
+    .cert-date {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+        .cert-date.expired {
+            color: var(--danger);
+        }
+
+        .cert-date.expiring {
+            color: var(--warning);
+        }
+
+    /* ===== ROW STYLES ===== */
+    .cert-expired {
+        background-color: #fef2f2;
+    }
+
+        .cert-expired:hover {
+            background-color: #fee2e2 !important;
+        }
+
+    .cert-expiring {
+        background-color: #fffbeb;
+    }
+
+        .cert-expiring:hover {
+            background-color: #fef3c7 !important;
+        }
+
+    /* ===== DAYS BADGE ===== */
+    .days-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.15rem 0.6rem;
+        border-radius: 2rem;
+        white-space: nowrap;
+    }
+
+        .days-badge i {
+            font-size: 0.65rem;
+        }
+
+    .days-expired {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .days-expiring {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .status-expired {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .status-expiring {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    /* ===== HEALTHY SUMMARY ===== */
+    .healthy-summary {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        padding: 0.5rem 0;
+    }
+
+    .healthy-icon {
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
+        background: #e6f5e9;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .healthy-text {
+        flex: 1;
+    }
+
+        .healthy-text strong {
+            color: var(--success);
+        }
+
+    /* ===== EMPTY STATE MINI ===== */
+    .empty-state-mini {
+        text-align: center;
+        padding: 1.5rem;
+        color: var(--gray-500);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+        .empty-state-mini.success {
+            padding: 2rem;
+        }
+
+            .empty-state-mini.success i {
+                font-size: 2rem;
+                margin-bottom: 0.25rem;
+            }
+
+    /* ===== PRINT STYLES ===== */
+    @@media print {
+        .btn-create-ticket {
+            display: none !important;
+        }
+
+        .data-card {
+            box-shadow: none !important;
+            border: 1px solid var(--gray-300) !important;
+            page-break-inside: avoid;
+        }
+
+        .kpi-card {
+            box-shadow: none !important;
+            border: 1px solid var(--gray-300) !important;
+        }
+
+        .cert-expired {
+            background-color: #fef2f2 !important;
+        }
+
+        .cert-expiring {
+            background-color: #fffbeb !important;
+        }
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 768px) {
+        .kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .kpi-card {
+            padding: 0.9rem 1rem;
+        }
+
+        .kpi-icon {
+            width: 38px;
+            height: 38px;
+            font-size: 0.9rem;
+        }
+
+        .kpi-value {
+            font-size: 1.1rem;
+        }
+
+        .page-header .d-flex.justify-content-between {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .tickets-table td,
+        .tickets-table th {
+            padding: 0.5rem 0.8rem;
+        }
+
+        .cert-url {
+            max-width: 120px;
+        }
+
+        .healthy-summary {
+            flex-direction: column;
+            text-align: center;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .kpi-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .btn-create-ticket {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.75rem;
+        }
+
+            .tickets-table td,
+            .tickets-table th {
+                padding: 0.4rem 0.5rem;
+            }
+
+        .status-badge,
+        .days-badge {
+            font-size: 0.6rem;
+            padding: 0.1rem 0.4rem;
+        }
+
+        .cert-url {
+            max-width: 80px;
+            font-size: 0.7rem;
+        }
+
+        .cert-date {
+            font-size: 0.7rem;
+        }
+
+        .healthy-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+            .healthy-icon i {
+                font-size: 1.5rem !important;
+            }
+    }
+</style>

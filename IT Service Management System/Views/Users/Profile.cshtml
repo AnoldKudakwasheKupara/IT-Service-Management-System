@@ -63,7 +63,7 @@
             }
 
             <!-- Profile Form -->
-            <form asp-action="MyProfile" method="post" id="profileForm">
+            <form asp-action="Profile" method="post" id="profileForm">
                 @Html.AntiForgeryToken()
                 
                 <div class="form-grid">
@@ -115,6 +115,18 @@
                             <div class="form-hint">
                                 <i class="fas fa-info-circle"></i> Used for login and notifications
                             </div>
+                        </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Phone" class="form-label">
+                                <i class="fas fa-phone"></i>
+                                Phone Number
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-mobile-alt input-icon"></i>
+                                <input asp-for="Phone" class="form-control-modern" placeholder="e.g. +1 555 123 4567" type="tel" />
+                            </div>
+                            <span asp-validation-for="Phone" class="validation-message text-danger"></span>
                         </div>
                     </div>
 
@@ -196,14 +208,153 @@
             </form>
         </div>
     </div>
+
+    @{
+        var sessions = ViewBag.ActiveSessions as List<IT_Service_Management_System.Models.UserSession>
+            ?? new List<IT_Service_Management_System.Models.UserSession>();
+        var currentToken = ViewBag.CurrentSessionToken as string;
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-modern alert-success" style="margin-top:1.25rem;">
+            <i class="fas fa-check-circle"></i>
+            <span>@TempData["Success"]</span>
+        </div>
+    }
+
+    <!-- Two-factor authentication -->
+    <div class="profile-card" style="margin-top:1.5rem;">
+        <div class="card-header-custom">
+            <div><i class="fas fa-mobile-screen-button me-2"></i><span>Two-Factor Authentication</span></div>
+            <span class="user-status-badge" style="color:@(Model.MfaEnabled ? "var(--success)" : "var(--gray-500)");">
+                <i class="fas fa-circle"></i>
+                <span>@(Model.MfaEnabled ? "Enabled" : "Disabled")</span>
+            </span>
+        </div>
+        <div class="card-body-custom">
+            <p class="text-muted" style="font-size:0.85rem;margin-bottom:1rem;">
+                When enabled, you'll receive a one-time code by email each time you sign in — an extra layer of
+                protection even if your password is compromised.
+            </p>
+            <form asp-controller="Users" asp-action="ToggleMfa" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="enable" value="@((!Model.MfaEnabled).ToString().ToLower())" />
+                @if (Model.MfaEnabled)
+                {
+                    <div style="margin-bottom:.6rem;">
+                        <label for="mfaOffPassword" style="display:block;font-size:.85rem;color:var(--gray-600);margin-bottom:.25rem;">
+                            Confirm your password to turn off 2FA
+                        </label>
+                        <input type="password" id="mfaOffPassword" name="password" required autocomplete="current-password"
+                               placeholder="Current password"
+                               style="width:100%;max-width:320px;padding:.55rem .75rem;border:1.5px solid var(--gray-200);border-radius:.55rem;" />
+                    </div>
+                    <button type="submit" class="btn-logout-all" style="background:linear-gradient(100deg,#475569,#64748b);">
+                        <i class="fas fa-toggle-off"></i> Turn off two-factor authentication
+                    </button>
+                }
+                else
+                {
+                    <button type="submit" class="btn-logout-all" style="background:linear-gradient(100deg,#1f8a5c,#2c9e6e);">
+                        <i class="fas fa-toggle-on"></i> Turn on two-factor authentication
+                    </button>
+                }
+            </form>
+        </div>
+    </div>
+
+    <!-- Active Sessions / Security -->
+    <div class="profile-card" style="margin-top:1.5rem;">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-shield-halved me-2"></i>
+                <span>Active Sessions &amp; Security</span>
+            </div>
+            <span class="user-status-badge" style="color:var(--primary);">
+                <i class="fas fa-desktop"></i>
+                <span>@sessions.Count active</span>
+            </span>
+        </div>
+        <div class="card-body-custom">
+            <p class="text-muted" style="font-size:0.85rem;margin-bottom:1rem;">
+                These are the devices currently signed in to your account. If you see something you
+                don't recognise, change your password and sign out everywhere.
+            </p>
+
+            <div class="sessions-list">
+                @foreach (var s in sessions)
+                {
+                    var isCurrent = s.SessionToken == currentToken;
+                    <div class="session-row @(isCurrent ? "current" : "")">
+                        <div class="session-icon"><i class="fas fa-@(s.Device != null && s.Device.Contains("Android") || (s.Device?.Contains("iOS") ?? false) ? "mobile-screen" : "display")"></i></div>
+                        <div class="session-info">
+                            <div class="session-device">
+                                @(string.IsNullOrEmpty(s.Device) ? "Unknown device" : s.Device)
+                                @if (isCurrent)
+                                {
+                                    <span class="current-pill">This device</span>
+                                }
+                            </div>
+                            <div class="session-meta">
+                                <span><i class="fas fa-network-wired"></i> @s.IpAddress</span>
+                                <span><i class="fas fa-clock"></i> Last active @s.LastSeenAt.ToString("MMM dd, h:mm tt")</span>
+                                <span><i class="fas fa-right-to-bracket"></i> Signed in @s.CreatedAt.ToString("MMM dd, h:mm tt")</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+                @if (!sessions.Any())
+                {
+                    <div class="text-muted" style="font-size:0.85rem;">No active sessions found.</div>
+                }
+            </div>
+
+            <form asp-controller="Account" asp-action="LogoutAllDevices" method="post"
+                  onsubmit="return confirm('This will sign you out on every device, including this one. Continue?');"
+                  style="margin-top:1.25rem;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn-logout-all">
+                    <i class="fas fa-power-off"></i>
+                    Log out from all devices
+                </button>
+            </form>
+        </div>
+    </div>
 </div>
 
 <style>
+    /* Active sessions */
+    .sessions-list { display:flex; flex-direction:column; gap:0.6rem; }
+    .session-row {
+        display:flex; align-items:flex-start; gap:0.9rem; padding:0.85rem 1rem;
+        border:1px solid var(--gray-200); border-radius:0.75rem; background:var(--gray-50);
+    }
+    .session-row.current { border-color:var(--primary); background:#eff6ff; }
+    .session-icon {
+        width:38px; height:38px; flex-shrink:0; border-radius:0.6rem; background:white;
+        display:flex; align-items:center; justify-content:center; color:var(--primary);
+        border:1px solid var(--gray-200);
+    }
+    .session-device { font-weight:600; color:var(--gray-800); font-size:0.875rem; }
+    .current-pill {
+        margin-left:0.5rem; font-size:0.65rem; font-weight:700; color:white;
+        background:var(--primary); padding:0.1rem 0.5rem; border-radius:1rem;
+    }
+    .session-meta { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.25rem; font-size:0.72rem; color:var(--gray-500); }
+    .session-meta i { margin-right:0.2rem; }
+    .btn-logout-all {
+        background:linear-gradient(100deg,#dc2626,#ef4444); color:white; border:none;
+        padding:0.7rem 1.25rem; border-radius:0.75rem; font-weight:600; font-size:0.85rem;
+        display:inline-flex; align-items:center; gap:0.5rem; cursor:pointer; transition:all 0.2s;
+    }
+    .btn-logout-all:hover { transform:translateY(-1px); box-shadow:var(--shadow-md); }
+
     /* My Profile Page Specific Styles */
     :root {
-        --primary-dark: #1e4c6b;
-        --primary: #2c7da0;
-        --primary-light: #61a5c2;
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
         --success: #2c9e6e;
         --warning: #f5b042;
         --danger: #e53e3e;
@@ -224,8 +375,9 @@
     }
 
     .page-container {
-        max-width: 1000px;
+        max-width: 1400px;
         margin: 0 auto;
+        padding: 0 1rem;
     }
 
     .page-header {
@@ -354,7 +506,7 @@
     }
 
     .role-badge.admin {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
         color: white;
     }
 
@@ -463,7 +615,7 @@
     .form-control-modern:focus {
         outline: none;
         border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
     }
 
     .readonly-field .form-control-modern {
@@ -633,7 +785,8 @@
                 const firstName = document.querySelector('[name="FirstName"]').value.trim();
                 const lastName = document.querySelector('[name="LastName"]').value.trim();
                 const email = document.querySelector('[name="Email"]').value.trim();
-                
+                const phone = document.querySelector('[name="Phone"]').value.trim();
+
                 if (!firstName) {
                     e.preventDefault();
                     showValidationError('First name is required');
@@ -665,11 +818,13 @@
                 }
                 
                 // Check if any changes were made
-                const originalFirstName = '@Model.FirstName';
-                const originalLastName = '@Model.LastName';
-                const originalEmail = '@Model.Email';
-                
-                if (firstName === originalFirstName && lastName === originalLastName && email === originalEmail) {
+                const originalFirstName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FirstName));
+                const originalLastName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.LastName));
+                const originalEmail = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Email));
+                const originalPhone = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Phone ?? ""));
+
+                if (firstName === originalFirstName && lastName === originalLastName &&
+                    email === originalEmail && phone === originalPhone) {
                     e.preventDefault();
                     showInfoToast('No changes detected. Please modify at least one field.');
                     return false;

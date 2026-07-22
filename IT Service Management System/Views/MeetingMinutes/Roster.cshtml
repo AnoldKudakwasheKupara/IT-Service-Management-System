@@ -1,0 +1,86 @@
+@model IEnumerable<IT_Service_Management_System.Models.MeetingRosterMember>
+@using IT_Service_Management_System.Models
+@{
+    ViewData["Title"] = "Meeting Rosters - Meeting Minutes";
+    var users = (ViewBag.Users as List<User>) ?? new List<User>();
+    var departments = (ViewBag.Departments as List<Department>) ?? new List<Department>();
+    int? selectedDept = ViewBag.SelectedDepartmentId;
+    string Initials(string? name) => string.IsNullOrWhiteSpace(name) ? "?" : string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => p[0]));
+    // Group rosters: one group per department, plus an organization-wide group (null department).
+    var groups = Model
+        .GroupBy(r => r.Department?.Name ?? "Organization-wide")
+        .OrderBy(g => g.Key == "Organization-wide" ? "" : g.Key);
+}
+
+<partial name="_MeetingStyles" />
+
+<div class="mm narrow">
+    <div class="page-container">
+        <div class="page-header head-row">
+            <div style="display:flex;align-items:center;gap:.9rem;">
+                <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <h1 class="page-title"><i class="fas fa-users-gear me-2" style="color:var(--primary);"></i> Meeting Rosters</h1>
+                    <p class="page-sub">Each department keeps its own standing roster — pre-loaded into that department's new meetings</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-user-plus"></i> Add a member to a roster</span></div>
+            <div class="card-body">
+                <form asp-action="AddRosterMember" method="post" style="display:flex;gap:.6rem;align-items:end;flex-wrap:wrap;">
+                    @Html.AntiForgeryToken()
+                    <div class="fg" style="margin:0;">
+                        <label class="lbl"><i class="fas fa-building"></i> Roster</label>
+                        <select name="departmentId" class="inp" style="min-width:200px;">
+                            <option value="">Organization-wide</option>
+                            @foreach (var d in departments) { <option value="@d.Id" selected="@(selectedDept == d.Id)">@d.Name</option> }
+                        </select>
+                    </div>
+                    <div class="fg" style="margin:0;">
+                        <label class="lbl"><i class="fas fa-user"></i> Person</label>
+                        <select name="userId" class="inp" style="min-width:240px;">
+                            @foreach (var u in users) { <option value="@u.Id">@u.FullName</option> }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary-mm"><i class="fas fa-plus"></i> Add</button>
+                </form>
+            </div>
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="card"><div class="empty"><i class="fas fa-users"></i><h3>No rosters yet</h3><p class="meta">Add your regular attendees above so they auto-fill each meeting.</p></div></div>
+        }
+        else
+        {
+            @foreach (var g in groups)
+            {
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-users"></i> @g.Key <span class="meta">(@g.Count())</span></span></div>
+                    <table class="tbl">
+                        <thead><tr><th>Member</th><th>Email</th><th>Added</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var r in g.OrderBy(r => r.User!.FirstName))
+                            {
+                                <tr>
+                                    <td><span class="with-avatar"><span class="avatar">@Initials(r.User?.FullName)</span> @r.User?.FullName</span></td>
+                                    <td class="meta">@r.User?.Email</td>
+                                    <td class="meta">@r.AddedAt.ToString("dd MMM yyyy")</td>
+                                    <td>
+                                        <form asp-action="RemoveRosterMember" method="post" onsubmit="return confirm('Remove this person from the roster?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@r.Id" />
+                                            <button type="submit" class="act del" title="Remove"><i class="fas fa-user-minus"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        }
+    </div>
+</div>

@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET (from global.json)
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore "IT Service Management System.slnx"
+
+      - name: Build
+        run: dotnet build "IT Service Management System.slnx" --configuration Release --no-restore
+
+      - name: Test
+        run: |
+          if find . -name '*.Tests.csproj' | grep -q .; then
+            dotnet test "IT Service Management System.slnx" --configuration Release --no-build --verbosity normal
+          else
+            echo "No test projects yet — skipping test step."
+          fi

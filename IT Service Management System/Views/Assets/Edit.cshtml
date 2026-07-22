@@ -28,7 +28,7 @@
             </div>
             <div class="asset-id-badge">
                 <i class="fas fa-hashtag"></i>
-                Asset ID: @Model.Asset.Id
+                Asset ID: @Model.Asset?.Id
             </div>
         </div>
 
@@ -60,15 +60,15 @@
                             <label asp-for="Asset.UserId" class="form-label">
                                 <i class="fas fa-user"></i>
                                 User
-                                <span class="required">*</span>
+                                <span class="required" id="userRequiredStar" style="display:none;">*</span>
                             </label>
                             <div class="select-wrapper">
                                 <i class="fas fa-chevron-down select-icon"></i>
-                                <select asp-for="Asset.UserId" class="form-control-modern">
-                                    <option value="">-- Select User --</option>
+                                <select asp-for="Asset.UserId" class="form-control-modern" id="userSelect">
+                                    <option value="">-- No user (in stock) --</option>
                                     @foreach (var user in Model.Users)
                                     {
-                                        <option value="@user.Id" selected="@(user.Id == Model.Asset.UserId)">
+                                        <option value="@user.Id" selected="@(user.Id == Model.Asset?.UserId)">
                                             @user.FirstName @user.LastName
                                         </option>
                                     }
@@ -124,12 +124,12 @@
                             <div class="select-wrapper">
                                 <i class="fas fa-chevron-down select-icon"></i>
                                 <select asp-for="Asset.ActionType" class="form-control-modern" id="actionSelect">
-                                    <option value="Issued" selected="@(Model.Asset.ActionType == "Issued")">Issued</option>
-                                    <option value="Returned" selected="@(Model.Asset.ActionType == "Returned")">Returned</option>
-                                    <option value="Repair" selected="@(Model.Asset.ActionType == "Repair")">Repair</option>
-                                    <option value="Upgrade" selected="@(Model.Asset.ActionType == "Upgrade")">Upgrade</option>
-                                    <option value="Stolen" selected="@(Model.Asset.ActionType == "Stolen")">Stolen</option>
-                                    <option value="Retired" selected="@(Model.Asset.ActionType == "Retired")">Retired</option>
+                                    <option value="In Stock" selected="@(Model.Asset?.ActionType == "In Stock")">In Stock</option>
+                                    <option value="Issued" selected="@(Model.Asset?.ActionType == "Issued")">Issued</option>
+                                    <option value="Returned" selected="@(Model.Asset?.ActionType == "Returned")">Returned</option>
+                                    <option value="In Repair" selected="@(Model.Asset?.ActionType == "In Repair")">In Repair</option>
+                                    <option value="Retired" selected="@(Model.Asset?.ActionType == "Retired")">Retired</option>
+                                    <option value="Stolen" selected="@(Model.Asset?.ActionType == "Stolen")">Stolen</option>
                                 </select>
                             </div>
                             <span asp-validation-for="Asset.ActionType" class="validation-message text-danger"></span>
@@ -148,10 +148,10 @@
                             <div class="select-wrapper">
                                 <i class="fas fa-chevron-down select-icon"></i>
                                 <select asp-for="Asset.Condition" class="form-control-modern" id="conditionSelect">
-                                    <option value="New" selected="@(Model.Asset.Condition == "New")">New</option>
-                                    <option value="Good" selected="@(Model.Asset.Condition == "Good")">Good</option>
-                                    <option value="Fair" selected="@(Model.Asset.Condition == "Fair")">Fair</option>
-                                    <option value="Poor" selected="@(Model.Asset.Condition == "Poor")">Poor</option>
+                                    <option value="New" selected="@(Model.Asset?.Condition == "New")">New</option>
+                                    <option value="Good" selected="@(Model.Asset?.Condition == "Good")">Good</option>
+                                    <option value="Fair" selected="@(Model.Asset?.Condition == "Fair")">Fair</option>
+                                    <option value="Poor" selected="@(Model.Asset?.Condition == "Poor")">Poor</option>
                                 </select>
                             </div>
                             <span asp-validation-for="Asset.Condition" class="validation-message text-danger"></span>
@@ -213,9 +213,9 @@
 <style>
     /* Edit Asset Page Specific Styles */
     :root {
-        --primary-dark: #1e4c6b;
-        --primary: #2c7da0;
-        --primary-light: #61a5c2;
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
         --success: #2c9e6e;
         --warning: #f5b042;
         --danger: #e53e3e;
@@ -374,7 +374,7 @@
     .form-control-modern:focus {
         outline: none;
         border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
     }
 
     /* Textarea Styling */
@@ -406,7 +406,7 @@
     .form-control-textarea:focus {
         outline: none;
         border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+        box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
     }
 
     /* Select Styling */
@@ -530,12 +530,21 @@
         const actionDescription = document.getElementById('actionDescription');
         
         const actionDescriptions = {
+            'In Stock': 'Asset is in stock with no holder',
             'Issued': 'Asset has been issued to the selected user',
-            'Returned': 'Asset has been returned from the selected user'
+            'Returned': 'Asset has been returned and goes back to stock',
+            'In Repair': 'Asset is in for repair',
+            'Retired': 'Asset is retired from service',
+            'Stolen': 'Asset is reported stolen or lost'
         };
         
         function updateActionDescription() {
             var selectedAction = actionSelect.value;
+
+            // Only "Issued" needs a user; toggle the required marker accordingly.
+            var userStar = document.getElementById('userRequiredStar');
+            if (userStar) userStar.style.display = (selectedAction === 'Issued') ? 'inline' : 'none';
+
             if (selectedAction && actionDescriptions[selectedAction]) {
                 actionDescription.textContent = actionDescriptions[selectedAction];
                 
@@ -616,9 +625,9 @@
                     return false;
                 }
                 
-                if (!userId) {
+                if (document.getElementById('actionSelect').value === 'Issued' && !userId) {
                     e.preventDefault();
-                    showValidationError('Please select a user');
+                    showValidationError('Please select the user the asset is issued to');
                     document.querySelector('[name="Asset.UserId"]').focus();
                     return false;
                 }

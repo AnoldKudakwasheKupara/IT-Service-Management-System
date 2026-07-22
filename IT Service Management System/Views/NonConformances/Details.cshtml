@@ -1,0 +1,760 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model NonConformance
+@{
+    ViewData["Title"] = Model.Reference;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    var canClose = (bool)(ViewBag.CanClose ?? false);
+
+    var sevClass = Model.Severity switch
+    {
+        NcSeverity.Minor => "badge-primary",
+        NcSeverity.Major => "badge-warning",
+        NcSeverity.Critical => "badge-critical",
+        _ => "badge-gray"
+    };
+    var statusClass = Model.Status switch
+    {
+        NcStatus.Closed => "badge-success",
+        NcStatus.Open => "badge-warning",
+        _ => "badge-gray"
+    };
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <a class="btn-back" asp-action="Index">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <span class="doc-number" style="font-size:1rem;font-weight:600;color:var(--primary);">@Model.Reference</span>
+                        <span style="font-weight:700;color:var(--gray-800);">@Model.Title</span>
+                    </h1>
+                    <div class="page-subtitle">
+                        <span class="status-badge @statusClass">@Model.Status</span>
+                        <span class="status-badge @sevClass">@Model.Severity</span>
+                        <span class="meta-separator">·</span>
+                        <span class="meta-text"><i class="fas fa-bug"></i> @Model.Source · @IsoStandards.Label(Model.Standard)</span>
+                    </div>
+                </div>
+            </div>
+            @if (canManage)
+            {
+                <div class="d-flex gap-2">
+                    <a class="btn-create-ticket" asp-action="Edit" asp-route-id="@Model.Id" style="background:var(--gray-100);color:var(--gray-700);">
+                        <i class="fas fa-pen"></i> Edit
+                    </a>
+                    <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this non-conformance?');" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button class="btn-danger" type="submit">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- TWO COLUMN GRID: Metadata & Narrative -->
+    <div class="two-col-grid">
+        <!-- METADATA CARD -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-circle-info me-2" style="color:var(--primary);"></i>
+                <span>Details</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Severity</div>
+                        <div class="detail-value">
+                            <span class="status-badge @sevClass">@Model.Severity</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value">
+                            <span class="status-badge @statusClass">@Model.Status</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Source</div>
+                        <div class="detail-value">@Model.Source</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ISO Standard</div>
+                        <div class="detail-value">@IsoStandards.Label(Model.Standard)</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Department</div>
+                        <div class="detail-value">@(Model.Department?.Name ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Raised By</div>
+                        <div class="detail-value">@(Model.RaisedBy?.FullName ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Assigned To</div>
+                        <div class="detail-value">@(Model.AssignedTo?.FullName ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Detected Date</div>
+                        <div class="detail-value">@Model.DetectedDate.ToString("dd MMM yyyy")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Created</div>
+                        <div class="detail-value">@Model.CreatedAt.ToString("dd MMM yyyy")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Closed</div>
+                        <div class="detail-value">@(Model.ClosedAt?.ToString("dd MMM yyyy") ?? "—")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NARRATIVE CARD -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-align-left me-2" style="color:var(--primary);"></i>
+                <span>Non-Conformity</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="narrative-section">
+                    <div class="narrative-label">Description</div>
+                    <div class="narrative-text">@Model.Description</div>
+                </div>
+
+                <div class="narrative-section">
+                    <div class="narrative-label">Root Cause</div>
+                    <div class="narrative-text">@(string.IsNullOrWhiteSpace(Model.RootCause) ? "—" : Model.RootCause)</div>
+                </div>
+
+                <div class="narrative-section" style="margin-bottom:0;">
+                    <div class="narrative-label">Evidence</div>
+                    <div class="narrative-text">@(string.IsNullOrWhiteSpace(Model.Evidence) ? "—" : Model.Evidence)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLOSE ACTION -->
+    @if (canClose && Model.Status != NcStatus.Closed)
+    {
+        <div class="data-card">
+            <div class="card-header-custom" style="border-left:4px solid var(--success);">
+                <i class="fas fa-circle-check me-2" style="color:var(--success);"></i>
+                <span>Close Non-Conformance</span>
+            </div>
+            <div class="card-body-custom">
+                <form method="post" asp-action="Close" asp-route-id="@Model.Id">
+                    @Html.AntiForgeryToken()
+                    <div class="form-group">
+                        <label class="form-label-sm">
+                            <i class="fas fa-magnifying-glass-chart"></i> Root Cause
+                        </label>
+                        <textarea class="form-control" name="rootCause" rows="3" placeholder="Confirm the root cause before closing">@Model.RootCause</textarea>
+                    </div>
+                    <div class="close-actions">
+                        <button class="btn-close-nc" type="submit">
+                            <i class="fas fa-check"></i> Close Non-Conformance
+                        </button>
+                        <span class="close-hint">
+                            <i class="fas fa-info-circle"></i> Closing sets the status to Closed and stamps the closure date.
+                        </span>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+
+    <!-- LINKED CAPAS -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-screwdriver-wrench me-2" style="color:var(--primary);"></i>
+            <span>Linked CAPAs</span>
+        </div>
+        <div class="card-body-custom" style="padding:0;">
+            @if (Model.Capas.Any())
+            {
+                <div class="table-responsive">
+                    <table class="tickets-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-hashtag me-1"></i> Reference</th>
+                                <th><i class="fas fa-heading me-1"></i> Title</th>
+                                <th><i class="fas fa-layer-group me-1"></i> Type</th>
+                                <th><i class="fas fa-tag me-1"></i> Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.Capas.OrderByDescending(c => c.Id))
+                            {
+                                var capaStatusClass = c.IsClosed ? "badge-success" : "badge-warning";
+                                <tr>
+                                    <td><span class="doc-number">@c.Reference</span></td>
+                                    <td class="capa-title">@c.Title</td>
+                                    <td class="meta-text">@c.Type</td>
+                                    <td>
+                                        <span class="status-badge @capaStatusClass">@c.Status</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-mini">
+                    <i class="fas fa-screwdriver-wrench"></i>
+                    <span>No CAPAs linked</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 1rem;
+    }
+
+    .page-subtitle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.3rem;
+    }
+
+    .meta-separator {
+        color: var(--gray-300);
+    }
+
+    .meta-text {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-danger {
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        background: linear-gradient(100deg, #dc2626, var(--danger));
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-close-nc {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(100deg, #227a55, var(--success));
+        color: white;
+        border: none;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        font-family: inherit;
+    }
+
+        .btn-close-nc:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* ===== TWO COLUMN GRID ===== */
+    .two-col-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ===== DETAILS GRID ===== */
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem 1.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .detail-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .detail-value {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    /* ===== NARRATIVE ===== */
+    .narrative-section {
+        margin-bottom: 1.25rem;
+    }
+
+        .narrative-section:last-child {
+            margin-bottom: 0;
+        }
+
+    .narrative-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 0.1rem;
+    }
+
+    .narrative-text {
+        font-size: 0.85rem;
+        color: var(--gray-700);
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .badge-primary {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    /* ===== CLOSE ACTION ===== */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .form-label-sm {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+        .form-label-sm i {
+            font-size: 0.65rem;
+            color: var(--gray-400);
+        }
+
+    .form-control {
+        padding: 0.5rem 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.6rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        font-family: inherit;
+        background: white;
+        transition: all 0.2s ease;
+        width: 100%;
+        color: var(--gray-800);
+        resize: vertical;
+        min-height: 60px;
+        line-height: 1.5;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+    .close-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 0.75rem;
+    }
+
+    .close-hint {
+        font-size: 0.75rem;
+        color: var(--gray-400);
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+        .close-hint i {
+            font-size: 0.7rem;
+        }
+
+    /* ===== EMPTY STATE MINI ===== */
+    .empty-state-mini {
+        text-align: center;
+        padding: 1.5rem;
+        color: var(--gray-500);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+        .empty-state-mini i {
+            font-size: 1.5rem;
+            color: var(--gray-300);
+        }
+
+        .empty-state-mini span {
+            font-size: 0.9rem;
+        }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 0.75rem 1.2rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.65rem 1.2rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+    .capa-title {
+        color: var(--gray-700);
+        font-size: 0.85rem;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .two-col-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .btn-create-ticket,
+        .btn-danger,
+        .btn-close-nc {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .close-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .btn-close-nc {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .page-subtitle {
+            font-size: 0.8rem;
+        }
+
+        .narrative-text {
+            font-size: 0.8rem;
+        }
+
+        .detail-value {
+            font-size: 0.8rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.1rem;
+        }
+
+        .doc-number {
+            font-size: 0.85rem;
+        }
+
+        .btn-create-ticket,
+        .btn-danger {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .d-flex.gap-2 {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .meta-text {
+            font-size: 0.75rem;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .capa-title {
+            font-size: 0.75rem;
+        }
+
+        .form-control {
+            font-size: 0.8rem;
+            min-height: 50px;
+        }
+
+        .close-hint {
+            font-size: 0.7rem;
+        }
+    }
+</style>

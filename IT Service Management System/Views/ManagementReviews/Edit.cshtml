@@ -1,0 +1,546 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model ManagementReview
+@{
+    ViewData["Title"] = "Edit " + Model.Reference;
+    var users = ViewBag.Users as List<User> ?? new();
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a class="btn-back" asp-action="Details" asp-route-id="@Model.Id">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-pen-to-square me-2" style="color: var(--primary);"></i>
+                    Edit <span class="doc-number">@Model.Reference</span>
+                </h1>
+                <p class="text-muted mt-2">Update the review meeting record. Changes are audited.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORM -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <i class="fas fa-people-group me-2" style="color: var(--primary);"></i>
+            <span>Review Details</span>
+        </div>
+
+        <div class="card-body-custom">
+            <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+
+                <!-- Validation Summary -->
+                <div asp-validation-summary="ModelOnly" class="alert-flash danger" style="display:block;margin-bottom:1.5rem;"></div>
+
+                <!-- Form Grid -->
+                <div class="form-grid">
+                    <!-- Title -->
+                    <div class="form-group full-width">
+                        <label asp-for="Title" class="form-label">
+                            <i class="fas fa-heading"></i> Title <span class="required">*</span>
+                        </label>
+                        <input asp-for="Title" class="form-control" placeholder="Enter the review title..." required />
+                        <span asp-validation-for="Title" class="validation-error"></span>
+                    </div>
+
+                    <!-- Standard & Status -->
+                    <div class="form-group">
+                        <label asp-for="Standard" class="form-label">
+                            <i class="fas fa-certificate"></i> ISO Standard
+                        </label>
+                        <select asp-for="Standard" class="form-control" asp-items="Html.GetEnumSelectList<IsoStandard>()"></select>
+                        <span asp-validation-for="Standard" class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Status" class="form-label">
+                            <i class="fas fa-flag"></i> Status
+                        </label>
+                        <select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<ReviewMeetingStatus>()"></select>
+                        <span asp-validation-for="Status" class="validation-error"></span>
+                    </div>
+
+                    <!-- Meeting Date & Location -->
+                    <div class="form-group">
+                        <label asp-for="MeetingDate" class="form-label">
+                            <i class="fas fa-calendar-day"></i> Meeting Date
+                        </label>
+                        <input asp-for="MeetingDate" class="form-control" type="datetime-local" />
+                        <span asp-validation-for="MeetingDate" class="validation-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Location" class="form-label">
+                            <i class="fas fa-location-dot"></i> Location
+                        </label>
+                        <input asp-for="Location" class="form-control" placeholder="e.g. Boardroom / Teams" />
+                        <span asp-validation-for="Location" class="validation-error"></span>
+                    </div>
+
+                    <!-- Chairperson -->
+                    <div class="form-group">
+                        <label asp-for="ChairId" class="form-label">
+                            <i class="fas fa-user-tie"></i> Chairperson
+                        </label>
+                        <select asp-for="ChairId" class="form-control">
+                            <option value="">— None —</option>
+                            @foreach (var u in users)
+                            {
+                                <option value="@u.Id" selected="@(Model.ChairId == u.Id)">@u.FullName</option>
+                            }
+                        </select>
+                        <span asp-validation-for="ChairId" class="validation-error"></span>
+                    </div>
+
+                    <!-- Agenda -->
+                    <div class="form-group full-width">
+                        <label asp-for="AgendaNotes" class="form-label">
+                            <i class="fas fa-list"></i> Agenda
+                        </label>
+                        <textarea asp-for="AgendaNotes" class="form-control" rows="3" placeholder="Agenda items for the meeting"></textarea>
+                        <span asp-validation-for="AgendaNotes" class="validation-error"></span>
+                    </div>
+
+                    <!-- Decisions -->
+                    <div class="form-group full-width">
+                        <label asp-for="Decisions" class="form-label">
+                            <i class="fas fa-gavel"></i> Decisions
+                        </label>
+                        <textarea asp-for="Decisions" class="form-control" rows="3" placeholder="Decisions taken (can be completed after the meeting)"></textarea>
+                        <span asp-validation-for="Decisions" class="validation-error"></span>
+                    </div>
+
+                    <!-- Conclusions -->
+                    <div class="form-group full-width">
+                        <label asp-for="Conclusions" class="form-label">
+                            <i class="fas fa-flag-checkered"></i> Conclusions
+                        </label>
+                        <textarea asp-for="Conclusions" class="form-control" rows="3" placeholder="Overall conclusions on the suitability, adequacy and effectiveness of the system"></textarea>
+                        <span asp-validation-for="Conclusions" class="validation-error"></span>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn-create-ticket">
+                        <i class="fas fa-save"></i>
+                        Save Changes
+                    </button>
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 1.2rem;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* ===== FORM GRID ===== */
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1.25rem;
+    }
+
+    .form-group.full-width {
+        grid-column: 1 / -1;
+    }
+
+    /* ===== FORM GROUP ===== */
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    /* ===== FORM LABEL ===== */
+    .form-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+        .form-label i {
+            font-size: 0.7rem;
+            color: var(--gray-400);
+            width: 16px;
+            text-align: center;
+        }
+
+        .form-label .required {
+            color: var(--danger);
+            font-weight: 700;
+            margin-left: 0.15rem;
+        }
+
+    /* ===== FORM CONTROL ===== */
+    .form-control {
+        padding: 0.55rem 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.6rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        font-family: inherit;
+        background: white;
+        transition: all 0.2s ease;
+        width: 100%;
+        color: var(--gray-800);
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: var(--gray-400);
+            font-size: 0.8rem;
+        }
+
+        .form-control[type="datetime-local"] {
+            min-height: 42px;
+            cursor: pointer;
+        }
+
+            .form-control[type="datetime-local"]::-webkit-calendar-picker-indicator {
+                opacity: 0.5;
+                cursor: pointer;
+            }
+
+            .form-control[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
+                opacity: 1;
+            }
+
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 0.75rem;
+        padding-right: 2rem;
+        cursor: pointer;
+    }
+
+        select.form-control:focus {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233b82f6' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 60px;
+        font-family: inherit;
+        line-height: 1.5;
+    }
+
+        textarea.form-control:focus {
+            resize: vertical;
+        }
+
+    /* ===== VALIDATION ===== */
+    .validation-error {
+        font-size: 0.72rem;
+        color: var(--danger);
+        font-weight: 500;
+        margin-top: 0.1rem;
+    }
+
+        .validation-error:empty {
+            display: none;
+        }
+
+    .form-control.input-validation-error {
+        border-color: var(--danger) !important;
+    }
+
+        .form-control.input-validation-error:focus {
+            box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1) !important;
+        }
+
+    /* ===== ALERT FLASH ===== */
+    .alert-flash {
+        padding: 0.9rem 1.2rem;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: 1px solid transparent;
+    }
+
+        .alert-flash.danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+            .alert-flash.danger:empty {
+                display: none;
+            }
+
+        .alert-flash i {
+            font-size: 1.1rem;
+        }
+
+    /* ===== FORM ACTIONS ===== */
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        flex-wrap: wrap;
+    }
+
+    /* ===== PRIMARY BUTTON ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== CANCEL BUTTON ===== */
+    .btn-cancel {
+        padding: 0.75rem 2rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        background: white;
+        border: 1.5px solid var(--gray-200);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        cursor: pointer;
+        font-family: inherit;
+        flex: 1;
+    }
+
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .form-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-wrap: wrap;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .doc-number {
+            font-size: 1rem;
+        }
+
+        .card-body-custom {
+            padding: 1.5rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .form-group.full-width {
+            grid-column: 1;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+            .form-actions .btn-create-ticket,
+            .form-actions .btn-cancel {
+                flex: none;
+                width: 100%;
+                padding: 0.65rem 1.5rem;
+            }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .doc-number {
+            font-size: 0.9rem;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .form-control {
+            font-size: 0.8rem;
+            padding: 0.5rem 0.65rem;
+        }
+
+        .form-label {
+            font-size: 0.7rem;
+        }
+
+        .btn-create-ticket,
+        .btn-cancel {
+            font-size: 0.8rem;
+            padding: 0.55rem 1.25rem;
+        }
+
+        textarea.form-control {
+            min-height: 50px;
+        }
+    }
+</style>

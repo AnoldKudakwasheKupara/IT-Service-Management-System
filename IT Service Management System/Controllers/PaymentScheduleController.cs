@@ -3,6 +3,7 @@ using IT_Service_Management_System.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+[IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin")]
 public class PaymentScheduleController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -50,6 +51,7 @@ public class PaymentScheduleController : Controller
         _context.Add(model);
         await _context.SaveChangesAsync();
 
+        TempData["Success"] = "Payment schedule created.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -74,22 +76,23 @@ public class PaymentScheduleController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        try
-        {
-            // 🔥 Recalculate Next Run Date
-            model.NextRunDate = CalculateNextRun(model);
+        var existing = await _context.PaymentSchedules.FindAsync(model.Id);
+        if (existing == null)
+            return NotFound();
 
-            _context.Update(model);
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!_context.PaymentSchedules.Any(e => e.Id == model.Id))
-                return NotFound();
-            else
-                throw;
-        }
+        existing.ServiceName = model.ServiceName;
+        existing.Amount = model.Amount;
+        existing.PaymentDate = model.PaymentDate;
+        existing.Frequency = model.Frequency;
+        existing.Departments = model.Departments;
 
+        // 🔥 Recalculate Next Run Date
+        existing.NextRunDate = CalculateNextRun(model);
+        // IsActive preserved from existing entity (not editable via the form)
+
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "Payment schedule updated.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -113,6 +116,11 @@ public class PaymentScheduleController : Controller
         {
             _context.PaymentSchedules.Remove(schedule);
             await _context.SaveChangesAsync();
+            TempData["Success"] = "Payment schedule deleted.";
+        }
+        else
+        {
+            TempData["Error"] = "Payment schedule not found.";
         }
 
         return RedirectToAction(nameof(Index));

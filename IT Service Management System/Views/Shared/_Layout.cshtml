@@ -11,413 +11,557 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
+    <!-- Toastr notifications -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.css" />
+
+    <!-- DataTables (Bootstrap 5 styling) — interactive sort / search / pagination -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" />
+
+    <!-- Shared design system (tokens, accessibility, utilities) -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
 
-        :root {
-            --primary: #3b82f6;
-            --primary-dark: #2563eb;
-            --primary-light: #dbeafe;
-            --primary-glow: rgba(59,130,246,0.25);
-            --sidebar-bg: #0f172a;
-            --sidebar-hover: #1e293b;
-            --sidebar-active: #3b82f6;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-light: #e2e8f0;
-            --text-muted: #94a3b8;
-            --bg-main: #f1f5f9;
-            --bg-card: #ffffff;
-            --border-light: #e2e8f0;
-            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
-            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
-            --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+            /* Design tokens now live in wwwroot/css/site.css (single source of truth). */
 
-        body {
-            margin: 0;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--bg-main);
-            color: var(--text-primary);
-            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-        }
+            body {
+                margin: 0;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+                background: var(--bg-main);
+                color: var(--text-primary);
+                font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+                -webkit-font-smoothing: antialiased;
+                -moz-osx-font-smoothing: grayscale;
+            }
 
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
+            ::-webkit-scrollbar {
+                width: 6px;
+                height: 6px;
+            }
 
-        ::-webkit-scrollbar-track {
-            background: var(--border-light);
-            border-radius: 10px;
-        }
+            ::-webkit-scrollbar-track {
+                background: var(--border-light);
+                border-radius: 10px;
+            }
 
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 10px;
-        }
+            ::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 10px;
+            }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--primary);
-        }
+                ::-webkit-scrollbar-thumb:hover {
+                    background: var(--primary);
+                }
 
-        /* layout */
-        .app-layout {
-            display: flex;
-            height: 100vh;
-            width: 100%;
-            overflow: hidden;
-        }
+            /* ============================================================
+                               LAYOUT
+                               ============================================================ */
+            .app-layout {
+                display: flex;
+                height: 100vh;
+                width: 100%;
+                overflow: hidden;
+            }
 
-        .sidebar {
-            width: 280px;
-            background: var(--sidebar-bg);
-            backdrop-filter: blur(0px);
-            color: var(--text-light);
-            display: flex;
-            flex-direction: column;
-            transition: var(--transition-smooth);
-            z-index: 20;
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
-            overflow-y: auto;
-            scrollbar-width: thin;
-        }
+            /* ============================================================
+                               SIDEBAR — premium dark
+                               ============================================================ */
+            .sidebar {
+                width: 280px;
+                background: var(--sidebar-bg);
+                color: var(--text-light);
+                display: flex;
+                flex-direction: column;
+                transition: var(--transition-smooth);
+                z-index: 20;
+                box-shadow: 4px 0 20px rgba(0, 0, 0, 0.08);
+                overflow: hidden;
+                flex-shrink: 0;
+            }
 
-        .sidebar-header {
-            padding: 1.5rem 1.5rem 1rem 1.5rem;
-            font-weight: 700;
-            font-size: 1.35rem;
-            letter-spacing: -0.3px;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
-            margin-bottom: 1rem;
-        }
+            /* Only the menu scrolls; the brand header stays pinned. */
+            .sidebar-nav {
+                flex: 1;
+                overflow-y: auto;
+                scrollbar-width: thin;
+                padding-bottom: 1rem;
+            }
 
-        .sidebar-header i {
-            font-size: 1.6rem;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 2px 5px rgba(59,130,246,0.3);
-        }
+                .sidebar-nav::-webkit-scrollbar {
+                    width: 4px;
+                }
 
-        .nav-group {
-            padding: 0.75rem 1.5rem 0.4rem 1.5rem;
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-            color: #64748b;
-            margin-top: 0.5rem;
-        }
+                .sidebar-nav::-webkit-scrollbar-track {
+                    background: transparent;
+                }
 
-        .nav-item {
-            padding: 0.7rem 1.5rem;
-            margin: 0.2rem 0.8rem;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #cbd5e1;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            border-radius: 12px;
-            transition: var(--transition-smooth);
-            position: relative;
-        }
+                .sidebar-nav::-webkit-scrollbar-thumb {
+                    background: rgba(255,255,255,0.2);
+                    border-radius: 10px;
+                }
 
-        .nav-item i {
-            width: 22px;
-            font-size: 1.1rem;
-            text-align: center;
-            transition: var(--transition-smooth);
-        }
+            /* Collapsible group headers (built up by the accordion script). */
+            .nav-group-toggle {
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                user-select: none;
+                transition: color .15s;
+            }
 
-        .nav-item:hover {
-            background: var(--sidebar-hover);
-            color: white;
-            transform: translateX(4px);
-        }
+                .nav-group-toggle:hover { color: #94a3b8; }
 
-        .nav-item.active {
-            background: linear-gradient(95deg, rgba(59,130,246,0.2) 0%, rgba(59,130,246,0.05) 100%);
-            color: white;
-            font-weight: 600;
-            border-left: 3px solid var(--primary);
-            box-shadow: var(--shadow-sm);
-        }
+                .nav-group-toggle:focus-visible {
+                    outline: 2px solid var(--primary);
+                    outline-offset: -2px;
+                    border-radius: 4px;
+                }
 
-        .nav-item.active i {
-            color: var(--primary);
-        }
+                .nav-chevron {
+                    font-size: .58rem;
+                    opacity: .7;
+                    transition: transform .2s ease;
+                }
 
-        /* MAIN AREA */
-        .main-area {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            background: var(--bg-main);
-        }
+                .nav-group-toggle.collapsed .nav-chevron { transform: rotate(-90deg); }
 
-        /* TOPBAR - modern floating effect */
-        .topbar {
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(226,232,240,0.6);
-            height: 70px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            transition: var(--transition-smooth);
-        }
+            .sidebar-header {
+                padding: 1.75rem 1.5rem 1.25rem 1.5rem;
+                font-weight: 700;
+                font-size: 1.35rem;
+                letter-spacing: -0.3px;
+                color: white;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                border-bottom: 1px solid rgba(255,255,255,0.06);
+                margin-bottom: 0.5rem;
+                flex-shrink: 0;
+            }
 
-        .topbar-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
+                .sidebar-header i {
+                    font-size: 1.6rem;
+                    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+                    -webkit-background-clip: text;
+                    background-clip: text;
+                    color: transparent;
+                    text-shadow: 0 2px 5px rgba(59,130,246,0.3);
+                }
 
-        .topbar-left h5 {
-            margin: 0;
-            font-weight: 700;
-            font-size: 1.25rem;
-            background: linear-gradient(135deg, var(--text-primary), #334155);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            letter-spacing: -0.2px;
-        }
+                .sidebar-header span {
+                    background: linear-gradient(135deg, #fff, #94a3b8);
+                    -webkit-background-clip: text;
+                    background-clip: text;
+                    color: transparent;
+                }
 
-        .mobile-toggle {
-            display: none;
-            background: white;
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            padding: 8px 12px;
-            transition: var(--transition-smooth);
-        }
+            .nav-group {
+                padding: 0.75rem 1.5rem 0.4rem 1.5rem;
+                font-size: 0.65rem;
+                text-transform: uppercase;
+                letter-spacing: 0.8px;
+                font-weight: 600;
+                color: #64748b;
+                margin-top: 0.5rem;
+            }
 
-        .mobile-toggle:hover {
-            background: var(--primary-light);
-            border-color: var(--primary);
-        }
+            .nav-item {
+                padding: 0.7rem 1.5rem;
+                margin: 0.15rem 0.8rem;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                color: #94a3b8;
+                text-decoration: none;
+                font-size: 0.875rem;
+                font-weight: 500;
+                border-radius: var(--radius-sm);
+                transition: var(--transition-smooth);
+                position: relative;
+                cursor: pointer;
+            }
 
-        /* USER PROFILE - enhanced */
-        .user-profile {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
+                .nav-item i {
+                    width: 22px;
+                    font-size: 1.05rem;
+                    text-align: center;
+                    transition: var(--transition-smooth);
+                    color: #64748b;
+                }
 
-        .profile-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            padding: 6px 12px 6px 8px;
-            border-radius: 60px;
-            transition: var(--transition-smooth);
-            background: rgba(255,255,255,0.5);
-        }
+                .nav-item:hover {
+                    background: var(--sidebar-hover);
+                    color: white;
+                    transform: translateX(4px);
+                }
 
-        .profile-link:hover {
-            background: white;
-            box-shadow: var(--shadow-sm);
-            transform: scale(1.02);
-        }
+                    .nav-item:hover i {
+                        color: var(--primary);
+                    }
 
-        .user-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 42px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 1rem;
-            box-shadow: 0 4px 8px rgba(59,130,246,0.2);
-            transition: var(--transition-smooth);
-        }
+                .nav-item.active {
+                    background: linear-gradient(95deg, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.05) 100%);
+                    color: white;
+                    font-weight: 600;
+                    border-left: 3px solid var(--primary);
+                }
 
-        .user-info {
-            line-height: 1.3;
-        }
+                    .nav-item.active i {
+                        color: var(--primary);
+                    }
 
-        .user-name {
-            font-weight: 700;
-            color: var(--text-primary);
-            font-size: 0.9rem;
-        }
+            /* badge indicator on nav items */
+            .nav-badge {
+                margin-left: auto;
+                background: var(--primary);
+                color: white;
+                font-size: 0.6rem;
+                padding: 2px 8px;
+                border-radius: 20px;
+                font-weight: 600;
+            }
 
-        .user-role {
-            font-size: 0.7rem;
-            color: var(--primary);
-            font-weight: 500;
-            background: var(--primary-light);
-            padding: 2px 8px;
-            border-radius: 30px;
-            display: inline-block;
-        }
+            /* ============================================================
+                               MAIN AREA
+                               ============================================================ */
+            .main-area {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                background: var(--bg-main);
+            }
 
-        .btn-logout {
-            background: rgba(239,68,68,0.1);
-            border: none;
-            color: #ef4444;
-            border-radius: 40px;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: var(--transition-smooth);
-        }
+            /* ============================================================
+                               TOPBAR — glass effect
+                               ============================================================ */
+            .topbar {
+                background: rgba(255,255,255,0.75);
+                backdrop-filter: blur(16px) saturate(180%);
+                -webkit-backdrop-filter: blur(16px) saturate(180%);
+                border-bottom: 1px solid rgba(226,232,240,0.5);
+                height: 72px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0 2rem;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                transition: var(--transition-smooth);
+            }
 
-        .btn-logout:hover {
-            background: #ef4444;
-            color: white;
-            transform: scale(1.05);
-            box-shadow: 0 6px 12px rgba(239,68,68,0.25);
-        }
+            .topbar-left {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
 
-        /* CONTENT - smooth scrolling + card enhancements */
-        .content {
-            padding: 1.8rem 2rem 2rem 2rem;
-            overflow-y: auto;
-            scroll-behavior: smooth;
-        }
+                .topbar-left h5 {
+                    margin: 0;
+                    font-weight: 700;
+                    font-size: 1.1rem;
+                    color: var(--text-primary);
+                    letter-spacing: -0.2px;
+                }
 
-        /* global button and card enhancements (for inner pages) */
-        .btn-modern {
-            padding: 8px 18px;
-            border-radius: 40px;
-            font-weight: 500;
-            transition: var(--transition-smooth);
-            letter-spacing: -0.2px;
-        }
+                    .topbar-left h5 small {
+                        font-weight: 400;
+                        color: var(--text-muted);
+                        font-size: 0.75rem;
+                        margin-left: 0.5rem;
+                    }
 
-        .btn-modern:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-sm);
-        }
+            .mobile-toggle {
+                display: none;
+                background: white;
+                border: 1px solid var(--border-light);
+                border-radius: var(--radius-sm);
+                padding: 8px 12px;
+                transition: var(--transition-smooth);
+                color: var(--text-secondary);
+            }
 
-        .btn-primary-modern {
-            background: var(--primary);
-            border: none;
-            color: white;
-        }
+                .mobile-toggle:hover {
+                    background: var(--primary-light);
+                    border-color: var(--primary);
+                    color: var(--primary);
+                }
 
-        .btn-primary-modern:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
+            /* ============================================================
+                               USER PROFILE
+                               ============================================================ */
+            .user-profile {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
 
-        /* card component style (makes any card beautiful) */
-        .card {
-            border: none;
-            border-radius: 24px;
-            background: var(--bg-card);
-            box-shadow: var(--shadow-sm);
-            transition: var(--transition-smooth);
-            overflow: hidden;
-        }
+            .profile-link {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                text-decoration: none;
+                padding: 6px 14px 6px 8px;
+                border-radius: 60px;
+                transition: var(--transition-smooth);
+                background: rgba(255,255,255,0.5);
+            }
 
-        .card:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
-        }
-        /* overlay for mobile */
-        .sidebar-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(3px);
-            z-index: 1040;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.25s ease;
-        }
+                .profile-link:hover {
+                    background: white;
+                    box-shadow: var(--shadow-sm);
+                    transform: scale(1.02);
+                    text-decoration: none;
+                }
 
-        .sidebar-overlay.active {
-            display: block;
-            opacity: 1;
-        }
+            .user-avatar {
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 0.9rem;
+                box-shadow: 0 4px 8px rgba(59,130,246,0.2);
+                transition: var(--transition-smooth);
+                flex-shrink: 0;
+            }
 
-        /* loading / smooth entry animation */
-        .fade-in {
-            animation: fadeInUp 0.4s ease-out;
-        }
+            .user-info {
+                line-height: 1.3;
+            }
 
+            .user-name {
+                font-weight: 600;
+                color: var(--text-primary);
+                font-size: 0.85rem;
+            }
 
-        /* Utility for modern tables & inputs (global theme) */
-        .table {
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100%;
-        }
+            .user-role {
+                font-size: 0.65rem;
+                color: var(--primary);
+                font-weight: 600;
+                background: var(--primary-light);
+                padding: 2px 10px;
+                border-radius: 30px;
+                display: inline-block;
+            }
 
-        .table thead th {
-            background: #f8fafc;
-            font-weight: 600;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid var(--border-light);
-            padding: 1rem 0.8rem;
-        }
+            .logout-form {
+                display: flex;
+                margin: 0;
+            }
 
-        .table tbody tr {
-            transition: var(--transition-smooth);
-        }
+            .btn-logout {
+                background: rgba(239,68,68,0.1);
+                border: none;
+                color: #ef4444;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: var(--transition-smooth);
+                cursor: pointer;
+            }
 
-        .table tbody tr:hover {
-            background: #fefefe;
-            transform: scale(1.002);
-        }
+                .btn-logout:hover {
+                    background: #ef4444;
+                    color: white;
+                    transform: scale(1.05);
+                    box-shadow: 0 6px 12px rgba(239,68,68,0.25);
+                }
 
-        input, select, textarea {
-            border-radius: 14px !important;
-            border: 1px solid var(--border-light) !important;
-            padding: 0.6rem 1rem !important;
-            transition: var(--transition-smooth) !important;
-        }
+            /* ============================================================
+                               CONTENT
+                               ============================================================ */
+            .content {
+                padding: 1.8rem 2rem 2rem 2rem;
+                overflow-y: auto;
+                scroll-behavior: smooth;
+                flex: 1;
+            }
 
-        input:focus, select:focus, textarea:focus {
-            border-color: var(--primary) !important;
-            box-shadow: 0 0 0 3px var(--primary-glow) !important;
-            outline: none !important;
-        }
+            /* ============================================================
+                               GLOBAL COMPONENTS
+                               ============================================================ */
+            .card {
+                border: none;
+                border-radius: var(--radius-md);
+                background: var(--bg-card);
+                box-shadow: var(--shadow-sm);
+                transition: var(--transition-smooth);
+                overflow: hidden;
+            }
 
-        /* custom badge */
-        .badge-modern {
-            padding: 4px 12px;
-            border-radius: 50px;
-            font-weight: 500;
-            font-size: 0.7rem;
-        }
+                .card:hover {
+                    box-shadow: var(--shadow-md);
+                    transform: translateY(-2px);
+                }
+
+            .btn-modern {
+                padding: 8px 20px;
+                border-radius: 40px;
+                font-weight: 500;
+                transition: var(--transition-smooth);
+                letter-spacing: -0.2px;
+                border: none;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+                .btn-modern:hover {
+                    transform: translateY(-2px);
+                    box-shadow: var(--shadow-md);
+                }
+
+            .btn-primary-modern {
+                background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+                color: white;
+            }
+
+                .btn-primary-modern:hover {
+                    background: linear-gradient(135deg, var(--primary-dark), #1d4ed8);
+                    color: white;
+                }
+
+            /* ============================================================
+                               SIDEBAR OVERLAY (mobile)
+                               ============================================================ */
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.4);
+                backdrop-filter: blur(4px);
+                z-index: 1040;
+                display: none;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+
+                .sidebar-overlay.active {
+                    display: block;
+                    opacity: 1;
+                }
+
+            /* ============================================================
+                               ANIMATIONS
+                               ============================================================ */
+            .fade-in {
+                animation: fadeInUp 0.5s ease-out;
+            }
+
+            @@keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* ============================================================
+                               RESPONSIVE
+                               ============================================================ */
+            @@media (max-width: 992px) {
+                .sidebar {
+                    position: fixed;
+                    top: 0;
+                    left: -320px;
+                    height: 100%;
+                    z-index: 1050;
+                    box-shadow: var(--shadow-xl);
+                    width: 300px;
+                }
+
+                    .sidebar.active {
+                        left: 0;
+                    }
+
+                .mobile-toggle {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .topbar {
+                    padding: 0 1rem;
+                }
+
+                .content {
+                    padding: 1rem;
+                }
+
+                .user-info {
+                    display: none;
+                }
+
+                .profile-link {
+                    padding: 6px 10px 6px 6px;
+                }
+            }
+
+            @@media (max-width: 576px) {
+                .topbar-left h5 small {
+                    display: none;
+                }
+
+                .content {
+                    padding: 0.75rem;
+                }
+
+                .btn-logout {
+                    width: 36px;
+                    height: 36px;
+                }
+            }
+
+            /* ============================================================
+                               PRINT
+                               ============================================================ */
+            @@media print {
+                .sidebar, .topbar, .btn-logout, .mobile-toggle {
+                    display: none !important;
+                }
+
+                .main-area {
+                    overflow: visible !important;
+                }
+
+                .content {
+                    padding: 1rem !important;
+                    overflow: visible !important;
+                }
+
+                .card {
+                    box-shadow: none !important;
+                    transform: none !important;
+                    break-inside: avoid;
+                }
+            }
     </style>
 </head>
 
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
 
     @{
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
@@ -434,12 +578,22 @@
 
         <div class="app-layout">
 
-            <!-- SIDEBAR (updated icons + micro-interactions) -->
+            <!-- SIDEBAR -->
             <aside class="sidebar" id="sidebar">
                 <div class="sidebar-header">
                     <i class="fas fa-headset"></i>
                     <span>Axis IT</span>
                 </div>
+
+                <nav class="sidebar-nav" id="sidebarNav" aria-label="Main navigation">
+                @{
+                    var navRole = Context.Session.GetString("UserRole");
+                    var navFull = navRole == "Admin" || navRole == "SystemsAdmin";
+                    var navHr = navRole == "HR";
+                    var navGeneralManager = navRole == "GeneralManager";
+                    // IMS / ISO working roles (see Helpers/Ims/ImsAccess) — who sees the ISO management nav.
+                    var navIms = navFull || navRole is "QualityManager" or "GeneralManager" or "DocumentController" or "DepartmentManager" or "Auditor" or "ExternalAuditor";
+                }
 
                 <div class="nav-group">Core</div>
                 <a class="nav-item @(currentController == "Home" ? "active" : "")"
@@ -450,81 +604,315 @@
                 <a class="nav-item @(currentController == "Tickets" ? "active" : "")"
                    asp-controller="Tickets" asp-action="Index">
                     <i class="fas fa-ticket-alt"></i> Tickets
+                    <span class="nav-badge">@(ViewBag.OpenTicketCount ?? 0)</span>
                 </a>
 
-                <div class="nav-group">Administration</div>
-                @if (Context.Session.GetString("UserRole") == "Admin")
-                {
-                    <a class="nav-item @(currentController == "Users" ? "active" : "")"
-                       asp-controller="Users" asp-action="Index">
-                        <i class="fas fa-users"></i> Users
-                    </a>
-                }
-
-                <a class="nav-item @(currentController == "Departments" ? "active" : "")"
-                   asp-controller="Departments" asp-action="Index">
-                    <i class="fas fa-building"></i> Departments
-                </a>
-
-                <a class="nav-item @(currentController == "AuditLogs" ? "active" : "")"
-                   asp-controller="AuditLogs" asp-action="Index">
-                    <i class="fas fa-history"></i> Audit Logs
-                </a>
-
-                <div class="nav-group">Operations</div>
                 <a class="nav-item @(currentController == "Activity" ? "active" : "")"
                    asp-controller="Activity" asp-action="Index">
                     <i class="fas fa-tasks"></i> Activity Tracker
                 </a>
 
-                <a class="nav-item @(currentController == "ActivityCategories" ? "active" : "")"
-                   asp-controller="ActivityCategories" asp-action="Index">
-                    <i class="fas fa-tags"></i> Categories
+                <a class="nav-item @(currentController == "ExitClearance" && currentAction == "Mine" ? "active" : "")"
+                   asp-controller="ExitClearance" asp-action="Mine">
+                    <i class="fas fa-file-signature"></i> My Exit Clearance
                 </a>
 
-                <a class="nav-item @(currentController == "PaymentSchedule" ? "active" : "")"
-                   asp-controller="PaymentSchedule" asp-action="Index">
-                    <i class="fas fa-credit-card"></i> Payments
+                <a class="nav-item @(currentController == "EmployeeDocuments" && currentAction == "MyDocuments" ? "active" : "")"
+                   asp-controller="EmployeeDocuments" asp-action="MyDocuments">
+                    <i class="fas fa-folder"></i> My Documents
                 </a>
 
-                <div class="nav-group">Assets & Security</div>
-                <a class="nav-item @(currentController == "Assets" ? "active" : "")"
-                   asp-controller="Assets" asp-action="Index">
-                    <i class="fas fa-laptop-code"></i> Assets
+                <a class="nav-item @(currentController == "IsoDocuments" && currentAction == "MyDocuments" ? "active" : "")"
+                   asp-controller="IsoDocuments" asp-action="MyDocuments">
+                    <i class="fas fa-user-check"></i> My ISO Documents
                 </a>
 
-                <a class="nav-item @(currentController == "SSLCertificates" ? "active" : "")"
-                   asp-controller="SSLCertificates" asp-action="Index">
-                    <i class="fas fa-shield-alt"></i> SSL Tracker
+                <a class="nav-item @(currentController == "Mfa" ? "active" : "")"
+                   asp-controller="Mfa" asp-action="Index">
+                    <i class="fas fa-shield-halved"></i> Two-Factor Auth
                 </a>
 
-                <div class="nav-group">HR Management</div>
+                @if (navFull)
+                {
+                    <div class="nav-group">Reports</div>
+                    <a class="nav-item @(currentController == "Reports" && currentAction != "Hr" ? "active" : "")"
+                       asp-controller="Reports" asp-action="Index">
+                        <i class="fas fa-chart-pie"></i> Reports
+                    </a>
+                    <a class="nav-item @(currentController == "Compliance" ? "active" : "")"
+                       asp-controller="Compliance" asp-action="Index">
+                        <i class="fas fa-scale-balanced"></i> Compliance
+                    </a>
+                }
 
-                <a class="nav-item @(currentController == "ExitClearance" ? "active" : "")"
-                   asp-controller="ExitClearance"
-                   asp-action="Index">
+                @if (navFull)
+                {
+                    <div class="nav-group">Service Management</div>
+                    <a class="nav-item @(currentController == "Problems" ? "active" : "")"
+                       asp-controller="Problems" asp-action="Index">
+                        <i class="fas fa-triangle-exclamation"></i> Problems
+                    </a>
+                    <a class="nav-item @(currentController == "Changes" ? "active" : "")"
+                       asp-controller="Changes" asp-action="Index">
+                        <i class="fas fa-code-branch"></i> Changes
+                    </a>
+                    <a class="nav-item @(currentController == "Cmdb" ? "active" : "")"
+                       asp-controller="Cmdb" asp-action="Index">
+                        <i class="fas fa-sitemap"></i> CMDB
+                    </a>
+                    <a class="nav-item @(currentController == "SlaPolicies" ? "active" : "")"
+                       asp-controller="SlaPolicies" asp-action="Index">
+                        <i class="fas fa-gauge-high"></i> SLA Policies
+                    </a>
+                }
 
-                    <i class="fas fa-file-signature"></i>
-                    Exit Clearance
+                @if (navIms)
+                {
+                    <div class="nav-group">ISO / Compliance</div>
+                    @if (!navGeneralManager)
+                    {
+                    <a class="nav-item @(currentController == "Ecie" ? "active" : "")"
+                       asp-controller="Ecie" asp-action="Index">
+                        <i class="fas fa-brain"></i> Intelligence Engine
+                    </a>
+                    <a class="nav-item @(currentController == "Ims" ? "active" : "")"
+                       asp-controller="Ims" asp-action="Index">
+                        <i class="fas fa-certificate"></i> ISO Dashboard
+                    </a>
+                    <a class="nav-item @(currentController == "IsoDocuments" && currentAction != "MyDocuments" ? "active" : "")"
+                       asp-controller="IsoDocuments" asp-action="Index">
+                        <i class="fas fa-file-shield"></i> Document Control
+                    </a>
+                    <a class="nav-item @(currentController == "IsoAudits" ? "active" : "")"
+                       asp-controller="IsoAudits" asp-action="Index">
+                        <i class="fas fa-clipboard-check"></i> Internal Audits
+                    </a>
+                    <a class="nav-item @(currentController == "Capa" ? "active" : "")"
+                       asp-controller="Capa" asp-action="Index">
+                        <i class="fas fa-screwdriver-wrench"></i> CAPA
+                    </a>
+                    <a class="nav-item @(currentController == "NonConformances" ? "active" : "")"
+                       asp-controller="NonConformances" asp-action="Index">
+                        <i class="fas fa-bug"></i> Non-Conformance
+                    </a>
+                    }
+                    <a class="nav-item @(currentController == "Incidents" ? "active" : "")"
+                       asp-controller="Incidents" asp-action="Index">
+                        <i class="fas fa-triangle-exclamation"></i> Incidents
+                    </a>
+                    @if (!navGeneralManager)
+                    {
+                    <a class="nav-item @(currentController == "Risk" ? "active" : "")"
+                       asp-controller="Risk" asp-action="Index">
+                        <i class="fas fa-gauge-high"></i> Risk Register
+                    </a>
+                    <a class="nav-item @(currentController == "Suppliers" ? "active" : "")"
+                       asp-controller="Suppliers" asp-action="Index">
+                        <i class="fas fa-truck-field"></i> Suppliers
+                    </a>
+                    <a class="nav-item @(currentController == "Training" ? "active" : "")"
+                       asp-controller="Training" asp-action="Index">
+                        <i class="fas fa-graduation-cap"></i> Training
+                    </a>
+                    <a class="nav-item @(currentController == "ManagementReviews" ? "active" : "")"
+                       asp-controller="ManagementReviews" asp-action="Index">
+                        <i class="fas fa-people-group"></i> Management Review
+                    </a>
+                    <a class="nav-item @(currentController == "Objectives" ? "active" : "")"
+                       asp-controller="Objectives" asp-action="Index">
+                        <i class="fas fa-bullseye"></i> Objectives &amp; KPIs
+                    </a>
+                    <a class="nav-item @(currentController == "ComplianceRegister" ? "active" : "")"
+                       asp-controller="ComplianceRegister" asp-action="Index">
+                        <i class="fas fa-scale-balanced"></i> Compliance
+                    </a>
+                    <a class="nav-item @(currentController == "Improvements" ? "active" : "")"
+                       asp-controller="Improvements" asp-action="Index">
+                        <i class="fas fa-lightbulb"></i> Improvement
+                    </a>
+                    <a class="nav-item @(currentController == "Evidence" ? "active" : "")"
+                       asp-controller="Evidence" asp-action="Index">
+                        <i class="fas fa-paperclip"></i> Evidence
+                    </a>
+                    <a class="nav-item @(currentController == "IsoReports" ? "active" : "")"
+                       asp-controller="IsoReports" asp-action="Index">
+                        <i class="fas fa-file-export"></i> ISO Reports
+                    </a>
+                    <a class="nav-item @(currentController == "IsoAssistant" ? "active" : "")"
+                       asp-controller="IsoAssistant" asp-action="Index">
+                        <i class="fas fa-robot"></i> AI Assistant
+                    </a>
+                    }
+                }
 
+                @if (navFull)
+                {
+                    <div class="nav-group">Administration</div>
+                    <a class="nav-item @(currentController == "Users" ? "active" : "")"
+                       asp-controller="Users" asp-action="Index">
+                        <i class="fas fa-users"></i> Users
+                    </a>
+                    <a class="nav-item @(currentController == "Departments" ? "active" : "")"
+                       asp-controller="Departments" asp-action="Index">
+                        <i class="fas fa-building"></i> Departments
+                    </a>
+                    <a class="nav-item @(currentController == "AuditLogs" ? "active" : "")"
+                       asp-controller="AuditLogs" asp-action="Index">
+                        <i class="fas fa-history"></i> Audit Logs
+                    </a>
+                }
+
+                @if (navFull)
+                {
+                    <div class="nav-group">Security</div>
+                    <a class="nav-item @(currentController == "Security" ? "active" : "")"
+                       asp-controller="Security" asp-action="Index">
+                        <i class="fas fa-shield-halved"></i> Security Dashboard
+                    </a>
+                    <a class="nav-item @(currentController == "Configuration" ? "active" : "")"
+                       asp-controller="Configuration" asp-action="Index">
+                        <i class="fas fa-sliders"></i> Configuration
+                    </a>
+                    <a class="nav-item @(currentController == "Backup" ? "active" : "")"
+                       asp-controller="Backup" asp-action="Index">
+                        <i class="fas fa-database"></i> Backup &amp; Recovery
+                    </a>
+                }
+
+                @* Operations: the group header + Meeting Minutes are visible to all staff
+                   (everyone attends meetings); the remaining items stay Admin/SystemsAdmin-only. *@
+                <div class="nav-group">Operations</div>
+                <a class="nav-item @(currentController == "MeetingMinutes" ? "active" : "")"
+                   asp-controller="MeetingMinutes" asp-action="Index">
+                    <i class="fas fa-clipboard-list"></i> Meeting Minutes
                 </a>
+                @if (navFull)
+                {
+                    <a class="nav-item @(currentController == "ActivityCategories" ? "active" : "")"
+                       asp-controller="ActivityCategories" asp-action="Index">
+                        <i class="fas fa-tags"></i> Categories
+                    </a>
+                    <a class="nav-item @(currentController == "PaymentSchedule" ? "active" : "")"
+                       asp-controller="PaymentSchedule" asp-action="Index">
+                        <i class="fas fa-credit-card"></i> Payments
+                    </a>
+                    <a class="nav-item @(currentController == "MaintenanceRecords" ? "active" : "")"
+                       asp-controller="MaintenanceRecords" asp-action="Index">
+                        <i class="fas fa-tools"></i> Maintenance
+                    </a>
+                    <a class="nav-item @(currentController == "UserAccessRights" ? "active" : "")"
+                       asp-controller="UserAccessRights" asp-action="Index">
+                        <i class="fas fa-user-shield"></i> Access Rights
+                    </a>
+                    <a class="nav-item @(currentController == "CannedResponses" ? "active" : "")"
+                       asp-controller="CannedResponses" asp-action="Index">
+                        <i class="fas fa-reply-all"></i> Canned Replies
+                    </a>
+                }
+
+
+
+
+                @if (navFull)
+                {
+                    <div class="nav-group">Assets & Security</div>
+                    <a class="nav-item @(currentController == "Assets" ? "active" : "")"
+                       asp-controller="Assets" asp-action="Index">
+                        <i class="fas fa-laptop-code"></i> Assets
+                    </a>
+                    <a class="nav-item @(currentController == "SSLCertificates" ? "active" : "")"
+                       asp-controller="SSLCertificates" asp-action="Index">
+                        <i class="fas fa-shield-alt"></i> SSL Tracker
+                        <span class="nav-badge">@(ViewBag.ExpiringCertCount ?? 0)</span>
+                    </a>
+                }
+
+                @if (navFull || navHr)
+                {
+                    <div class="nav-group">HR Management</div>
+                    @if (navHr)
+                    {
+                        <a class="nav-item @(currentController == "Reports" && currentAction == "Hr" ? "active" : "")"
+                           asp-controller="Reports" asp-action="Hr">
+                            <i class="fas fa-chart-pie"></i> HR Report
+                        </a>
+                    }
+                    <a class="nav-item @(currentController == "ExitClearance" && currentAction != "Mine" ? "active" : "")"
+                       asp-controller="ExitClearance" asp-action="Index">
+                        <i class="fas fa-file-signature"></i>
+                        Exit Clearance
+                        <span class="nav-badge">@(ViewBag.PendingClearances ?? 0)</span>
+                    </a>
+                    <a class="nav-item @(currentController == "ExitInterview" ? "active" : "")"
+                       asp-controller="ExitInterview" asp-action="Index">
+                        <i class="fas fa-clipboard-list"></i>
+                        Exit Interview
+                    </a>
+                    <a class="nav-item @(currentController == "EngagementStayInterview" ? "active" : "")"
+                       asp-controller="EngagementStayInterview" asp-action="Index">
+                        <i class="fas fa-user-friends"></i>
+                        Engagement Stay Interview
+                    </a>
+                    <a class="nav-item @(currentController == "TalentIdentification" ? "active" : "")"
+                       asp-controller="TalentIdentification" asp-action="Index">
+                        <i class="fas fa-user-tie"></i>
+                        Talent Identification
+                    </a>
+                    <a class="nav-item @(currentController == "EmployeeDocuments" && currentAction != "Approvals" && currentAction != "Requests" ? "active" : "")"
+                       asp-controller="EmployeeDocuments" asp-action="Index">
+                        <i class="fas fa-folder-tree"></i>
+                        Employee Files
+                    </a>
+                    <a class="nav-item @(currentController == "EmployeeDocuments" && currentAction == "Approvals" ? "active" : "")"
+                       asp-controller="EmployeeDocuments" asp-action="Approvals">
+                        <i class="fas fa-clipboard-check"></i>
+                        Document Approvals
+                        <span class="nav-badge">@(ViewData["EfmPendingApprovals"] as int? ?? 0)</span>
+                    </a>
+                    <a class="nav-item @(currentController == "EmployeeDocuments" && currentAction == "Requests" ? "active" : "")"
+                       asp-controller="EmployeeDocuments" asp-action="Requests">
+                        <i class="fas fa-file-circle-question"></i>
+                        Document Requests
+                        <span class="nav-badge">@(ViewData["EfmPendingRequests"] as int? ?? 0)</span>
+                    </a>
+                    <a class="nav-item @(currentController == "EfmSettings" ? "active" : "")"
+                       asp-controller="EfmSettings" asp-action="Categories">
+                        <i class="fas fa-sliders"></i>
+                        File Settings
+                    </a>
+                }
+                </nav>
             </aside>
-
-
 
             <!-- MAIN AREA -->
             <div class="main-area">
 
-                <!-- TOPBAR with blur and smooth design -->
+                <!-- TOPBAR -->
                 <div class="topbar">
                     <div class="topbar-left">
-                        <button class="mobile-toggle btn btn-light" onclick="toggleSidebar()" aria-label="Toggle menu">
+                        <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">
                             <i class="fas fa-bars"></i>
                         </button>
-                        <h5>@ViewData["Title"]</h5>
+                        <h5>
+                            @ViewData["Title"]
+                            <small>Axis IT Operations</small>
+                        </h5>
                     </div>
 
-                    <!-- user profile section with modern look -->
+                    <!-- Notification bell -->
+                    @{
+                        var efmUnread = ViewData["EfmUnread"] as int? ?? 0;
+                        var efmStaff = ViewData["EfmUnreadStaff"] as bool? ?? false;
+                        var bellAction = efmStaff ? "Notifications" : "MyNotifications";
+                    }
+                    <a asp-controller="EmployeeDocuments" asp-action="@bellAction" class="topbar-bell" title="Notifications" aria-label="Notifications"
+                       style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;color:var(--gray-600);text-decoration:none;margin-right:0.75rem;transition:background .15s;">
+                        <i class="fas fa-bell" style="font-size:1.1rem;"></i>
+                        <span id="efmBellBadge" data-count="@efmUnread"
+                              style="position:absolute;top:4px;right:4px;background:#ef4444;color:#fff;font-size:0.6rem;font-weight:700;min-width:16px;height:16px;padding:0 4px;border-radius:8px;align-items:center;justify-content:center;line-height:1;display:@(efmUnread > 0 ? "inline-flex" : "none");">@(efmUnread > 99 ? "99+" : efmUnread.ToString())</span>
+                    </a>
+
+                    <!-- User Profile -->
                     <div class="user-profile">
                         <a asp-controller="Users" asp-action="Profile" class="profile-link">
                             <div class="user-avatar">
@@ -540,14 +928,17 @@
                             </div>
                         </a>
 
-                        <a class="btn btn-logout" asp-controller="Account" asp-action="Logout" title="Logout">
-                            <i class="fas fa-sign-out-alt"></i>
-                        </a>
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="logout-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-logout" title="Logout" aria-label="Log out">
+                                <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+                            </button>
+                        </form>
                     </div>
                 </div>
 
-                <!-- CONTENT area with smooth fade-in -->
-                <main class="content fade-in">
+                <!-- CONTENT -->
+                <main id="main-content" class="content fade-in" tabindex="-1">
                     @RenderBody()
                 </main>
 
@@ -556,130 +947,253 @@
     }
     else
     {
-        <main class="fade-in" style="background: var(--bg-main); min-height:100vh;">
+        <main id="main-content" tabindex="-1" style="background: var(--bg-main); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem;">
             @RenderBody()
         </main>
     }
 
+    <!-- jQuery + Toastr (global notifications) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js"></script>
+    <script>
+        // Global Toastr configuration + helper.
+        toastr.options = {
+            closeButton: true,
+            progressBar: true,
+            newestOnTop: true,
+            positionClass: "toast-top-right",
+            timeOut: 4000,
+            extendedTimeOut: 1500,
+            preventDuplicates: true
+        };
+        // Convenience global so any page/script can raise a toast.
+        window.notify = function (type, message, title) {
+            if (!message) return;
+            (toastr[type] || toastr.info)(message, title || "");
+        };
+    </script>
+
+    @* Bridge server-side TempData/ViewBag messages to Toastr on page load *@
+    @{
+        var _toastSuccess = TempData["Success"] as string ?? ViewBag.Success as string;
+        var _toastError = TempData["Error"] as string ?? ViewBag.Error as string;
+        var _toastInfo = TempData["Info"] as string ?? ViewBag.Info as string;
+        var _toastWarning = TempData["Warning"] as string ?? ViewBag.Warning as string;
+    }
+    @if (_toastSuccess != null || _toastError != null || _toastInfo != null || _toastWarning != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                @if (_toastSuccess != null) { <text>toastr.success(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_toastSuccess)));</text> }
+                @if (_toastError != null) { <text>toastr.error(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_toastError)));</text> }
+                @if (_toastInfo != null) { <text>toastr.info(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_toastInfo)));</text> }
+                @if (_toastWarning != null) { <text>toastr.warning(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(_toastWarning)));</text> }
+            });
+        </script>
+    }
+
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 
+    <!-- DataTables: turn shared .data-table tables into sortable/searchable tables paginated at 10/page -->
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <style>
+        .dataTables_wrapper { padding: 0.9rem 1.1rem; }
+        .dataTables_wrapper .dataTables_filter input { border:1.5px solid var(--gray-200); border-radius:0.5rem; padding:0.35rem 0.6rem; font-size:0.85rem; }
+        .dataTables_wrapper .dataTables_filter label, .dataTables_wrapper .dataTables_info { font-size:0.82rem; color:var(--gray-500); }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current { background:var(--primary) !important; border-color:var(--primary) !important; color:#fff !important; border-radius:0.5rem; }
+        .dataTables_wrapper .dataTables_paginate .paginate_button { border-radius:0.5rem; }
+        table.data-table.dataTable { width:100% !important; }
+    </style>
     <script>
-        // Enhanced smooth sidebar toggling with overlay and animations
+        $(function () {
+            if (!$.fn || !$.fn.DataTable) return;
+            $('table.data-table').each(function () {
+                var $t = $(this);
+                if ($.fn.DataTable.isDataTable($t)) return;
+                // Skip tables that are already server-paginated (they render a .pager in their card).
+                if ($t.closest('.data-card, .page-container').find('.pager').length) return;
+                var $rows = $t.find('tbody > tr');
+                if ($rows.length === 0) return;
+                // Skip a lone empty-state placeholder row (<td colspan>…</td>).
+                if ($rows.length === 1 && $rows.find('td[colspan]').length) return;
+                // Header/body column mismatch would throw — guard.
+                var cols = $t.find('thead > tr:first > th').length;
+                if (cols === 0) return;
+                try {
+                    $t.DataTable({
+                        pageLength: 10,
+                        lengthChange: false,
+                        order: [],
+                        autoWidth: false,
+                        language: {
+                            search: '', searchPlaceholder: 'Search…',
+                            info: 'Showing _START_–_END_ of _TOTAL_',
+                            infoEmpty: 'No records', infoFiltered: '(of _MAX_)',
+                            zeroRecords: 'No matching records', emptyTable: 'No records',
+                            paginate: { previous: '‹', next: '›' }
+                        }
+                    });
+                } catch (e) { /* leave the table static if DataTables can't handle its shape */ }
+            });
+        });
+    </script>
+
+    <script>
+        // Sidebar toggle with overlay
         function toggleSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const overlay = document.getElementById("sidebarOverlay");
-            sidebar.classList.toggle("active");
-            if (sidebar.classList.contains("active")) {
-                overlay.classList.add("active");
-                document.body.style.overflow = "hidden";
-            } else {
-                overlay.classList.remove("active");
-                document.body.style.overflow = "";
-            }
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebarOverlay");
+        sidebar.classList.toggle("active");
+        if (sidebar.classList.contains("active")) {
+        overlay.classList.add("active");
+        document.body.style.overflow = "hidden";
+        } else {
+        overlay.classList.remove("active");
+        document.body.style.overflow = "";
+        }
         }
 
         function closeSidebar() {
-            const sidebar = document.getElementById("sidebar");
-            const overlay = document.getElementById("sidebarOverlay");
-            sidebar.classList.remove("active");
-            overlay.classList.remove("active");
-            document.body.style.overflow = "";
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebarOverlay");
+        sidebar.classList.remove("active");
+        overlay.classList.remove("active");
+        document.body.style.overflow = "";
         }
 
-        // optional: close sidebar when window resizes above mobile breakpoint
+        // Close sidebar on resize to desktop
         window.addEventListener('resize', function() {
-            if (window.innerWidth > 768) {
-                const sidebar = document.getElementById("sidebar");
-                const overlay = document.getElementById("sidebarOverlay");
-                if (sidebar.classList.contains("active")) {
-                    sidebar.classList.remove("active");
-                    overlay.classList.remove("active");
-                    document.body.style.overflow = "";
-                }
-            }
+        if (window.innerWidth > 992) {
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebarOverlay");
+        if (sidebar.classList.contains("active")) {
+        sidebar.classList.remove("active");
+        overlay.classList.remove("active");
+        document.body.style.overflow = "";
+        }
+        }
         });
 
-        // Smooth page transition effect (subtle highlight for active nav)
+        // Topbar shadow on scroll
         document.addEventListener("DOMContentLoaded", function() {
-            // add ripple effect on nav items
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => {
-                item.addEventListener('click', function(e) {
-                    // don't interfere with actual href, just style feedback
-                    if (!e.ctrlKey && !e.metaKey) {
-                        // optional ripple effect can be added
-                        this.style.transition = 'all 0.15s';
-                        this.style.transform = 'translateX(2px)';
-                        setTimeout(() => {
-                            this.style.transform = '';
-                        }, 120);
-                    }
+        const mainContent = document.querySelector('.content');
+        const topbar = document.querySelector('.topbar');
+        if (mainContent && topbar) {
+        mainContent.addEventListener('scroll', function() {
+        if (mainContent.scrollTop > 10) {
+        topbar.style.boxShadow = '0 4px 20px rgba(0,0,0,0.06)';
+        topbar.style.background = 'rgba(255,255,255,0.85)';
+        } else {
+        topbar.style.boxShadow = 'none';
+        topbar.style.background = 'rgba(255,255,255,0.75)';
+        }
+        });
+        }
+
+        // Active nav item highlight enhancement
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+        if (!e.ctrlKey && !e.metaKey) {
+        this.style.transition = 'all 0.15s';
+        this.style.transform = 'translateX(2px)';
+        setTimeout(() => {
+        this.style.transform = '';
+        }, 120);
+        }
+        });
+        });
+        });
+
+        // Collapsible sidebar groups (accordion) built over the flat nav structure.
+        (function () {
+            var nav = document.getElementById('sidebarNav');
+            if (!nav) return;
+            var KEY = 'sidebarGroups';
+            var state = {};
+            try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { }
+            nav.querySelectorAll('.nav-group').forEach(function (g) {
+                var label = g.textContent.trim();
+                var items = [];
+                var el = g.nextElementSibling;
+                while (el && !el.classList.contains('nav-group')) {
+                    if (el.classList && el.classList.contains('nav-item')) items.push(el);
+                    el = el.nextElementSibling;
+                }
+                if (!items.length) return;
+
+                var chev = document.createElement('i');
+                chev.className = 'fas fa-chevron-down nav-chevron';
+                chev.setAttribute('aria-hidden', 'true');
+                g.appendChild(chev);
+                g.classList.add('nav-group-toggle');
+                g.setAttribute('role', 'button');
+                g.setAttribute('tabindex', '0');
+
+                var hasActive = items.some(function (i) { return i.classList.contains('active'); });
+                // Core and the current page's group start open; others follow saved state (default collapsed).
+                var open = (hasActive || label.toLowerCase() === 'core') ? true
+                         : (label in state ? state[label] : false);
+
+                function apply(o) {
+                    g.setAttribute('aria-expanded', o ? 'true' : 'false');
+                    g.classList.toggle('collapsed', !o);
+                    items.forEach(function (i) { i.style.display = o ? '' : 'none'; });
+                }
+                apply(open);
+
+                function toggle() {
+                    open = !open;
+                    apply(open);
+                    state[label] = open;
+                    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { }
+                }
+                g.addEventListener('click', toggle);
+                g.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
                 });
             });
+        })();
+    </script>
 
-            // make any existing buttons more polished (fallback to modern classes)
-            const allBtns = document.querySelectorAll('.btn');
-            allBtns.forEach(btn => {
-                if (!btn.classList.contains('btn-logout') && !btn.classList.contains('btn-modern') && !btn.classList.contains('mobile-toggle')) {
-                    btn.classList.add('btn-modern');
+    <!-- Real-time notifications (SignalR): live bell badge + toasts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script>
+        (function () {
+            var badge = document.getElementById('efmBellBadge');
+            if (!badge || typeof signalR === 'undefined') return;   // only for authenticated pages
+
+            function bumpBadge() {
+                var n = (parseInt(badge.getAttribute('data-count')) || 0) + 1;
+                badge.setAttribute('data-count', n);
+                badge.textContent = n > 99 ? '99+' : n;
+                badge.style.display = 'inline-flex';
+            }
+
+            var connection = new signalR.HubConnectionBuilder()
+                .withUrl('/hubs/notifications')
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on('notification', function (notice) {
+                bumpBadge();
+                if (window.toastr) {
+                    var t = (toastr[notice.level] || toastr.info)(
+                        (notice.message || ''), (notice.title || 'Notification'),
+                        { timeOut: 6000, closeButton: true, progressBar: true });
+                    if (notice.url && t) {
+                        t.css('cursor', 'pointer');
+                        t.on('click', function () { window.location.href = notice.url; });
+                    }
                 }
             });
 
-            // add card effect to any card-like element if missing
-            const cards = document.querySelectorAll('.card');
-            cards.forEach(card => {
-                card.classList.add('card'); // already, ensure smoothness
-            });
-        });
+            connection.start().catch(function () { /* hub unavailable — bell still works via page loads */ });
+        })();
     </script>
 
     @RenderSection("Scripts", required: false)
-
-    <!-- Additional micro-animations for smooth scrolling and improved UX -->
-    <style>
-        /* graceful loading for content blocks */
-        .content * {
-            animation: fadeIn 0.2s ease forwards;
-        }
-
-        /* better focus rings */
-        a, button, .nav-item {
-            outline: none;
-        }
-
-        a:focus-visible, button:focus-visible, .nav-item:focus-visible {
-            outline: 2px solid var(--primary);
-            outline-offset: 2px;
-            border-radius: 8px;
-        }
-
-        /* smooth topbar shadow on scroll */
-        .topbar {
-            transition: box-shadow 0.2s, background 0.2s;
-        }
-        .main-area {
-            scroll-behavior: smooth;
-        }
-    </style>
-
-    <script>
-        // dynamic shadow on topbar based on scroll
-        (function() {
-            const mainContent = document.querySelector('.content');
-            const topbar = document.querySelector('.topbar');
-            if (mainContent && topbar) {
-                mainContent.addEventListener('scroll', function() {
-                    if (mainContent.scrollTop > 10) {
-                        topbar.style.boxShadow = '0 4px 20px rgba(0,0,0,0.05)';
-                        topbar.style.background = 'rgba(255,255,255,0.95)';
-                    } else {
-                        topbar.style.boxShadow = 'none';
-                        topbar.style.background = 'rgba(255,255,255,0.85)';
-                    }
-                });
-            }
-        })();
-    </script>
 
 </body>
 </html>

@@ -1,31 +1,439 @@
-html {
-  font-size: 14px;
+/* ============================================================
+   Axis IT Operations — shared design system
+   Single source of truth for design tokens, accessibility
+   primitives and small cross-page utilities. Linked globally
+   from _Layout. Page-level <style> blocks may still override.
+   ============================================================ */
+
+:root {
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --primary-light: #dbeafe;
+    --primary-glow: rgba(59,130,246,0.25);
+
+    /* Semantic colors */
+    --success: #2c9e6e;
+    --success-light: #e6f5e9;
+    --warning: #f5b042;
+    --warning-light: #fff5e6;
+    --danger: #e53e3e;
+    --danger-light: #fff5f5;
+    --info: #3b82f6;
+
+    /* Neutral / gray scale (slate) */
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-400: #94a3b8;
+    --gray-500: #64748b;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1e293b;
+
+    --sidebar-bg: #0f172a;
+    --sidebar-hover: #1e293b;
+    --sidebar-active: #3b82f6;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-light: #e2e8f0;
+    --text-muted: #94a3b8;
+    --bg-main: #f1f5f9;
+    --bg-card: #ffffff;
+    --border-light: #e2e8f0;
+    --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+    --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    --transition-smooth: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    --radius-lg: 1.5rem;
+    --radius-md: 1rem;
+    --radius-sm: 0.75rem;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+html { font-size: 14px; }
+@media (min-width: 768px) { html { font-size: 16px; } }
+
+/* ============================================================
+   Accessibility
+   ============================================================ */
+
+/* Visible keyboard-focus ring for all interactive elements.
+   (Mouse users don't see it thanks to :focus-visible.) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+    outline: 3px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+/* Screen-reader-only content. */
+.sr-only {
+    position: absolute !important;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap; border: 0;
 }
 
-html {
-  position: relative;
-  min-height: 100%;
+/* Skip-to-content link — appears on keyboard focus. */
+.skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -3rem;
+    z-index: 1000;
+    background: var(--primary);
+    color: #fff;
+    padding: 0.6rem 1rem;
+    border-radius: 0 0 0.5rem 0.5rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: top 0.2s ease;
+}
+.skip-link:focus { top: 0; color: #fff; }
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
-body {
-  margin-bottom: 60px;
+/* ============================================================
+   Shared page components
+   Canonical look for list/detail pages (card, header bar, table,
+   title, back button). Historically every view redefined these
+   in its own <style> block; those local blocks load AFTER this
+   file and still win, so existing pages are unchanged. Pages that
+   DON'T define them (e.g. Employee File Management) now inherit the
+   standard look instead of rendering unstyled.
+   ============================================================ */
+.page-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+.page-header { margin-bottom: 2rem; }
+
+.page-title {
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: var(--gray-800);
+    margin: 0;
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+.data-card {
+    background: #fff;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
 }
+
+.card-header-custom {
+    background: var(--gray-50);
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--gray-200);
+    font-weight: 600;
+    color: var(--gray-700);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.record-count {
+    font-size: 0.875rem;
+    font-weight: normal;
+    color: var(--gray-500);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.data-table thead {
+    background: var(--gray-50);
+    border-bottom: 2px solid var(--gray-200);
+}
+.data-table th {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--gray-600);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.data-table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--gray-200);
+    vertical-align: middle;
+    font-size: 0.875rem;
+}
+.data-table tbody tr { transition: background-color 0.2s; }
+.data-table tbody tr:hover { background-color: var(--gray-50); }
+
+.btn-back {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border-radius: 0.75rem;
+    color: var(--gray-600);
+    text-decoration: none;
+    transition: all 0.2s;
+    border: 1px solid var(--gray-200);
+    flex-shrink: 0;
+}
+.btn-back:hover {
+    background: var(--gray-50);
+    color: var(--primary);
+    transform: translateX(-2px);
+}
+
+/* Primary call-to-action button — the gradient "create/new" button used
+   in page headers across the app. Self-contained (does not need .btn). */
+.btn-create {
+    background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: var(--shadow-sm);
+}
+.btn-create:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    color: #fff;
+    text-decoration: none;
+}
+.btn-create-sm {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* ---- Statistics cards (Ticket-dashboard style) ---- */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+.stat-card {
+    background: #fff;
+    border-radius: 1rem;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    border: 1px solid var(--gray-200);
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--primary-light), var(--primary));
+    border-radius: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+.stat-info h3 { font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--gray-800); }
+.stat-info p { margin: 0; color: var(--gray-500); font-size: 0.875rem; }
+
+/* ---- Filters card ---- */
+.filters-card {
+    background: #fff;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--gray-200);
+    margin-bottom: 1.5rem;
+}
+.filters-header {
+    background: var(--gray-50);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--gray-200);
+    font-weight: 600;
+    color: var(--gray-700);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.filters-body {
+    padding: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+.filter-group { flex: 1; min-width: 180px; }
+.filter-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--gray-600);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.filter-select {
+    width: 100%;
+    padding: 0.625rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+    background: #fff;
+    cursor: pointer;
+}
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+.search-wrapper { position: relative; }
+.search-wrapper i {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+    font-size: 0.875rem;
+}
+.search-input {
+    width: 100%;
+    padding: 0.625rem 0.75rem 0.625rem 2rem;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    font-family: 'Inter', sans-serif;
+}
+.search-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+.btn-clear-filters {
+    background: #fff;
+    color: var(--gray-600);
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+    border: 1.5px solid var(--gray-200);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+.btn-clear-filters:hover { background: var(--gray-50); border-color: var(--gray-300); color: var(--gray-700); }
+
+/* ---- Status / label badges (Ticket-dashboard style) ---- */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.badge-green { background: #e6f5e9; color: var(--success); border: 1px solid #c6e0c9; }
+.badge-amber { background: #fff5e6; color: #b45309; border: 1px solid #ffe0b3; }
+.badge-red   { background: #fff5f5; color: var(--danger); border: 1px solid #fed7d7; }
+.badge-blue  { background: #e6f0ff; color: var(--primary-dark); border: 1px solid #cce4ff; }
+.badge-gray  { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-300); }
+
+/* ---- Row avatar + chips ---- */
+.list-avatar {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    text-transform: uppercase;
+}
+.list-avatar-cell { display: flex; align-items: center; gap: 0.5rem; }
+.chip {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    background: #eff6ff; color: var(--primary-dark); border: 1px solid #cce4ff;
+    padding: 0.2rem 0.6rem; border-radius: 2rem; font-size: 0.72rem; font-weight: 600;
+}
+.chip-muted { color: var(--gray-400); font-size: 0.72rem; font-style: italic; }
+.date-cell { color: var(--gray-500); font-size: 0.875rem; white-space: nowrap; }
+
+/* ---- Table action buttons ---- */
+.action-buttons { display: flex; gap: 0.5rem; align-items: center; }
+.action-btn {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-size: 0.875rem;
+    background: var(--gray-100);
+    border: none;
+    cursor: pointer;
+}
+.btn-view { background: var(--gray-100); color: var(--info); }
+.btn-view:hover { background: var(--info); color: #fff; transform: translateY(-2px); }
+.btn-download { background: var(--gray-100); color: var(--success); }
+.btn-download:hover { background: var(--success); color: #fff; transform: translateY(-2px); }
+.btn-edit { background: var(--gray-100); color: var(--warning); }
+.btn-edit:hover { background: var(--warning); color: #fff; transform: translateY(-2px); }
+.btn-delete { background: var(--gray-100); color: var(--danger); }
+.btn-delete:hover { background: var(--danger); color: #fff; transform: translateY(-2px); }
+.btn-approve { background: var(--gray-100); color: var(--success); }
+.btn-approve:hover { background: var(--success); color: #fff; transform: translateY(-2px); }
+
+/* ---- Empty state ---- */
+.empty-state { text-align: center; padding: 3rem; color: var(--gray-500); }
+.empty-state i { font-size: 4rem; color: var(--gray-300); margin-bottom: 1rem; }
+.empty-state h3 { font-size: 1.25rem; margin-bottom: 0.5rem; color: var(--gray-600); }
+.empty-state p { margin-bottom: 1.5rem; }
+
+/* ============================================================
+   Small shared utilities
+   ============================================================ */
+.text-muted-2 { color: var(--gray-500); }
+.cursor-pointer { cursor: pointer; }

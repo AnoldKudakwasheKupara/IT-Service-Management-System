@@ -1,0 +1,1094 @@
+@model IT_Service_Management_System.ViewModels.Efm.DocumentSearchVm
+@using IT_Service_Management_System.Models.Efm
+@{
+    ViewData["Title"] = "Search Documents - Axis IT Operations";
+    var paging = ViewBag.Paging as IT_Service_Management_System.Helpers.PagingInfo;
+    var returnUrl = Url.Action("Search", new { q = Model.Q, folderId = Model.FolderId, categoryId = Model.CategoryId, status = Model.Status, expiry = Model.Expiry, archived = Model.Archived });
+    string StatusBadge(DocumentStatus s) => s switch
+    {
+        DocumentStatus.Active or DocumentStatus.Approved => "status-resolved",
+        DocumentStatus.PendingApproval => "status-progress",
+        DocumentStatus.Rejected or DocumentStatus.Expired => "status-closed",
+        _ => "status-open"
+    };
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-magnifying-glass me-2" style="color: var(--primary);"></i>
+                    Search Documents
+                </h1>
+                <p class="text-muted mt-2">
+                    Full-text search across every employee file — name, number, department, category, tags, keywords, OCR content
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-action="Index" class="btn-create-ticket">
+                    <i class="fas fa-users me-2"></i>
+                    Employee Files
+                </a>
+            </div>
+        </div>
+
+        <!-- Archive Toggle -->
+        <div class="archive-toggle mb-4">
+            <span class="toggle-label">
+                <i class="fas fa-filter"></i>
+                Show:
+            </span>
+            <div class="btn-group-toggle" role="group">
+                <a asp-action="Search" asp-route-q="@Model.Q" asp-route-folderId="@Model.FolderId"
+                   asp-route-categoryId="@Model.CategoryId"
+                   class="toggle-btn @(!Model.Archived ? "active" : "")">
+                    <i class="fas fa-folder-open"></i>
+                    Active Files
+                </a>
+                <a asp-action="Search" asp-route-archived="true" asp-route-q="@Model.Q"
+                   asp-route-folderId="@Model.FolderId" asp-route-categoryId="@Model.CategoryId"
+                   class="toggle-btn @(Model.Archived ? "active" : "")">
+                    <i class="fas fa-box-archive"></i>
+                    Archived
+                </a>
+            </div>
+            <span class="result-count-badge">
+                <i class="fas fa-chart-simple"></i>
+                @(paging?.TotalCount ?? Model.Results.Count) result(s)
+            </span>
+        </div>
+    </div>
+
+    <!-- FILTERS CARD -->
+    <div class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-sliders-h"></i>
+            <span>Filter Documents</span>
+        </div>
+        <form method="get" asp-action="Search" class="filters-body">
+            <input type="hidden" name="archived" value="@Model.Archived.ToString().ToLower()" />
+
+            <div class="filter-group" style="flex: 2; min-width: 240px;">
+                <label>
+                    <i class="fas fa-search"></i>
+                    Search
+                </label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" value="@Model.Q" class="search-input"
+                           placeholder="Search documents, employees, tags, content…" autofocus />
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label>
+                    <i class="fas fa-folder"></i>
+                    Folder
+                </label>
+                <select name="folderId" class="filter-select">
+                    <option value="">All folders</option>
+                    @foreach (var f in Model.Folders)
+                    {
+                        <option value="@f.Id" selected="@(Model.FolderId == f.Id)">@f.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>
+                    <i class="fas fa-tag"></i>
+                    Category
+                </label>
+                <select name="categoryId" class="filter-select">
+                    <option value="">All categories</option>
+                    @foreach (var c in Model.Categories)
+                    {
+                        <option value="@c.Id" selected="@(Model.CategoryId == c.Id)">@c.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>
+                    <i class="fas fa-chart-simple"></i>
+                    Status
+                </label>
+                <select name="status" class="filter-select">
+                    <option value="">Any status</option>
+                    @foreach (var st in Enum.GetValues<DocumentStatus>())
+                    {
+                        <option value="@st" selected="@(Model.Status == st)">@st</option>
+                    }
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>
+                    <i class="fas fa-hourglass-half"></i>
+                    Expiry
+                </label>
+                <select name="expiry" class="filter-select">
+                    <option value="">Any expiry</option>
+                    <option value="expiring" selected="@(Model.Expiry == "expiring")">Expiring ≤30d</option>
+                    <option value="expired" selected="@(Model.Expiry == "expired")">Expired</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>
+                    <i class="fas fa-calendar-start"></i>
+                    From
+                </label>
+                <input type="date" name="from" value="@(Model.From?.ToString("yyyy-MM-dd"))"
+                       class="filter-select date-input" />
+            </div>
+
+            <div class="filter-group">
+                <label>
+                    <i class="fas fa-calendar-end"></i>
+                    To
+                </label>
+                <input type="date" name="to" value="@(Model.To?.ToString("yyyy-MM-dd"))"
+                       class="filter-select date-input" />
+            </div>
+
+            <div class="filter-actions">
+                <button type="submit" class="btn-clear-filters" style="background:var(--primary);color:#fff;border:none;">
+                    <i class="fas fa-search"></i>
+                    Search
+                </button>
+                <a asp-action="Search" asp-route-archived="@Model.Archived.ToString().ToLower()"
+                   class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+                    <i class="fas fa-undo-alt"></i>
+                    Clear
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- RESULTS CARD -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-file-lines me-2"></i>
+                <span>Search Results</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span id="visibleCount">@(paging?.TotalCount ?? Model.Results.Count)</span> match(es)
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            @if (Model.Results.Any())
+            {
+                <table class="data-table tickets-table" id="searchResultsTable">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user me-1"></i> Employee</th>
+                            <th><i class="fas fa-file me-1"></i> Document</th>
+                            <th><i class="fas fa-tag me-1"></i> Category</th>
+                            <th><i class="fas fa-folder me-1"></i> Folder</th>
+                            <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                            <th><i class="fas fa-hourglass-half me-1"></i> Expiry</th>
+                            <th><i class="fas fa-calendar me-1"></i> Uploaded</th>
+                            <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model.Results)
+                        {
+                            var initials = (d.Employee?.FirstName?.Substring(0, 1) ?? "U") +
+                                           (d.Employee?.LastName?.Substring(0, 1) ?? "");
+                            var statusClass = StatusBadge(d.Status);
+                            var statusIcon = d.Status switch
+                            {
+                                DocumentStatus.Active or DocumentStatus.Approved => "fa-check-circle",
+                                DocumentStatus.PendingApproval => "fa-clock",
+                                DocumentStatus.Rejected => "fa-times-circle",
+                                DocumentStatus.Expired => "fa-exclamation-triangle",
+                                _ => "fa-circle"
+                            };
+
+                            <tr data-title="@d.Title" data-employee="@d.Employee?.FullName"
+                                data-category="@d.Category?.Name" data-folder="@d.Folder?.Name"
+                                data-status="@d.Status">
+                                <td>
+                                    <div class="employee-info">
+                                        <div class="employee-avatar">@initials</div>
+                                        <span class="employee-name">@d.Employee?.FullName</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@d.Id" class="document-link">
+                                        @d.Title
+                                    </a>
+                                </td>
+                                <td>
+                                    @if (d.Category != null)
+                                    {
+                                        <span class="category-chip">@d.Category.Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted" style="font-size:0.75rem;">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (d.Folder != null)
+                                    {
+                                        <span class="folder-chip">@d.Folder.Name</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted" style="font-size:0.75rem;">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="status-badge @statusClass">
+                                        <i class="fas @statusIcon"></i>
+                                        @d.Status
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (d.ExpiryDate == null)
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                    else if (d.IsExpired)
+                                    {
+                                        <span class="status-badge status-closed">
+                                            <i class="fas fa-exclamation-triangle"></i> Expired
+                                        </span>
+                                    }
+                                    else if (d.DaysUntilExpiry <= 30)
+                                    {
+                                        <span class="status-badge status-progress">
+                                            <i class="fas fa-clock"></i> @d.ExpiryDate?.ToString("MMM dd")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="date-cell">@d.ExpiryDate?.ToString("MMM dd, yyyy")</span>
+                                    }
+                                </td>
+                                <td class="date-cell">
+                                    <i class="far fa-calendar-alt"></i>
+                                    @d.CreatedAt.ToString("MMM dd, yyyy")
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a class="action-btn btn-view" asp-action="Preview" asp-route-id="@d.Id"
+                                           target="_blank" title="Preview">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a class="action-btn btn-download" asp-action="Download" asp-route-id="@d.Id"
+                                           title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        @if (Model.Archived)
+                                        {
+                                            <form asp-action="Restore" method="post" style="display:inline;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@d.Id" />
+                                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                                <button class="action-btn btn-restore" title="Restore from archive">
+                                                    <i class="fas fa-box-open"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="Archive" method="post" style="display:inline;"
+                                                  onsubmit="return confirm('Archive this document?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@d.Id" />
+                                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                                <button class="action-btn btn-archive" title="Archive">
+                                                    <i class="fas fa-box-archive"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-magnifying-glass"></i>
+                    <h3>No documents found</h3>
+                    <p>Try adjusting your search terms or filters.</p>
+                    <button onclick="document.querySelector('input[name=\" q\"]').focus();"
+                            class="btn-create-ticket-sm">
+                        <i class="fas fa-search"></i> Refine Search
+                    </button>
+                </div>
+            }
+        </div>
+
+        @if (paging != null)
+        {
+            <div class="pagination-wrapper">
+                @await Html.PartialAsync("_Pagination", paging)
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        white-space: nowrap;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-create-ticket-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+    }
+
+        .btn-create-ticket-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== ARCHIVE TOGGLE ===== */
+    .archive-toggle {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        background: white;
+        padding: 0.75rem 1.25rem;
+        border-radius: 0.75rem;
+        border: 1px solid var(--gray-200);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .toggle-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .btn-group-toggle {
+        display: flex;
+        gap: 0.25rem;
+        background: var(--gray-100);
+        padding: 0.25rem;
+        border-radius: 0.5rem;
+    }
+
+    .toggle-btn {
+        padding: 0.4rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+        .toggle-btn:hover {
+            color: var(--gray-700);
+            text-decoration: none;
+        }
+
+        .toggle-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+    .result-count-badge {
+        margin-left: auto;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--gray-500);
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.75rem;
+        background: var(--gray-50);
+        border-radius: 2rem;
+        border: 1px solid var(--gray-200);
+    }
+
+    /* ===== FILTERS CARD ===== */
+    .filters-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .filters-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filters-body {
+        padding: 1.5rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+        align-items: end;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+        .filter-group label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+            .filter-group label i {
+                font-size: 0.6rem;
+                color: var(--primary);
+            }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        cursor: pointer;
+        min-height: 42px;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+        .filter-select.date-input {
+            padding: 0.625rem;
+            min-height: 42px;
+        }
+
+    .search-wrapper {
+        position: relative;
+    }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+            pointer-events: none;
+        }
+
+    .search-input {
+        width: 100%;
+        padding: 0.625rem 0.75rem 0.625rem 2.25rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        min-height: 42px;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .filter-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        align-self: end;
+        grid-column: span 1;
+    }
+
+    .btn-clear-filters {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        min-height: 42px;
+        white-space: nowrap;
+    }
+
+        .btn-clear-filters:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .pagination-wrapper {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .data-table.tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .data-table.tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .data-table.tickets-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table.tickets-table td {
+            padding: 0.875rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .data-table.tickets-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .data-table.tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+    /* ===== EMPLOYEE INFO ===== */
+    .employee-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .employee-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+        font-weight: 700;
+        font-size: 0.7rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+        flex-shrink: 0;
+    }
+
+    .employee-name {
+        font-weight: 500;
+        color: var(--gray-800);
+        font-size: 0.875rem;
+    }
+
+    /* ===== DOCUMENT LINK ===== */
+    .document-link {
+        font-weight: 600;
+        color: var(--gray-800);
+        text-decoration: none;
+        transition: color 0.2s;
+        font-size: 0.875rem;
+    }
+
+        .document-link:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+    /* ===== CATEGORY & FOLDER CHIPS ===== */
+    .category-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: #f3e8ff;
+        color: #7c3aed;
+        border: 1px solid #e9d5ff;
+        padding: 0.2rem 0.6rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .folder-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+        padding: 0.2rem 0.6rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .status-open {
+        background: #fff5e6;
+        color: var(--warning);
+        border: 1px solid #ffe0b3;
+    }
+
+    .status-progress {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    .status-resolved {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .status-closed {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .date-cell {
+        color: var(--gray-500);
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+        .date-cell i {
+            margin-right: 0.25rem;
+        }
+
+    /* ===== ACTION BUTTONS ===== */
+    .action-buttons {
+        display: flex;
+        gap: 0.35rem;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.8rem;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-view {
+        background: var(--gray-100);
+        color: var(--info);
+    }
+
+        .btn-view:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .btn-download {
+        background: var(--gray-100);
+        color: var(--success);
+    }
+
+        .btn-download:hover {
+            background: var(--success);
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .btn-archive {
+        background: var(--gray-100);
+        color: var(--warning);
+    }
+
+        .btn-archive:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    .btn-restore {
+        background: var(--gray-100);
+        color: var(--primary);
+    }
+
+        .btn-restore:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 1024px) {
+        .filters-body {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        }
+
+        .filter-actions {
+            grid-column: span 2;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .filters-body {
+            grid-template-columns: 1fr;
+        }
+
+        .filter-actions {
+            grid-column: span 1;
+            flex-wrap: wrap;
+        }
+
+            .filter-actions .btn-clear-filters {
+                flex: 1;
+                justify-content: center;
+            }
+
+        .data-table.tickets-table th,
+        .data-table.tickets-table td {
+            padding: 0.75rem 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .archive-toggle {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .result-count-badge {
+            margin-left: 0;
+            justify-content: center;
+        }
+
+        .btn-group-toggle {
+            justify-content: stretch;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            justify-content: center;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-header .d-flex {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .btn-create-ticket {
+            justify-content: center;
+        }
+
+        .action-buttons {
+            justify-content: center;
+        }
+
+        .action-btn {
+            width: 28px;
+            height: 28px;
+            font-size: 0.7rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Client-side filtering for the results table
+        const searchInput = document.querySelector('input[name="q"]');
+        const statusFilter = document.querySelector('select[name="status"]');
+        const categoryFilter = document.querySelector('select[name="categoryId"]');
+        const folderFilter = document.querySelector('select[name="folderId"]');
+        const table = document.getElementById('searchResultsTable');
+        const rows = table ? table.querySelectorAll('tbody tr') : [];
+        const visibleCountSpan = document.getElementById('visibleCount');
+
+        function filterResults() {
+            const searchValue = searchInput ? searchInput.value.toLowerCase() : '';
+            const statusValue = statusFilter ? statusFilter.value : '';
+            const categoryValue = categoryFilter ? categoryFilter.value : '';
+            const folderValue = folderFilter ? folderFilter.value : '';
+
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const title = row.getAttribute('data-title')?.toLowerCase() || '';
+                const employee = row.getAttribute('data-employee')?.toLowerCase() || '';
+                const category = row.getAttribute('data-category') || '';
+                const folder = row.getAttribute('data-folder') || '';
+                const status = row.getAttribute('data-status') || '';
+
+                let show = true;
+
+                if (searchValue && !title.includes(searchValue) && !employee.includes(searchValue)) {
+                    show = false;
+                }
+
+                if (statusValue && status !== statusValue) {
+                    show = false;
+                }
+
+                if (categoryValue && category !== categoryValue) {
+                    show = false;
+                }
+
+                if (folderValue && folder !== folderValue) {
+                    show = false;
+                }
+
+                if (show) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (visibleCountSpan) {
+                visibleCountSpan.textContent = visibleCount;
+            }
+
+            // Show no results message
+            const emptyState = document.querySelector('.empty-state:not(.original)');
+            const tbody = table ? table.querySelector('tbody') : null;
+
+            if (visibleCount === 0 && rows.length > 0) {
+                if (!emptyState && tbody) {
+                    const noResultsDiv = document.createElement('div');
+                    noResultsDiv.className = 'empty-state';
+                    noResultsDiv.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <h3>No matching documents found</h3>
+                        <p>Try adjusting your filters or search terms</p>
+                    `;
+                    tbody.parentNode.appendChild(noResultsDiv);
+                    if (table) table.style.display = 'none';
+                }
+            } else {
+                if (emptyState) emptyState.remove();
+                if (table) table.style.display = '';
+            }
+        }
+
+        // Attach event listeners
+        if (searchInput) {
+            searchInput.addEventListener('keyup', filterResults);
+        }
+        if (statusFilter) {
+            statusFilter.addEventListener('change', filterResults);
+        }
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', filterResults);
+        }
+        if (folderFilter) {
+            folderFilter.addEventListener('change', filterResults);
+        }
+
+        // Initialize
+        filterResults();
+    });
+</script>

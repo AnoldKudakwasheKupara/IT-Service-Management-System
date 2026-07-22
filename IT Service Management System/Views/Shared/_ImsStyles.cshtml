@@ -1,0 +1,175 @@
+@* Shared styles for the Integrated Management System (ISO 9001 & 27001) module — included at the top of each IMS view. *@
+<style>
+    .ims {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --purple: #7c5cff;
+        --teal: #0d9488;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    }
+
+    .ims .page-container { max-width: 1280px; margin: 0 auto; padding: 2rem 1rem; }
+    .ims.narrow .page-container { max-width: 860px; }
+    .ims .page-header { margin-bottom: 1.5rem; }
+    .ims .page-title { font-size: 1.875rem; font-weight: 700; color: var(--gray-800); margin: 0; display: inline-flex; align-items: center; gap: .65rem; }
+    .ims .page-title i { color: var(--primary); }
+    .ims .page-sub { color: var(--gray-500); margin-top: .35rem; font-size: .95rem; }
+    .ims .head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; }
+    .ims .head-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+
+    .ims .btn-back {
+        width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center;
+        background: white; border-radius: .75rem; color: var(--gray-600); text-decoration: none;
+        border: 1px solid var(--gray-200); transition: all .2s;
+    }
+    .ims .btn-back:hover { background: var(--gray-50); color: var(--primary); transform: translateX(-2px); }
+
+    .ims .btn-primary-ims, .ims .btn-outline-ims, .ims .btn-ghost-ims {
+        display: inline-flex; align-items: center; gap: .5rem; padding: .6rem 1.1rem; border-radius: .7rem;
+        font-weight: 600; font-size: .875rem; text-decoration: none; cursor: pointer; border: 1px solid transparent;
+        transition: all .2s; font-family: inherit;
+    }
+    .ims .btn-primary-ims { background: linear-gradient(100deg, var(--primary-dark), var(--primary)); color: white; box-shadow: var(--shadow-sm); }
+    .ims .btn-primary-ims:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); color: white; }
+    .ims .btn-outline-ims { background: white; color: var(--primary); border-color: var(--primary); }
+    .ims .btn-outline-ims:hover { background: var(--primary); color: white; }
+    .ims .btn-ghost-ims { background: var(--gray-100); color: var(--gray-700); }
+    .ims .btn-ghost-ims:hover { background: var(--gray-200); }
+    .ims .btn-danger-ims { background: #fef2f2; color: var(--danger); border: 1px solid #fecaca; }
+    .ims .btn-danger-ims:hover { background: var(--danger); color: white; }
+    .ims .btn-success-ims { background: #ecfdf5; color: var(--success); border: 1px solid #a7f3d0; }
+    .ims .btn-success-ims:hover { background: var(--success); color: white; }
+
+    .ims .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .ims .stat { background: white; border: 1px solid var(--gray-200); border-radius: 1rem; padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow-sm); }
+    .ims .stat .ic { width: 46px; height: 46px; border-radius: .85rem; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: white; flex-shrink: 0; }
+    .ims .stat .ic.blue { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+    .ims .stat .ic.amber { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+    .ims .stat .ic.green { background: linear-gradient(135deg, #34d399, #059669); }
+    .ims .stat .ic.red { background: linear-gradient(135deg, #f87171, #dc2626); }
+    .ims .stat .ic.purple { background: linear-gradient(135deg, #a78bfa, #7c3aed); }
+    .ims .stat .ic.teal { background: linear-gradient(135deg, #2dd4bf, #0d9488); }
+    .ims .stat h3 { font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--gray-800); }
+    .ims .stat p { margin: 0; color: var(--gray-500); font-size: .8rem; }
+
+    .ims .card { background: white; border: 1px solid var(--gray-200); border-radius: 1rem; box-shadow: var(--shadow-sm); overflow: hidden; margin-bottom: 1.5rem; }
+    .ims .card-head { background: var(--gray-50); padding: 1rem 1.25rem; border-bottom: 1px solid var(--gray-200); font-weight: 600; color: var(--gray-700); display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+    .ims .card-head .t { display: inline-flex; align-items: center; gap: .5rem; }
+    .ims .card-head .t i { color: var(--primary); }
+    .ims .card-body { padding: 1.25rem; }
+
+    .ims table.tbl { width: 100%; border-collapse: collapse; }
+    .ims table.tbl th { text-align: left; padding: .85rem 1.25rem; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--gray-500); background: var(--gray-50); border-bottom: 1px solid var(--gray-200); }
+    .ims table.tbl td { padding: .85rem 1.25rem; border-bottom: 1px solid var(--gray-100); vertical-align: middle; color: var(--gray-700); font-size: .9rem; }
+    .ims table.tbl tbody tr:hover { background: var(--gray-50); }
+    .ims table.tbl tbody tr:last-child td { border-bottom: none; }
+    .ims .docnum { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; font-size: .8rem; color: var(--gray-600); font-weight: 600; }
+
+    .ims .badge-ims { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .6rem; border-radius: 999px; font-size: .72rem; font-weight: 600; white-space: nowrap; }
+
+    /* Document lifecycle status */
+    .ims .b-draft      { background: var(--gray-100); color: var(--gray-600); }
+    .ims .b-deptreview { background: #eef2ff; color: #4338ca; }
+    .ims .b-qualreview { background: #eff6ff; color: #1d4ed8; }
+    .ims .b-approval   { background: #fdf3e1; color: #9a5b00; }
+    .ims .b-published  { background: #e9f6ee; color: #1e6b45; }
+    .ims .b-review     { background: #ecfeff; color: #0e7490; }
+    .ims .b-revision   { background: #fef3c7; color: #92400e; }
+    .ims .b-archived   { background: #f1f5f9; color: #475569; }
+    .ims .b-obsolete   { background: #fdecea; color: #b3261e; }
+    .ims .b-rejected   { background: #fdecea; color: #b3261e; }
+    .ims .b-expired    { background: #fdecea; color: #b3261e; }
+
+    /* Classification */
+    .ims .b-public       { background: #e9f6ee; color: #1e6b45; }
+    .ims .b-internal     { background: #eef2f8; color: #3d5a80; }
+    .ims .b-confidential { background: #fdf3e1; color: #9a5b00; }
+    .ims .b-restricted   { background: #fdecea; color: #b3261e; }
+
+    /* Generic severity / status scales reused across audits, CAPA, risk */
+    .ims .b-low      { background: var(--gray-100); color: var(--gray-600); }
+    .ims .b-medium   { background: #eff6ff; color: #1d4ed8; }
+    .ims .b-high     { background: #fdf3e1; color: #9a5b00; }
+    .ims .b-critical { background: #fdecea; color: #b3261e; }
+    .ims .b-open     { background: #eef2f8; color: #3d5a80; }
+    .ims .b-closed   { background: #e9f6ee; color: #1e6b45; }
+    .ims .b-overdue  { background: #fdecea; color: #b3261e; }
+    .ims .overdue { color: var(--danger); font-weight: 600; }
+
+    .ims .act-btns { display: inline-flex; gap: .4rem; }
+    .ims .act { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: .5rem; text-decoration: none; font-size: .8rem; border: none; cursor: pointer; background: var(--gray-100); transition: all .2s; }
+    .ims .act.view { color: var(--primary); } .ims .act.view:hover { background: var(--primary); color: white; }
+    .ims .act.edit { color: var(--warning); } .ims .act.edit:hover { background: var(--warning); color: white; }
+    .ims .act.del  { color: var(--danger); }  .ims .act.del:hover  { background: var(--danger); color: white; }
+
+    .ims .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+    .ims .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .ims .fg { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1rem; }
+    .ims .fg.full { grid-column: 1 / -1; }
+    .ims label.lbl { font-weight: 600; font-size: .8rem; color: var(--gray-700); display: inline-flex; align-items: center; gap: .4rem; }
+    .ims label.lbl i { color: var(--primary); }
+    .ims .req { color: var(--danger); }
+    .ims .hint { color: var(--gray-400); font-size: .75rem; }
+    .ims .inp, .ims select.inp, .ims textarea.inp {
+        width: 100%; padding: .65rem .8rem; font-size: .875rem; border: 1.5px solid var(--gray-200);
+        border-radius: .65rem; font-family: inherit; background: white; transition: all .2s; color: var(--gray-800);
+    }
+    .ims .inp:focus, .ims select.inp:focus, .ims textarea.inp:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,.1); }
+    .ims textarea.inp { resize: vertical; }
+    .ims .form-actions { display: flex; gap: .75rem; padding-top: 1rem; border-top: 1px solid var(--gray-200); margin-top: .5rem; }
+
+    /* Definition list for detail views */
+    .ims .dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem 1.75rem; }
+    .ims .dl .k { font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; color: var(--gray-400); margin-bottom: .15rem; }
+    .ims .dl .v { color: var(--gray-800); font-size: .92rem; font-weight: 500; }
+
+    /* Approval-workflow stepper (Draft → Dept → Quality → Approval → Published → …) */
+    .ims .wf-steps { display: flex; flex-wrap: wrap; gap: .25rem; margin: .25rem 0 1rem; }
+    .ims .wf-step { position: relative; flex: 1 1 0; min-width: 110px; text-align: center; padding: .55rem .5rem; background: var(--gray-100); color: var(--gray-500); font-size: .72rem; font-weight: 600; }
+    .ims .wf-step:first-child { border-radius: .5rem 0 0 .5rem; }
+    .ims .wf-step:last-child { border-radius: 0 .5rem .5rem 0; }
+    .ims .wf-step .n { display: block; font-size: 1rem; margin-bottom: .1rem; }
+    .ims .wf-step.done { background: #e9f6ee; color: #1e6b45; }
+    .ims .wf-step.active { background: linear-gradient(100deg, var(--primary-dark), var(--primary)); color: white; }
+
+    /* Acknowledgement / completion progress bar */
+    .ims .progress-ims { height: 10px; background: var(--gray-100); border-radius: 999px; overflow: hidden; }
+    .ims .progress-ims > span { display: block; height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-dark)); border-radius: 999px; }
+    .ims .progress-ims.green > span { background: linear-gradient(90deg, #34d399, #059669); }
+    .ims .progress-ims.amber > span { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+
+    .ims .empty { text-align: center; padding: 3rem 1rem; color: var(--gray-500); }
+    .ims .empty i { font-size: 3.25rem; color: var(--gray-200); margin-bottom: 1rem; display: block; }
+    .ims .empty h3 { font-size: 1.15rem; margin: 0 0 1rem; color: var(--gray-700); }
+
+    .ims .meta { color: var(--gray-500); font-size: .8rem; }
+    .ims .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--primary); color: white; display: inline-flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; }
+    .ims .with-avatar { display: inline-flex; align-items: center; gap: .5rem; }
+
+    /* Filter / toolbar row above tables */
+    .ims .toolbar { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-bottom: 1rem; }
+    .ims .toolbar .inp { width: auto; min-width: 180px; }
+
+    @@media (max-width: 760px) {
+        .ims .form-grid, .ims .form-grid.three { grid-template-columns: 1fr; }
+        .ims .form-actions { flex-direction: column; }
+        .ims table.tbl { display: block; overflow-x: auto; white-space: nowrap; }
+        .ims .wf-step { min-width: 84px; }
+    }
+</style>

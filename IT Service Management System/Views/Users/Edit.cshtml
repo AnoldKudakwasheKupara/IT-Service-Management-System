@@ -81,42 +81,38 @@
                                 <i class="fas fa-info-circle"></i> User will use this email to login
                             </div>
                         </div>
+
+                        <div class="form-group-modern">
+                            <label asp-for="Phone" class="form-label">
+                                <i class="fas fa-phone"></i>
+                                Phone Number
+                            </label>
+                            <div class="input-icon-wrapper">
+                                <i class="fas fa-mobile-alt input-icon"></i>
+                                <input asp-for="Phone" class="form-control-modern" placeholder="e.g. +1 555 123 4567" type="tel" />
+                            </div>
+                            <span asp-validation-for="Phone" class="validation-message text-danger"></span>
+                        </div>
                     </div>
 
                     <!-- Right Column -->
                     <div class="form-column">
                         <div class="form-group-modern">
-                            <label asp-for="PasswordHash" class="form-label">
+                            <label class="form-label">
                                 <i class="fas fa-lock"></i>
                                 Password
                             </label>
-                            <div class="input-icon-wrapper">
-                                <i class="fas fa-key input-icon"></i>
-                                <input asp-for="PasswordHash" type="password" class="form-control-modern" placeholder="Leave blank to keep current password" id="password" />
-                                <button type="button" class="password-toggle" id="togglePassword">
-                                    <i class="far fa-eye-slash"></i>
-                                </button>
+                            <div class="password-readonly-panel">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>For security, administrators cannot view or set a user's password.</span>
                             </div>
-                            <span asp-validation-for="PasswordHash" class="validation-message text-danger"></span>
+                            <!-- Submits the separate #resetPasswordForm below (kept outside #editUserForm — forms can't nest in HTML). -->
+                            <button type="submit" form="resetPasswordForm" class="btn-reset-password">
+                                <i class="fas fa-paper-plane"></i>
+                                Reset Password (send email link)
+                            </button>
                             <div class="form-hint">
-                                <i class="fas fa-info-circle"></i> Leave blank to keep the current password
-                            </div>
-                        </div>
-
-                        <div class="form-group-modern" id="confirmPasswordGroup" style="display: none;">
-                            <label class="form-label">
-                                <i class="fas fa-check-circle"></i>
-                                Confirm New Password
-                            </label>
-                            <div class="input-icon-wrapper">
-                                <i class="fas fa-redo-alt input-icon"></i>
-                                <input type="password" class="form-control-modern" placeholder="Confirm new password" id="confirmPassword" />
-                                <button type="button" class="password-toggle" id="toggleConfirmPassword">
-                                    <i class="far fa-eye-slash"></i>
-                                </button>
-                            </div>
-                            <div id="passwordMatchError" class="validation-message text-danger" style="display: none;">
-                                <i class="fas fa-times-circle"></i> Passwords do not match
+                                <i class="fas fa-info-circle"></i> Emails the user a one-time link to set a new password
                             </div>
                         </div>
 
@@ -214,7 +210,7 @@
                         </div>
                         <div class="tip-item">
                             <i class="fas fa-check-circle"></i>
-                            <span>Leave password blank to keep existing password</span>
+                            <span>Use "Reset Password" to email the user a secure reset link</span>
                         </div>
                         <div class="tip-item">
                             <i class="fas fa-check-circle"></i>
@@ -236,15 +232,20 @@
                 </div>
             </div>
         </form>
+
+        <form id="resetPasswordForm" asp-action="ResetPassword" asp-controller="Users" method="post" style="display:none;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@Model.Id" />
+        </form>
     </div>
 </div>
 
 <style>
     /* Edit User Page Specific Styles */
     :root {
-        --primary-dark: #1e4c6b;
-        --primary: #2c7da0;
-        --primary-light: #61a5c2;
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
         --success: #2c9e6e;
         --warning: #f5b042;
         --danger: #e53e3e;
@@ -412,7 +413,7 @@
         .form-control-modern:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
         }
 
     /* Select Styling */
@@ -434,7 +435,7 @@
             .select-wrapper select:focus {
                 outline: none;
                 border-color: var(--primary);
-                box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.1);
+                box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
             }
 
     .select-icon {
@@ -448,23 +449,44 @@
     }
 
     /* Password Toggle */
-    .password-toggle {
-        position: absolute;
-        right: 0.75rem;
-        top: 50%;
-        transform: translateY(-50%);
-        background: none;
-        border: none;
-        color: var(--gray-400);
-        cursor: pointer;
-        padding: 0;
+    /* Read-only password panel + admin reset button */
+    .password-readonly-panel {
         display: flex;
         align-items: center;
-        justify-content: center;
+        gap: 0.6rem;
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+        color: var(--gray-600);
     }
 
-        .password-toggle:hover {
-            color: var(--primary);
+        .password-readonly-panel i {
+            color: var(--warning);
+        }
+
+    .btn-reset-password {
+        width: 100%;
+        margin-top: 0.5rem;
+        background: white;
+        color: var(--primary);
+        border: 1.5px solid var(--primary);
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.2s;
+    }
+
+        .btn-reset-password:hover {
+            background: var(--primary);
+            color: white;
         }
 
     /* Validation Messages */
@@ -598,80 +620,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Password visibility toggles
-        const passwordInput = document.getElementById('password');
-        const confirmPasswordGroup = document.getElementById('confirmPasswordGroup');
-        const confirmPasswordInput = document.getElementById('confirmPassword');
-        const togglePassword = document.getElementById('togglePassword');
-        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
-        const passwordMatchError = document.getElementById('passwordMatchError');
-
-        // Show confirm password field when user starts typing in password field
-        if (passwordInput) {
-            passwordInput.addEventListener('input', function() {
-                if (this.value.length > 0) {
-                    confirmPasswordGroup.style.display = 'block';
-                } else {
-                    confirmPasswordGroup.style.display = 'none';
-                    if (confirmPasswordInput) confirmPasswordInput.value = '';
-                    if (passwordMatchError) passwordMatchError.style.display = 'none';
-                }
-            });
-        }
-
-        // Password visibility toggle for main password
-        if (togglePassword && passwordInput) {
-            togglePassword.addEventListener('click', function() {
-                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                passwordInput.setAttribute('type', type);
-
-                const icon = this.querySelector('i');
-                if (type === 'text') {
-                    icon.classList.remove('fa-eye-slash');
-                    icon.classList.add('fa-eye');
-                } else {
-                    icon.classList.remove('fa-eye');
-                    icon.classList.add('fa-eye-slash');
-                }
-            });
-        }
-
-        // Password visibility toggle for confirm password
-        if (toggleConfirmPassword && confirmPasswordInput) {
-            toggleConfirmPassword.addEventListener('click', function() {
-                const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                confirmPasswordInput.setAttribute('type', type);
-
-                const icon = this.querySelector('i');
-                if (type === 'text') {
-                    icon.classList.remove('fa-eye-slash');
-                    icon.classList.add('fa-eye');
-                } else {
-                    icon.classList.remove('fa-eye');
-                    icon.classList.add('fa-eye-slash');
-                }
-            });
-        }
-
-        // Password match validation
-        if (confirmPasswordInput && passwordInput) {
-            function checkPasswordMatch() {
-                if (confirmPasswordGroup.style.display === 'block' && confirmPasswordInput.value.length > 0) {
-                    if (passwordInput.value !== confirmPasswordInput.value) {
-                        passwordMatchError.style.display = 'flex';
-                        return false;
-                    } else {
-                        passwordMatchError.style.display = 'none';
-                        return true;
-                    }
-                }
-                return true;
-            }
-
-            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-            passwordInput.addEventListener('input', checkPasswordMatch);
-        }
-
         // Role selection description
         const roleSelect = document.getElementById('roleSelect');
         const roleDescription = document.getElementById('roleDescription');
@@ -706,16 +654,6 @@
 
         if (form) {
             form.addEventListener('submit', function(e) {
-                // Check password match if password is being changed
-                if (passwordInput && passwordInput.value.length > 0) {
-                    if (confirmPasswordInput.value !== passwordInput.value) {
-                        e.preventDefault();
-                        passwordMatchError.style.display = 'flex';
-                        confirmPasswordInput.focus();
-                        return false;
-                    }
-                }
-
                 // Validate required fields
                 const firstName = document.querySelector('[name="FirstName"]').value.trim();
                 const lastName = document.querySelector('[name="LastName"]').value.trim();

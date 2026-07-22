@@ -1,0 +1,822 @@
+@model IT_Service_Management_System.Models.Itsm.ChangeRequest
+@using IT_Service_Management_System.Models.Itsm
+
+@{
+    ViewData["Title"] = $"{Model.ChangeRef} - Change";
+
+    var typeBadge = Model.Type switch
+    {
+        ChangeType.Emergency => "badge-critical",
+        ChangeType.Normal => "badge-primary",
+        _ => "badge-gray"
+    };
+    var riskBadge = Model.Risk switch
+    {
+        ChangeRisk.High => "badge-critical",
+        ChangeRisk.Medium => "badge-warning",
+        _ => "badge-success"
+    };
+    var impactBadge = Model.Impact switch
+    {
+        ChangeImpact.High => "badge-critical",
+        ChangeImpact.Medium => "badge-warning",
+        _ => "badge-success"
+    };
+    var statusBadge = Model.Status switch
+    {
+        ChangeStatus.Draft => "badge-gray",
+        ChangeStatus.SubmittedForApproval => "badge-warning",
+        ChangeStatus.Approved => "badge-primary",
+        ChangeStatus.Scheduled => "badge-primary",
+        ChangeStatus.InProgress => "badge-warning",
+        ChangeStatus.Implemented => "badge-success",
+        ChangeStatus.Closed => "badge-success",
+        ChangeStatus.Rejected => "badge-critical",
+        ChangeStatus.Failed => "badge-critical",
+        ChangeStatus.Cancelled => "badge-critical",
+        _ => "badge-gray"
+    };
+    var isActionable = Model.Status is ChangeStatus.Approved or ChangeStatus.Scheduled or ChangeStatus.InProgress;
+    var isFinished = Model.Status is ChangeStatus.Closed or ChangeStatus.Failed or ChangeStatus.Rejected or ChangeStatus.Cancelled;
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <a asp-action="Index" class="btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-code-branch me-2" style="color: var(--primary);"></i>
+                        <span class="doc-number">@Model.ChangeRef</span>
+                    </h1>
+                    <p class="text-muted mt-1" style="font-size:0.95rem;">@Model.Title</p>
+                </div>
+            </div>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-create-ticket" style="background: var(--gray-100); color: var(--gray-700);">
+                <i class="fas fa-pencil-alt"></i>
+                Edit
+            </a>
+        </div>
+    </div>
+
+    <!-- FLASH MESSAGES -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert-flash success">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert-flash danger">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+        </div>
+    }
+
+    <!-- BADGES STRIP -->
+    <div class="badges-strip">
+        <span class="status-badge @typeBadge">
+            <i class="fas fa-tag"></i> @Model.Type
+        </span>
+        <span class="status-badge @riskBadge">
+            <i class="fas fa-triangle-exclamation"></i> Risk: @Model.Risk
+        </span>
+        <span class="status-badge @impactBadge">
+            <i class="fas fa-bolt"></i> Impact: @Model.Impact
+        </span>
+        <span class="status-badge @statusBadge">
+            <i class="fas fa-chart-simple"></i> @Model.Status
+        </span>
+    </div>
+
+    <!-- TWO COLUMN GRID -->
+    <div class="two-col-grid">
+        <!-- LEFT COLUMN: Details -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-circle-info me-2" style="color: var(--primary);"></i>
+                <span>Change Details</span>
+            </div>
+            <div class="card-body-custom">
+                <!-- Description -->
+                <div class="field-section">
+                    <div class="field-label"><i class="fas fa-align-left" style="color:var(--primary);"></i> Description</div>
+                    <div class="field-value description-text">@Model.Description</div>
+                </div>
+
+                <!-- Plans -->
+                @foreach (var plan in new[] {
+                    ("Implementation Plan", "fa-list-check", Model.ImplementationPlan),
+                    ("Backout Plan", "fa-rotate-left", Model.BackoutPlan),
+                    ("Test Plan", "fa-vial", Model.TestPlan) })
+                {
+                    <div class="field-section">
+                        <div class="field-label"><i class="fas @plan.Item2" style="color:var(--primary);"></i> @plan.Item1</div>
+                        <div class="field-value">
+                            @if (!string.IsNullOrWhiteSpace(plan.Item3))
+                            {
+                                @plan.Item3
+                            }
+                            else
+                            {
+                                <span style="color:var(--gray-400);font-style:italic;">Not provided</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Details Grid -->
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Scheduled Window</div>
+                        <div class="detail-value">
+                            @if (Model.ScheduledStart != null)
+                            {
+                                @Model.ScheduledStart.Value.ToString("MMM dd, yyyy HH:mm")
+                                <text> → </text>
+                                @(Model.ScheduledEnd?.ToString("MMM dd, yyyy HH:mm") ?? "—")
+                            }
+                            else
+                            {
+                                <span style="color:var(--gray-400);font-style:italic;">Not scheduled</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Configuration Item</div>
+                        <div class="detail-value">@(Model.ConfigurationItem?.Name ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Linked Problem</div>
+                        <div class="detail-value">
+                            @if (Model.Problem != null)
+                            {
+                                <a href="/Problems/Details/@Model.ProblemId" class="doc-link">
+                                    <span class="doc-number">@Model.Problem.Title</span>
+                                </a>
+                            }
+                            else
+                            {
+                                <text>—</text>
+                            }
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Assignee</div>
+                        <div class="detail-value">@(Model.AssignedTo != null ? $"{Model.AssignedTo.FirstName} {Model.AssignedTo.LastName}" : "Unassigned")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Created By</div>
+                        <div class="detail-value">@(Model.CreatedBy != null ? $"{Model.CreatedBy.FirstName} {Model.CreatedBy.LastName}" : "—") · @Model.CreatedAt.ToString("MMM dd, yyyy")</div>
+                    </div>
+                    @if (Model.ApprovedBy != null || Model.ApprovedAt != null)
+                    {
+                        <div class="detail-item">
+                            <div class="detail-label">Approver</div>
+                            <div class="detail-value">
+                                @(Model.ApprovedBy != null ? $"{Model.ApprovedBy.FirstName} {Model.ApprovedBy.LastName}" : "—")
+                                @if (Model.ApprovedAt != null)
+                                {
+                                    <text> · @Model.ApprovedAt.Value.ToString("MMM dd, yyyy")</text>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Approval Notes -->
+                @if (!string.IsNullOrWhiteSpace(Model.ApprovalNotes))
+                {
+                    <div class="field-section" style="border-top:1px solid var(--gray-200);padding-top:1rem;">
+                        <div class="field-label"><i class="fas fa-sticky-note" style="color:var(--gray-400);"></i> Approval / Closure Notes</div>
+                        <div class="field-value">@Model.ApprovalNotes</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Workflow -->
+        <div class="data-card">
+            <div class="card-header-custom" style="border-left: 4px solid var(--primary);">
+                <i class="fas fa-diagram-project me-2" style="color: var(--primary);"></i>
+                <span>Workflow</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="workflow-actions">
+                    @if (Model.Status == ChangeStatus.Draft)
+                    {
+                        <form asp-action="Submit" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <p class="workflow-hint">This change is a draft. Submit it to request approval.</p>
+                            <button type="submit" class="btn-primary-full">
+                                <i class="fas fa-paper-plane"></i> Submit for Approval
+                            </button>
+                        </form>
+                    }
+                    else if (Model.Status == ChangeStatus.SubmittedForApproval)
+                    {
+                        <p class="workflow-hint">This change is awaiting approval.</p>
+
+                        <form asp-action="Approve" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="approve" value="true" />
+                            <div class="form-group">
+                                <label class="form-label-sm">Approval Notes</label>
+                                <textarea name="notes" class="form-control" rows="2" placeholder="Optional notes for approval"></textarea>
+                            </div>
+                            <button type="submit" class="btn-success-full">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                        </form>
+
+                        <form asp-action="Approve" method="post" class="workflow-divider">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <input type="hidden" name="approve" value="false" />
+                            <div class="form-group">
+                                <label class="form-label-sm">Rejection Reason</label>
+                                <textarea name="notes" class="form-control" rows="2" placeholder="Why is this change rejected?"></textarea>
+                            </div>
+                            <button type="submit" class="btn-danger-full">
+                                <i class="fas fa-xmark"></i> Reject
+                            </button>
+                        </form>
+                    }
+                    else if (isActionable)
+                    {
+                        <form asp-action="SetStatus" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <div class="form-group">
+                                <label class="form-label-sm">Update Status</label>
+                                <select name="status" class="form-control">
+                                    <option value="@ChangeStatus.Scheduled" selected="@(Model.Status == ChangeStatus.Scheduled)">Scheduled</option>
+                                    <option value="@ChangeStatus.InProgress" selected="@(Model.Status == ChangeStatus.InProgress)">In Progress</option>
+                                    <option value="@ChangeStatus.Implemented">Implemented</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-primary-full">
+                                <i class="fas fa-arrows-rotate"></i> Update Status
+                            </button>
+                        </form>
+
+                        <form asp-action="Close" method="post" class="workflow-divider">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <div class="form-group">
+                                <label class="form-label-sm">Close Change</label>
+                                <select name="successful" class="form-control">
+                                    <option value="true">Successful</option>
+                                    <option value="false">Failed</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label-sm">Closure Notes</label>
+                                <textarea name="notes" class="form-control" rows="2" placeholder="Closure notes (optional)"></textarea>
+                            </div>
+                            <button type="submit" class="btn-secondary-full">
+                                <i class="fas fa-lock"></i> Close Change
+                            </button>
+                        </form>
+                    }
+                    else if (isFinished)
+                    {
+                        <div class="workflow-finished">
+                            <span class="status-badge @statusBadge" style="font-size:0.9rem;padding:0.4rem 1rem;">
+                                <i class="fas fa-flag-checkered"></i> @Model.Status
+                            </span>
+                            <p class="workflow-hint">This change is finalized. No further actions are available.</p>
+                            @if (Model.ImplementedSuccessfully != null)
+                            {
+                                <span class="status-badge @(Model.ImplementedSuccessfully == true ? "badge-success" : "badge-critical")">
+                                    <i class="fas @(Model.ImplementedSuccessfully == true ? "fa-circle-check" : "fa-circle-xmark")"></i>
+                                    @(Model.ImplementedSuccessfully == true ? "Implemented Successfully" : "Implementation Failed")
+                                </span>
+                            }
+                            @if (Model.ClosedAt != null)
+                            {
+                                <p class="workflow-meta">Closed @Model.ClosedAt.Value.ToString("MMM dd, yyyy HH:mm")</p>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="workflow-hint" style="text-align:center;">No workflow actions available for this status.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 1.2rem;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-primary-full,
+    .btn-success-full,
+    .btn-danger-full,
+    .btn-secondary-full {
+        width: 100%;
+        padding: 0.65rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .btn-primary-full {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+    }
+
+        .btn-primary-full:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-success-full {
+        background: linear-gradient(100deg, #227a55, var(--success));
+        color: white;
+    }
+
+        .btn-success-full:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-danger-full {
+        background: linear-gradient(100deg, #dc2626, var(--danger));
+        color: white;
+    }
+
+        .btn-danger-full:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-secondary-full {
+        background: linear-gradient(100deg, var(--gray-600), var(--gray-500));
+        color: white;
+    }
+
+        .btn-secondary-full:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    /* ===== ALERT FLASH ===== */
+    .alert-flash {
+        padding: 0.9rem 1.2rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: 1px solid transparent;
+    }
+
+        .alert-flash.success {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #166534;
+        }
+
+        .alert-flash.danger {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+        .alert-flash i {
+            font-size: 1.1rem;
+        }
+
+    /* ===== BADGES STRIP ===== */
+    .badges-strip {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-primary {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    /* ===== TWO COLUMN GRID ===== */
+    .two-col-grid {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 1.5rem;
+    }
+
+    /* ===== FIELD SECTIONS ===== */
+    .field-section {
+        margin-bottom: 1.25rem;
+    }
+
+        .field-section:last-child {
+            margin-bottom: 0;
+        }
+
+    .field-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .field-value {
+        font-size: 0.9rem;
+        color: var(--gray-700);
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    .description-text {
+        background: var(--gray-50);
+        padding: 1rem;
+        border-radius: 0.75rem;
+        margin-top: 0.1rem;
+    }
+
+    /* ===== DETAILS GRID ===== */
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem 1.5rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid var(--gray-200);
+        margin-top: 1.25rem;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .detail-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .detail-value {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    /* ===== DOC LINK ===== */
+    .doc-link {
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+        .doc-link:hover {
+            text-decoration: none;
+        }
+
+    /* ===== WORKFLOW ===== */
+    .workflow-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .workflow-hint {
+        font-size: 0.85rem;
+        color: var(--gray-600);
+        margin: 0;
+    }
+
+    .workflow-divider {
+        border-top: 1px solid var(--gray-200);
+        padding-top: 1.25rem;
+    }
+
+    .workflow-finished {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .workflow-meta {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        margin: 0;
+    }
+
+    .workflow-actions .form-group {
+        margin-bottom: 0.75rem;
+    }
+
+        .workflow-actions .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+    .workflow-actions .form-label-sm {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
+    .workflow-actions .form-control {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.85rem;
+        font-family: inherit;
+        transition: all 0.2s;
+        background: white;
+    }
+
+        .workflow-actions .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+    .workflow-actions select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 0.75rem;
+        padding-right: 2rem;
+        cursor: pointer;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .two-col-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .doc-number {
+            font-size: 1rem;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .badges-strip {
+            gap: 0.35rem;
+        }
+
+        .status-badge {
+            font-size: 0.65rem;
+            padding: 0.2rem 0.6rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .btn-primary-full,
+        .btn-success-full,
+        .btn-danger-full,
+        .btn-secondary-full {
+            font-size: 0.8rem;
+            padding: 0.55rem 1.25rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .doc-number {
+            font-size: 0.9rem;
+        }
+
+        .field-value {
+            font-size: 0.8rem;
+        }
+
+        .detail-value {
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .workflow-actions .form-control {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.6rem;
+        }
+    }
+</style>

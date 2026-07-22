@@ -8,6 +8,7 @@ using static IT_Service_Management_System.Models.Ticket;
 
 namespace IT_Service_Management_System.Controllers
 {
+    [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin", "HR")]
     public class ExitClearanceController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -17,17 +18,137 @@ namespace IT_Service_Management_System.Controllers
             _context = context;
         }
 
+        // 👤 The current user's own exit clearance — visible to every role.
         [HttpGet]
-        public IActionResult Index()
+        [IT_Service_Management_System.Filters.AllowAnyRole]
+        public IActionResult Mine()
         {
-            var clearances = _context.ExitClearances
-                .Include(x => x.Employee)
-                .OrderByDescending(x => x.CreatedDate)
-                .ToList();
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return RedirectToAction("Login", "Account");
 
+            var clearances = _context.ExitClearances
+                .Include(c => c.Employee)
+                .Include(c => c.Workflows)
+                .Where(c => c.EmployeeId == userId)
+                .OrderByDescending(c => c.CreatedDate)
+                .ToList();
 
             return View(clearances);
         }
+
+        [HttpGet]
+        public IActionResult Index()
+        {
+            var role = GetCurrentUserRole();
+
+            if (role == UserRole.Finance ||
+                role == UserRole.Development ||
+                role == UserRole.Employee)
+            {
+                return RedirectToAction(nameof(Pending));
+            }
+
+            var clearances = _context.ExitClearances
+                .Include(x => x.Employee)
+                .OrderByDescending(x => x.Id)
+                .ToList();
+
+            return View(clearances);
+        }
+
+
+        private UserRole GetCurrentUserRole()
+        {
+            var userId = GetCurrentUserId();
+
+            return _context.Users
+                .Where(x => x.Id == userId)
+                .Select(x => x.Role)
+                .FirstOrDefault();
+        }
+
+
+        [HttpGet]
+        [HttpGet]
+        public IActionResult Pending()
+        {
+            var userId = GetCurrentUserId();
+
+            var user = _context.Users
+                .FirstOrDefault(x => x.Id == userId);
+
+            if (user == null)
+                return Unauthorized();
+
+            List<ExitClearance> clearances = new();
+
+            switch (user.Role)
+            {
+                case UserRole.Finance:
+
+                    clearances = _context.ExitClearances
+                        .Include(x => x.Employee)
+                        .Where(x =>
+                            x.CurrentStage == ClearanceStage.Finance &&
+                            x.Status != ClearanceStatus.Completed)
+                        .ToList();
+
+                    break;
+
+                case UserRole.SystemsAdmin:
+
+                    clearances = _context.ExitClearances
+                        .Include(x => x.Employee)
+                        .Where(x =>
+                            x.CurrentStage == ClearanceStage.SystemsAdmin &&
+                            x.Status != ClearanceStatus.Completed)
+                        .ToList();
+
+                    break;
+
+                case UserRole.Development:
+
+                    clearances = _context.ExitClearances
+                        .Include(x => x.Employee)
+                        .Where(x =>
+                            x.CurrentStage == ClearanceStage.Development &&
+                            x.Status != ClearanceStatus.Completed)
+                        .ToList();
+
+                    break;
+
+                case UserRole.HR:
+
+                    clearances = _context.ExitClearances
+                        .Include(x => x.Employee)
+                        .Where(x =>
+                            x.CurrentStage == ClearanceStage.HR &&
+                            x.Status != ClearanceStatus.Completed)
+                        .ToList();
+
+                    break;
+
+                case UserRole.Employee:
+
+                    clearances = _context.ExitClearances
+                        .Include(x => x.Employee)
+                        .Where(x =>
+                            x.CurrentStage == ClearanceStage.Employee &&
+                            x.Status != ClearanceStatus.Completed)
+                        .ToList();
+
+                    break;
+
+                default:
+
+                    clearances = new List<ExitClearance>();
+
+                    break;
+            }
+
+            return View(clearances);
+        }
+
 
         public IActionResult Open(int id)
         {
@@ -77,7 +198,10 @@ namespace IT_Service_Management_System.Controllers
         }
 
 
-        [HttpGet]
+        // State-relevant action that surfaces the employee access-token link — must be POST,
+        // not a GET (no CSRF / link-prefetch side effects).
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Send(int id)
         {
             var clearance = _context.ExitClearances
@@ -96,7 +220,7 @@ namespace IT_Service_Management_System.Controllers
             // Email logic here
 
             TempData["Success"] =
-                $"Clearance sent to {clearance.Employee.Email}";
+                $"Clearance sent to {clearance.Employee?.Email}";
 
             return RedirectToAction(nameof(Index));
         }
@@ -158,19 +282,20 @@ namespace IT_Service_Management_System.Controllers
         }
 
         [HttpGet]
+        [IT_Service_Management_System.Filters.AllowAnyRole]
         public IActionResult Complete(string id)
         {
             var clearance = _context.ExitClearances
                 .Include(x => x.Employee)
                 .FirstOrDefault(x => x.AccessToken == id);
 
-            if (clearance == null)
+            if (clearance == null || clearance.Employee == null)
                 return NotFound();
 
             var vm = new EmployeeClearanceVM
             {
                 ExitClearanceId = clearance.Id,
-                AccessToken = clearance.AccessToken,
+                AccessToken = clearance.AccessToken ?? string.Empty,
 
                 Surname = clearance.Employee.LastName,
                 Email = clearance.Employee.Email,
@@ -185,6 +310,7 @@ namespace IT_Service_Management_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [IT_Service_Management_System.Filters.AllowAnyRole]
         public IActionResult Complete(EmployeeClearanceVM vm)
         {
             if (!ModelState.IsValid)
@@ -367,6 +493,12 @@ namespace IT_Service_Management_System.Controllers
             var systemsAdmin = _context.Users
                 .FirstOrDefault(x =>
                     x.Role == UserRole.SystemsAdmin);
+
+            if (systemsAdmin == null)
+            {
+                TempData["Error"] = "No Systems Admin user is configured to receive this clearance.";
+                return RedirectToAction(nameof(Index));
+            }
 
             clearance.CurrentStage = ClearanceStage.SystemsAdmin;
 
@@ -602,10 +734,10 @@ namespace IT_Service_Management_System.Controllers
         {
             var clearance = _context.ExitClearances
                 .Include(x => x.Employee)
-                    .ThenInclude(x => x.Supervisor)
+                    .ThenInclude(x => x!.Supervisor)
                 .Include(x => x.Employee)
-                    .ThenInclude(x => x.Department)
-                        .ThenInclude(x => x.Hod)
+                    .ThenInclude(x => x!.Department)
+                        .ThenInclude(x => x!.Hod)
                 .FirstOrDefault(x => x.Id == model.ExitClearanceId);
 
             if (clearance == null)
@@ -672,7 +804,7 @@ namespace IT_Service_Management_System.Controllers
             }
 
             // Route to Supervisor if configured
-            var supervisor = clearance.Employee.Supervisor;
+            var supervisor = clearance.Employee?.Supervisor;
 
             if (supervisor != null)
             {
@@ -691,7 +823,7 @@ namespace IT_Service_Management_System.Controllers
             {
                 // No supervisor, send directly to HOD
 
-                var hod = clearance.Employee.Department?.Hod;
+                var hod = clearance.Employee?.Department?.Hod;
 
                 if (hod == null)
                 {
@@ -774,8 +906,8 @@ namespace IT_Service_Management_System.Controllers
         {
             var clearance = _context.ExitClearances
                 .Include(x => x.Employee)
-                    .ThenInclude(x => x.Department)
-                        .ThenInclude(x => x.Hod)
+                    .ThenInclude(x => x!.Department)
+                        .ThenInclude(x => x!.Hod)
                 .FirstOrDefault(x => x.Id == model.ExitClearanceId);
 
             if (clearance == null)
@@ -810,7 +942,7 @@ namespace IT_Service_Management_System.Controllers
                 workflow.CompletedDate = DateTime.Now;
             }
 
-            var hod = clearance.Employee.Department?.Hod;
+            var hod = clearance.Employee?.Department?.Hod;
 
             if (hod == null)
             {
@@ -964,7 +1096,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpGet]
         public IActionResult HrQueue()
         {
-            var userId = GetCurrentUserId(); // replace with your implementation
+            var userId = GetCurrentUserId(); 
 
             var clearances = _context.ExitClearances
                 .Include(x => x.Employee)
@@ -1022,23 +1154,79 @@ namespace IT_Service_Management_System.Controllers
 
             if (existing == null)
             {
-                existing = model;
+                existing = new HrApproval
+                {
+                    ExitClearanceId = model.ExitClearanceId,
+
+                    ResignationLetterReceived = model.ResignationLetterReceived,
+                    ResignationLetterReceivedBy = model.ResignationLetterReceivedBy,
+                    ResignationLetterDate = model.ResignationLetterDate,
+
+                    StaffIdReturned = model.StaffIdReturned,
+                    StaffIdReceivedBy = model.StaffIdReceivedBy,
+                    StaffIdDate = model.StaffIdDate,
+
+                    MedicalAidCancelled = model.MedicalAidCancelled,
+                    MedicalAidReceivedBy = model.MedicalAidReceivedBy,
+                    MedicalAidDate = model.MedicalAidDate,
+
+                    NSSACancelled = model.NSSACancelled,
+                    NSSAReceivedBy = model.NSSAReceivedBy,
+                    NSSADate = model.NSSADate,
+
+                    FuneralPolicyCancelled = model.FuneralPolicyCancelled,
+                    FuneralPolicyReceivedBy = model.FuneralPolicyReceivedBy,
+                    FuneralPolicyDate = model.FuneralPolicyDate,
+
+                    ExitInterviewCompleted = model.ExitInterviewCompleted,
+                    ExitInterviewReceivedBy = model.ExitInterviewReceivedBy,
+                    ExitInterviewDate = model.ExitInterviewDate,
+
+                    HandoverReportSubmitted = model.HandoverReportSubmitted,
+                    HandoverReportReceivedBy = model.HandoverReportReceivedBy,
+                    HandoverReportDate = model.HandoverReportDate,
+
+                    Comments = model.Comments,
+
+                    ApprovedDate = DateTime.Now
+                };
+
                 _context.HrApprovals.Add(existing);
             }
             else
             {
                 existing.ResignationLetterReceived = model.ResignationLetterReceived;
-                existing.StaffIdCardReturned = model.StaffIdCardReturned;
-                existing.MedicalAidCancelled = model.MedicalAidCancelled;
-                existing.NSSACancelled = model.NSSACancelled;
-                existing.FuneralPolicyCancelled = model.FuneralPolicyCancelled;
-                existing.ExitInterviewCompleted = model.ExitInterviewCompleted;
-                existing.HandoverReportSubmitted = model.HandoverReportSubmitted;
-                existing.Comments = model.Comments;
-                existing.Approved = model.Approved;
-            }
+                existing.ResignationLetterReceivedBy = model.ResignationLetterReceivedBy;
+                existing.ResignationLetterDate = model.ResignationLetterDate;
 
-            existing.ApprovedDate = DateTime.Now;
+                existing.StaffIdReturned = model.StaffIdReturned;
+                existing.StaffIdReceivedBy = model.StaffIdReceivedBy;
+                existing.StaffIdDate = model.StaffIdDate;
+
+                existing.MedicalAidCancelled = model.MedicalAidCancelled;
+                existing.MedicalAidReceivedBy = model.MedicalAidReceivedBy;
+                existing.MedicalAidDate = model.MedicalAidDate;
+
+                existing.NSSACancelled = model.NSSACancelled;
+                existing.NSSAReceivedBy = model.NSSAReceivedBy;
+                existing.NSSADate = model.NSSADate;
+
+                existing.FuneralPolicyCancelled = model.FuneralPolicyCancelled;
+                existing.FuneralPolicyReceivedBy = model.FuneralPolicyReceivedBy;
+                existing.FuneralPolicyDate = model.FuneralPolicyDate;
+
+                existing.ExitInterviewCompleted = model.ExitInterviewCompleted;
+                existing.ExitInterviewReceivedBy = model.ExitInterviewReceivedBy;
+                existing.ExitInterviewDate = model.ExitInterviewDate;
+
+                existing.HandoverReportSubmitted = model.HandoverReportSubmitted;
+                existing.HandoverReportReceivedBy = model.HandoverReportReceivedBy;
+                existing.HandoverReportDate = model.HandoverReportDate;
+
+                existing.Comments = model.Comments;
+
+                existing.ApprovedDate = DateTime.Now;
+            }
 
             var workflow = _context.ClearanceWorkflows
                 .FirstOrDefault(x =>
@@ -1059,6 +1247,7 @@ namespace IT_Service_Management_System.Controllers
 
             return RedirectToAction(nameof(HrQueue));
         }
+
 
         [HttpGet]
         public IActionResult Details(int id)
@@ -1104,7 +1293,126 @@ namespace IT_Service_Management_System.Controllers
             return View(vm);
         }
 
+        [HttpGet]
+        public IActionResult Edit(int id)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == id);
 
+            if (clearance == null)
+                return NotFound();
+
+            var vm = new CreateExitClearanceVM
+            {
+                EmployeeId = clearance.EmployeeId,
+
+                Employees = _context.Users
+                    .Where(x => x.IsActive)
+                    .Select(x => new SelectListItem
+                    {
+                        Value = x.Id.ToString(),
+                        Text = x.FirstName + " " + x.LastName
+                    })
+                    .ToList()
+            };
+
+            ViewBag.ClearanceId = clearance.Id;
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(int id, CreateExitClearanceVM vm)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            clearance.EmployeeId = vm.EmployeeId;
+
+            _context.SaveChanges();
+
+            TempData["Success"] =
+                "Exit Clearance updated successfully.";
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public IActionResult Delete(int id)
+        {
+            var clearance = _context.ExitClearances
+                .Include(x => x.Employee)
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            return View(clearance);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult DeleteConfirmed(int id)
+        {
+            var clearance = _context.ExitClearances
+                .FirstOrDefault(x => x.Id == id);
+
+            if (clearance == null)
+                return NotFound();
+
+            _context.ExitClearanceEmployeeDetails
+                .RemoveRange(
+                    _context.ExitClearanceEmployeeDetails
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.FinanceClearances
+                .RemoveRange(
+                    _context.FinanceClearances
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.SystemsAdminClearances
+                .RemoveRange(
+                    _context.SystemsAdminClearances
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.DevelopmentClearances
+                .RemoveRange(
+                    _context.DevelopmentClearances
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.SupervisorApprovals
+                .RemoveRange(
+                    _context.SupervisorApprovals
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.HodApprovals
+                .RemoveRange(
+                    _context.HodApprovals
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.HrApprovals
+                .RemoveRange(
+                    _context.HrApprovals
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.ClearanceWorkflows
+                .RemoveRange(
+                    _context.ClearanceWorkflows
+                        .Where(x => x.ExitClearanceId == id));
+
+            _context.ExitClearances.Remove(clearance);
+
+            _context.SaveChanges();
+
+            TempData["Success"] =
+                "Exit Clearance deleted successfully.";
+
+            return RedirectToAction(nameof(Index));
+        }
 
 
 

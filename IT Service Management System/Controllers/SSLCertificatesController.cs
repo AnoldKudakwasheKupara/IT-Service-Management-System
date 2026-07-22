@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.Controllers
 {
+    [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin")]
     public class SSLCertificatesController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -50,6 +51,7 @@ namespace IT_Service_Management_System.Controllers
             {
                 _context.Add(cert);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "SSL certificate created.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -78,35 +80,31 @@ namespace IT_Service_Management_System.Controllers
 
             if (ModelState.IsValid)
             {
-                try
+                var existingCert = await _context.SSLCertificates.FindAsync(cert.Id);
+                if (existingCert == null)
+                    return NotFound();
+
+                // 🔥 Detect if renewal checkbox was just ticked
+                bool justRenewed = !existingCert.IsRenewed && cert.IsRenewed;
+
+                existingCert.SystemName = cert.SystemName;
+                existingCert.URL = cert.URL;
+                existingCert.ExpiryDate = cert.ExpiryDate;
+                existingCert.IsRenewed = cert.IsRenewed;
+                existingCert.LastRenewedDate = cert.LastRenewedDate;
+                // DaysRemaining is a computed read-only property (not persisted)
+
+                if (justRenewed)
                 {
-                    var existingCert = await _context.SSLCertificates
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(c => c.Id == id);
+                    existingCert.LastRenewedDate = DateTime.Now;
 
-                    if (existingCert == null)
-                        return NotFound();
-
-                    // 🔥 Detect if renewal checkbox was just ticked
-                    if (!existingCert.IsRenewed && cert.IsRenewed)
-                    {
-                        cert.LastRenewedDate = DateTime.Now;
-
-                        // ✅ Reset expiry to 1 year from now
-                        cert.ExpiryDate = DateTime.Now.AddYears(1);
-                    }
-
-                    _context.Update(cert);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.SSLCertificates.Any(e => e.Id == cert.Id))
-                        return NotFound();
-                    else
-                        throw;
+                    // ✅ Reset expiry to 1 year from now
+                    existingCert.ExpiryDate = DateTime.Now.AddYears(1);
                 }
 
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "SSL certificate updated.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -136,6 +134,11 @@ namespace IT_Service_Management_System.Controllers
             {
                 _context.SSLCertificates.Remove(cert);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "SSL certificate deleted.";
+            }
+            else
+            {
+                TempData["Error"] = "SSL certificate not found.";
             }
 
             return RedirectToAction(nameof(Index));

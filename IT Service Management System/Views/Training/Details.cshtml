@@ -1,0 +1,1031 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Ims
+@using IT_Service_Management_System.Helpers.Ims
+@model TrainingCourse
+@{
+    ViewData["Title"] = Model.Reference;
+    var canManage = (bool)(ViewBag.CanManage ?? false);
+    var users = ViewBag.Users as List<User> ?? new();
+    var records = Model.Records.OrderByDescending(r => r.ScheduledDate ?? r.CreatedAt).ToList();
+    var completed = records.Count(r => r.Status == AttendanceStatus.Completed);
+    var pct = records.Count == 0 ? 0 : (int)Math.Round(completed * 100.0 / records.Count);
+
+    Func<AttendanceStatus, string> statusClass = s => s switch
+    {
+        AttendanceStatus.Completed => "badge-success",
+        AttendanceStatus.Attended => "badge-primary",
+        AttendanceStatus.Enrolled => "badge-gray",
+        AttendanceStatus.Failed => "badge-critical",
+        AttendanceStatus.NoShow => "badge-critical",
+        _ => "badge-gray"
+    };
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <a class="btn-back" asp-action="Index">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="page-title">
+                        <span class="doc-number" style="font-size:1rem;font-weight:600;color:var(--primary);">@Model.Reference</span>
+                        <span style="font-weight:700;color:var(--gray-800);">@Model.Title</span>
+                    </h1>
+                    <div class="page-subtitle">
+                        <span class="status-badge badge-gray">@Model.Type</span>
+                        <span class="meta-separator">·</span>
+                        <span class="meta-text">@IsoStandards.Label(Model.Standard) · @Model.DurationHours.ToString("0.#") hrs</span>
+                    </div>
+                </div>
+            </div>
+            @if (canManage)
+            {
+                <div class="d-flex gap-2">
+                    <a class="btn-create-ticket" asp-action="Edit" asp-route-id="@Model.Id" style="background:var(--gray-100);color:var(--gray-700);">
+                        <i class="fas fa-pen"></i> Edit
+                    </a>
+                    <form method="post" asp-action="Delete" asp-route-id="@Model.Id" onsubmit="return confirm('Delete this course and all its records?');" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button class="btn-danger" type="submit">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- TWO COLUMN GRID -->
+    <div class="two-col-grid">
+        <!-- DETAILS CARD -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-circle-info me-2" style="color:var(--primary);"></i>
+                <span>Details</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Type</div>
+                        <div class="detail-value">@Model.Type</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">ISO Standard</div>
+                        <div class="detail-value">@IsoStandards.Label(Model.Standard)</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Provider</div>
+                        <div class="detail-value">@(Model.Provider ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Duration</div>
+                        <div class="detail-value">@Model.DurationHours.ToString("0.#") hrs</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Linked Document</div>
+                        <div class="detail-value">
+                            @if (Model.LinkedDocument != null)
+                            {
+                                <a asp-controller="IsoDocuments" asp-action="Details" asp-route-id="@Model.LinkedDocumentId" class="doc-link">
+                                    <span class="doc-number" style="font-size:0.85rem;">@Model.LinkedDocument.DocumentNumber</span>
+                                    <span class="doc-title">— @Model.LinkedDocument.Title</span>
+                                </a>
+                            }
+                            else
+                            {
+                                <text>—</text>
+                            }
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Created By</div>
+                        <div class="detail-value">@(Model.CreatedBy?.FullName ?? "—")</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Created</div>
+                        <div class="detail-value">@Model.CreatedAt.ToString("dd MMM yyyy")</div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <div class="narrative-section">
+                        <div class="narrative-label">Description</div>
+                        <div class="narrative-text">@Model.Description</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- COMPLETION CARD -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <i class="fas fa-chart-simple me-2" style="color:var(--primary);"></i>
+                <span>Completion</span>
+            </div>
+            <div class="card-body-custom">
+                <div class="completion-stats">
+                    <span class="comp-label">Completed</span>
+                    <strong class="comp-value">@pct%</strong>
+                </div>
+                <div class="progress-bar-track @(pct >= 70 ? "success" : pct >= 40 ? "warning" : "danger")">
+                    <div class="progress-bar-fill @(pct >= 70 ? "success" : pct >= 40 ? "warning" : "danger")" style="width: @pct%;"></div>
+                </div>
+                <div class="comp-hint">
+                    @completed of @records.Count records completed
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TRAINING RECORDS -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-clipboard-user me-2" style="color:var(--primary);"></i>
+                <span>Training Records</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span>@records.Count</span> records
+            </div>
+        </div>
+        <div class="card-body-custom" style="padding:0;">
+            @if (records.Any())
+            {
+                <div class="table-responsive">
+                    <table class="tickets-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-user me-1"></i> Employee</th>
+                                <th><i class="fas fa-calendar me-1"></i> Scheduled</th>
+                                <th><i class="fas fa-calendar-check me-1"></i> Completed</th>
+                                <th><i class="fas fa-tag me-1"></i> Status</th>
+                                <th><i class="fas fa-percent me-1"></i> Score</th>
+                                <th><i class="fas fa-certificate me-1"></i> Certificate</th>
+                                <th><i class="fas fa-clock me-1"></i> Expiry</th>
+                                @if (canManage)
+                                {
+                                    <th style="text-align:right;"><i class="fas fa-cog me-1"></i></th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in records)
+                            {
+                                var hasExpiry = r.CertificateExpiry.HasValue;
+                                var isExpired = hasExpiry && r.CertificateExpiry.Value.Date < DateTime.Now.Date;
+                                var isExpiringSoon = hasExpiry && !isExpired && r.CertificateExpiry.Value.Date <= DateTime.Now.Date.AddDays(90);
+                                <tr class="@(isExpired ? "row-expired" : "")">
+                                    <td class="employee-name">@(r.User?.FullName ?? $"User #{r.UserId}")</td>
+                                    <td class="meta-text">@(r.ScheduledDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    <td class="meta-text">@(r.CompletedDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    <td>
+                                        <span class="status-badge @statusClass(r.Status)">@r.Status</span>
+                                    </td>
+                                    <td class="meta-text">@(r.Score.HasValue ? $"{r.Score}%" : "—")</td>
+                                    <td class="meta-text">@(r.CertificateName ?? "—")</td>
+                                    <td>
+                                        @if (hasExpiry)
+                                        {
+                                            if (isExpired)
+                                            {
+                                                <span class="status-badge badge-critical">
+                                                    <i class="fas fa-exclamation-circle"></i> Expired @r.CertificateExpiry.Value.ToString("dd MMM yyyy")
+                                                </span>
+                                            }
+                                            else if (isExpiringSoon)
+                                            {
+                                                <span class="status-badge badge-warning">
+                                                    <i class="fas fa-clock"></i> @r.CertificateExpiry.Value.ToString("dd MMM yyyy")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="meta-text">@r.CertificateExpiry.Value.ToString("dd MMM yyyy")</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="meta-text">—</span>
+                                        }
+                                    </td>
+                                    @if (canManage)
+                                    {
+                                        <td style="text-align:right;">
+                                            <form method="post" asp-action="DeleteRecord" asp-route-id="@Model.Id" onsubmit="return confirm('Remove this record?');" style="display:inline;">
+                                                <input type="hidden" name="recordId" value="@r.Id" />
+                                                @Html.AntiForgeryToken()
+                                                <button class="action-btn btn-delete" type="submit" title="Remove Record">
+                                                    <i class="fas fa-xmark"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state-mini">
+                    <i class="fas fa-clipboard-user"></i>
+                    <span>No attendance records yet</span>
+                </div>
+            }
+
+            @if (canManage)
+            {
+                <form method="post" asp-action="AddRecord" asp-route-id="@Model.Id" class="add-record-form">
+                    @Html.AntiForgeryToken()
+                    <div class="add-record-header">
+                        <label class="form-label-sm">
+                            <i class="fas fa-user-plus"></i> Add Attendance Record
+                        </label>
+                    </div>
+                    <div class="add-record-grid">
+                        <div class="form-group">
+                            <label class="form-label-sm">Employee <span class="required">*</span></label>
+                            <select class="form-control" name="UserId" required>
+                                <option value="">— Select employee —</option>
+                                @foreach (var u in users)
+                                {
+                                    <option value="@u.Id">@u.FullName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label-sm">Status</label>
+                            <select class="form-control" name="Status" asp-items="Html.GetEnumSelectList<AttendanceStatus>()"></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label-sm">Score (%)</label>
+                            <input class="form-control" type="number" name="Score" min="0" max="100" placeholder="Optional" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label-sm">Scheduled Date</label>
+                            <input class="form-control" type="date" name="ScheduledDate" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label-sm">Completed Date</label>
+                            <input class="form-control" type="date" name="CompletedDate" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label-sm">Certificate</label>
+                            <input class="form-control" name="CertificateName" placeholder="Certificate name / no." />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label-sm">Certificate Expiry</label>
+                            <input class="form-control" type="date" name="CertificateExpiry" />
+                        </div>
+                        <div class="form-group full-width">
+                            <label class="form-label-sm">Notes</label>
+                            <input class="form-control" name="Notes" placeholder="Optional notes" />
+                        </div>
+                    </div>
+                    <div class="add-record-actions">
+                        <button class="btn-add-record" type="submit">
+                            <i class="fas fa-plus"></i> Add Record
+                        </button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --violet: #8b5cf6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .doc-number {
+        font-weight: 600;
+        color: var(--primary);
+        font-size: 1rem;
+    }
+
+    .page-subtitle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.3rem;
+    }
+
+    .meta-separator {
+        color: var(--gray-300);
+    }
+
+    .meta-text {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-size: 0.875rem;
+        font-family: inherit;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-danger {
+        padding: 0.6rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        background: linear-gradient(100deg, #dc2626, var(--danger));
+        color: white;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .btn-add-record {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1.5rem;
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        border: none;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        font-family: inherit;
+        flex: 1;
+        justify-content: center;
+    }
+
+        .btn-add-record:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .card-body-custom {
+        padding: 1.5rem;
+    }
+
+    .ticket-count {
+        font-size: 0.8rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    /* ===== TWO COLUMN GRID ===== */
+    .two-col-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ===== DETAILS GRID ===== */
+    .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem 1.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .detail-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+
+    .detail-value {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    .doc-link {
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+        .doc-link:hover {
+            text-decoration: none;
+        }
+
+            .doc-link:hover .doc-number {
+                color: var(--primary-dark);
+            }
+
+    .doc-title {
+        font-size: 0.85rem;
+        color: var(--gray-600);
+    }
+
+    /* ===== NARRATIVE ===== */
+    .narrative-section {
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--gray-200);
+        margin-top: 0.75rem;
+    }
+
+    .narrative-label {
+        font-size: 0.65rem;
+        font-weight: 600;
+        color: var(--gray-400);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 0.1rem;
+    }
+
+    .narrative-text {
+        font-size: 0.85rem;
+        color: var(--gray-700);
+        line-height: 1.6;
+        white-space: pre-wrap;
+    }
+
+    /* ===== COMPLETION ===== */
+    .completion-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+    }
+
+    .comp-label {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+    }
+
+    .comp-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--gray-800);
+    }
+
+    .progress-bar-track {
+        width: 100%;
+        height: 8px;
+        background: var(--gray-100);
+        border-radius: 1rem;
+        overflow: hidden;
+        margin: 0.5rem 0;
+    }
+
+        .progress-bar-track.success .progress-bar-fill {
+            background: linear-gradient(90deg, #6ee7b7, var(--success));
+        }
+
+        .progress-bar-track.warning .progress-bar-fill {
+            background: linear-gradient(90deg, #fcd34d, var(--warning));
+        }
+
+        .progress-bar-track.danger .progress-bar-fill {
+            background: linear-gradient(90deg, #fca5a5, var(--danger));
+        }
+
+    .progress-bar-fill {
+        height: 100%;
+        border-radius: 1rem;
+        transition: width 0.6s ease;
+        min-width: 4px;
+    }
+
+    .comp-hint {
+        font-size: 0.8rem;
+        color: var(--gray-500);
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+    }
+
+        .tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tickets-table th {
+            padding: 0.75rem 1.2rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .tickets-table td {
+            padding: 0.65rem 1.2rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .tickets-table tbody tr {
+            transition: background-color 0.15s;
+        }
+
+            .tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+            .tickets-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .tickets-table tbody tr.row-expired {
+                background-color: #fef2f2;
+            }
+
+                .tickets-table tbody tr.row-expired:hover {
+                    background-color: #fee2e2 !important;
+                }
+
+    /* ===== TRAINING SPECIFIC ===== */
+    .employee-name {
+        font-weight: 500;
+        color: var(--gray-700);
+    }
+
+    /* ===== STATUS BADGES ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.2rem 0.7rem;
+        border-radius: 2rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+
+    .badge-success {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-warning {
+        background: #fffbeb;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+
+    .badge-critical {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .badge-primary {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    /* ===== ACTION BUTTONS ===== */
+    .action-btn {
+        width: 34px;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.8rem;
+        border: none;
+        cursor: pointer;
+        background: transparent;
+    }
+
+    .btn-delete {
+        background: var(--gray-100);
+        color: var(--danger);
+    }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+    /* ===== ADD RECORD FORM ===== */
+    .add-record-form {
+        padding: 1rem;
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .add-record-header {
+        margin-bottom: 0.75rem;
+    }
+
+    .add-record-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        gap: 0.75rem 1rem;
+    }
+
+        .add-record-grid .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .form-label-sm {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+        .form-label-sm .required {
+            color: var(--danger);
+            font-weight: 700;
+            margin-left: 0.15rem;
+        }
+
+        .form-label-sm i {
+            font-size: 0.65rem;
+            color: var(--gray-400);
+        }
+
+    .form-control {
+        padding: 0.5rem 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.6rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        font-family: inherit;
+        background: white;
+        transition: all 0.2s ease;
+        width: 100%;
+        color: var(--gray-800);
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .form-control::placeholder {
+            color: var(--gray-400);
+            font-size: 0.8rem;
+        }
+
+        .form-control[type="date"],
+        .form-control[type="number"] {
+            min-height: 42px;
+        }
+
+            .form-control[type="date"]::-webkit-calendar-picker-indicator {
+                opacity: 0.5;
+                cursor: pointer;
+            }
+
+            .form-control[type="date"]:hover::-webkit-calendar-picker-indicator {
+                opacity: 1;
+            }
+
+        .form-control[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+            .form-control[type="number"]::-webkit-outer-spin-button,
+            .form-control[type="number"]::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 0.75rem;
+        padding-right: 2rem;
+        cursor: pointer;
+    }
+
+        select.form-control:focus {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%233b82f6' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        }
+
+    .add-record-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--gray-200);
+        flex-wrap: wrap;
+    }
+
+    /* ===== EMPTY STATE MINI ===== */
+    .empty-state-mini {
+        text-align: center;
+        padding: 1.5rem;
+        color: var(--gray-500);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+    }
+
+        .empty-state-mini i {
+            font-size: 1.5rem;
+            color: var(--gray-300);
+        }
+
+        .empty-state-mini span {
+            font-size: 0.9rem;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 992px) {
+        .two-col-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .add-record-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .page-header .d-flex.align-items-center {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 1rem;
+        }
+
+        .page-title {
+            font-size: 1.25rem;
+        }
+
+        .details-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .card-body-custom {
+            padding: 1rem;
+        }
+
+        .btn-back {
+            width: 34px;
+            height: 34px;
+            font-size: 0.8rem;
+        }
+
+        .btn-create-ticket,
+        .btn-danger {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .add-record-grid {
+            grid-template-columns: 1fr;
+        }
+
+            .add-record-grid .form-group.full-width {
+                grid-column: 1;
+            }
+
+        .add-record-actions {
+            flex-direction: column;
+        }
+
+        .btn-add-record {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.5rem 0.8rem;
+        }
+
+        .tickets-table {
+            font-size: 0.8rem;
+        }
+
+        .page-subtitle {
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            font-size: 0.6rem;
+            padding: 0.15rem 0.5rem;
+        }
+
+        .meta-text {
+            font-size: 0.75rem;
+        }
+
+        .comp-value {
+            font-size: 1.25rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.1rem;
+        }
+
+        .doc-number {
+            font-size: 0.85rem;
+        }
+
+        .btn-create-ticket,
+        .btn-danger {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .d-flex.gap-2 {
+            width: 100%;
+            flex-direction: column;
+        }
+
+        .tickets-table th,
+        .tickets-table td {
+            padding: 0.4rem 0.5rem;
+            font-size: 0.7rem;
+        }
+
+        .status-badge {
+            font-size: 0.55rem;
+            padding: 0.1rem 0.35rem;
+        }
+
+        .form-control {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.6rem;
+        }
+
+        .form-label-sm {
+            font-size: 0.65rem;
+        }
+
+        .btn-add-record {
+            font-size: 0.8rem;
+            padding: 0.4rem 1rem;
+        }
+
+        .employee-name {
+            font-size: 0.8rem;
+        }
+    }
+</style>

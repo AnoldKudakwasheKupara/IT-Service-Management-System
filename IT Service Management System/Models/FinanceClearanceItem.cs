@@ -6,11 +6,11 @@
 
         public int ClearanceRequestId { get; set; }
 
-        public string ItemName { get; set; }
+        public string ItemName { get; set; } = string.Empty;
 
-        public string AssetSerialNumber { get; set; }
+        public string AssetSerialNumber { get; set; } = string.Empty;
 
-        public string ReceivedBy { get; set; }
+        public string ReceivedBy { get; set; } = string.Empty;
 
         public DateTime? DateReceived { get; set; }
 

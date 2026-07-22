@@ -1,0 +1,61 @@
+@{
+    ViewData["Title"] = "HR Dashboard - Axis IT Operations";
+    var name = Context.Session.GetString("UserName") ?? "there";
+    var total = ViewBag.TotalClearances ?? 0;
+    var inProgress = ViewBag.ClearancesInProgress ?? 0;
+    var completed = ViewBag.ClearancesCompleted ?? 0;
+    var interviews = ViewBag.ExitInterviews ?? 0;
+    var engagement = ViewBag.EngagementInterviews ?? 0;
+    var talent = ViewBag.TalentRecords ?? 0;
+    var recent = ViewBag.RecentClearances as List<IT_Service_Management_System.Models.ExitClearance> ?? new List<IT_Service_Management_System.Models.ExitClearance>();
+}
+
+@await Html.PartialAsync("~/Views/Reports/_ReportStyles.cshtml")
+
+<div class="report-container">
+    <div class="report-header">
+        <h1 class="report-title"><i class="fas fa-user-friends"></i> HR Dashboard</h1>
+        <p class="report-subtitle">Welcome back, @name &middot; @DateTime.Now.ToString("dddd, MMMM dd, yyyy")</p>
+    </div>
+
+    <div class="report-actions" style="margin-bottom:1.25rem;">
+        <a class="report-btn primary" asp-controller="ExitClearance" asp-action="Index"><i class="fas fa-file-signature"></i> Exit Clearances</a>
+        <a class="report-btn" asp-controller="ExitInterview" asp-action="Index"><i class="fas fa-clipboard-list"></i> Exit Interviews</a>
+        <a class="report-btn" asp-controller="EngagementStayInterview" asp-action="Index"><i class="fas fa-user-friends"></i> Engagement Interviews</a>
+        <a class="report-btn" asp-controller="TalentIdentification" asp-action="Index"><i class="fas fa-user-tie"></i> Talent</a>
+        <a class="report-btn" asp-controller="Reports" asp-action="Hr"><i class="fas fa-chart-pie"></i> HR Report</a>
+    </div>
+
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon"><i class="fas fa-file-signature"></i></div><div class="kpi-body"><div class="kpi-value">@total</div><div class="kpi-label">Exit Clearances</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon amber"><i class="fas fa-spinner"></i></div><div class="kpi-body"><div class="kpi-value">@inProgress</div><div class="kpi-label">In Progress</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon green"><i class="fas fa-check-circle"></i></div><div class="kpi-body"><div class="kpi-value">@completed</div><div class="kpi-label">Completed</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon violet"><i class="fas fa-clipboard-list"></i></div><div class="kpi-body"><div class="kpi-value">@interviews</div><div class="kpi-label">Exit Interviews</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon slate"><i class="fas fa-user-friends"></i></div><div class="kpi-body"><div class="kpi-value">@engagement</div><div class="kpi-label">Engagement Interviews</div></div></div>
+        <div class="kpi-card"><div class="kpi-icon"><i class="fas fa-user-tie"></i></div><div class="kpi-body"><div class="kpi-value">@talent</div><div class="kpi-label">Talent Records</div></div></div>
+    </div>
+
+    <div class="report-card">
+        <div class="report-card-header"><span><i class="fas fa-clock-rotate-left"></i> Recent Exit Clearances</span><a class="report-btn" asp-controller="ExitClearance" asp-action="Index"><i class="fas fa-list"></i> View all</a></div>
+        <div class="report-card-body" style="padding:0;">
+            @if (recent.Any())
+            {
+                <table class="report-table">
+                    <thead><tr><th>Employee</th><th>Stage</th><th>Status</th><th>Created</th></tr></thead>
+                    <tbody>
+                        @foreach (var c in recent)
+                        {
+                            <tr>
+                                <td>@(c.Employee != null ? $"{c.Employee.FirstName} {c.Employee.LastName}" : "—")</td>
+                                <td><span class="pill">@c.CurrentStage</span></td>
+                                <td><span class="pill @(c.Status.ToString() == "Completed" ? "green" : c.Status.ToString() == "Rejected" ? "red" : "amber")">@c.Status</span></td>
+                                <td>@c.CreatedDate.ToString("MMM dd, yyyy")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else { <div class="empty-mini">No exit clearances recorded yet</div> }
+        </div>
+    </div>
+</div>

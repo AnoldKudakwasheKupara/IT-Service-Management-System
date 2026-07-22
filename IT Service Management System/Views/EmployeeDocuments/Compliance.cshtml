@@ -1,0 +1,1090 @@
+@model List<IT_Service_Management_System.ViewModels.Efm.ComplianceRow>
+@{
+    ViewData["Title"] = "File Completeness - Axis IT Operations";
+    var avg = Model.Any() ? (int)Math.Round(Model.Average(r => r.Percent)) : 100;
+    var incomplete = Model.Count(r => r.Percent < 100);
+    var fullyComplete = Model.Count(r => r.Percent == 100);
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-clipboard-check me-2" style="color: var(--primary);"></i>
+                    File Completeness
+                </h1>
+                <p class="text-muted mt-2">
+                    Required-document compliance across all employees
+                    <span class="compliance-summary">
+                        <span class="summary-badge">
+                            <i class="fas fa-chart-line"></i>
+                            Avg <strong>@avg%</strong>
+                        </span>
+                        <span class="summary-badge warning">
+                            <i class="fas fa-triangle-exclamation"></i>
+                            @incomplete incomplete
+                        </span>
+                        <span class="summary-badge success">
+                            <i class="fas fa-check-circle"></i>
+                            @fullyComplete complete
+                        </span>
+                    </span>
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <div class="btn-group-export">
+                    <button type="button" class="btn-export dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="fas fa-download"></i>
+                        Export
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item" asp-action="ComplianceExport">
+                                <i class="fas fa-file-csv me-2"></i>CSV
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" asp-action="ComplianceExportExcel">
+                                <i class="fas fa-file-excel me-2"></i>Excel (.xlsx)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" asp-action="ComplianceExportPdf">
+                                <i class="fas fa-file-pdf me-2"></i>PDF
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <a asp-action="Dashboard" class="btn-back" title="Back to Dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATISTICS CARDS -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--primary-light), var(--primary));">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Count</h3>
+                <p>Total Employees</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-circle-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@fullyComplete</h3>
+                <p>Fully Complete</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@incomplete</h3>
+                <p>Incomplete</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                <i class="fas fa-percent"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@avg%</h3>
+                <p>Average Completion</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTERS CARD -->
+    <div class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Filter Employees</span>
+        </div>
+        <form method="get" asp-action="Compliance" class="filters-body">
+            <div class="filter-group" style="flex: 1.5;">
+                <label>Search</label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" value="@ViewBag.Search" placeholder="Search by name or department..." class="search-input">
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Completion Status</label>
+                <select name="status" class="filter-select">
+                    <option value="">All Status</option>
+                    <option value="complete" selected="@(ViewBag.Status == "complete")">Complete (100%)</option>
+                    <option value="incomplete" selected="@(ViewBag.Status == "incomplete")">Incomplete (&lt; 100%)</option>
+                    <option value="critical" selected="@(ViewBag.Status == "critical")">Critical (&lt; 75%)</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Department</label>
+                <select name="departmentId" class="filter-select">
+                    <option value="">All Departments</option>
+                    @if (ViewBag.Departments != null)
+                    {
+                        foreach (var dept in (SelectList)ViewBag.Departments)
+                        {
+                            <option value="@dept.Value">@dept.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary,#3b82f6);color:#fff;border:none;">
+                <i class="fas fa-search"></i>
+                Apply
+            </button>
+            <a asp-action="Compliance" class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+                <i class="fas fa-undo-alt"></i>
+                Clear
+            </a>
+        </form>
+    </div>
+
+    <!-- MAIN DATA CARD -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Compliance Details</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span id="visibleCount">@Model.Count</span> employee(s)
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            @if (Model.Any())
+            {
+                <table class="data-table tickets-table" id="complianceTable">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-user me-1"></i> Employee</th>
+                            <th><i class="fas fa-building me-1"></i> Department</th>
+                            <th style="min-width: 280px;"><i class="fas fa-clipboard-check me-1"></i> Completeness</th>
+                            <th><i class="fas fa-triangle-exclamation me-1"></i> Missing Documents</th>
+                            <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            var cls = r.Percent == 100 ? "progress-success" : r.Percent >= 75 ? "progress-warning" : "progress-danger";
+                            var badgeClass = r.Percent == 100 ? "status-resolved" : r.Percent >= 75 ? "status-progress" : "status-open";
+                            var statusIcon = r.Percent == 100 ? "fa-check-circle" : r.Percent >= 75 ? "fa-clock" : "fa-exclamation-circle";
+                            var initials = r.EmployeeName.Length > 0 ?
+                                string.Concat(r.EmployeeName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => p[0])) : "U";
+
+                            <tr data-name="@r.EmployeeName" data-department="@(r.Department ?? "")" data-percent="@r.Percent">
+                                <td>
+                                    <div class="employee-info">
+                                        <div class="employee-avatar">@initials</div>
+                                        <div>
+                                            <a asp-action="Files" asp-route-id="@r.EmployeeId" class="employee-link">
+                                                @r.EmployeeName
+                                            </a>
+                                            @if (r.Percent == 100)
+                                            {
+                                                <span class="completion-badge complete">
+                                                    <i class="fas fa-check"></i> Complete
+                                                </span>
+                                            }
+                                            else if (r.Percent < 75)
+                                            {
+                                                <span class="completion-badge critical">
+                                                    <i class="fas fa-exclamation"></i> Critical
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="department-chip">@(r.Department ?? "—")</span>
+                                </td>
+                                <td>
+                                    <div class="progress-wrapper">
+                                        <div class="progress-track">
+                                            <div class="progress-bar @cls" style="width: @r.Percent%;">
+                                                <span class="progress-label">@r.Percent%</span>
+                                            </div>
+                                        </div>
+                                        <span class="status-badge @badgeClass" style="flex-shrink:0;">
+                                            <i class="fas @statusIcon"></i>
+                                            @r.Percent%
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (string.IsNullOrEmpty(r.Missing))
+                                    {
+                                        <span class="missing-none">
+                                            <i class="fas fa-check-circle" style="color:var(--success);"></i>
+                                            All documents present
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="missing-list">
+                                            <i class="fas fa-file-circle-exclamation" style="color:var(--warning);"></i>
+                                            @r.Missing
+                                        </span>
+                                    }
+                                </td>
+                                <td style="text-align:right;">
+                                    <a asp-action="Files" asp-route-id="@r.EmployeeId" class="action-btn btn-view" title="View Employee Files">
+                                        <i class="fas fa-folder-open"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@r.EmployeeId" class="action-btn btn-edit" title="Edit Employee">
+                                        <i class="fas fa-pencil-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-check"></i>
+                    <h3>Nothing to report</h3>
+                    <p>No employees to evaluate for compliance.</p>
+                    <a asp-action="Index" class="btn-create-ticket-sm">
+                        <i class="fas fa-users"></i> View Employees
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== COMPLIANCE SUMMARY ===== */
+    .compliance-summary {
+        display: inline-flex;
+        gap: 0.75rem;
+        margin-left: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .summary-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.15rem 0.6rem;
+        border-radius: 2rem;
+        background: var(--gray-100);
+        color: var(--gray-600);
+    }
+
+        .summary-badge.success {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+        .summary-badge.warning {
+            background: #fff5e6;
+            color: var(--warning);
+        }
+
+        .summary-badge strong {
+            font-weight: 700;
+        }
+
+    /* ===== STATISTICS CARDS ===== */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* ===== EXPORT BUTTON ===== */
+    .btn-group-export {
+        position: relative;
+        display: inline-block;
+    }
+
+    .btn-export {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.75rem;
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: 'Inter', sans-serif;
+    }
+
+        .btn-export:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+        }
+
+    .dropdown-menu {
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 0.75rem;
+        box-shadow: var(--shadow-md);
+        padding: 0.5rem;
+        min-width: 180px;
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        color: var(--gray-700);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+    }
+
+        .dropdown-item:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+    /* ===== BACK BUTTON ===== */
+    .btn-back {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border-radius: 0.75rem;
+        color: var(--gray-600);
+        text-decoration: none;
+        transition: all 0.2s;
+        border: 1px solid var(--gray-200);
+        flex-shrink: 0;
+    }
+
+        .btn-back:hover {
+            background: var(--gray-50);
+            color: var(--primary);
+            transform: translateX(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== FILTERS CARD ===== */
+    .filters-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .filters-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filters-body {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 180px;
+    }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        cursor: pointer;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .search-wrapper {
+        position: relative;
+    }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+        }
+
+    .search-input {
+        width: 100%;
+        padding: 0.625rem 0.75rem 0.625rem 2rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .btn-clear-filters {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+    }
+
+        .btn-clear-filters:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .data-table.tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .data-table.tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .data-table.tickets-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table.tickets-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .data-table.tickets-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .data-table.tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+    /* ===== EMPLOYEE INFO ===== */
+    .employee-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .employee-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--primary), var(--primary-light));
+        color: white;
+        font-weight: 700;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-transform: uppercase;
+        flex-shrink: 0;
+    }
+
+    .employee-link {
+        font-weight: 600;
+        color: var(--gray-800);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+
+        .employee-link:hover {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+    /* ===== COMPLETION BADGES ===== */
+    .completion-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        padding: 0.1rem 0.4rem;
+        border-radius: 1rem;
+        margin-left: 0.4rem;
+        vertical-align: middle;
+    }
+
+        .completion-badge.complete {
+            background: #e6f5e9;
+            color: var(--success);
+        }
+
+        .completion-badge.critical {
+            background: #fee;
+            color: var(--danger);
+        }
+
+    /* ===== DEPARTMENT CHIP ===== */
+    .department-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: #eff6ff;
+        color: var(--primary-dark);
+        border: 1px solid #cce4ff;
+        padding: 0.2rem 0.6rem;
+        border-radius: 2rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+
+    /* ===== PROGRESS BAR ===== */
+    .progress-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .progress-track {
+        flex: 1;
+        height: 8px;
+        background: var(--gray-200);
+        border-radius: 1rem;
+        overflow: hidden;
+        min-width: 100px;
+    }
+
+    .progress-bar {
+        height: 100%;
+        border-radius: 1rem;
+        transition: width 0.6s ease;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 0.25rem;
+    }
+
+        .progress-bar .progress-label {
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            letter-spacing: 0.3px;
+            display: none;
+        }
+
+        .progress-bar.progress-success {
+            background: linear-gradient(90deg, #2c9e6e, #34d399);
+        }
+
+        .progress-bar.progress-warning {
+            background: linear-gradient(90deg, #f5b042, #fbbf24);
+        }
+
+        .progress-bar.progress-danger {
+            background: linear-gradient(90deg, #e53e3e, #f87171);
+        }
+
+        /* Show label on larger bars */
+        .progress-bar[style*="width: 100%"] .progress-label,
+        .progress-bar[style*="width: 95%"] .progress-label,
+        .progress-bar[style*="width: 90%"] .progress-label {
+            display: block;
+        }
+
+    /* ===== STATUS BADGES (reused from Dashboard) ===== */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .status-open {
+        background: #fff5e6;
+        color: var(--warning);
+        border: 1px solid #ffe0b3;
+    }
+
+    .status-progress {
+        background: #e6f0ff;
+        color: var(--info);
+        border: 1px solid #cce4ff;
+    }
+
+    .status-resolved {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    /* ===== MISSING DOCUMENTS ===== */
+    .missing-none {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+        color: var(--gray-500);
+    }
+
+    .missing-list {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        background: var(--gray-50);
+        padding: 0.2rem 0.6rem;
+        border-radius: 0.5rem;
+        border: 1px solid var(--gray-200);
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* ===== ACTION BUTTONS ===== */
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        margin: 0 0.15rem;
+    }
+
+    .btn-view {
+        background: var(--gray-100);
+        color: var(--info);
+    }
+
+        .btn-view:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .btn-edit {
+        background: var(--gray-100);
+        color: var(--warning);
+    }
+
+        .btn-edit:hover {
+            background: var(--warning);
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    .btn-create-ticket-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+        .btn-create-ticket-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 1024px) {
+        .compliance-summary {
+            margin-left: 0;
+            margin-top: 0.5rem;
+        }
+
+        .progress-wrapper {
+            flex-wrap: wrap;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .stats-cards {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .filters-body {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-group {
+            min-width: 100%;
+        }
+
+        .data-table.tickets-table th,
+        .data-table.tickets-table td {
+            padding: 0.75rem 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .missing-list {
+            max-width: 120px;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .page-header .d-flex {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .compliance-summary {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        .btn-group-export {
+            width: 100%;
+        }
+
+        .btn-export {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .progress-wrapper {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .progress-track {
+            min-width: 60px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Client-side filtering
+        const searchInput = document.querySelector('input[name="q"]');
+        const statusFilter = document.querySelector('select[name="status"]');
+        const departmentFilter = document.querySelector('select[name="departmentId"]');
+        const table = document.getElementById('complianceTable');
+        const rows = table ? table.querySelectorAll('tbody tr') : [];
+        const visibleCountSpan = document.getElementById('visibleCount');
+
+        function filterCompliance() {
+            const searchValue = searchInput ? searchInput.value.toLowerCase() : '';
+            const statusValue = statusFilter ? statusFilter.value : '';
+            const departmentValue = departmentFilter ? departmentFilter.value : '';
+
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name')?.toLowerCase() || '';
+                const department = row.getAttribute('data-department') || '';
+                const percent = parseInt(row.getAttribute('data-percent')) || 0;
+
+                let show = true;
+
+                if (searchValue && !name.includes(searchValue) && !department.toLowerCase().includes(searchValue)) {
+                    show = false;
+                }
+
+                if (departmentValue && department !== departmentValue) {
+                    show = false;
+                }
+
+                if (statusValue) {
+                    if (statusValue === 'complete' && percent < 100) show = false;
+                    if (statusValue === 'incomplete' && percent >= 100) show = false;
+                    if (statusValue === 'critical' && percent >= 75) show = false;
+                }
+
+                if (show) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (visibleCountSpan) {
+                visibleCountSpan.textContent = visibleCount;
+            }
+
+            // Show no results message
+            const emptyState = document.querySelector('.empty-state:not(.original)');
+            const tbody = table ? table.querySelector('tbody') : null;
+
+            if (visibleCount === 0 && rows.length > 0) {
+                if (!emptyState && tbody) {
+                    const noResultsDiv = document.createElement('div');
+                    noResultsDiv.className = 'empty-state';
+                    noResultsDiv.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <h3>No matching employees found</h3>
+                        <p>Try adjusting your filters or search terms</p>
+                    `;
+                    tbody.parentNode.appendChild(noResultsDiv);
+                    if (table) table.style.display = 'none';
+                }
+            } else {
+                if (emptyState) emptyState.remove();
+                if (table) table.style.display = '';
+            }
+        }
+
+        // Attach event listeners
+        if (searchInput) {
+            searchInput.addEventListener('keyup', filterCompliance);
+        }
+        if (statusFilter) {
+            statusFilter.addEventListener('change', filterCompliance);
+        }
+        if (departmentFilter) {
+            departmentFilter.addEventListener('change', filterCompliance);
+        }
+
+        // Initialize
+        filterCompliance();
+    });
+</script>

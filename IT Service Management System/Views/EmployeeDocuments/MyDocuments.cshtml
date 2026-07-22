@@ -1,0 +1,1509 @@
+@model IT_Service_Management_System.ViewModels.Efm.EmployeeFileBrowserVm
+@using IT_Service_Management_System.Models.Efm
+@{
+    ViewData["Title"] = "My Documents - Axis IT Operations";
+    string Size(long b) => b >= 1048576 ? $"{b / 1048576.0:0.#} MB" : b >= 1024 ? $"{b / 1024.0:0.#} KB" : $"{b} B";
+    string StatusPill(DocumentStatus s) => s switch
+    {
+        DocumentStatus.PendingApproval => "badge-amber",
+        DocumentStatus.Rejected or DocumentStatus.Expired => "badge-red",
+        DocumentStatus.Approved or DocumentStatus.Active => "badge-green",
+        _ => "badge-gray"
+    };
+    string StatusIcon(DocumentStatus s) => s switch
+    {
+        DocumentStatus.PendingApproval => "fa-clock",
+        DocumentStatus.Rejected => "fa-times-circle",
+        DocumentStatus.Expired => "fa-calendar-xmark",
+        DocumentStatus.Approved => "fa-check-circle",
+        DocumentStatus.Active => "fa-circle-check",
+        _ => "fa-circle"
+    };
+}
+
+<div class="page-container">
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-folder-open me-2" style="color: var(--primary);"></i>
+                    My Documents
+                </h1>
+                <p class="text-muted mt-2">
+                    <i class="fas fa-info-circle me-1" style="color: var(--primary);"></i>
+                    Your personal documents. New uploads are sent to HR for approval.
+                </p>
+            </div>
+            <button class="btn-create-ticket" data-bs-toggle="modal" data-bs-target="#myUploadModal">
+                <i class="fas fa-cloud-arrow-up me-2"></i>
+                Upload Document
+            </button>
+        </div>
+    </div>
+
+    @if (Model.PendingRequests.Any())
+    {
+        <!-- PENDING DOCUMENT REQUESTS -->
+        <div class="requests-panel mb-4">
+            <div class="requests-header">
+                <i class="fas fa-file-circle-question"></i>
+                <span>HR has requested @Model.PendingRequests.Count document(s) from you</span>
+            </div>
+            <div class="requests-list">
+                @foreach (var r in Model.PendingRequests)
+                {
+                    <div class="request-item @(r.IsOverdue ? "overdue" : "")">
+                        <div class="request-info">
+                            <span class="request-title">
+                                <i class="fas fa-file me-1"></i>@r.Title
+                                <span class="category-badge">@r.Category?.Name</span>
+                                @if (r.IsOverdue)
+                                {
+                                    <span class="status-badge badge-red"><i class="fas fa-triangle-exclamation"></i> Overdue</span>
+                                }
+                            </span>
+                            @if (!string.IsNullOrEmpty(r.Instructions))
+                            {
+                                <span class="request-instructions"><i class="fas fa-comment-dots me-1"></i>@r.Instructions</span>
+                            }
+                            <span class="request-meta">
+                                Requested by @(r.RequestedByName ?? "HR") on @r.CreatedAt.ToString("MMM dd, yyyy")
+                                @if (r.DueDate.HasValue)
+                                {
+                                    <text> · due @r.DueDate.Value.ToString("MMM dd, yyyy")</text>
+                                }
+                            </span>
+                        </div>
+                        <button type="button" class="btn-fulfill" data-bs-toggle="modal" data-bs-target="#fulfillModal"
+                                data-request-id="@r.Id" data-request-title="@r.Title">
+                            <i class="fas fa-cloud-arrow-up"></i>
+                            Upload
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- STATISTICS CARDS -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, var(--primary-light), var(--primary));">
+                <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.TotalDocuments</h3>
+                <p>Total Documents</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #f5b042, #e6a017);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Documents.Count(d => d.Status == DocumentStatus.PendingApproval)</h3>
+                <p>Pending Approval</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #2c9e6e, #227a55);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Documents.Count(d => d.Status == DocumentStatus.Approved || d.Status == DocumentStatus.Active)</h3>
+                <p>Approved</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                <i class="fas fa-folder"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Folders.Count</h3>
+                <p>Folders</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTERS CARD -->
+    <div class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Filter Documents</span>
+        </div>
+        <form method="get" asp-action="MyDocuments" class="filters-body">
+            <div class="filter-group" style="flex: 1.5;">
+                <label>Search</label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" value="@ViewBag.Search" placeholder="Search by title or description..." class="search-input">
+                </div>
+            </div>
+            <div class="filter-group">
+                <label>Category</label>
+                <select name="categoryId" class="filter-select">
+                    <option value="">All Categories</option>
+                    @foreach (var c in Model.Categories)
+                    {
+                        <option value="@c.Id">@c.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Folder</label>
+                <select name="folderId" class="filter-select">
+                    <option value="">All Folders</option>
+                    @foreach (var f in Model.Folders)
+                    {
+                        <option value="@f.Id">@f.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status" class="filter-select">
+                    <option value="">All Status</option>
+                    <option value="PendingApproval">Pending Approval</option>
+                    <option value="Approved">Approved</option>
+                    <option value="Active">Active</option>
+                    <option value="Rejected">Rejected</option>
+                    <option value="Expired">Expired</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary,#3b82f6);color:#fff;border:none;">
+                <i class="fas fa-search"></i>
+                Apply
+            </button>
+            <a asp-action="MyDocuments" class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:0.4rem;">
+                <i class="fas fa-undo-alt"></i>
+                Clear
+            </a>
+        </form>
+    </div>
+
+    <!-- MAIN DATA CARD -->
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-file-lines me-2"></i>
+                <span>Documents</span>
+            </div>
+            <div class="ticket-count">
+                <i class="fas fa-chart-simple"></i>
+                <span id="visibleCount">@Model.TotalDocuments</span> document(s)
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            @if (Model.Documents.Any())
+            {
+                <table class="data-table tickets-table" id="documentsTable">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-file me-1"></i> Document</th>
+                            <th><i class="fas fa-tag me-1"></i> Category</th>
+                            <th><i class="fas fa-folder me-1"></i> Folder</th>
+                            <th><i class="fas fa-chart-simple me-1"></i> Status</th>
+                            <th><i class="fas fa-calendar me-1"></i> Uploaded</th>
+                            <th style="text-align:right;"><i class="fas fa-cog me-1"></i> Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model.Documents)
+                        {
+                            var statusClass = StatusPill(d.Status);
+                            var statusIcon = StatusIcon(d.Status);
+                            var statusLabel = d.Status == DocumentStatus.PendingApproval ? "Pending Approval" : d.Status.ToString();
+
+                            <tr data-title="@d.Title" data-category="@d.Category?.Name" data-folder="@d.Folder?.Name" data-status="@d.Status.ToString()">
+                                <td>
+                                    <div class="document-info">
+                                        <i class="fas fa-file document-icon"></i>
+                                        <div>
+                                            <span class="document-title">@d.Title</span>
+                                            <span class="document-size">@(Size(d.CurrentVersion?.FileSizeBytes ?? 0))</span>
+                                            @if (!string.IsNullOrEmpty(d.Description))
+                                            {
+                                                <span class="document-description">@d.Description</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="category-badge">@d.Category?.Name</span>
+                                </td>
+                                <td>
+                                    <span class="folder-badge">@d.Folder?.Name</span>
+                                </td>
+                                <td>
+                                    <span class="status-badge @statusClass">
+                                        <i class="fas @statusIcon"></i>
+                                        @statusLabel
+                                    </span>
+                                </td>
+                                <td class="date-cell">
+                                    <i class="far fa-calendar-alt"></i>
+                                    @d.CreatedAt.ToString("MMM dd, yyyy")
+                                </td>
+                                <td style="text-align:right;">
+                                    <div class="action-buttons">
+                                        <a class="action-btn btn-preview" asp-action="Preview" asp-route-id="@d.Id" target="_blank" title="Preview">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a class="action-btn btn-download" asp-action="Download" asp-route-id="@d.Id" title="Download">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <h3>No documents yet</h3>
+                    <p>Upload a document — it will be sent to HR for approval.</p>
+                    <button class="btn-create-ticket-sm" data-bs-toggle="modal" data-bs-target="#myUploadModal">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                        Upload your first document
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="modal fade" id="myUploadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="MyUpload" method="post" enctype="multipart/form-data" id="uploadForm">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-cloud-arrow-up me-2" style="color: var(--primary);"></i>
+                        Upload Document
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="upload-grid-modal">
+                        <div class="upload-field">
+                            <label class="field-label">
+                                <i class="fas fa-folder"></i>
+                                Folder <span class="required">*</span>
+                            </label>
+                            <select name="folderId" class="filter-select" required>
+                                @foreach (var f in Model.Folders)
+                                {
+                                    <option value="@f.Id">@f.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="upload-field">
+                            <label class="field-label">
+                                <i class="fas fa-tag"></i>
+                                Category <span class="required">*</span>
+                            </label>
+                            <select name="categoryId" class="filter-select" required>
+                                @foreach (var c in Model.Categories)
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="upload-field full-width">
+                            <label class="field-label">
+                                <i class="fas fa-pencil-alt"></i>
+                                Description (optional)
+                            </label>
+                            <input type="text" name="description" class="search-input"
+                                   placeholder="Brief description of the document..." maxlength="500" />
+                        </div>
+                        <div class="upload-field full-width">
+                            <label class="field-label">
+                                <i class="fas fa-paperclip"></i>
+                                Files <span class="required">*</span>
+                            </label>
+                            <div class="file-drop-zone">
+                                <input type="file" name="files" id="modalFileInput" multiple required />
+                                <label for="modalFileInput" class="file-drop-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Drop files here or click to browse</span>
+                                    <span class="file-hint">Up to 50 MB per file</span>
+                                </label>
+                                <div id="modalFileList" class="file-list"></div>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle"></i>
+                                Uploads are reviewed by HR before approval. Supported formats: PDF, DOC, DOCX, XLS, XLSX, PNG, JPG.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-upload-modal">
+                        <i class="fas fa-upload"></i>
+                        Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- FULFILL REQUEST MODAL -->
+<div class="modal fade" id="fulfillModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="FulfillRequest" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="requestId" id="fulfillRequestId" value="" />
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-cloud-arrow-up me-2" style="color: var(--primary);"></i>
+                        Upload Requested Document
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="upload-grid-modal">
+                        <div class="upload-field full-width">
+                            <label class="field-label">
+                                <i class="fas fa-file"></i>
+                                Requested Document
+                            </label>
+                            <input type="text" class="search-input" id="fulfillRequestTitle" value="" readonly
+                                   style="background:var(--gray-50);" />
+                        </div>
+                        <div class="upload-field full-width">
+                            <label class="field-label">
+                                <i class="fas fa-pencil-alt"></i>
+                                Note (optional)
+                            </label>
+                            <input type="text" name="note" class="search-input"
+                                   placeholder="Anything HR should know about this file..." maxlength="500" />
+                        </div>
+                        <div class="upload-field full-width">
+                            <label class="field-label">
+                                <i class="fas fa-paperclip"></i>
+                                File <span class="required">*</span>
+                            </label>
+                            <div class="file-drop-zone">
+                                <input type="file" name="file" id="fulfillFileInput" required />
+                                <label for="fulfillFileInput" class="file-drop-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Drop the file here or click to browse</span>
+                                    <span class="file-hint">Up to 50 MB</span>
+                                </label>
+                                <div id="fulfillFileList" class="file-list"></div>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle"></i>
+                                Your upload is reviewed by HR before it is filed.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn-upload-modal">
+                        <i class="fas fa-upload"></i>
+                        Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== ROOT VARIABLES (from Dashboard) ===== */
+    :root {
+        --primary-dark: #2563eb;
+        --primary: #3b82f6;
+        --primary-light: #60a5fa;
+        --success: #2c9e6e;
+        --warning: #f5b042;
+        --danger: #e53e3e;
+        --info: #3b82f6;
+        --gray-50: #f8fafc;
+        --gray-100: #f1f5f9;
+        --gray-200: #e2e8f0;
+        --gray-300: #cbd5e1;
+        --gray-400: #94a3b8;
+        --gray-500: #64748b;
+        --gray-600: #475569;
+        --gray-700: #334155;
+        --gray-800: #1e293b;
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    }
+
+    /* ===== PAGE CONTAINER ===== */
+    .page-container {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    /* ===== PENDING REQUESTS PANEL ===== */
+    .requests-panel {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .requests-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #fde68a;
+        font-weight: 600;
+        color: #92400e;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .requests-header i {
+            color: var(--warning);
+        }
+
+    .requests-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .request-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #fde68a;
+        background: white;
+        flex-wrap: wrap;
+    }
+
+        .request-item:last-child {
+            border-bottom: none;
+        }
+
+        .request-item.overdue {
+            background: #fff5f5;
+        }
+
+    .request-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        min-width: 0;
+    }
+
+    .request-title {
+        font-weight: 600;
+        color: var(--gray-800);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+        .request-title > i {
+            color: var(--primary);
+        }
+
+    .request-instructions {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+    }
+
+    .request-meta {
+        font-size: 0.72rem;
+        color: var(--gray-500);
+    }
+
+    .btn-fulfill {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1.1rem;
+        border-radius: 0.5rem;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: all 0.2s;
+        flex-shrink: 0;
+    }
+
+        .btn-fulfill:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .page-header {
+        margin-bottom: 2rem;
+    }
+
+    .page-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        color: var(--gray-800);
+        margin: 0;
+    }
+
+    /* ===== STATISTICS CARDS ===== */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 1rem;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid var(--gray-200);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--primary-light), var(--primary));
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .stat-info h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--gray-800);
+    }
+
+    .stat-info p {
+        margin: 0;
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn-create-ticket {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.75rem;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-sm);
+        border: none;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.875rem;
+    }
+
+        .btn-create-ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: white;
+            text-decoration: none;
+        }
+
+    .btn-create-ticket-sm {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        border: none;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+    }
+
+        .btn-create-ticket-sm:hover {
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+    /* ===== FILTERS CARD ===== */
+    .filters-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+        margin-bottom: 1.5rem;
+    }
+
+    .filters-header {
+        background: var(--gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .filters-body {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 180px;
+    }
+
+        .filter-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gray-600);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+    .filter-select {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        cursor: pointer;
+    }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .search-wrapper {
+        position: relative;
+    }
+
+        .search-wrapper i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+        }
+
+    .search-input {
+        width: 100%;
+        padding: 0.625rem 0.75rem 0.625rem 2rem;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59,130,246, 0.1);
+        }
+
+    .btn-clear-filters {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1rem;
+        border-radius: 0.5rem;
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+    }
+
+        .btn-clear-filters:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+            text-decoration: none;
+        }
+
+    /* ===== DATA CARD ===== */
+    .data-card {
+        background: white;
+        border-radius: 1rem;
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--gray-200);
+    }
+
+    .card-header-custom {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+        font-weight: 600;
+        color: var(--gray-700);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .ticket-count {
+        font-size: 0.875rem;
+        font-weight: normal;
+        color: var(--gray-500);
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    /* ===== TABLE STYLES ===== */
+    .data-table.tickets-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .data-table.tickets-table thead {
+            background: var(--gray-50);
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .data-table.tickets-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--gray-600);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table.tickets-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            vertical-align: middle;
+        }
+
+        .data-table.tickets-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+            .data-table.tickets-table tbody tr:hover {
+                background-color: var(--gray-50);
+            }
+
+    /* ===== DOCUMENT INFO ===== */
+    .document-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .document-icon {
+        font-size: 1.25rem;
+        color: var(--primary);
+        width: 24px;
+        text-align: center;
+    }
+
+    .document-title {
+        font-weight: 600;
+        color: var(--gray-800);
+        display: block;
+    }
+
+    .document-size {
+        font-size: 0.7rem;
+        color: var(--gray-400);
+        margin-left: 0.4rem;
+    }
+
+    .document-description {
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        display: block;
+        margin-top: 0.1rem;
+    }
+
+    /* ===== BADGES ===== */
+    .category-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: #eff6ff;
+        color: var(--primary-dark);
+        border: 1px solid #cce4ff;
+        padding: 0.2rem 0.6rem;
+        border-radius: 2rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+
+    .folder-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: var(--gray-100);
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+        padding: 0.2rem 0.6rem;
+        border-radius: 2rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 2rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .badge-green {
+        background: #e6f5e9;
+        color: var(--success);
+        border: 1px solid #c6e0c9;
+    }
+
+    .badge-amber {
+        background: #fff5e6;
+        color: var(--warning);
+        border: 1px solid #ffe0b3;
+    }
+
+    .badge-red {
+        background: #fee;
+        color: var(--danger);
+        border: 1px solid #fed7d7;
+    }
+
+    .badge-gray {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border: 1px solid var(--gray-300);
+    }
+
+    .date-cell {
+        color: var(--gray-500);
+        font-size: 0.875rem;
+    }
+
+        .date-cell i {
+            margin-right: 0.3rem;
+        }
+
+    /* ===== ACTION BUTTONS ===== */
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-end;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-preview {
+        background: var(--gray-100);
+        color: var(--info);
+    }
+
+        .btn-preview:hover {
+            background: var(--info);
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    .btn-download {
+        background: var(--gray-100);
+        color: var(--success);
+    }
+
+        .btn-download:hover {
+            background: var(--success);
+            color: white;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray-500);
+    }
+
+        .empty-state i {
+            font-size: 4rem;
+            color: var(--gray-300);
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            color: var(--gray-600);
+        }
+
+        .empty-state p {
+            margin-bottom: 1.5rem;
+        }
+
+    /* ===== MODAL STYLES ===== */
+    .modal-content {
+        border-radius: 1rem;
+        border: 1px solid var(--gray-200);
+        box-shadow: var(--shadow-lg);
+        overflow: hidden;
+    }
+
+    .modal-header {
+        background: var(--gray-50);
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+        .modal-header .modal-title {
+            font-weight: 700;
+            color: var(--gray-800);
+            font-size: 1.125rem;
+        }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .modal-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.25rem;
+        cursor: pointer;
+        color: var(--gray-500);
+        padding: 0.25rem;
+        transition: color 0.2s;
+    }
+
+        .btn-close:hover {
+            color: var(--gray-700);
+        }
+
+    .btn-cancel {
+        background: white;
+        color: var(--gray-600);
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        border: 1.5px solid var(--gray-200);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 500;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-cancel:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-300);
+        }
+
+    .btn-upload-modal {
+        background: linear-gradient(100deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.5rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.875rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+        .btn-upload-modal:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+    /* ===== UPLOAD GRID MODAL ===== */
+    .upload-grid-modal {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+    }
+
+    .upload-field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+        .upload-field.full-width {
+            grid-column: 1 / -1;
+        }
+
+    .field-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+        .field-label i {
+            color: var(--primary);
+            font-size: 0.7rem;
+        }
+
+        .field-label .required {
+            color: var(--danger);
+            font-size: 0.7rem;
+        }
+
+    /* ===== FILE DROP ZONE ===== */
+    .file-drop-zone {
+        border: 2px dashed var(--gray-300);
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        background: var(--gray-50);
+        position: relative;
+        cursor: pointer;
+    }
+
+        .file-drop-zone:hover {
+            border-color: var(--primary);
+            background: var(--gray-100);
+        }
+
+        .file-drop-zone input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            cursor: pointer;
+        }
+
+    .file-drop-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        pointer-events: none;
+    }
+
+        .file-drop-label i {
+            font-size: 2rem;
+            color: var(--primary);
+        }
+
+        .file-drop-label span {
+            color: var(--gray-600);
+            font-size: 0.875rem;
+        }
+
+        .file-drop-label .file-hint {
+            font-size: 0.75rem;
+            color: var(--gray-400);
+        }
+
+    .file-list {
+        margin-top: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .file-item {
+        background: white;
+        border: 1px solid var(--gray-200);
+        border-radius: 0.5rem;
+        padding: 0.3rem 0.6rem;
+        font-size: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        color: var(--gray-700);
+    }
+
+        .file-item i {
+            color: var(--primary);
+        }
+
+        .file-item .remove-file {
+            cursor: pointer;
+            color: var(--danger);
+            font-size: 0.65rem;
+            margin-left: 0.2rem;
+        }
+
+    .form-text {
+        font-size: 0.75rem;
+        color: var(--gray-500);
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+        .form-text i {
+            color: var(--primary);
+        }
+
+    /* ===== RESPONSIVE ===== */
+    @@media (max-width: 1024px) {
+        .upload-grid-modal {
+            grid-template-columns: 1fr;
+        }
+
+        .upload-field.full-width {
+            grid-column: 1;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .stats-cards {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .filters-body {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .filter-group {
+            min-width: 100%;
+        }
+
+        .data-table.tickets-table th,
+        .data-table.tickets-table td {
+            padding: 0.75rem 1rem;
+        }
+
+        .card-header-custom {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+        }
+
+        .page-header .d-flex {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .btn-create-ticket {
+            justify-content: center;
+        }
+
+        .modal-dialog {
+            margin: 0.5rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .action-buttons {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .action-btn {
+            width: 28px;
+            height: 28px;
+            font-size: 0.75rem;
+        }
+
+        .file-drop-zone {
+            padding: 1rem;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Modal file list display
+        const fileInput = document.getElementById('modalFileInput');
+        const fileList = document.getElementById('modalFileList');
+
+        if (fileInput && fileList) {
+            fileInput.addEventListener('change', function() {
+                fileList.innerHTML = '';
+                const files = Array.from(this.files);
+
+                if (files.length === 0) {
+                    return;
+                }
+
+                files.forEach((file, index) => {
+                    const fileItem = document.createElement('span');
+                    fileItem.className = 'file-item';
+                    const fileSize = formatFileSize(file.size);
+                    fileItem.innerHTML = `
+                        <i class="fas fa-file"></i>
+                        ${file.name} (${fileSize})
+                        <span class="remove-file" data-index="${index}">
+                            <i class="fas fa-times"></i>
+                        </span>
+                    `;
+                    fileList.appendChild(fileItem);
+                });
+
+                // Remove file functionality
+                document.querySelectorAll('.remove-file').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const index = parseInt(this.getAttribute('data-index'));
+                        const dt = new DataTransfer();
+                        const files = Array.from(fileInput.files);
+                        files.splice(index, 1);
+                        files.forEach(f => dt.items.add(f));
+                        fileInput.files = dt.files;
+                        fileInput.dispatchEvent(new Event('change'));
+                    });
+                });
+            });
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        // Fulfill-request modal: carry the clicked request into the hidden field + label
+        const fulfillModal = document.getElementById('fulfillModal');
+        if (fulfillModal) {
+            fulfillModal.addEventListener('show.bs.modal', function(event) {
+                const btn = event.relatedTarget;
+                if (!btn) return;
+                document.getElementById('fulfillRequestId').value = btn.getAttribute('data-request-id');
+                document.getElementById('fulfillRequestTitle').value = btn.getAttribute('data-request-title');
+            });
+
+            const fulfillInput = document.getElementById('fulfillFileInput');
+            const fulfillList = document.getElementById('fulfillFileList');
+            if (fulfillInput && fulfillList) {
+                fulfillInput.addEventListener('change', function() {
+                    fulfillList.innerHTML = '';
+                    Array.from(this.files).forEach(file => {
+                        const item = document.createElement('span');
+                        item.className = 'file-item';
+                        item.innerHTML = `<i class="fas fa-file"></i> ${file.name} (${formatFileSize(file.size)})`;
+                        fulfillList.appendChild(item);
+                    });
+                });
+            }
+        }
+
+        // Drag and drop visual feedback
+        const dropZone = document.querySelector('.file-drop-zone');
+        if (dropZone) {
+            dropZone.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--primary)';
+                this.style.background = 'var(--gray-100)';
+            });
+
+            dropZone.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--gray-300)';
+                this.style.background = 'var(--gray-50)';
+            });
+
+            dropZone.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--gray-300)';
+                this.style.background = 'var(--gray-50)';
+            });
+        }
+
+        // Client-side filtering
+        const searchInput = document.querySelector('input[name="q"]');
+        const categoryFilter = document.querySelector('select[name="categoryId"]');
+        const folderFilter = document.querySelector('select[name="folderId"]');
+        const statusFilter = document.querySelector('select[name="status"]');
+        const table = document.getElementById('documentsTable');
+        const rows = table ? table.querySelectorAll('tbody tr') : [];
+        const visibleCountSpan = document.getElementById('visibleCount');
+
+        function filterDocuments() {
+            const searchValue = searchInput ? searchInput.value.toLowerCase() : '';
+            const categoryValue = categoryFilter ? categoryFilter.value : '';
+            const folderValue = folderFilter ? folderFilter.value : '';
+            const statusValue = statusFilter ? statusFilter.value : '';
+
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const title = row.getAttribute('data-title')?.toLowerCase() || '';
+                const category = row.getAttribute('data-category') || '';
+                const folder = row.getAttribute('data-folder') || '';
+                const status = row.getAttribute('data-status') || '';
+
+                let show = true;
+
+                if (searchValue && !title.includes(searchValue) && !category.toLowerCase().includes(searchValue)) {
+                    show = false;
+                }
+
+                if (categoryValue && category !== categoryValue) {
+                    show = false;
+                }
+
+                if (folderValue && folder !== folderValue) {
+                    show = false;
+                }
+
+                if (statusValue && status !== statusValue) {
+                    show = false;
+                }
+
+                if (show) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (visibleCountSpan) {
+                visibleCountSpan.textContent = visibleCount;
+            }
+
+            // Show no results message
+            const emptyState = document.querySelector('.empty-state:not(.original)');
+            const tbody = table ? table.querySelector('tbody') : null;
+
+            if (visibleCount === 0 && rows.length > 0) {
+                if (!emptyState && tbody) {
+                    const noResultsDiv = document.createElement('div');
+                    noResultsDiv.className = 'empty-state';
+                    noResultsDiv.innerHTML = `
+                        <i class="fas fa-search"></i>
+                        <h3>No matching documents found</h3>
+                        <p>Try adjusting your filters or search terms</p>
+                    `;
+                    tbody.parentNode.appendChild(noResultsDiv);
+                    if (table) table.style.display = 'none';
+                }
+            } else {
+                if (emptyState) emptyState.remove();
+                if (table) table.style.display = '';
+            }
+        }
+
+        // Attach event listeners
+        if (searchInput) {
+            searchInput.addEventListener('keyup', filterDocuments);
+        }
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', filterDocuments);
+        }
+        if (folderFilter) {
+            folderFilter.addEventListener('change', filterDocuments);
+        }
+        if (statusFilter) {
+            statusFilter.addEventListener('change', filterDocuments);
+        }
+
+        // Initialize
+        filterDocuments();
+    });
+</script>

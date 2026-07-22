@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.Controllers
 {
+    [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin")]
     public class DepartmentsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -70,6 +71,7 @@ namespace IT_Service_Management_System.Controllers
             _context.Departments.Add(department);
             await _context.SaveChangesAsync();
 
+            TempData["Success"] = "Department created.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -130,6 +132,7 @@ namespace IT_Service_Management_System.Controllers
                 throw;
             }
 
+            TempData["Success"] = "Department updated.";
             return RedirectToAction(nameof(Index));
 
         }
@@ -159,6 +162,11 @@ namespace IT_Service_Management_System.Controllers
             {
                 _context.Departments.Remove(department);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "Department deleted.";
+            }
+            else
+            {
+                TempData["Error"] = "Department not found.";
             }
 
             return RedirectToAction(nameof(Index));

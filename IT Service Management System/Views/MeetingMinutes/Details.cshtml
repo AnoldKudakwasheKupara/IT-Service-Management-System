@@ -1,0 +1,268 @@
+@model IT_Service_Management_System.Models.Meeting
+@using IT_Service_Management_System.Enums
+@using IT_Service_Management_System.Models
+@{
+    ViewData["Title"] = Model.DisplayTitle + " - Meeting Minutes";
+    bool isManager = ViewBag.IsManager ?? false;
+    int? currentUserId = ViewBag.CurrentUserId;
+    var users = (ViewBag.Users as List<User>) ?? new List<User>();
+    var attendeeIds = Model.Attendances.Select(a => a.UserId).ToHashSet();
+    var addable = users.Where(u => !attendeeIds.Contains(u.Id)).ToList();
+    string Initials(string? name) => string.IsNullOrWhiteSpace(name) ? "?" : string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => p[0]));
+}
+
+<partial name="_MeetingStyles" />
+
+<div class="mm">
+    <div class="page-container">
+        <div class="page-header head-row">
+            <div style="display:flex;align-items:center;gap:.9rem;">
+                <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                <div>
+                    <h1 class="page-title">@Model.DisplayTitle</h1>
+                    <p class="page-sub">
+                        <i class="far fa-calendar"></i> @Model.Date.ToString("dddd, dd MMM yyyy")
+                        &nbsp;·&nbsp; <span class="badge-mm b-dept">@(Model.Department?.Name ?? "Organization-wide")</span>
+                        &nbsp; <span class="badge-mm b-status-@Model.Status.ToString().ToLower()">@Model.Status</span>
+                    </p>
+                </div>
+            </div>
+            @if (isManager)
+            {
+                <div class="head-actions">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-ghost-mm"><i class="fas fa-pen"></i> Edit</a>
+                    <a asp-action="Delete" asp-route-id="@Model.Id" class="btn-danger-mm"><i class="fas fa-trash"></i> Delete</a>
+                </div>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
+            <div class="card-body">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:.6rem 1.5rem;margin-bottom:1rem;">
+                    <p class="meta" style="margin:0;"><strong>Day:</strong> @Model.WeekdayName</p>
+                    <p class="meta" style="margin:0;"><strong>Venue:</strong> @(string.IsNullOrWhiteSpace(Model.Venue) ? "—" : Model.Venue)</p>
+                    <p class="meta" style="margin:0;"><strong>Time:</strong> @(Model.StartTime?.ToString("HH:mm") ?? "—")@(Model.EndTime.HasValue ? $" – {Model.EndTime:HH\\:mm}" : "")</p>
+                    <p class="meta" style="margin:0;"><strong>Chair:</strong> @(Model.Facilitator?.FullName ?? "—")</p>
+                    <p class="meta" style="margin:0;"><strong>Minute taker:</strong> @(Model.MinuteTaker?.FullName ?? "—")</p>
+                    <p class="meta" style="margin:0;"><strong>Next meeting:</strong> @(Model.NextMeetingDate?.ToString("dd MMM yyyy") ?? "—")</p>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Objective))
+                {
+                    <div style="margin-bottom:1rem;">
+                        <strong style="font-size:.85rem;color:var(--gray-700);">Overview / objective</strong>
+                        <p style="white-space:pre-wrap;margin:.35rem 0 0;color:var(--gray-700);">@Model.Objective</p>
+                    </div>
+                }
+                <div>
+                    <strong style="font-size:.85rem;color:var(--gray-700);">Minutes / discussion</strong>
+                    <p style="white-space:pre-wrap;margin:.35rem 0 0;color:var(--gray-700);">@(string.IsNullOrWhiteSpace(Model.Summary) ? "No minutes recorded." : Model.Summary)</p>
+                </div>
+            </div>
+        </div>
+
+        @* ── ATTENDANCE ───────────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-user-check"></i> Attendance <span class="meta">(@Model.Attendances.Count(a => a.Status == AttendanceStatus.Present || a.Status == AttendanceStatus.Late)/@Model.Attendances.Count present)</span></span>
+            </div>
+            <div class="card-body">
+                @if (!Model.Attendances.Any())
+                {
+                    <p class="meta">No attendees yet. @(isManager ? "Add members below, or add people to the standing roster so they pre-load automatically." : "")</p>
+                }
+                else if (isManager)
+                {
+                    <form asp-action="RecordAttendance" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="meetingId" value="@Model.Id" />
+                        <table class="tbl">
+                            <thead><tr><th>Attendee</th><th>Dept / Role</th><th style="width:190px;">Status</th><th>Note</th></tr></thead>
+                            <tbody>
+                                @foreach (var a in Model.Attendances.OrderBy(a => a.User!.FirstName))
+                                {
+                                    <tr>
+                                        <td>
+                                            <span class="with-avatar"><span class="avatar">@Initials(a.User?.FullName)</span> @a.User?.FullName</span>
+                                            <input type="hidden" name="attendanceId" value="@a.Id" />
+                                        </td>
+                                        <td class="meta">@(a.User?.Department?.Name ?? "—") · @a.User?.Role</td>
+                                        <td>
+                                            <select name="status" class="inp">
+                                                @foreach (AttendanceStatus s in Enum.GetValues(typeof(AttendanceStatus)))
+                                                {
+                                                    <option value="@s" selected="@(a.Status == s)">@s</option>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td><input name="note" class="inp" value="@a.Note" placeholder="e.g. reason for absence" /></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <div style="margin-top:1rem;"><button type="submit" class="btn-primary-mm"><i class="fas fa-save"></i> Save attendance</button></div>
+                    </form>
+
+                    @if (addable.Any())
+                    {
+                        <form asp-action="AddAttendee" method="post" style="margin-top:1rem;display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="meetingId" value="@Model.Id" />
+                            <span class="meta">Add a guest:</span>
+                            <select name="userId" class="inp" style="max-width:280px;">
+                                @foreach (var u in addable)
+                                {
+                                    <option value="@u.Id">@u.FullName</option>
+                                }
+                            </select>
+                            <button type="submit" class="btn-ghost-mm"><i class="fas fa-user-plus"></i> Add</button>
+                        </form>
+                    }
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Attendee</th><th>Dept / Role</th><th>Status</th><th>Note</th></tr></thead>
+                        <tbody>
+                            @foreach (var a in Model.Attendances.OrderBy(a => a.User!.FirstName))
+                            {
+                                <tr>
+                                    <td><span class="with-avatar"><span class="avatar">@Initials(a.User?.FullName)</span> @a.User?.FullName</span></td>
+                                    <td class="meta">@(a.User?.Department?.Name ?? "—") · @a.User?.Role</td>
+                                    <td><span class="badge-mm b-@a.Status.ToString().ToLower()">@a.Status</span></td>
+                                    <td class="meta">@a.Note</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        @* ── ACTION ITEMS ─────────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-list-check"></i> Action Items</span></div>
+            <div class="card-body">
+                @if (isManager)
+                {
+                    <details class="disc" style="margin-bottom:1rem;">
+                        <summary><i class="fas fa-plus-circle"></i> Add action item</summary>
+                        <form asp-action="CreateActionItem" method="post" class="update-form" style="margin-top:.75rem;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="meetingId" value="@Model.Id" />
+                            <div class="form-grid">
+                                <div class="fg full"><label class="lbl"><i class="fas fa-heading"></i> Title <span class="req">*</span></label><input name="title" class="inp" required placeholder="What needs to be done?" /></div>
+                                <div class="fg full"><label class="lbl"><i class="fas fa-align-left"></i> Details</label><textarea name="details" rows="2" class="inp"></textarea></div>
+                                <div class="fg"><label class="lbl"><i class="fas fa-user"></i> Assign to (person)</label>
+                                    <select name="assignedToId" class="inp"><option value="">— none —</option>
+                                        @foreach (var u in users) { <option value="@u.Id">@u.FullName</option> }
+                                    </select>
+                                </div>
+                                <div class="fg"><label class="lbl"><i class="fas fa-users"></i> …or team / other</label><input name="assigneeLabel" class="inp" placeholder="e.g. Support Team" /></div>
+                                <div class="fg"><label class="lbl"><i class="fas fa-calendar-day"></i> Due date</label><input type="date" name="dueDate" class="inp" /></div>
+                                <div class="fg"><label class="lbl"><i class="fas fa-flag"></i> Priority</label>
+                                    <select name="priority" class="inp">
+                                        @foreach (ActionItemPriority p in Enum.GetValues(typeof(ActionItemPriority))) { <option value="@p" selected="@(p == ActionItemPriority.Normal)">@p</option> }
+                                    </select>
+                                </div>
+                            </div>
+                            <div><button type="submit" class="btn-primary-mm"><i class="fas fa-plus"></i> Add item</button></div>
+                        </form>
+                    </details>
+                }
+
+                @if (!Model.ActionItems.Any())
+                {
+                    <p class="meta">No action items raised in this meeting yet.</p>
+                }
+                else
+                {
+                    @foreach (var item in Model.ActionItems.OrderBy(a => a.Status == ActionItemStatus.Done).ThenByDescending(a => a.Priority))
+                    {
+                        bool canUpdate = isManager || (currentUserId != null && item.AssignedToId == currentUserId);
+                        <div class="ai @(item.IsOverdue ? "overdue-b" : "")">
+                            <div class="ai-head">
+                                <div>
+                                    <p class="ai-title">@item.Title</p>
+                                    <div class="ai-meta">
+                                        <span class="badge-mm b-@item.Status.ToString().ToLower()">@(item.Status == ActionItemStatus.InProgress ? "In Progress" : item.Status.ToString())</span>
+                                        <span class="badge-mm b-pri-@item.Priority.ToString().ToLower()">@item.Priority</span>
+                                        <span class="meta"><i class="fas fa-user"></i> @item.AssigneeDisplay</span>
+                                        @if (item.DueDate.HasValue)
+                                        {
+                                            <span class="meta @(item.IsOverdue ? "overdue" : "")"><i class="fas fa-calendar-day"></i> Due @item.DueDate.Value.ToString("dd MMM")</span>
+                                        }
+                                    </div>
+                                </div>
+                                @if (isManager)
+                                {
+                                    <details class="disc"><summary>Edit</summary>
+                                        <form asp-action="EditActionItem" method="post" class="update-form" style="margin-top:.5rem;min-width:260px;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <div class="fg"><label class="lbl">Title</label><input name="title" class="inp" value="@item.Title" /></div>
+                                            <div class="fg"><label class="lbl">Details</label><textarea name="details" rows="2" class="inp">@item.Details</textarea></div>
+                                            <div class="fg"><label class="lbl">Assign to (person)</label>
+                                                <select name="assignedToId" class="inp"><option value="">— none —</option>
+                                                    @foreach (var u in users) { <option value="@u.Id" selected="@(u.Id == item.AssignedToId)">@u.FullName</option> }
+                                                </select>
+                                            </div>
+                                            <div class="fg"><label class="lbl">…or team / other</label><input name="assigneeLabel" class="inp" value="@item.AssigneeLabel" placeholder="e.g. Support Team" /></div>
+                                            <div class="fg"><label class="lbl">Due date</label><input type="date" name="dueDate" class="inp" value="@(item.DueDate?.ToString("yyyy-MM-dd"))" /></div>
+                                            <div class="fg"><label class="lbl">Priority</label>
+                                                <select name="priority" class="inp">@foreach (ActionItemPriority p in Enum.GetValues(typeof(ActionItemPriority))) { <option value="@p" selected="@(p == item.Priority)">@p</option> }</select>
+                                            </div>
+                                            <div class="fg"><label class="lbl">Status</label>
+                                                <select name="status" class="inp">@foreach (ActionItemStatus s in Enum.GetValues(typeof(ActionItemStatus))) { <option value="@s" selected="@(s == item.Status)">@s</option> }</select>
+                                            </div>
+                                            <button type="submit" class="btn-ghost-mm"><i class="fas fa-save"></i> Save</button>
+                                        </form>
+                                    </details>
+                                }
+                            </div>
+                            <div class="ai-body">
+                                @if (!string.IsNullOrWhiteSpace(item.Details))
+                                {
+                                    <p class="ai-desc">@item.Details</p>
+                                }
+
+                                @if (item.Updates.Any())
+                                {
+                                    <div class="timeline">
+                                        @foreach (var up in item.Updates.OrderByDescending(u => u.CreatedAt))
+                                        {
+                                            <div class="tl-item">
+                                                <div class="tl-note">@up.Note</div>
+                                                <div class="tl-meta">
+                                                    <span class="badge-mm b-@up.StatusAtUpdate.ToString().ToLower()" style="font-size:.65rem;">@up.StatusAtUpdate</span>
+                                                    · @up.UpdatedBy?.FullName · @up.CreatedAt.ToString("dd MMM yyyy HH:mm")
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+
+                                @if (canUpdate && item.Status != ActionItemStatus.Done)
+                                {
+                                    <form asp-action="PostUpdate" method="post" class="update-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="actionItemId" value="@item.Id" />
+                                        <input type="hidden" name="meetingId" value="@Model.Id" />
+                                        <div class="fg" style="margin-bottom:.5rem;"><label class="lbl"><i class="fas fa-comment-dots"></i> Post progress update</label>
+                                            <textarea name="note" rows="2" class="inp" placeholder="What's the latest on this?" required></textarea></div>
+                                        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+                                            <select name="status" class="inp" style="max-width:180px;">
+                                                @foreach (ActionItemStatus s in Enum.GetValues(typeof(ActionItemStatus))) { <option value="@s" selected="@(s == item.Status)">@s</option> }
+                                            </select>
+                                            <button type="submit" class="btn-outline-mm"><i class="fas fa-paper-plane"></i> Post update</button>
+                                        </div>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
