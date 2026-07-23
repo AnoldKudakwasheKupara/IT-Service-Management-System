@@ -77,6 +77,11 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<SlaEvent> SlaEvents { get; set; }
         public DbSet<ServiceCatalogItem> ServiceCatalogItems { get; set; }
         public DbSet<ServiceRequest> ServiceRequests { get; set; }
+        public DbSet<MajorIncident> MajorIncidents { get; set; }
+        public DbSet<MajorIncidentAffectedItem> MajorIncidentAffectedItems { get; set; }
+        public DbSet<MajorIncidentTimelineEntry> MajorIncidentTimelineEntries { get; set; }
+        public DbSet<MajorIncidentUpdate> MajorIncidentUpdates { get; set; }
+        public DbSet<MajorIncidentFollowUp> MajorIncidentFollowUps { get; set; }
 
         // ── Meeting Minutes (Operations) ───────────────────────────────────────────
         public DbSet<Meeting> Meetings { get; set; }
@@ -436,6 +441,56 @@ namespace IT_Service_Management_System.DbContexts
                 .HasOne(r => r.ApprovedBy).WithMany().HasForeignKey(r => r.ApprovedById).OnDelete(DeleteBehavior.NoAction);
             modelBuilder.Entity<ServiceRequest>().HasIndex(r => new { r.Status, r.DueAt });
             modelBuilder.Entity<ServiceRequest>().HasIndex(r => new { r.RequestedById, r.CreatedAt });
+
+            // ── Major incident management ───────────────────────────────────────────────
+            // Enums stored as readable strings; children cascade; user/ticket links never cascade.
+            modelBuilder.Entity<MajorIncident>().Property(m => m.Severity).HasConversion<string>();
+            modelBuilder.Entity<MajorIncident>().Property(m => m.Status).HasConversion<string>();
+            modelBuilder.Entity<MajorIncident>()
+                .HasOne(m => m.SourceTicket).WithMany().HasForeignKey(m => m.SourceTicketId).OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<MajorIncident>()
+                .HasOne(m => m.DeclaredBy).WithMany().HasForeignKey(m => m.DeclaredById).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<MajorIncident>()
+                .HasOne(m => m.Commander).WithMany().HasForeignKey(m => m.CommanderId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<MajorIncident>()
+                .HasOne(m => m.TechnicalLead).WithMany().HasForeignKey(m => m.TechnicalLeadId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<MajorIncident>()
+                .HasOne(m => m.CommunicationsLead).WithMany().HasForeignKey(m => m.CommunicationsLeadId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<MajorIncident>()
+                .HasOne(m => m.ReviewFacilitator).WithMany().HasForeignKey(m => m.ReviewFacilitatorId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<MajorIncident>().HasIndex(m => new { m.Status, m.Severity });
+            modelBuilder.Entity<MajorIncident>().HasIndex(m => m.DeclaredAt);
+
+            modelBuilder.Entity<MajorIncidentAffectedItem>()
+                .HasOne(a => a.MajorIncident).WithMany(m => m.AffectedItems).HasForeignKey(a => a.MajorIncidentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<MajorIncidentAffectedItem>()
+                .HasOne(a => a.ConfigurationItem).WithMany().HasForeignKey(a => a.ConfigurationItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<MajorIncidentTimelineEntry>().Property(e => e.Type).HasConversion<string>();
+            modelBuilder.Entity<MajorIncidentTimelineEntry>()
+                .HasOne(e => e.MajorIncident).WithMany(m => m.Timeline).HasForeignKey(e => e.MajorIncidentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<MajorIncidentTimelineEntry>()
+                .HasOne(e => e.LoggedBy).WithMany().HasForeignKey(e => e.LoggedById).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<MajorIncidentTimelineEntry>().HasIndex(e => new { e.MajorIncidentId, e.OccurredAt });
+
+            modelBuilder.Entity<MajorIncidentUpdate>().Property(u => u.Channel).HasConversion<string>();
+            modelBuilder.Entity<MajorIncidentUpdate>().Property(u => u.StatusAtUpdate).HasConversion<string>();
+            modelBuilder.Entity<MajorIncidentUpdate>()
+                .HasOne(u => u.MajorIncident).WithMany(m => m.Updates).HasForeignKey(u => u.MajorIncidentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<MajorIncidentUpdate>()
+                .HasOne(u => u.PostedBy).WithMany().HasForeignKey(u => u.PostedById).OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<MajorIncidentFollowUp>().Property(f => f.Status).HasConversion<string>();
+            modelBuilder.Entity<MajorIncidentFollowUp>()
+                .HasOne(f => f.MajorIncident).WithMany(m => m.FollowUps).HasForeignKey(f => f.MajorIncidentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<MajorIncidentFollowUp>()
+                .HasOne(f => f.Owner).WithMany().HasForeignKey(f => f.OwnerId).OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<MajorIncidentFollowUp>().HasIndex(f => new { f.MajorIncidentId, f.Status });
 
             // ── Meeting Minutes relationships ──────────────────────────────────────────
             // Store enums as readable strings (matches the Ticket/User convention above).

@@ -1,0 +1,66 @@
+@model IT_Service_Management_System.Models.Itsm.MajorIncident
+@using IT_Service_Management_System.Models.Itsm
+@{
+    ViewData["Title"] = $"Edit {Model.Reference}";
+    var tickets = ViewBag.Tickets as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+@await Html.PartialAsync("_MajorIncidentStyles")
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title"><i class="fas fa-pen me-2" style="color:var(--primary);"></i>Edit @Model.Reference</h1>
+                <p class="text-muted mt-2">@Model.Title</p>
+            </div>
+            <a asp-action="Details" asp-route-id="@Model.Id" class="btn-back"><i class="fas fa-arrow-left me-2"></i>Back</a>
+        </div>
+    </div>
+
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="mi-grid">
+            <div>
+                <div class="mi-section">
+                    <h2><i class="fas fa-circle-info"></i> Details</h2>
+                    <div class="mi-body">
+                        <div class="mi-field">
+                            <label>Title <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+                        <div class="mi-field"><label>Situation summary</label><textarea asp-for="Summary" class="form-control" rows="3"></textarea></div>
+                        <div class="mi-field"><label>Business impact</label><textarea asp-for="BusinessImpact" class="form-control" rows="2"></textarea></div>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="mi-section">
+                    <h2><i class="fas fa-gauge-high"></i> Classification & impact</h2>
+                    <div class="mi-body">
+                        <div class="mi-field">
+                            <label>Severity</label>
+                            <select asp-for="Severity" class="form-select">
+                                <option value="@MajorIncidentSeverity.Sev1">SEV 1 — Critical</option>
+                                <option value="@MajorIncidentSeverity.Sev2">SEV 2 — High</option>
+                            </select>
+                        </div>
+                        <div class="mi-field"><label>Detected at</label><input asp-for="DetectedAt" type="datetime-local" class="form-control" /></div>
+                        <div class="mi-field">
+                            <label>Escalated from ticket</label>
+                            <select asp-for="SourceTicketId" class="form-select">
+                                <option value="">— none —</option>
+                                @foreach (var t in tickets) { <option value="@t.Id" selected="@(Model.SourceTicketId == (int)t.Id)">@t.Label</option> }
+                            </select>
+                        </div>
+                        <div class="mi-field"><label>Users affected</label><input asp-for="UsersAffected" type="number" min="0" class="form-control" /></div>
+                        <div class="mi-field"><label>Downtime (minutes)</label><input asp-for="DowntimeMinutes" type="number" min="0" class="form-control" /></div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-create w-100"><i class="fas fa-save me-2"></i>Save Changes</button>
+            </div>
+        </div>
+    </form>
+</div>

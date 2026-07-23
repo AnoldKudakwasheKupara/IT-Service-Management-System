@@ -663,6 +663,10 @@
                 @if (navFull)
                 {
                     <div class="nav-group">Service Management</div>
+                    <a class="nav-item @(currentController == "MajorIncidents" ? "active" : "")"
+                       asp-controller="MajorIncidents" asp-action="Index">
+                        <i class="fas fa-fire"></i> Major Incidents
+                    </a>
                     <a class="nav-item @(currentController == "Problems" ? "active" : "")"
                        asp-controller="Problems" asp-action="Index">
                         <i class="fas fa-triangle-exclamation"></i> Problems

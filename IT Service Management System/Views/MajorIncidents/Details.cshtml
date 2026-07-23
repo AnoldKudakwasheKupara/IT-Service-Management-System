@@ -1,0 +1,320 @@
+@model IT_Service_Management_System.Models.Itsm.MajorIncident
+@using IT_Service_Management_System.Models.Itsm
+@using IT_Service_Management_System.Helpers
+@{
+    ViewData["Title"] = Model.Reference;
+    var agents = ViewBag.Agents as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var cis = ViewBag.Cis as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var nextStages = MajorIncidentWorkflow.NextStages(Model.Status);
+
+    string RoleName(dynamic? u) => u == null ? "Unassigned" : $"{u.FirstName} {u.LastName}";
+    string StatusBadge(MajorIncidentStatus s) => s switch
+    {
+        MajorIncidentStatus.Declared => "badge-red",
+        MajorIncidentStatus.Investigating or MajorIncidentStatus.Identified => "badge-amber",
+        MajorIncidentStatus.Recovering or MajorIncidentStatus.Review => "badge-blue",
+        MajorIncidentStatus.Resolved => "badge-green",
+        _ => "badge-gray"
+    };
+}
+@await Html.PartialAsync("_MajorIncidentStyles")
+
+<div class="page-container">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left me-2"></i>Register</a>
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-clear-filters" style="text-decoration:none;"><i class="fas fa-pencil-alt me-1"></i>Edit</a>
+        </div>
+    </div>
+
+    @* ── Hero ─────────────────────────────────────────────────────────── *@
+    <div class="mi-hero @(Model.Severity == MajorIncidentSeverity.Sev2 ? "sev2" : "")">
+        <div class="mi-ref">@Model.Reference · @(Model.Severity == MajorIncidentSeverity.Sev1 ? "SEV 1 — CRITICAL" : "SEV 2 — HIGH")</div>
+        <h1>@Model.Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Summary)) { <div style="opacity:.92;">@Model.Summary</div> }
+        <div class="mi-meta">
+            <span><strong>Status</strong>@Model.Status</span>
+            <span><strong>Declared</strong>@Model.DeclaredAt.ToString("MMM dd HH:mm")</span>
+            <span><strong>Detected</strong>@(Model.DetectedAt?.ToString("MMM dd HH:mm") ?? "—")</span>
+            <span><strong>Resolved</strong>@(Model.ResolvedAt?.ToString("MMM dd HH:mm") ?? "—")</span>
+            <span><strong>Time to resolve</strong>@(Model.TimeToResolveMinutes.HasValue ? $"{Model.TimeToResolveMinutes / 60}h {Model.TimeToResolveMinutes % 60}m" : "—")</span>
+        </div>
+    </div>
+
+    @* ── Stage controls ──────────────────────────────────────────────── *@
+    <div class="mi-section">
+        <h2><i class="fas fa-forward"></i> Response stage</h2>
+        <div class="mi-body d-flex flex-wrap align-items-center gap-2">
+            <span class="status-badge @StatusBadge(Model.Status)" style="font-size:.8rem;">@Model.Status</span>
+            @if (nextStages.Count == 0 && Model.Status != MajorIncidentStatus.Closed)
+            {
+                <span class="text-muted">No further forward stage.</span>
+            }
+            @foreach (var stage in nextStages)
+            {
+                <form asp-action="Advance" asp-route-id="@Model.Id" method="post" style="margin:0;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="to" value="@stage" />
+                    <button type="submit" class="btn-create-sm" style="border:none;cursor:pointer;">
+                        <i class="fas fa-arrow-right"></i> Move to @stage
+                    </button>
+                </form>
+            }
+            @if (Model.Status != MajorIncidentStatus.Closed)
+            {
+                <form asp-action="Advance" asp-route-id="@Model.Id" method="post" style="margin:0;"
+                      onsubmit="return confirm('Close @Model.Reference?');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="to" value="@MajorIncidentStatus.Closed" />
+                    <button type="submit" class="btn-clear-filters" style="cursor:pointer;"><i class="fas fa-flag-checkered"></i> Close</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <div class="mi-grid">
+        <div>
+            @* ── Response timeline ──────────────────────────────────────── *@
+            <div class="mi-section">
+                <h2><i class="fas fa-timeline"></i> Response timeline</h2>
+                <div class="mi-body">
+                    <form asp-action="AddTimelineEntry" asp-route-id="@Model.Id" method="post" class="mi-inline-form mb-3">
+                        @Html.AntiForgeryToken()
+                        <select name="type" class="form-select">
+                            @foreach (var t in Enum.GetValues<MajorIncidentEventType>()) { <option value="@t">@t</option> }
+                        </select>
+                        <input type="datetime-local" name="occurredAt" class="form-control" />
+                        <input name="detail" class="form-control" style="flex:1;min-width:200px;" placeholder="What happened?" required />
+                        <button type="submit" class="btn-create-sm" style="border:none;cursor:pointer;"><i class="fas fa-plus"></i> Log</button>
+                    </form>
+                    @if (Model.Timeline.Any())
+                    {
+                        <ul class="mi-timeline">
+                            @foreach (var e in Model.Timeline.OrderByDescending(x => x.OccurredAt))
+                            {
+                                <li>
+                                    <div class="t-time">@e.OccurredAt.ToString("MMM dd, yyyy HH:mm") · <span class="t-kind">@e.Type</span>@(e.LoggedBy != null ? $" · {e.LoggedBy.FirstName} {e.LoggedBy.LastName}" : "")</div>
+                                    <div class="t-detail">@e.Detail</div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else { <p class="text-muted mb-0">No entries yet.</p> }
+                </div>
+            </div>
+
+            @* ── Stakeholder updates ────────────────────────────────────── *@
+            <div class="mi-section">
+                <h2><i class="fas fa-bullhorn"></i> Stakeholder updates</h2>
+                <div class="mi-body">
+                    <form asp-action="PostUpdate" asp-route-id="@Model.Id" method="post" class="mb-3">
+                        @Html.AntiForgeryToken()
+                        <div class="mi-inline-form mb-2">
+                            <select name="channel" class="form-select">
+                                @foreach (var c in Enum.GetValues<StakeholderChannel>()) { <option value="@c">@c</option> }
+                            </select>
+                            <input name="audience" class="form-control" placeholder="Audience (e.g. All staff, Customers)" style="flex:1;" />
+                        </div>
+                        <textarea name="message" class="form-control mb-2" rows="2" placeholder="Update message to stakeholders..." required></textarea>
+                        <button type="submit" class="btn-create-sm" style="border:none;cursor:pointer;"><i class="fas fa-paper-plane"></i> Post update</button>
+                    </form>
+                    @foreach (var u in Model.Updates.OrderByDescending(x => x.PostedAt))
+                    {
+                        <div class="mi-update">
+                            <div class="u-head">
+                                <span><i class="fas fa-satellite-dish me-1"></i>@u.Channel@(string.IsNullOrWhiteSpace(u.Audience) ? "" : $" → {u.Audience}")</span>
+                                <span>@u.PostedAt.ToString("MMM dd HH:mm")@(u.PostedBy != null ? $" · {u.PostedBy.FirstName} {u.PostedBy.LastName}" : "")</span>
+                            </div>
+                            <div>@u.Message</div>
+                        </div>
+                    }
+                    @if (!Model.Updates.Any()) { <p class="text-muted mb-0">No stakeholder updates issued yet.</p> }
+                </div>
+            </div>
+
+            @* ── Recovery & resolution ──────────────────────────────────── *@
+            <div class="mi-section">
+                <h2><i class="fas fa-heart-pulse"></i> Recovery &amp; resolution</h2>
+                <div class="mi-body">
+                    <form asp-action="Resolve" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mi-field"><label>Workaround / temporary fix</label><textarea name="workaround" class="form-control" rows="2">@Model.Workaround</textarea></div>
+                        <div class="mi-field"><label>Resolution summary</label><textarea name="resolutionSummary" class="form-control" rows="3">@Model.ResolutionSummary</textarea></div>
+                        <div class="mi-field"><label>Root cause</label><textarea name="rootCauseSummary" class="form-control" rows="3">@Model.RootCauseSummary</textarea></div>
+                        <button type="submit" class="btn-create-sm" style="border:none;cursor:pointer;">
+                            <i class="fas fa-check"></i> @(Model.IsResolved ? "Save resolution" : "Mark resolved")
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            @* ── Post-incident review ───────────────────────────────────── *@
+            <div class="mi-section">
+                <h2><i class="fas fa-clipboard-check"></i> Post-incident review @(Model.ReviewCompleted ? "· completed" : "")</h2>
+                <div class="mi-body">
+                    <form asp-action="SavePir" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mi-inline-form mb-2">
+                            <div><label class="mi-field" style="margin:0;">Scheduled</label><input type="datetime-local" name="ReviewScheduledAt" value="@Model.ReviewScheduledAt?.ToString("yyyy-MM-ddTHH:mm")" class="form-control" /></div>
+                            <div><label class="mi-field" style="margin:0;">Held</label><input type="datetime-local" name="ReviewHeldAt" value="@Model.ReviewHeldAt?.ToString("yyyy-MM-ddTHH:mm")" class="form-control" /></div>
+                            <div style="flex:1;min-width:180px;"><label class="mi-field" style="margin:0;">Facilitator</label>
+                                <select name="ReviewFacilitatorId" class="form-select">
+                                    <option value="">— none —</option>
+                                    @foreach (var a in agents) { <option value="@a.Id" selected="@(Model.ReviewFacilitatorId == (int)a.Id)">@a.Name</option> }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mi-field"><label>What happened</label><textarea name="PirWhatHappened" class="form-control" rows="3">@Model.PirWhatHappened</textarea></div>
+                        <div class="mi-field"><label>What went well</label><textarea name="PirWhatWentWell" class="form-control" rows="2">@Model.PirWhatWentWell</textarea></div>
+                        <div class="mi-field"><label>What went wrong</label><textarea name="PirWhatWentWrong" class="form-control" rows="2">@Model.PirWhatWentWrong</textarea></div>
+                        <div class="mi-field"><label>Lessons learned</label><textarea name="PirLessonsLearned" class="form-control" rows="2">@Model.PirLessonsLearned</textarea></div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn-clear-filters" style="cursor:pointer;"><i class="fas fa-save"></i> Save review</button>
+                            @if (!Model.ReviewCompleted)
+                            {
+                                <button type="submit" name="complete" value="true" class="btn-create-sm" style="border:none;cursor:pointer;"><i class="fas fa-check-double"></i> Complete review</button>
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            @* ── Command team ───────────────────────────────────────────── *@
+            <div class="mi-section">
+                <h2><i class="fas fa-users-gear"></i> Command team</h2>
+                <div class="mi-body">
+                    <div class="mi-roles mb-3">
+                        <div class="mi-role"><div class="lbl">Incident commander</div><div class="val">@RoleName(Model.Commander)</div></div>
+                        <div class="mi-role"><div class="lbl">Technical lead</div><div class="val">@RoleName(Model.TechnicalLead)</div></div>
+                        <div class="mi-role"><div class="lbl">Communications lead</div><div class="val">@RoleName(Model.CommunicationsLead)</div></div>
+                    </div>
+                    <form asp-action="Assign" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mi-field"><label>Incident commander</label>
+                            <select name="commanderId" class="form-select">
+                                <option value="">— unassigned —</option>
+                                @foreach (var a in agents) { <option value="@a.Id" selected="@(Model.CommanderId == (int)a.Id)">@a.Name</option> }
+                            </select>
+                        </div>
+                        <div class="mi-field"><label>Technical lead</label>
+                            <select name="technicalLeadId" class="form-select">
+                                <option value="">— unassigned —</option>
+                                @foreach (var a in agents) { <option value="@a.Id" selected="@(Model.TechnicalLeadId == (int)a.Id)">@a.Name</option> }
+                            </select>
+                        </div>
+                        <div class="mi-field"><label>Communications lead</label>
+                            <select name="communicationsLeadId" class="form-select">
+                                <option value="">— unassigned —</option>
+                                @foreach (var a in agents) { <option value="@a.Id" selected="@(Model.CommunicationsLeadId == (int)a.Id)">@a.Name</option> }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-clear-filters w-100" style="cursor:pointer;"><i class="fas fa-user-check"></i> Assign team</button>
+                    </form>
+                </div>
+            </div>
+
+            @* ── Impact metrics ─────────────────────────────────────────── *@
+            <div class="mi-section">
+                <h2><i class="fas fa-chart-simple"></i> Impact</h2>
+                <div class="mi-body">
+                    <div class="mi-metrics">
+                        <div class="mi-metric"><strong>@(Model.UsersAffected?.ToString() ?? "—")</strong><span>Users affected</span></div>
+                        <div class="mi-metric"><strong>@(Model.DowntimeMinutes?.ToString() ?? "—")</strong><span>Downtime min</span></div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Model.BusinessImpact)) { <p class="mt-3 mb-0" style="font-size:.85rem;color:var(--gray-600,#475569);">@Model.BusinessImpact</p> }
+                </div>
+            </div>
+
+            @* ── Affected services & CIs ────────────────────────────────── *@
+            <div class="mi-section">
+                <h2><i class="fas fa-sitemap"></i> Affected services &amp; CIs</h2>
+                <div class="mi-body">
+                    <form asp-action="AddAffectedItem" asp-route-id="@Model.Id" method="post" class="mb-3">
+                        @Html.AntiForgeryToken()
+                        <div class="mi-field" style="margin-bottom:.5rem;">
+                            <select name="configurationItemId" class="form-select">
+                                <option value="">— CMDB item (optional) —</option>
+                                @foreach (var c in cis) { <option value="@c.Id">@c.Name</option> }
+                            </select>
+                        </div>
+                        <input name="serviceName" class="form-control mb-2" placeholder="Or service name" />
+                        <input name="impactNote" class="form-control mb-2" placeholder="Impact note" />
+                        <button type="submit" class="btn-create-sm w-100" style="border:none;cursor:pointer;"><i class="fas fa-plus"></i> Add affected service</button>
+                    </form>
+                    @if (Model.AffectedItems.Any())
+                    {
+                        <table class="mi-affected">
+                            <thead><tr><th>Service / CI</th><th>Status</th><th></th></tr></thead>
+                            <tbody>
+                                @foreach (var a in Model.AffectedItems)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div>@(a.ConfigurationItem?.Name ?? a.ServiceName)</div>
+                                            @if (!string.IsNullOrWhiteSpace(a.ImpactNote)) { <div style="font-size:.72rem;color:var(--gray-500,#64748b);">@a.ImpactNote</div> }
+                                        </td>
+                                        <td>
+                                            <span class="status-badge @(a.Restored ? "badge-green" : "badge-red")">@(a.Restored ? "Restored" : "Down")</span>
+                                        </td>
+                                        <td style="text-align:right;white-space:nowrap;">
+                                            <form asp-action="ToggleRestored" asp-route-id="@Model.Id" method="post" style="display:inline;margin:0;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="itemId" value="@a.Id" />
+                                                <button type="submit" class="action-btn btn-view" title="Toggle restored"><i class="fas fa-power-off"></i></button>
+                                            </form>
+                                            <form asp-action="RemoveAffectedItem" asp-route-id="@Model.Id" method="post" style="display:inline;margin:0;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="itemId" value="@a.Id" />
+                                                <button type="submit" class="action-btn btn-delete" title="Remove"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else { <p class="text-muted mb-0">No affected services recorded.</p> }
+                </div>
+            </div>
+
+            @* ── Follow-up actions ──────────────────────────────────────── *@
+            <div class="mi-section">
+                <h2><i class="fas fa-list-check"></i> Follow-up actions</h2>
+                <div class="mi-body">
+                    <form asp-action="AddFollowUp" asp-route-id="@Model.Id" method="post" class="mb-3">
+                        @Html.AntiForgeryToken()
+                        <input name="description" class="form-control mb-2" placeholder="Corrective / preventive action" required />
+                        <div class="mi-inline-form mb-2">
+                            <select name="ownerId" class="form-select" style="flex:1;">
+                                <option value="">— owner —</option>
+                                @foreach (var a in agents) { <option value="@a.Id">@a.Name</option> }
+                            </select>
+                            <input type="date" name="dueDate" class="form-control" />
+                        </div>
+                        <button type="submit" class="btn-create-sm w-100" style="border:none;cursor:pointer;"><i class="fas fa-plus"></i> Add follow-up</button>
+                    </form>
+                    @foreach (var f in Model.FollowUps.OrderBy(x => x.Status).ThenBy(x => x.DueDate))
+                    {
+                        <div class="mi-update">
+                            <div class="u-head">
+                                <span>@(f.Owner != null ? $"{f.Owner.FirstName} {f.Owner.LastName}" : (f.OwnerName ?? "Unassigned"))</span>
+                                <span class="@(f.IsOverdue ? "text-danger fw-semibold" : "")">@(f.DueDate?.ToString("MMM dd") ?? "no due date")</span>
+                            </div>
+                            <div class="mb-2">@f.Description</div>
+                            <form asp-action="SetFollowUpStatus" asp-route-id="@Model.Id" method="post" class="mi-inline-form" style="margin:0;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="followUpId" value="@f.Id" />
+                                <select name="status" class="form-select" onchange="this.form.submit()">
+                                    @foreach (var s in Enum.GetValues<FollowUpStatus>()) { <option value="@s" selected="@(f.Status == s)">@s</option> }
+                                </select>
+                            </form>
+                        </div>
+                    }
+                    @if (!Model.FollowUps.Any()) { <p class="text-muted mb-0">No follow-up actions yet.</p> }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,134 @@
+@model List<IT_Service_Management_System.Models.Itsm.MajorIncident>
+@using IT_Service_Management_System.Models.Itsm
+@{
+    ViewData["Title"] = "Major Incidents";
+    var curStatus = ViewBag.Status as MajorIncidentStatus?;
+    var curSev = ViewBag.Severity as MajorIncidentSeverity?;
+    var curQ = ViewBag.Q as string;
+
+    string StatusBadge(MajorIncidentStatus s) => s switch
+    {
+        MajorIncidentStatus.Declared => "badge-red",
+        MajorIncidentStatus.Investigating => "badge-amber",
+        MajorIncidentStatus.Identified => "badge-amber",
+        MajorIncidentStatus.Recovering => "badge-blue",
+        MajorIncidentStatus.Resolved => "badge-green",
+        MajorIncidentStatus.Review => "badge-blue",
+        MajorIncidentStatus.Closed => "badge-gray",
+        _ => "badge-gray"
+    };
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title"><i class="fas fa-fire me-2" style="color:var(--danger,#e53e3e);"></i>Major Incidents</h1>
+                <p class="text-muted mt-2">Declare and coordinate high-impact (P1/P2) incident response</p>
+            </div>
+            <a asp-action="Declare" class="btn-create"><i class="fas fa-bullhorn me-2"></i>Declare Major Incident</a>
+        </div>
+    </div>
+
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon danger"><i class="fas fa-fire"></i></div>
+            <div class="stat-info"><h3>@(ViewBag.Open ?? 0)</h3><p>Open</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon warning"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="stat-info"><h3>@(ViewBag.Sev1 ?? 0)</h3><p>Open SEV 1</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon primary"><i class="fas fa-list"></i></div>
+            <div class="stat-info"><h3>@(ViewBag.Total ?? 0)</h3><p>Total Declared</p></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon success"><i class="fas fa-stopwatch"></i></div>
+            <div class="stat-info"><h3>@(ViewBag.MttrHours?.ToString() ?? "—")@(ViewBag.MttrHours != null ? "h" : "")</h3><p>Mean Time To Resolve</p></div>
+        </div>
+    </div>
+
+    <div class="filters-card mb-4">
+        <div class="filters-header"><i class="fas fa-filter"></i><span>Filter Incidents</span></div>
+        <form method="get" asp-action="Index" class="filters-body">
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status" class="filter-select">
+                    <option value="">All Status</option>
+                    @foreach (var s in Enum.GetValues<MajorIncidentStatus>())
+                    { <option value="@s" selected="@(curStatus == s)">@s</option> }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Severity</label>
+                <select name="severity" class="filter-select">
+                    <option value="">All Severity</option>
+                    @foreach (var s in Enum.GetValues<MajorIncidentSeverity>())
+                    { <option value="@s" selected="@(curSev == s)">@s</option> }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Search</label>
+                <div class="search-wrapper"><i class="fas fa-search"></i>
+                    <input type="text" name="q" value="@curQ" placeholder="Search title or summary..." class="search-input">
+                </div>
+            </div>
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary);color:#fff;border:none;"><i class="fas fa-search"></i> Search</button>
+            <a asp-action="Index" class="btn-clear-filters" style="text-decoration:none;display:inline-flex;align-items:center;gap:.4rem;"><i class="fas fa-undo-alt"></i> Clear</a>
+        </form>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-list me-2"></i><span>Incident Register</span></div>
+            <div class="record-count"><i class="fas fa-chart-simple"></i> <span>@Model.Count</span> shown</div>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Ref</th><th>Severity</th><th>Status</th><th>Commander</th>
+                        <th>Declared</th><th>Resolved</th><th style="text-align:right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@m.Id" style="text-decoration:none;">
+                                    <div style="font-size:.68rem;font-weight:700;color:var(--primary);letter-spacing:.5px;">@m.Reference</div>
+                                    <div style="color:var(--gray-700,#334155);">@m.Title</div>
+                                </a>
+                            </td>
+                            <td><span class="status-badge @(m.Severity == MajorIncidentSeverity.Sev1 ? "badge-red" : "badge-amber")">@(m.Severity == MajorIncidentSeverity.Sev1 ? "SEV 1" : "SEV 2")</span></td>
+                            <td><span class="status-badge @StatusBadge(m.Status)">@m.Status</span></td>
+                            <td>@(m.Commander != null ? $"{m.Commander.FirstName} {m.Commander.LastName}" : "—")</td>
+                            <td class="date-cell">@m.DeclaredAt.ToString("MMM dd, HH:mm")</td>
+                            <td class="date-cell">@(m.ResolvedAt?.ToString("MMM dd, HH:mm") ?? "—")</td>
+                            <td class="action-buttons">
+                                <a asp-action="Details" asp-route-id="@m.Id" class="action-btn btn-view" title="Open"><i class="fas fa-eye"></i></a>
+                                <a asp-action="Edit" asp-route-id="@m.Id" class="action-btn btn-edit" title="Edit"><i class="fas fa-pencil-alt"></i></a>
+                                <form asp-action="Delete" asp-route-id="@m.Id" method="post" style="display:inline;margin:0;"
+                                      onsubmit="return confirm('Delete @m.Reference? This cannot be undone.');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="action-btn btn-delete" title="Delete"><i class="fas fa-trash"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <i class="fas fa-fire-extinguisher"></i>
+                <h3>No major incidents</h3>
+                <p>When a P1/P2 hits, declare it here to run a coordinated response.</p>
+                <a asp-action="Declare" class="btn-create-sm"><i class="fas fa-bullhorn"></i> Declare Major Incident</a>
+            </div>
+        }
+    </div>
+</div>
