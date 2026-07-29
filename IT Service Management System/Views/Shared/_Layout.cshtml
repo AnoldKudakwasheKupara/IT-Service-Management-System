@@ -131,6 +131,169 @@
 
                 .nav-group-toggle.collapsed .nav-chevron { transform: rotate(-90deg); }
 
+            /* ── Global search / command palette (Ctrl+K) ─────────────────────── */
+            .topbar-search {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                padding: 0.45rem 0.9rem;
+                margin-right: 0.75rem;
+                background: var(--gray-100);
+                border: 1px solid var(--gray-200);
+                border-radius: 0.6rem;
+                color: var(--gray-500);
+                font-size: 0.82rem;
+                font-family: inherit;
+                cursor: pointer;
+                transition: var(--transition-smooth);
+            }
+
+                .topbar-search:hover {
+                    background: white;
+                    border-color: var(--gray-300);
+                    color: var(--gray-700);
+                    box-shadow: var(--shadow-sm);
+                }
+
+                .topbar-search .topbar-search-kbd {
+                    font-size: 0.65rem;
+                    font-weight: 600;
+                    color: var(--gray-400);
+                    border: 1px solid var(--gray-200);
+                    border-radius: 0.3rem;
+                    padding: 0.1rem 0.35rem;
+                    background: white;
+                }
+
+            @@media (max-width: 768px) {
+                .topbar-search .topbar-search-label,
+                .topbar-search .topbar-search-kbd { display: none; }
+                .topbar-search { padding: 0.45rem 0.6rem; }
+            }
+
+            .cmdk-overlay {
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.45);
+                backdrop-filter: blur(3px);
+                z-index: 200;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+                padding: 12vh 1rem 1rem;
+            }
+
+                .cmdk-overlay[hidden] { display: none; }
+
+            .cmdk {
+                width: 100%;
+                max-width: 560px;
+                background: white;
+                border-radius: 1rem;
+                box-shadow: var(--shadow-xl, 0 25px 50px -12px rgba(0,0,0,.25));
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                max-height: 62vh;
+            }
+
+            .cmdk-input-row {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.9rem 1.1rem;
+                border-bottom: 1px solid var(--gray-100);
+                flex-shrink: 0;
+            }
+
+                .cmdk-input-row > i { color: var(--gray-400); }
+
+                .cmdk-input-row input {
+                    flex: 1;
+                    border: none;
+                    outline: none;
+                    font-size: 0.95rem;
+                    font-family: inherit;
+                    color: var(--gray-800);
+                    background: transparent;
+                }
+
+                .cmdk-input-row kbd,
+                .cmdk-footer kbd {
+                    font-size: 0.62rem;
+                    font-weight: 600;
+                    color: var(--gray-400);
+                    border: 1px solid var(--gray-200);
+                    border-radius: 0.3rem;
+                    padding: 0.12rem 0.4rem;
+                    background: var(--gray-50);
+                    font-family: inherit;
+                }
+
+            .cmdk-results {
+                overflow-y: auto;
+                padding: 0.4rem;
+                flex: 1;
+            }
+
+            .cmdk-item {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.6rem 0.8rem;
+                border-radius: 0.55rem;
+                color: var(--gray-700);
+                text-decoration: none;
+                font-size: 0.875rem;
+                cursor: pointer;
+            }
+
+                .cmdk-item i {
+                    width: 20px;
+                    text-align: center;
+                    color: var(--gray-400);
+                    font-size: 0.95rem;
+                }
+
+                .cmdk-item .cmdk-item-group {
+                    margin-left: auto;
+                    font-size: 0.66rem;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.4px;
+                    color: var(--gray-400);
+                    background: var(--gray-50);
+                    border: 1px solid var(--gray-100);
+                    border-radius: 2rem;
+                    padding: 0.12rem 0.55rem;
+                    white-space: nowrap;
+                }
+
+                .cmdk-item.selected,
+                .cmdk-item:hover {
+                    background: var(--gray-100);
+                    color: var(--gray-800);
+                }
+
+                    .cmdk-item.selected i { color: var(--primary); }
+
+            .cmdk-empty {
+                padding: 1.5rem;
+                text-align: center;
+                color: var(--gray-400);
+                font-size: 0.875rem;
+            }
+
+            .cmdk-footer {
+                display: flex;
+                gap: 1rem;
+                padding: 0.55rem 1.1rem;
+                border-top: 1px solid var(--gray-100);
+                color: var(--gray-400);
+                font-size: 0.7rem;
+                flex-shrink: 0;
+            }
+
             .sidebar-header {
                 padding: 1.75rem 1.5rem 1.25rem 1.5rem;
                 font-weight: 700;
@@ -147,11 +310,11 @@
 
                 .sidebar-header i {
                     font-size: 1.6rem;
-                    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+                    background: linear-gradient(135deg, #b11d23, #d9565d);
                     -webkit-background-clip: text;
                     background-clip: text;
                     color: transparent;
-                    text-shadow: 0 2px 5px rgba(59,130,246,0.3);
+                    text-shadow: 0 2px 5px rgba(177, 29, 35,0.3);
                 }
 
                 .sidebar-header span {
@@ -206,7 +369,7 @@
                     }
 
                 .nav-item.active {
-                    background: linear-gradient(95deg, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0.05) 100%);
+                    background: linear-gradient(95deg, rgba(177, 29, 35,0.15) 0%, rgba(177, 29, 35,0.05) 100%);
                     color: white;
                     font-weight: 600;
                     border-left: 3px solid var(--primary);
@@ -332,7 +495,7 @@
                 justify-content: center;
                 font-weight: 700;
                 font-size: 0.9rem;
-                box-shadow: 0 4px 8px rgba(59,130,246,0.2);
+                box-shadow: 0 4px 8px rgba(177, 29, 35,0.2);
                 transition: var(--transition-smooth);
                 flex-shrink: 0;
             }
@@ -433,7 +596,7 @@
             }
 
                 .btn-primary-modern:hover {
-                    background: linear-gradient(135deg, var(--primary-dark), #1d4ed8);
+                    background: linear-gradient(135deg, var(--primary-dark), #7a1418);
                     color: white;
                 }
 
@@ -575,6 +738,24 @@
     {
         <!-- Mobile Overlay -->
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+        <!-- Global search / command palette (Ctrl+K) -->
+        <div class="cmdk-overlay" id="cmdkOverlay" hidden>
+            <div class="cmdk" role="dialog" aria-modal="true" aria-label="Global search">
+                <div class="cmdk-input-row">
+                    <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                    <input id="cmdkInput" type="text" placeholder="Jump to a module or page…"
+                           autocomplete="off" spellcheck="false" aria-label="Search pages" />
+                    <kbd>Esc</kbd>
+                </div>
+                <div class="cmdk-results" id="cmdkResults" role="listbox" aria-label="Search results"></div>
+                <div class="cmdk-footer">
+                    <span><kbd>&uarr;</kbd> <kbd>&darr;</kbd> navigate</span>
+                    <span><kbd>Enter</kbd> open</span>
+                    <span><kbd>Ctrl</kbd> <kbd>K</kbd> toggle</span>
+                </div>
+            </div>
+        </div>
 
         <div class="app-layout">
 
@@ -922,6 +1103,14 @@
                         </h5>
                     </div>
 
+                    <!-- Global search trigger -->
+                    <button class="topbar-search" id="globalSearchBtn" type="button"
+                            aria-label="Search (Ctrl+K)" aria-haspopup="dialog">
+                        <i class="fas fa-magnifying-glass" aria-hidden="true"></i>
+                        <span class="topbar-search-label">Search</span>
+                        <span class="topbar-search-kbd">Ctrl K</span>
+                    </button>
+
                     <!-- Notification bell -->
                     @{
                         var efmUnread = ViewData["EfmUnread"] as int? ?? 0;
@@ -1176,6 +1365,141 @@
                 g.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
                 });
+            });
+        })();
+
+        // Global search / command palette (Ctrl+K). The index is harvested from the
+        // sidebar links, so it automatically reflects the current user's permissions.
+        (function () {
+            var overlay = document.getElementById('cmdkOverlay');
+            var input = document.getElementById('cmdkInput');
+            var resultsEl = document.getElementById('cmdkResults');
+            var trigger = document.getElementById('globalSearchBtn');
+            var nav = document.getElementById('sidebarNav');
+            if (!overlay || !input || !resultsEl || !nav) return;
+
+            // Build the destination index: { label, href, icon, group }.
+            var items = [];
+            var group = '';
+            nav.querySelectorAll('.nav-group, .nav-item').forEach(function (el) {
+                if (el.classList.contains('nav-group')) {
+                    var gc = el.cloneNode(true);
+                    gc.querySelectorAll('i').forEach(function (n) { n.remove(); });
+                    group = gc.textContent.replace(/\s+/g, ' ').trim();
+                    return;
+                }
+                var href = el.getAttribute('href');
+                if (!href) return;
+                var icon = el.querySelector('i');
+                var lc = el.cloneNode(true);
+                lc.querySelectorAll('i, .nav-badge').forEach(function (n) { n.remove(); });
+                var label = lc.textContent.replace(/\s+/g, ' ').trim();
+                if (label) items.push({ label: label, href: href, group: group, icon: icon ? icon.className : 'fas fa-link' });
+            });
+
+            var selected = 0;
+            var visible = [];
+
+            function rank(item, q) {
+                var l = item.label.toLowerCase(), g = item.group.toLowerCase();
+                if (l.indexOf(q) === 0) return 0;                          // label starts with
+                if (l.split(' ').some(function (w) { return w.indexOf(q) === 0; })) return 1;  // word starts with
+                if (l.indexOf(q) >= 0) return 2;                           // label contains
+                if (g.indexOf(q) >= 0) return 3;                           // group contains
+                return -1;
+            }
+
+            function render() {
+                var q = input.value.trim().toLowerCase();
+                visible = !q ? items.slice() : items
+                    .map(function (i) { return { i: i, r: rank(i, q) }; })
+                    .filter(function (x) { return x.r >= 0; })
+                    .sort(function (a, b) { return a.r - b.r; })
+                    .map(function (x) { return x.i; });
+                visible = visible.slice(0, 14);
+                if (selected >= visible.length) selected = 0;
+
+                if (!visible.length) {
+                    resultsEl.innerHTML = '<div class="cmdk-empty">No matching pages.</div>';
+                    return;
+                }
+                resultsEl.innerHTML = '';
+                visible.forEach(function (item, idx) {
+                    var a = document.createElement('a');
+                    a.className = 'cmdk-item' + (idx === selected ? ' selected' : '');
+                    a.href = item.href;
+                    a.setAttribute('role', 'option');
+                    a.setAttribute('aria-selected', idx === selected ? 'true' : 'false');
+
+                    var ic = document.createElement('i');
+                    ic.className = item.icon;
+                    ic.setAttribute('aria-hidden', 'true');
+                    a.appendChild(ic);
+
+                    var span = document.createElement('span');
+                    span.textContent = item.label;
+                    a.appendChild(span);
+
+                    if (item.group) {
+                        var chip = document.createElement('span');
+                        chip.className = 'cmdk-item-group';
+                        chip.textContent = item.group;
+                        a.appendChild(chip);
+                    }
+
+                    a.addEventListener('mousemove', function () {
+                        if (selected !== idx) { selected = idx; paintSelection(); }
+                    });
+                    resultsEl.appendChild(a);
+                });
+            }
+
+            function paintSelection() {
+                resultsEl.querySelectorAll('.cmdk-item').forEach(function (el, idx) {
+                    el.classList.toggle('selected', idx === selected);
+                    el.setAttribute('aria-selected', idx === selected ? 'true' : 'false');
+                });
+                var sel = resultsEl.querySelector('.cmdk-item.selected');
+                if (sel) sel.scrollIntoView({ block: 'nearest' });
+            }
+
+            function openPalette() {
+                overlay.hidden = false;
+                input.value = '';
+                selected = 0;
+                render();
+                input.focus();
+            }
+
+            function closePalette() {
+                overlay.hidden = true;
+                if (trigger) trigger.focus();
+            }
+
+            if (trigger) trigger.addEventListener('click', openPalette);
+
+            overlay.addEventListener('mousedown', function (e) {
+                if (e.target === overlay) closePalette();
+            });
+
+            input.addEventListener('input', function () { selected = 0; render(); });
+
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'ArrowDown') { e.preventDefault(); if (visible.length) { selected = (selected + 1) % visible.length; paintSelection(); } }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); if (visible.length) { selected = (selected - 1 + visible.length) % visible.length; paintSelection(); } }
+                else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (visible[selected]) window.location.href = visible[selected].href;
+                }
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+                    e.preventDefault();
+                    overlay.hidden ? openPalette() : closePalette();
+                } else if (e.key === 'Escape' && !overlay.hidden) {
+                    closePalette();
+                }
             });
         })();
     </script>
