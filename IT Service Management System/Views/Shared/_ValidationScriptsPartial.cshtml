@@ -1,2 +1,12 @@
-﻿<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-<script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+@*
+    Intentionally empty.
+
+    jQuery Validation and its unobtrusive adapter are now loaded once for every page in
+    _Layout.cshtml, so every form validates client-side instead of only the pages that
+    remembered to render this partial.
+
+    This partial is kept as a no-op so the existing
+    RenderPartialAsync("_ValidationScriptsPartial") calls across the views keep working
+    without loading the scripts twice — a double-loaded unobtrusive adapter can bind
+    duplicate validation messages to the same field.
+*@
