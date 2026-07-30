@@ -148,8 +148,37 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ── DELETE (hard) ──────────────────────────────────────────────────────────
-        [HttpPost, ValidateAntiForgeryToken]
+        // Confirmation page — deleting is destructive, so it gets the same explicit
+        // acknowledgement step as tickets rather than a browser confirm() popup.
         public async Task<IActionResult> Delete(int id)
+        {
+            if (!Can(ImsPermission.ManageSuppliers)) return Denied();
+            var entity = await _db.Suppliers.Include(s => s.Evaluations)
+                .FirstOrDefaultAsync(s => s.Id == id);
+            if (entity == null) return NotFound();
+
+            var vm = new ViewModels.DeleteConfirmationVm
+            {
+                EntityName = "Supplier",
+                Icon = "fa-truck-field",
+                RecordTitle = entity.Name,
+                Reference = entity.Reference,
+                Controller = "Suppliers",
+                Id = entity.Id
+            };
+            vm.Add("Category", entity.Category.ToString());
+            vm.Add("Status", entity.Status.ToString());
+            vm.Add("Contact", entity.ContactName);
+            vm.Add("Email", entity.Email);
+            vm.Add("Contract End", entity.ContractEnd?.ToString("dd MMM yyyy"));
+            vm.Consequences.Add("The supplier record, its contract dates and certificate details will be removed.");
+            vm.Consequences.Add($"Its entire evaluation history ({entity.Evaluations.Count} evaluation(s)) is deleted with it.");
+            vm.Consequences.Add("It will no longer appear in the approved supplier list, dashboards or ISO reports.");
+            return View("DeleteConfirm", vm);
+        }
+
+        [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (!Can(ImsPermission.ManageSuppliers)) return Denied();
             var supplier = await _db.Suppliers.Include(s => s.Evaluations).FirstOrDefaultAsync(s => s.Id == id);
