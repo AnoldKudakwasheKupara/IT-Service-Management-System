@@ -3,7 +3,7 @@
     ViewData["Title"] = "Request " + Model.Item?.Name;
 }
 <partial name="_Styles" />
-<div class="catalog-shell" style="max-width:900px">
+<div class="page-container" style="max-width:900px">
     <a asp-action="Details" asp-route-id="@Model.ServiceCatalogItemId" class="btn btn-link px-0 mb-3"><i class="fas fa-arrow-left me-1"></i>Back</a>
     <div class="catalog-panel">
         <h1 class="h3 mb-2">Request @Model.Item?.Name</h1>
