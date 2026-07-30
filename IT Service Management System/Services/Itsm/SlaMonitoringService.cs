@@ -124,24 +124,27 @@ namespace IT_Service_Management_System.Services.Itsm
     public class SlaMonitoringHostedService : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly TimeProvider _clock;
         private readonly ILogger<SlaMonitoringHostedService> _logger;
 
-        public SlaMonitoringHostedService(IServiceScopeFactory scopeFactory, ILogger<SlaMonitoringHostedService> logger)
+        public SlaMonitoringHostedService(IServiceScopeFactory scopeFactory, TimeProvider clock,
+            ILogger<SlaMonitoringHostedService> logger)
         {
             _scopeFactory = scopeFactory;
+            _clock = clock;
             _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1));
+            using var timer = new PeriodicTimer(TimeSpan.FromMinutes(1), _clock);
             do
             {
                 try
                 {
                     using var scope = _scopeFactory.CreateScope();
                     await scope.ServiceProvider.GetRequiredService<SlaMonitoringService>()
-                        .ProcessAsync(DateTime.Now, stoppingToken);
+                        .ProcessAsync(_clock.GetLocalNow().DateTime, stoppingToken);
                 }
                 catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
                 catch (Exception ex)

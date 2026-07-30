@@ -12,10 +12,12 @@ namespace IT_Service_Management_System.Controllers
     public class ReportsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly TimeProvider _clock;
 
-        public ReportsController(ApplicationDbContext context)
+        public ReportsController(ApplicationDbContext context, TimeProvider clock)
         {
             _context = context;
+            _clock = clock;
         }
 
         // 🧑‍💼 HR ANALYTICS — accessible to HR as well as full-access roles.
@@ -90,27 +92,46 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // 🎫 TICKETS
-        public IActionResult Tickets()
+        public async Task<IActionResult> Tickets()
         {
-            var tickets = _context.Tickets.AsNoTracking().Include(t => t.CreatedBy).ToList();
+            var tickets = _context.Tickets.AsNoTracking();
+
+            // Each breakdown is a GROUP BY on the server; only the grouped rows come back, never the
+            // ticket table itself. Enum keys are grouped as their stored int and named client-side,
+            // because ToString() on an enum has no SQL translation.
+            var byStatus = await tickets.GroupBy(t => t.Status)
+                .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+            var byPriority = await tickets.GroupBy(t => t.Priority)
+                .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+            var byCategory = await tickets.GroupBy(t => t.Category)
+                .Select(g => new { g.Key, Count = g.Count() }).ToListAsync();
+            var topRequesters = await tickets.Where(t => t.CreatedBy != null)
+                .GroupBy(t => new { t.CreatedBy!.FirstName, t.CreatedBy.LastName })
+                .Select(g => new { g.Key.FirstName, g.Key.LastName, Count = g.Count() })
+                .OrderByDescending(x => x.Count).Take(10).ToListAsync();
+
+            int CountOf(Ticket.TicketStatus s) => byStatus.FirstOrDefault(x => x.Key == s)?.Count ?? 0;
 
             var vm = new TicketsReportVM
             {
-                Total = tickets.Count,
-                Open = tickets.Count(t => t.Status == Ticket.TicketStatus.Open),
-                InProgress = tickets.Count(t => t.Status == Ticket.TicketStatus.InProgress),
-                Resolved = tickets.Count(t => t.Status == Ticket.TicketStatus.Resolved),
-                Closed = tickets.Count(t => t.Status == Ticket.TicketStatus.Closed),
-                ByStatus = tickets.GroupBy(t => t.Status.ToString())
-                    .Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
-                ByPriority = tickets.GroupBy(t => t.Priority.ToString())
-                    .Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
-                ByCategory = tickets.GroupBy(t => string.IsNullOrWhiteSpace(t.Category) ? "Uncategorised" : t.Category)
-                    .Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
-                TopRequesters = tickets.Where(t => t.CreatedBy != null)
-                    .GroupBy(t => $"{t.CreatedBy!.FirstName} {t.CreatedBy.LastName}")
-                    .Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).Take(10).ToList(),
-                Recent = tickets.OrderByDescending(t => t.CreatedAt).Take(10).ToList()
+                Total = byStatus.Sum(x => x.Count),
+                Open = CountOf(Ticket.TicketStatus.Open),
+                InProgress = CountOf(Ticket.TicketStatus.InProgress),
+                Resolved = CountOf(Ticket.TicketStatus.Resolved),
+                Closed = CountOf(Ticket.TicketStatus.Closed),
+                ByStatus = byStatus.Select(x => new NameCount(x.Key.ToString(), x.Count))
+                    .OrderByDescending(x => x.Count).ToList(),
+                ByPriority = byPriority.Select(x => new NameCount(x.Key.ToString(), x.Count))
+                    .OrderByDescending(x => x.Count).ToList(),
+                // Null and blank categories collapse into one "Uncategorised" bucket after grouping.
+                ByCategory = byCategory
+                    .GroupBy(x => string.IsNullOrWhiteSpace(x.Key) ? "Uncategorised" : x.Key)
+                    .Select(g => new NameCount(g.Key, g.Sum(x => x.Count)))
+                    .OrderByDescending(x => x.Count).ToList(),
+                TopRequesters = topRequesters
+                    .Select(x => new NameCount($"{x.FirstName} {x.LastName}", x.Count)).ToList(),
+                Recent = await tickets.Include(t => t.CreatedBy)
+                    .OrderByDescending(t => t.CreatedAt).Take(10).ToListAsync()
             };
             vm.ResolutionRate = vm.Total == 0 ? 0 : Math.Round(100.0 * (vm.Resolved + vm.Closed) / vm.Total, 1);
 
@@ -262,74 +283,122 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ⏱️ SLA COMPLIANCE
-        public IActionResult SlaCompliance()
+        public async Task<IActionResult> SlaCompliance()
         {
-            var now = DateTime.Now;
-            var tickets = _context.Tickets.AsNoTracking().ToList();
-            var measured = tickets.Where(t => t.DueAt != null).ToList();
-            DateTime? DoneAt(Ticket t) => t.ResolvedAt ?? t.ClosedAt;
-            var resolved = measured.Where(t => DoneAt(t) != null).ToList();
+            var now = _clock.GetLocalNow().DateTime;
 
-            int resMet = resolved.Count(t => DoneAt(t) <= t.DueAt);
-            int resBreached = resolved.Count - resMet;
+            // Only tickets with a resolution target are measurable. Everything below aggregates on the
+            // server — SUM/COUNT/AVG over these predicates — so the page costs a few grouped rows
+            // rather than the whole ticket table in memory.
+            var measured = _context.Tickets.AsNoTracking().Where(t => t.DueAt != null);
+            var resolved = measured.Where(t => t.ResolvedAt != null || t.ClosedAt != null);
+            var withResponseTarget = measured.Where(t => t.ResponseDueAt != null);
 
-            var withResp = measured.Where(t => t.ResponseDueAt != null).ToList();
-            var responded = withResp.Where(t => t.FirstRespondedAt != null).ToList();
-            int respMet = responded.Count(t => t.FirstRespondedAt <= t.ResponseDueAt);
-            int respBreached = (responded.Count - respMet)
-                + withResp.Count(t => t.FirstRespondedAt == null && t.ResponseDueAt < now);
+            int measuredCount = await measured.CountAsync();
+            int resolvedCount = await resolved.CountAsync();
+            int resMet = await resolved.CountAsync(t => (t.ResolvedAt ?? t.ClosedAt) <= t.DueAt);
+            int resBreached = resolvedCount - resMet;
+
+            int respondedCount = await withResponseTarget.CountAsync(t => t.FirstRespondedAt != null);
+            int respMet = await withResponseTarget.CountAsync(t => t.FirstRespondedAt <= t.ResponseDueAt);
+            // A breach is either a late reply, or no reply at all once the target has passed.
+            int respBreached = (respondedCount - respMet)
+                + await withResponseTarget.CountAsync(t => t.FirstRespondedAt == null && t.ResponseDueAt < now);
+
+            int openBreaching = await measured.CountAsync(t =>
+                t.Status != Ticket.TicketStatus.Resolved && t.Status != Ticket.TicketStatus.Closed
+                && t.DueAt < now);
+
+            // DateDiffMinute maps to SQL DATEDIFF; averaging minutes and converting keeps the whole
+            // calculation in the database (TimeSpan subtraction has no SQL translation).
+            double avgResolutionHours = resolvedCount == 0 ? 0 : Math.Round(
+                (await resolved.AverageAsync(t =>
+                    (double?)EF.Functions.DateDiffMinute(t.CreatedAt, t.ResolvedAt ?? t.ClosedAt)) ?? 0) / 60.0, 1);
+            double avgResponseHours = respondedCount == 0 ? 0 : Math.Round(
+                (await withResponseTarget.Where(t => t.FirstRespondedAt != null).AverageAsync(t =>
+                    (double?)EF.Functions.DateDiffMinute(t.CreatedAt, t.FirstRespondedAt)) ?? 0) / 60.0, 1);
+
+            var byPriority = await measured
+                .GroupBy(t => t.Priority)
+                .Select(g => new
+                {
+                    Priority = g.Key,
+                    Total = g.Count(),
+                    Done = g.Count(t => t.ResolvedAt != null || t.ClosedAt != null),
+                    Met = g.Count(t => (t.ResolvedAt ?? t.ClosedAt) <= t.DueAt),
+                    AvgMinutes = g.Where(t => t.ResolvedAt != null || t.ClosedAt != null)
+                        .Average(t => (double?)EF.Functions.DateDiffMinute(t.CreatedAt, t.ResolvedAt ?? t.ClosedAt))
+                })
+                .ToListAsync();
+
+            var breachesByCategory = await resolved
+                .Where(t => (t.ResolvedAt ?? t.ClosedAt) > t.DueAt)
+                .GroupBy(t => t.Category)
+                .Select(g => new { g.Key, Count = g.Count() })
+                .ToListAsync();
 
             var vm = new SlaComplianceVM
             {
-                MeasuredTickets = measured.Count,
+                MeasuredTickets = measuredCount,
                 ResolutionMet = resMet,
                 ResolutionBreached = resBreached,
                 ResponseMet = respMet,
                 ResponseBreached = respBreached,
-                OpenBreaching = measured.Count(t => t.IsOpen && t.DueAt < now),
-                ResolutionCompliance = resolved.Count == 0 ? 0 : Math.Round(100.0 * resMet / resolved.Count, 1),
+                OpenBreaching = openBreaching,
+                ResolutionCompliance = resolvedCount == 0 ? 0 : Math.Round(100.0 * resMet / resolvedCount, 1),
                 ResponseCompliance = (respMet + respBreached) == 0 ? 0 : Math.Round(100.0 * respMet / (respMet + respBreached), 1),
-                AvgResolutionHours = resolved.Count == 0 ? 0 : Math.Round(resolved.Average(t => (DoneAt(t)!.Value - t.CreatedAt).TotalHours), 1),
-                AvgResponseHours = responded.Count == 0 ? 0 : Math.Round(responded.Average(t => (t.FirstRespondedAt!.Value - t.CreatedAt).TotalHours), 1),
-                ByPriority = measured.GroupBy(t => t.Priority).OrderByDescending(g => g.Key).Select(g =>
-                {
-                    var gr = g.Where(t => DoneAt(t) != null).ToList();
-                    int met = gr.Count(t => DoneAt(t) <= t.DueAt);
-                    return new SlaByPriority(g.Key.ToString(), g.Count(), met, gr.Count - met,
-                        gr.Count == 0 ? 0 : Math.Round(100.0 * met / gr.Count, 1),
-                        gr.Count == 0 ? 0 : Math.Round(gr.Average(t => (DoneAt(t)!.Value - t.CreatedAt).TotalHours), 1));
-                }).ToList(),
-                BreachesByCategory = resolved.Where(t => DoneAt(t) > t.DueAt)
-                    .GroupBy(t => string.IsNullOrWhiteSpace(t.Category) ? "Uncategorised" : t.Category)
-                    .Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList()
+                AvgResolutionHours = avgResolutionHours,
+                AvgResponseHours = avgResponseHours,
+                ByPriority = byPriority.OrderByDescending(g => g.Priority).Select(g => new SlaByPriority(
+                    g.Priority.ToString(), g.Total, g.Met, g.Done - g.Met,
+                    g.Done == 0 ? 0 : Math.Round(100.0 * g.Met / g.Done, 1),
+                    g.Done == 0 ? 0 : Math.Round((g.AvgMinutes ?? 0) / 60.0, 1))).ToList(),
+                BreachesByCategory = breachesByCategory
+                    .GroupBy(x => string.IsNullOrWhiteSpace(x.Key) ? "Uncategorised" : x.Key)
+                    .Select(g => new NameCount(g.Key, g.Sum(x => x.Count)))
+                    .OrderByDescending(x => x.Count).ToList()
             };
             return View(vm);
         }
 
         // 👷 AGENT PERFORMANCE
-        public IActionResult AgentPerformance()
+        public async Task<IActionResult> AgentPerformance()
         {
-            var now = DateTime.Now;
-            var tickets = _context.Tickets.AsNoTracking().Where(t => t.AssignedToId != null).ToList();
-            var names = _context.Users.AsNoTracking().ToDictionary(u => u.Id, u => u.FirstName + " " + u.LastName);
-            DateTime? DoneAt(Ticket t) => t.ResolvedAt ?? t.ClosedAt;
+            var now = _clock.GetLocalNow().DateTime;
+
+            // Grouped by assignee with the name columns in the key, so the agent name arrives from the
+            // same query — no second pass and no full Users dictionary loaded to look it up.
+            var rows = await _context.Tickets.AsNoTracking()
+                .Where(t => t.AssignedToId != null)
+                .GroupBy(t => new { t.AssignedToId, t.AssignedTo!.FirstName, t.AssignedTo.LastName })
+                .Select(g => new
+                {
+                    g.Key.AssignedToId,
+                    g.Key.FirstName,
+                    g.Key.LastName,
+                    Assigned = g.Count(),
+                    Open = g.Count(t => t.Status != Ticket.TicketStatus.Resolved && t.Status != Ticket.TicketStatus.Closed),
+                    Resolved = g.Count(t => t.ResolvedAt != null || t.ClosedAt != null),
+                    AvgMinutes = g.Where(t => t.ResolvedAt != null || t.ClosedAt != null)
+                        .Average(t => (double?)EF.Functions.DateDiffMinute(t.CreatedAt, t.ResolvedAt ?? t.ClosedAt)),
+                    Breached = g.Count(t => t.DueAt != null &&
+                        (((t.ResolvedAt ?? t.ClosedAt) != null && (t.ResolvedAt ?? t.ClosedAt) > t.DueAt)
+                         || (t.Status != Ticket.TicketStatus.Resolved && t.Status != Ticket.TicketStatus.Closed && t.DueAt < now))),
+                    Csat = g.Average(t => (double?)t.SatisfactionRating)
+                })
+                .ToListAsync();
 
             var vm = new AgentPerformanceVM
             {
-                Unassigned = _context.Tickets.Count(t => t.AssignedToId == null),
-                Agents = tickets.GroupBy(t => t.AssignedToId!.Value).Select(g =>
-                {
-                    var resolved = g.Where(t => DoneAt(t) != null).ToList();
-                    var csats = g.Where(t => t.SatisfactionRating != null).Select(t => (double)t.SatisfactionRating!.Value).ToList();
-                    return new AgentRow(
-                        names.TryGetValue(g.Key, out var n) ? n : "User #" + g.Key,
-                        g.Count(),
-                        g.Count(t => t.IsOpen),
-                        resolved.Count,
-                        resolved.Count == 0 ? 0 : Math.Round(resolved.Average(t => (DoneAt(t)!.Value - t.CreatedAt).TotalHours), 1),
-                        g.Count(t => (t.DueAt != null && DoneAt(t) != null && DoneAt(t) > t.DueAt) || (t.DueAt != null && t.IsOpen && t.DueAt < now)),
-                        csats.Count == 0 ? (double?)null : Math.Round(csats.Average(), 1));
-                }).OrderByDescending(a => a.Resolved).ToList()
+                Unassigned = await _context.Tickets.CountAsync(t => t.AssignedToId == null),
+                Agents = rows.Select(r => new AgentRow(
+                        string.IsNullOrWhiteSpace(r.FirstName + r.LastName)
+                            ? "User #" + r.AssignedToId : $"{r.FirstName} {r.LastName}",
+                        r.Assigned, r.Open, r.Resolved,
+                        r.Resolved == 0 ? 0 : Math.Round((r.AvgMinutes ?? 0) / 60.0, 1),
+                        r.Breached,
+                        r.Csat == null ? null : Math.Round(r.Csat.Value, 1)))
+                    .OrderByDescending(a => a.Resolved).ToList()
             };
             vm.TotalResolved = vm.Agents.Sum(a => a.Resolved);
             return View(vm);
@@ -369,22 +438,38 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // 📈 TICKET TRENDS (last 12 months)
-        public IActionResult TicketTrends()
+        public async Task<IActionResult> TicketTrends()
         {
-            var start = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-11);
-            var tickets = _context.Tickets.AsNoTracking()
-                .Where(t => t.CreatedAt >= start || t.ResolvedAt >= start || t.ClosedAt >= start).ToList();
+            var today = _clock.GetLocalNow().DateTime;
+            var start = new DateTime(today.Year, today.Month, 1).AddMonths(-11);
+
+            // Bucketed in SQL by month offset from `start` (0..11), which avoids both a 12-pass client
+            // scan and any dependence on how the provider translates .Year/.Month on a coalesced column.
+            var created = await _context.Tickets.AsNoTracking()
+                .Where(t => t.CreatedAt >= start)
+                .GroupBy(t => EF.Functions.DateDiffMonth(start, t.CreatedAt))
+                .Select(g => new { Offset = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            var completed = await _context.Tickets.AsNoTracking()
+                .Where(t => (t.ResolvedAt ?? t.ClosedAt) >= start)
+                .GroupBy(t => EF.Functions.DateDiffMonth(start, t.ResolvedAt ?? t.ClosedAt))
+                .Select(g => new { Offset = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            // CreatedAt is non-nullable so its offset is int; the coalesced completion date is int?.
+            var createdByOffset = created.ToDictionary(x => x.Offset, x => x.Count);
+            var completedByOffset = completed.Where(x => x.Offset != null)
+                .ToDictionary(x => x.Offset!.Value, x => x.Count);
 
             var vm = new TicketTrendsVM();
             for (int i = 0; i < 12; i++)
             {
-                var m = start.AddMonths(i);
-                var next = m.AddMonths(1);
-                int created = tickets.Count(t => t.CreatedAt >= m && t.CreatedAt < next);
-                int resolved = tickets.Count(t => (t.ResolvedAt ?? t.ClosedAt) is DateTime d && d >= m && d < next);
-                vm.Months.Add(new TrendPoint(m.ToString("MMM yy"), created, resolved));
-                vm.TotalCreated += created;
-                vm.TotalResolved += resolved;
+                createdByOffset.TryGetValue(i, out int c);
+                completedByOffset.TryGetValue(i, out int r);
+                vm.Months.Add(new TrendPoint(start.AddMonths(i).ToString("MMM yy"), c, r));
+                vm.TotalCreated += c;
+                vm.TotalResolved += r;
             }
             vm.PeakValue = vm.Months.Count == 0 ? 1 : Math.Max(1, vm.Months.Max(p => Math.Max(p.Created, p.Resolved)));
             return View(vm);

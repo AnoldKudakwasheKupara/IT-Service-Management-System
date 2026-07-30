@@ -126,7 +126,7 @@
                     <option value="cancelled" selected="@(Model.Status == "cancelled")">Cancelled</option>
                 </select>
             </div>
-            <button type="submit" class="btn-clear-filters" style="background:var(--primary,#3b82f6);color:#fff;border:none;">
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary,#b11d23);color:#fff;border:none;">
                 <i class="fas fa-search"></i>
                 Apply
             </button>
@@ -352,13 +352,13 @@
 
 <style>
     :root {
-        --primary-dark: #2563eb;
-        --primary: #3b82f6;
-        --primary-light: #60a5fa;
+        --primary-dark: #8f171c;
+        --primary: #b11d23;
+        --primary-light: #d9565d;
         --success: #2c9e6e;
         --warning: #f5b042;
         --danger: #e53e3e;
-        --info: #3b82f6;
+        --info: #b11d23;
         --gray-50: #f8fafc;
         --gray-100: #f1f5f9;
         --gray-200: #e2e8f0;
@@ -452,7 +452,7 @@
         font-size: 0.875rem; transition: all 0.2s;
         font-family: 'Inter', sans-serif; background: white; cursor: pointer;
     }
-    .filter-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246, 0.1); }
+    .filter-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(177, 29, 35, 0.1); }
 
     .search-wrapper { position: relative; }
     .search-wrapper i {
@@ -465,7 +465,7 @@
         font-size: 0.875rem; transition: all 0.2s; font-family: 'Inter', sans-serif;
     }
     .upload-field .search-input { padding-left: 0.75rem; }
-    .search-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246, 0.1); }
+    .search-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(177, 29, 35, 0.1); }
 
     .btn-clear-filters {
         background: white; color: var(--gray-600);
@@ -512,8 +512,8 @@
 
     .category-badge {
         display: inline-flex; align-items: center; gap: 0.35rem;
-        background: #eff6ff; color: var(--primary-dark);
-        border: 1px solid #cce4ff; padding: 0.2rem 0.6rem;
+        background: #fdf3f3; color: var(--primary-dark);
+        border: 1px solid #f4ced0; padding: 0.2rem 0.6rem;
         border-radius: 2rem; font-size: 0.72rem; font-weight: 600;
         margin-top: 0.2rem;
     }

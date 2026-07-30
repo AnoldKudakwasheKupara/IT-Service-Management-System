@@ -9,6 +9,7 @@ namespace IT_Service_Management_System.Helpers
         public const string Development = "Development";
         public const string HR = "HR";
         public const string Employee = "Employee";
+        public const string SupportAgent = "SupportAgent";
 
         // ── IMS / ISO roles (Integrated Management System module) ──
         public const string QualityManager = "QualityManager";
@@ -20,6 +21,22 @@ namespace IT_Service_Management_System.Helpers
 
         /// <summary>Roles with full visibility across every module.</summary>
         public static readonly string[] FullAccess = { Admin, SystemsAdmin };
+
+        /// <summary>Helpdesk staff — full ticket-queue access (admins plus front-line support agents).</summary>
+        public static readonly string[] HelpdeskStaff = { Admin, SystemsAdmin, SupportAgent };
+
+        /// <summary>True when the role works the helpdesk queue as staff (not just as a requester).</summary>
+        public static bool IsHelpdeskStaff(string? role) =>
+            role == Admin || role == SystemsAdmin || role == SupportAgent;
+
+        /// <summary>
+        /// Enum overload, for checks against a persisted <see cref="Models.Ticket.UserRole"/> rather than
+        /// the role string carried in session (e.g. vetting a proposed ticket assignee).
+        /// </summary>
+        public static bool IsHelpdeskStaff(Models.Ticket.UserRole role) =>
+            role is Models.Ticket.UserRole.Admin
+                or Models.Ticket.UserRole.SystemsAdmin
+                or Models.Ticket.UserRole.SupportAgent;
 
         /// <summary>Full-access roles plus HR (for the HR Management module &amp; HR reports).</summary>
         public static readonly string[] HrAndAdmins = { Admin, SystemsAdmin, HR };

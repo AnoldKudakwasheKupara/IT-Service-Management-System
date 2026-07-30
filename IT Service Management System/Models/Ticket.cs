@@ -81,12 +81,23 @@ namespace IT_Service_Management_System.Models
 
         /// <summary>True when the SLA target has passed and the ticket is still open. Paused while on hold.</summary>
         [NotMapped]
-        public bool IsSlaBreached => DueAt.HasValue && IsOpen && !IsOnHold && DueAt.Value < DateTime.Now;
+        public bool IsSlaBreached => IsSlaBreachedAt(DateTime.Now);
 
         /// <summary>True when the first-response target passed without a staff reply. Paused while on hold.</summary>
         [NotMapped]
-        public bool IsResponseBreached => ResponseDueAt.HasValue && FirstRespondedAt == null
-            && IsOpen && !IsOnHold && ResponseDueAt.Value < DateTime.Now;
+        public bool IsResponseBreached => IsResponseBreachedAt(DateTime.Now);
+
+        /// <summary>
+        /// Breach test against an explicit instant. The parameterless properties above are the convenience
+        /// form for views; callers that need determinism (services, tests) pass their own clock's value.
+        /// </summary>
+        public bool IsSlaBreachedAt(DateTime now) =>
+            DueAt.HasValue && IsOpen && !IsOnHold && DueAt.Value < now;
+
+        /// <inheritdoc cref="IsSlaBreachedAt"/>
+        public bool IsResponseBreachedAt(DateTime now) =>
+            ResponseDueAt.HasValue && FirstRespondedAt == null
+            && IsOpen && !IsOnHold && ResponseDueAt.Value < now;
 
         public int CreatedById { get; set; }
         [ValidateNever]
@@ -146,7 +157,11 @@ namespace IT_Service_Management_System.Models
             DepartmentManager,
             Auditor,
             DocumentController,
-            ExternalAuditor
+            ExternalAuditor,
+            // ── Helpdesk (ITSM) ──
+            // A front-line support agent: full ticket-queue access without system-admin rights.
+            // Appended last so existing persisted role values are unchanged.
+            SupportAgent
         }
     }
 }

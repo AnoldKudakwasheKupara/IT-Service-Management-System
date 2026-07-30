@@ -1,13 +1,13 @@
 <style>
     /* ===== Incident module — shared design system (aligned with the Ticket views) ===== */
     :root {
-        --primary-dark: #2563eb;
-        --primary: #3b82f6;
-        --primary-light: #60a5fa;
+        --primary-dark: #8f171c;
+        --primary: #b11d23;
+        --primary-light: #d9565d;
         --success: #2c9e6e;
         --warning: #f5b042;
         --danger: #e53e3e;
-        --info: #3b82f6;
+        --info: #b11d23;
         --violet: #8b5cf6;
         --gray-50: #f8fafc;
         --gray-100: #f1f5f9;
@@ -94,7 +94,7 @@
         display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;
         background: linear-gradient(135deg, var(--primary-light), var(--primary));
     }
-    .stat-icon.primary { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+    .stat-icon.primary { background: linear-gradient(135deg, #d9565d, #b11d23); }
     .stat-icon.info    { background: linear-gradient(135deg, #38bdf8, #0ea5e9); }
     .stat-icon.warning { background: linear-gradient(135deg, #f5b042, #e6a017); }
     .stat-icon.danger  { background: linear-gradient(135deg, #f87171, #e53e3e); }
@@ -110,11 +110,11 @@
     .filter-group { flex: 1; min-width: 180px; }
     .filter-group label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--gray-600); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.5px; }
     .filter-select { width: 100%; padding: 0.625rem; border: 1.5px solid var(--gray-200); border-radius: 0.5rem; font-size: 0.875rem; transition: all 0.2s; font-family: inherit; background: white; cursor: pointer; }
-    .filter-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .filter-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(177, 29, 35,0.1); }
     .search-wrapper { position: relative; }
     .search-wrapper i { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 0.875rem; }
     .search-input { width: 100%; padding: 0.625rem 0.75rem 0.625rem 2rem; border: 1.5px solid var(--gray-200); border-radius: 0.5rem; font-size: 0.875rem; transition: all 0.2s; font-family: inherit; }
-    .search-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .search-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(177, 29, 35,0.1); }
 
     /* ===== Cards & tables ===== */
     .data-card, .tickets-card { background: white; border-radius: 1rem; overflow: hidden; box-shadow: var(--shadow-sm); border: 1px solid var(--gray-200); margin-bottom: 1.5rem; }
@@ -124,7 +124,7 @@
         justify-content: space-between; flex-wrap: wrap;
     }
     .card-header-custom > div { display: flex; align-items: center; gap: 0.5rem; }
-    .card-header-custom .header-tag { margin-left: auto; font-size: 0.72rem; font-weight: 700; color: var(--primary); background: #eff6ff; border: 1px solid #cce4ff; padding: 0.15rem 0.6rem; border-radius: 2rem; }
+    .card-header-custom .header-tag { margin-left: auto; font-size: 0.72rem; font-weight: 700; color: var(--primary); background: #fdf3f3; border: 1px solid #f4ced0; padding: 0.15rem 0.6rem; border-radius: 2rem; }
     .ticket-count { font-size: 0.875rem; font-weight: normal; color: var(--gray-500); }
     .card-body-custom { padding: 1.5rem; }
 
@@ -146,14 +146,14 @@
     .badge-critical { background: #fee; color: var(--danger); border: 1px solid #fed7d7; }
     .badge-warning  { background: #fff5e6; color: #b45309; border: 1px solid #ffe0b3; }
     .badge-success  { background: #e6f5e9; color: var(--success); border: 1px solid #c6e0c9; }
-    .badge-primary  { background: #e6f0ff; color: var(--primary-dark); border: 1px solid #cce4ff; }
+    .badge-primary  { background: #fceaeb; color: var(--primary-dark); border: 1px solid #f4ced0; }
     .badge-gray     { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-300); }
 
     .badge-pill { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.22rem 0.7rem; border-radius: 2rem; font-size: 0.72rem; font-weight: 600; white-space: nowrap; }
     .b-green { background: #e6f5e9; color: var(--success); border: 1px solid #c6e0c9; }
     .b-amber { background: #fff5e6; color: #b45309; border: 1px solid #ffe0b3; }
     .b-red { background: #fee; color: var(--danger); border: 1px solid #fed7d7; }
-    .b-blue { background: #eff6ff; color: var(--primary-dark); border: 1px solid #cce4ff; }
+    .b-blue { background: #fdf3f3; color: var(--primary-dark); border: 1px solid #f4ced0; }
     .b-gray { background: var(--gray-100); color: var(--gray-500); border: 1px solid var(--gray-300); }
     .b-violet { background: #f5f3ff; color: #6d28d9; border: 1px solid #ddd6fe; }
 
@@ -188,7 +188,7 @@
     .form-label i { font-size: 0.7rem; color: var(--gray-400); width: 16px; text-align: center; }
     .form-label .required { color: var(--danger); font-weight: 700; margin-left: 0.15rem; }
     .form-control { padding: 0.55rem 0.75rem; border: 1.5px solid var(--gray-200); border-radius: 0.6rem; font-size: 0.875rem; font-family: inherit; background: white; transition: all 0.2s; width: 100%; color: var(--gray-800); }
-    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(177, 29, 35,0.1); }
     .form-control::placeholder { color: var(--gray-400); font-size: 0.8rem; }
     select.form-control { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 0.75rem; padding-right: 2rem; cursor: pointer; }
     textarea.form-control { resize: vertical; min-height: 60px; line-height: 1.5; }

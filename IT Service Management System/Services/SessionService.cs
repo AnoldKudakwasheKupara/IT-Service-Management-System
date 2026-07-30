@@ -1,6 +1,7 @@
 using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace IT_Service_Management_System.Services
 {
@@ -21,12 +22,21 @@ namespace IT_Service_Management_System.Services
         private readonly ApplicationDbContext _context;
         private readonly IHttpContextAccessor _http;
         private readonly GeoLocationService _geo;
+        private readonly IMemoryCache _cache;
 
-        public SessionService(ApplicationDbContext context, IHttpContextAccessor http, GeoLocationService geo)
+        // Short-lived positive-validation cache: skips the per-request session + security-stamp DB
+        // lookups for a recently-validated token. Every revocation path (logout, log-out-everywhere,
+        // password/role change) evicts the token here, so immediate invalidation is preserved.
+        private static readonly TimeSpan ValidationCacheTtl = TimeSpan.FromSeconds(60);
+        private static string CacheKey(string token) => "session-valid:" + token;
+
+        public SessionService(ApplicationDbContext context, IHttpContextAccessor http, GeoLocationService geo,
+            IMemoryCache cache)
         {
             _context = context;
             _http = http;
             _geo = geo;
+            _cache = cache;
         }
 
         /// <summary>Creates a session record and populates the ASP.NET session for a freshly authenticated user.</summary>
@@ -78,6 +88,10 @@ namespace IT_Service_Management_System.Services
             if (userId == null || string.IsNullOrEmpty(token))
                 return false;
 
+            // Fast path: validated within the cache window and not since revoked.
+            if (_cache.TryGetValue(CacheKey(token), out bool cachedValid) && cachedValid)
+                return true;
+
             var session = await _context.UserSessions
                 .FirstOrDefaultAsync(s => s.SessionToken == token);
 
@@ -111,6 +125,8 @@ namespace IT_Service_Management_System.Services
                 await _context.SaveChangesAsync();
             }
 
+            // Cache the positive result; evicted immediately by any revocation path below.
+            _cache.Set(CacheKey(token), true, ValidationCacheTtl);
             return true;
         }
 
@@ -120,6 +136,8 @@ namespace IT_Service_Management_System.Services
             var token = _http.HttpContext?.Session.GetString(SessionTokenKey);
             if (string.IsNullOrEmpty(token))
                 return;
+
+            _cache.Remove(CacheKey(token));   // stop the fast path from accepting a revoked session
 
             var session = await _context.UserSessions
                 .FirstOrDefaultAsync(s => s.SessionToken == token && s.RevokedAt == null);
@@ -145,6 +163,7 @@ namespace IT_Service_Management_System.Services
                     continue;
                 s.RevokedAt = DateTime.Now;
                 s.RevokedReason = reason;
+                _cache.Remove(CacheKey(s.SessionToken));   // evict the fast-path cache for each revoked session
             }
 
             await _context.SaveChangesAsync();

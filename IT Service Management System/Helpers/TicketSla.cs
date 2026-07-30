@@ -17,12 +17,15 @@ namespace IT_Service_Management_System.Helpers
             => createdAt + TargetFor(priority);
 
         /// <summary>Short human label: "Due in 3h", "Overdue 2h", or "—".</summary>
-        public static string Describe(DateTime? dueAt, bool isOpen)
+        public static string Describe(DateTime? dueAt, bool isOpen) => Describe(dueAt, isOpen, DateTime.Now);
+
+        /// <summary>Same label, measured against an explicit instant so it can be asserted in tests.</summary>
+        public static string Describe(DateTime? dueAt, bool isOpen, DateTime now)
         {
             if (dueAt == null) return "—";
             if (!isOpen) return "Met";
 
-            var delta = dueAt.Value - DateTime.Now;
+            var delta = dueAt.Value - now;
             var overdue = delta < TimeSpan.Zero;
             var abs = overdue ? -delta : delta;
             string span = abs.TotalDays >= 1 ? $"{(int)abs.TotalDays}d {abs.Hours}h"

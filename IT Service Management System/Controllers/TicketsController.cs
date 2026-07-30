@@ -1,72 +1,64 @@
 using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
-using IT_Service_Management_System.Services;
+using IT_Service_Management_System.Services.Itsm;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using static IT_Service_Management_System.Models.Ticket;
 
 namespace IT_Service_Management_System.Controllers
 {
+    /// <summary>
+    /// Helpdesk ticket surface. Reads/query + view preparation live here; every state change and
+    /// its side-effects (audit, email, realtime, SLA math, concurrency handling) are delegated to
+    /// <see cref="TicketService"/>, and attachment vetting/storage to <see cref="TicketAttachmentService"/>.
+    /// Authentication is guaranteed by the global SessionAuthorizationFilter, so actions only assert
+    /// the extra role/ownership rules they need.
+    /// </summary>
     public class TicketsController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private readonly AuditService _auditService;
-        private readonly EmailDispatcher _email;
-        private readonly IT_Service_Management_System.Services.Itsm.ISlaService _sla;
-        private readonly IT_Service_Management_System.Services.Realtime.IRealtimeNotifier _rt;
-        private readonly ILogger<TicketsController> _logger;
+        private readonly TicketService _tickets;
+        private readonly TicketAttachmentService _attachments;
 
-        public TicketsController(ApplicationDbContext context, AuditService auditService,
-            EmailDispatcher email, IT_Service_Management_System.Services.Itsm.ISlaService sla,
-            IT_Service_Management_System.Services.Realtime.IRealtimeNotifier rt, ILogger<TicketsController> logger)
+        public TicketsController(ApplicationDbContext context, TicketService tickets,
+            TicketAttachmentService attachments)
         {
             _context = context;
-            _auditService = auditService;
-            _email = email;
-            _sla = sla;
-            _rt = rt;
-            _logger = logger;
+            _tickets = tickets;
+            _attachments = attachments;
         }
 
         // ── helpers ──────────────────────────────────────────────────────────────────
-        private bool IsStaff(string? role) => role == "Admin" || role == "SystemsAdmin";
+        private int Uid => HttpContext.Session.GetInt32("UserId") ?? 0;
+        private string? Role => HttpContext.Session.GetString("UserRole");
+        private bool IsStaff => TicketService.IsStaff(Role);
 
         // Session-based auth has no ASP.NET auth scheme, so Forbid() would throw. Redirect instead.
         private IActionResult Denied() => RedirectToAction("AccessDenied", "Home");
 
-        private string TicketLink(int id) => Url.Action("Details", "Tickets", new { id }, Request.Scheme)!;
-
-        private async Task<List<User>> StaffRecipientsAsync() =>
-            await _context.Users.AsNoTracking()
-                .Where(u => u.IsActive && (u.Role == UserRole.Admin || u.Role == UserRole.SystemsAdmin))
-                .ToListAsync();
-
-        private async Task<List<User>> AgentsAsync() =>
-            await _context.Users.AsNoTracking()
-                .Where(u => u.Role == UserRole.Admin || u.Role == UserRole.SystemsAdmin)
-                .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
-                .ToListAsync();
-
-        // Queues the email on the background worker so SMTP latency never blocks the request.
-        private Task TrySendEmailAsync(string toEmail, string toName, string subject, string body)
+        // Maps a service outcome to a redirect back to the ticket, with the right flash message.
+        private IActionResult Redirect(TicketOp op, int id, string successKey = "Success") => op.Status switch
         {
-            _email.Queue(toEmail, toName, subject, body);
-            return Task.CompletedTask;
+            TicketOpStatus.NotFound => NotFound(),
+            TicketOpStatus.Ok => Flash(successKey, op.Message, id),
+            _ => Flash("Error", op.Message, id) // Concurrency + Invalid
+        };
+
+        private IActionResult Flash(string key, string? message, int id)
+        {
+            if (message != null) TempData[key] = message;
+            return RedirectToAction("Details", new { id });
         }
 
         // ── list ─────────────────────────────────────────────────────────────────────
         public async Task<IActionResult> Index(int page = 1, string? q = null, string? status = null, string? priority = null, string? category = null)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            var role = HttpContext.Session.GetString("UserRole");
-            if (userId == null) return RedirectToAction("Login", "Account");
-
             // Role-scoped base set drives the (unfiltered) summary counts so the stat cards
             // stay stable regardless of the current search/filter or page.
             var baseQuery = _context.Tickets.AsQueryable();
-            if (!IsStaff(role))
-                baseQuery = baseQuery.Where(t => t.CreatedById == userId);
+            if (!IsStaff)
+                baseQuery = baseQuery.Where(t => t.CreatedById == Uid);
 
             ViewBag.TotalTickets = await baseQuery.CountAsync();
             ViewBag.OpenTickets = await baseQuery.CountAsync(t => t.Status == TicketStatus.Open);
@@ -107,67 +99,26 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ── create ───────────────────────────────────────────────────────────────────
-        public IActionResult Create()
-        {
-            if (HttpContext.Session.GetInt32("UserId") == null)
-                return RedirectToAction("Login", "Account");
-            return View();
-        }
+        public IActionResult Create() => View();
 
         [HttpPost]
         public async Task<IActionResult> Create(Ticket ticket, List<IFormFile> files)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            if (userId == null) return RedirectToAction("Login", "Account");
             if (!ModelState.IsValid) return View(ticket);
 
-            ticket.CreatedAt = DateTime.Now;
-            ticket.UpdatedAt = DateTime.Now;
-            ticket.Status = TicketStatus.Open;
-            ticket.CreatedById = userId.Value;
-            ticket.AssignedToId = null;
+            var created = await _tickets.CreateAsync(ticket, Uid);
+            var result = await _attachments.SaveAsync(files, ticketId: created.Id);
 
-            // SLA targets from the configurable policy (response + resolution).
-            var targets = await _sla.ComputeAsync(ticket.Priority, ticket.Category, ticket.CreatedAt);
-            ticket.SlaPolicyId = targets.PolicyId;
-            ticket.ResponseDueAt = targets.ResponseDueAt;
-            ticket.DueAt = targets.ResolutionDueAt ?? TicketSla.DueFrom(ticket.CreatedAt, ticket.Priority);
-
-            _context.Tickets.Add(ticket);
-            await _context.SaveChangesAsync();
-
-            await _auditService.LogAsync("Created", "Ticket", ticket.Id, $"Ticket '{ticket.Title}' created");
-
-            // Live nudge to the IT/HR staff group.
-            await _rt.NotifyStaffAsync(new IT_Service_Management_System.Services.Realtime.RealtimeNotice(
-                $"New ticket {ticket.Reference}", ticket.Title, TicketLink(ticket.Id),
-                ticket.Priority == TicketPriority.Critical ? "error" : "info"));
-
-            await SaveAttachments(files, ticketId: ticket.Id);
-
-            // Notify all admins / systems admins of the new ticket.
-            var creator = await _context.Users.FindAsync(userId.Value);
-            var creatorName = creator != null ? creator.FullName : "A user";
-            var link = TicketLink(ticket.Id);
-            foreach (var staff in await StaffRecipientsAsync())
-            {
-                await TrySendEmailAsync(staff.Email, staff.FirstName,
-                    $"[New Ticket {ticket.Reference}] {ticket.Title}",
-                    EmailTemplates.TicketCreatedForStaff(ticket.Reference, ticket.Title, ticket.Description,
-                        ticket.Priority.ToString(), creatorName, link));
-            }
-
-            TempData["Success"] = $"Ticket {ticket.Reference} created. Our team has been notified.";
-            return RedirectToAction("Details", new { id = ticket.Id });
+            var message = $"Ticket {created.Reference} created. Our team has been notified.";
+            if (result.AnyRejected)
+                message += " Some files were not attached: " + string.Join("; ", result.Skipped);
+            TempData["Success"] = message;
+            return RedirectToAction("Details", new { id = created.Id });
         }
 
         // ── details ──────────────────────────────────────────────────────────────────
         public async Task<IActionResult> Details(int id)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            var role = HttpContext.Session.GetString("UserRole");
-            if (userId == null) return RedirectToAction("Login", "Account");
-
             var ticket = await _context.Tickets
                 .Include(t => t.CreatedBy)
                 .Include(t => t.AssignedTo)
@@ -176,18 +127,19 @@ namespace IT_Service_Management_System.Controllers
                 .Include(t => t.Attachments)
                 .Include(t => t.Messages).ThenInclude(m => m.Sender)
                 .Include(t => t.Messages).ThenInclude(m => m.Attachments)
+                .AsSplitQuery()   // multiple collection includes — avoid a cartesian row explosion
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (ticket == null) return NotFound();
-            bool staff = IsStaff(role);
-            if (!staff && ticket.CreatedById != userId) return Denied();
+            bool staff = IsStaff;
+            if (!staff && ticket.CreatedById != Uid) return Denied();
 
             // Requesters never see internal staff notes.
             if (!staff)
                 ticket.Messages = ticket.Messages.Where(m => !m.IsInternal).ToList();
 
             ViewBag.IsStaff = staff;
-            ViewBag.Agents = staff ? await AgentsAsync() : new List<User>();
+            ViewBag.Agents = staff ? await _tickets.AgentsAsync() : new List<User>();
             ViewBag.CannedResponses = staff
                 ? await _context.CannedResponses.AsNoTracking().OrderBy(c => c.Title).ToListAsync()
                 : new List<CannedResponse>();
@@ -197,63 +149,36 @@ namespace IT_Service_Management_System.Controllers
         // ── edit (staff) ─────────────────────────────────────────────────────────────
         public async Task<IActionResult> Edit(int id)
         {
-            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
+            if (!IsStaff) return Denied();
 
             var ticket = await _context.Tickets
                 .Include(t => t.CreatedBy).Include(t => t.AssignedTo)
                 .FirstOrDefaultAsync(t => t.Id == id);
             if (ticket == null) return NotFound();
 
-            ViewBag.Agents = await AgentsAsync();
+            ViewBag.Agents = await _tickets.AgentsAsync();
             return View(ticket);
         }
 
         [HttpPost]
         public async Task<IActionResult> Edit(Ticket updatedTicket)
         {
-            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
+            if (!IsStaff) return Denied();
             if (!ModelState.IsValid)
             {
-                ViewBag.Agents = await AgentsAsync();
+                ViewBag.Agents = await _tickets.AgentsAsync();
                 return View(updatedTicket);
             }
 
-            var ticket = await _context.Tickets.Include(t => t.CreatedBy)
-                .FirstOrDefaultAsync(t => t.Id == updatedTicket.Id);
-            if (ticket == null) return NotFound();
-
-            var oldStatus = ticket.Status;
-            var oldAssignee = ticket.AssignedToId;
-
-            ticket.Title = updatedTicket.Title;
-            ticket.Description = updatedTicket.Description;
-            ticket.Status = updatedTicket.Status;
-            ticket.Priority = updatedTicket.Priority;
-            ticket.AssignedToId = updatedTicket.AssignedToId;
-            ticket.UpdatedAt = DateTime.Now;
-            ApplyStatusTimestamps(ticket, oldStatus);
-
-            // Optimistic concurrency: when the form round-trips the original RowVersion, use it so
-            // a concurrent edit is detected (otherwise fall back to last-write-wins).
-            if (updatedTicket.RowVersion != null)
-                _context.Entry(ticket).Property(t => t.RowVersion).OriginalValue = updatedTicket.RowVersion;
-
-            try
+            var op = await _tickets.EditAsync(updatedTicket);
+            if (op.Status == TicketOpStatus.NotFound) return NotFound();
+            // Concurrency and a rejected status/assignee both send the user back to the form to correct it.
+            if (op.Status != TicketOpStatus.Ok)
             {
-                await _context.SaveChangesAsync();
+                TempData["Error"] = op.Message;
+                return RedirectToAction("Edit", new { id = updatedTicket.Id });
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                TempData["Error"] = "This ticket was changed by someone else while you were editing. Please review the latest version and try again.";
-                return RedirectToAction("Edit", new { id = ticket.Id });
-            }
-
-            await _auditService.LogAsync("Updated", "Ticket", ticket.Id, $"Ticket '{ticket.Title}' updated");
-
-            await NotifyStatusChangeAsync(ticket, oldStatus);
-            await NotifyAssignmentAsync(ticket, oldAssignee);
-
-            return RedirectToAction("Details", new { id = ticket.Id });
+            return RedirectToAction("Details", new { id = updatedTicket.Id });
         }
 
         // ── assign (staff) ───────────────────────────────────────────────────────────
@@ -261,28 +186,8 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Assign(int id, int? assignedToId)
         {
-            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
-
-            var ticket = await _context.Tickets.FindAsync(id);
-            if (ticket == null) return NotFound();
-
-            var oldAssignee = ticket.AssignedToId;
-            ticket.AssignedToId = assignedToId;
-            ticket.UpdatedAt = DateTime.Now;
-            if (ticket.Status == TicketStatus.Open && assignedToId != null)
-                ticket.Status = TicketStatus.InProgress;
-
-            await _context.SaveChangesAsync();
-            await _auditService.LogAsync("Assigned", "Ticket", ticket.Id,
-                assignedToId == null ? "Ticket unassigned" : $"Ticket assigned to user #{assignedToId}");
-
-            await NotifyAssignmentAsync(ticket, oldAssignee);
-            if (assignedToId != null)
-                await _rt.NotifyUserAsync(assignedToId.Value, new IT_Service_Management_System.Services.Realtime.RealtimeNotice(
-                    $"Assigned to you: {ticket.Reference}", ticket.Title, TicketLink(ticket.Id), "info"));
-
-            TempData["Success"] = assignedToId == null ? "Ticket unassigned." : "Ticket assigned.";
-            return RedirectToAction("Details", new { id });
+            if (!IsStaff) return Denied();
+            return Redirect(await _tickets.AssignAsync(id, assignedToId), id);
         }
 
         // ── status quick-change (staff) ──────────────────────────────────────────────
@@ -290,25 +195,8 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangeStatus(int id, TicketStatus status)
         {
-            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
-
-            var ticket = await _context.Tickets.Include(t => t.CreatedBy).FirstOrDefaultAsync(t => t.Id == id);
-            if (ticket == null) return NotFound();
-
-            var oldStatus = ticket.Status;
-            if (oldStatus != status)
-            {
-                ticket.Status = status;
-                ticket.UpdatedAt = DateTime.Now;
-                ApplyStatusTimestamps(ticket, oldStatus);
-                await _context.SaveChangesAsync();
-                await _auditService.LogAsync("Status Changed", "Ticket", ticket.Id,
-                    $"Status {oldStatus} -> {status}");
-                await NotifyStatusChangeAsync(ticket, oldStatus);
-            }
-
-            TempData["Success"] = $"Ticket marked {status}.";
-            return RedirectToAction("Details", new { id });
+            if (!IsStaff) return Denied();
+            return Redirect(await _tickets.ChangeStatusAsync(id, status), id);
         }
 
         // ── reopen (owner or staff) ──────────────────────────────────────────────────
@@ -316,24 +204,9 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Reopen(int id)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            var role = HttpContext.Session.GetString("UserRole");
-            if (userId == null) return RedirectToAction("Login", "Account");
-
-            var ticket = await _context.Tickets.Include(t => t.CreatedBy).FirstOrDefaultAsync(t => t.Id == id);
-            if (ticket == null) return NotFound();
-            if (!IsStaff(role) && ticket.CreatedById != userId) return Denied();
-
-            var oldStatus = ticket.Status;
-            ticket.Status = TicketStatus.Open;
-            ticket.UpdatedAt = DateTime.Now;
-            ApplyStatusTimestamps(ticket, oldStatus);
-            await _context.SaveChangesAsync();
-            await _auditService.LogAsync("Reopened", "Ticket", ticket.Id, "Ticket reopened");
-            await NotifyStatusChangeAsync(ticket, oldStatus);
-
-            TempData["Success"] = "Ticket reopened.";
-            return RedirectToAction("Details", new { id });
+            var op = await _tickets.ReopenAsync(id, Uid, Role);
+            if (op.Status == TicketOpStatus.Invalid) return Denied();
+            return Redirect(op, id);
         }
 
         // ── put on hold (staff) — pauses the SLA clock ───────────────────────────────
@@ -341,36 +214,8 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Hold(int id, string? reason)
         {
-            var uid = HttpContext.Session.GetInt32("UserId");
-            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
-
-            var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
-            if (ticket == null) return NotFound();
-            if (!ticket.IsOpen || ticket.IsOnHold)
-            {
-                TempData["Error"] = "Only an active ticket can be placed on hold.";
-                return RedirectToAction("Details", new { id });
-            }
-
-            var oldStatus = ticket.Status;
-            ticket.Status = TicketStatus.OnHold;
-            ticket.UpdatedAt = DateTime.Now;
-            ApplyStatusTimestamps(ticket, oldStatus);   // stamps OnHoldSince (SLA paused)
-            if (uid != null)
-                _context.TicketMessages.Add(new TicketMessage
-                {
-                    TicketId = id,
-                    SenderId = uid.Value,
-                    Message = "Placed on hold — SLA paused." + (string.IsNullOrWhiteSpace(reason) ? "" : $" Reason: {reason.Trim()}"),
-                    SentAt = DateTime.Now,
-                    IsInternal = true
-                });
-            await _context.SaveChangesAsync();
-            await _auditService.LogAsync("On Hold", "Ticket", id,
-                string.IsNullOrWhiteSpace(reason) ? "Ticket placed on hold" : $"On hold: {reason.Trim()}");
-
-            TempData["Success"] = "Ticket placed on hold — SLA paused.";
-            return RedirectToAction("Details", new { id });
+            if (!IsStaff) return Denied();
+            return Redirect(await _tickets.HoldAsync(id, reason, Uid), id);
         }
 
         // ── resume from hold (staff) — resumes the SLA clock ─────────────────────────
@@ -378,35 +223,8 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Resume(int id)
         {
-            var uid = HttpContext.Session.GetInt32("UserId");
-            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
-
-            var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
-            if (ticket == null) return NotFound();
-            if (!ticket.IsOnHold)
-            {
-                TempData["Error"] = "This ticket is not on hold.";
-                return RedirectToAction("Details", new { id });
-            }
-
-            var oldStatus = ticket.Status;
-            ticket.Status = ticket.AssignedToId != null ? TicketStatus.InProgress : TicketStatus.Open;
-            ticket.UpdatedAt = DateTime.Now;
-            ApplyStatusTimestamps(ticket, oldStatus);   // adds paused time + extends SLA targets
-            if (uid != null)
-                _context.TicketMessages.Add(new TicketMessage
-                {
-                    TicketId = id,
-                    SenderId = uid.Value,
-                    Message = "Resumed from hold — SLA running again.",
-                    SentAt = DateTime.Now,
-                    IsInternal = true
-                });
-            await _context.SaveChangesAsync();
-            await _auditService.LogAsync("Resumed", "Ticket", id, $"Resumed from hold ({ticket.PausedMinutes} min paused total)");
-
-            TempData["Success"] = "Ticket resumed — SLA running again.";
-            return RedirectToAction("Details", new { id });
+            if (!IsStaff) return Denied();
+            return Redirect(await _tickets.ResumeAsync(id, Uid), id);
         }
 
         // ── escalate (staff) — raise priority + alert the team ───────────────────────
@@ -414,124 +232,28 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Escalate(int id, string? reason)
         {
-            var uid = HttpContext.Session.GetInt32("UserId");
-            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
-
-            var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
-            if (ticket == null) return NotFound();
-            if (!ticket.IsOpen)
-            {
-                TempData["Error"] = "Only an open ticket can be escalated.";
-                return RedirectToAction("Details", new { id });
-            }
-
-            ticket.EscalatedAt = DateTime.Now;
-            var oldPriority = ticket.Priority;
-            ticket.Priority = ticket.Priority switch
-            {
-                TicketPriority.Low => TicketPriority.Medium,
-                TicketPriority.Medium => TicketPriority.High,
-                _ => TicketPriority.Critical
-            };
-            ticket.UpdatedAt = DateTime.Now;
-            if (uid != null)
-                _context.TicketMessages.Add(new TicketMessage
-                {
-                    TicketId = id,
-                    SenderId = uid.Value,
-                    Message = $"Escalated (priority {oldPriority} → {ticket.Priority})."
-                        + (string.IsNullOrWhiteSpace(reason) ? "" : $" Reason: {reason.Trim()}"),
-                    SentAt = DateTime.Now,
-                    IsInternal = true
-                });
-            await _context.SaveChangesAsync();
-            await _auditService.LogAsync("Escalated", "Ticket", id, $"Escalated; priority {oldPriority} -> {ticket.Priority}");
-
-            await _rt.NotifyStaffAsync(new IT_Service_Management_System.Services.Realtime.RealtimeNotice(
-                $"Escalated: {ticket.Reference}", ticket.Title, TicketLink(ticket.Id), "error"));
-
-            TempData["Warning"] = $"Ticket escalated — priority raised to {ticket.Priority}.";
-            return RedirectToAction("Details", new { id });
+            if (!IsStaff) return Denied();
+            return Redirect(await _tickets.EscalateAsync(id, reason, Uid), id, successKey: "Warning");
         }
 
         // ── reply ────────────────────────────────────────────────────────────────────
         [HttpPost]
         public async Task<IActionResult> AddReply(int ticketId, string message, List<IFormFile> files, bool isInternal = false)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            var role = HttpContext.Session.GetString("UserRole");
-            if (userId == null) return Unauthorized();
+            var reply = await _tickets.AddReplyAsync(ticketId, Uid, Role, message, isInternal);
+            if (!reply.Success)
+                return StatusCode(reply.StatusCode, new { success = false, message = reply.Error });
 
-            var ticket = await _context.Tickets.Include(t => t.CreatedBy).Include(t => t.AssignedTo)
-                .FirstOrDefaultAsync(t => t.Id == ticketId);
-            if (ticket == null) return NotFound();
-
-            // Ownership: only the ticket owner, the assignee, or admins/sysadmins may reply.
-            bool staff = IsStaff(role);
-            bool isOwner = ticket.CreatedById == userId;
-            bool isAssignee = ticket.AssignedToId == userId;
-            if (!staff && !isOwner && !isAssignee)
-                return StatusCode(403, new { success = false, message = "You don't have access to this ticket." });
-
-            if (ticket.Status == TicketStatus.Closed)
-                return BadRequest(new { success = false, message = "This ticket is closed." });
-
-            if (string.IsNullOrWhiteSpace(message))
-                return BadRequest(new { success = false, message = "Message cannot be empty." });
-
-            // Only staff/assignee can post internal notes.
-            bool replierIsStaffSide = staff || isAssignee;
-            bool internalNote = isInternal && replierIsStaffSide;
-
-            var sender = await _context.Users.FindAsync(userId.Value);
-            var ticketMessage = new TicketMessage
+            var attach = await _attachments.SaveAsync(files, ticketMessageId: reply.MessageId);
+            return Json(new
             {
-                TicketId = ticketId,
-                SenderId = userId.Value,
-                Message = message.Trim(),
-                SentAt = DateTime.Now,
-                IsInternal = internalNote
-            };
-            _context.TicketMessages.Add(ticketMessage);
-
-            // A public staff reply (not the owner, not an internal note) → first response + Open→In Progress.
-            if (replierIsStaffSide && !isOwner && !internalNote)
-            {
-                ticket.FirstRespondedAt ??= DateTime.Now;
-                if (ticket.Status == TicketStatus.Open)
-                    ticket.Status = TicketStatus.InProgress;
-            }
-            ticket.UpdatedAt = DateTime.Now;
-
-            await _context.SaveChangesAsync();
-            await _auditService.LogAsync(internalNote ? "Internal Note Added" : "Reply Added",
-                "Ticket", ticketId, internalNote ? "Internal note posted" : "Reply posted");
-
-            await SaveAttachments(files, ticketMessageId: ticketMessage.Id);
-
-            // Internal notes are never emailed to anyone; public replies notify the other party.
-            var senderName = sender?.FullName ?? "Someone";
-            if (!internalNote)
-            {
-                var link = TicketLink(ticket.Id);
-                await NotifyReplyAsync(ticket, isOwner, senderName, ticketMessage.Message, link);
-
-                // Live nudge to the other side of the conversation.
-                var notice = new IT_Service_Management_System.Services.Realtime.RealtimeNotice(
-                    $"Reply on {ticket.Reference}", $"{senderName}: {message.Trim()}", link, "info");
-                if (isOwner)
-                {
-                    await _rt.NotifyStaffAsync(notice);
-                    if (ticket.AssignedToId != null) await _rt.NotifyUserAsync(ticket.AssignedToId.Value, notice);
-                }
-                else
-                {
-                    await _rt.NotifyUserAsync(ticket.CreatedById, notice);
-                }
-            }
-
-            var time = ticketMessage.SentAt.ToString("MMM dd, yyyy HH:mm");
-            return Json(new { success = true, senderName, time, isStaff = replierIsStaffSide && !isOwner, isInternal = internalNote });
+                success = true,
+                senderName = reply.SenderName,
+                time = reply.Time,
+                isStaff = reply.IsStaffReply,
+                isInternal = reply.IsInternal,
+                attachmentsRejected = attach.AnyRejected ? attach.Skipped : null
+            });
         }
 
         // ── CSAT: requester rates a resolved/closed ticket ─────────────────────────────
@@ -539,28 +261,15 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RateSatisfaction(int id, int rating, string? comment)
         {
-            var userId = HttpContext.Session.GetInt32("UserId");
-            if (userId == null) return RedirectToAction("Login", "Account");
-
-            var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
-            if (ticket == null) return NotFound();
-            if (ticket.CreatedById != userId) return Denied();   // only the requester rates
-            if (ticket.IsOpen) { TempData["Error"] = "You can rate a ticket once it's resolved or closed."; return RedirectToAction("Details", new { id }); }
-
-            ticket.SatisfactionRating = Math.Clamp(rating, 1, 5);
-            ticket.SatisfactionComment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
-            await _context.SaveChangesAsync();
-            await _auditService.LogAsync("Satisfaction Rated", "Ticket", id, $"Rated {ticket.SatisfactionRating}/5");
-
-            TempData["Success"] = "Thanks for your feedback!";
-            return RedirectToAction("Details", new { id });
+            var op = await _tickets.RateSatisfactionAsync(id, Uid, rating, comment);
+            return Redirect(op, id);
         }
 
         // ── close (staff) ────────────────────────────────────────────────────────────
         [HttpGet]
         public async Task<IActionResult> Close(int id)
         {
-            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
+            if (!IsStaff) return Denied();
             var ticket = await _context.Tickets.Include(t => t.CreatedBy).FirstOrDefaultAsync(t => t.Id == id);
             if (ticket == null) return NotFound();
             return View(ticket);
@@ -570,42 +279,17 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Close(int id, string closingNotes)
         {
-            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
-
-            var ticket = await _context.Tickets.Include(t => t.CreatedBy).FirstOrDefaultAsync(t => t.Id == id);
-            if (ticket == null) return NotFound();
-
-            var oldStatus = ticket.Status;
-            ticket.Status = TicketStatus.Closed;
-            ticket.ClosedAt = DateTime.Now;
-            ticket.UpdatedAt = DateTime.Now;
-
-            if (!string.IsNullOrWhiteSpace(closingNotes))
-            {
-                var actor = await _context.Users.FindAsync(HttpContext.Session.GetInt32("UserId"));
-                _context.TicketMessages.Add(new TicketMessage
-                {
-                    TicketId = id,
-                    SenderId = actor?.Id ?? ticket.CreatedById,
-                    Message = $"[Closing notes] {closingNotes.Trim()}",
-                    SentAt = DateTime.Now
-                });
-            }
-
-            await _context.SaveChangesAsync();
-            await _auditService.LogAsync("Closed", "Ticket", id, $"Ticket closed. Notes: {closingNotes ?? "None"}");
-            await NotifyStatusChangeAsync(ticket, oldStatus);
-
-            TempData["Success"] = $"Ticket {ticket.Reference} closed.";
-            return RedirectToAction("Details", new { id });
+            if (!IsStaff) return Denied();
+            return Redirect(await _tickets.CloseAsync(id, closingNotes, Uid), id);
         }
 
         // ── delete (staff) ───────────────────────────────────────────────────────────
         public async Task<IActionResult> Delete(int id)
         {
-            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
+            if (!IsStaff) return Denied();
             var ticket = await _context.Tickets.Include(t => t.CreatedBy)
                 .Include(t => t.Messages).Include(t => t.Attachments)
+                .AsSplitQuery()   // two collection includes — avoid a cartesian row explosion
                 .FirstOrDefaultAsync(t => t.Id == id);
             if (ticket == null) return NotFound();
             return View(ticket);
@@ -615,124 +299,11 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (!IsStaff(HttpContext.Session.GetString("UserRole"))) return Denied();
-
-            var ticket = await _context.Tickets.FirstOrDefaultAsync(t => t.Id == id);
-            if (ticket == null) return NotFound();
-
-            // Soft delete — the ticket (and its messages/attachments) are retained for audit,
-            // but hidden everywhere by the global query filter.
-            ticket.IsDeleted = true;
-            ticket.DeletedAt = DateTime.Now;
-            await _context.SaveChangesAsync();
-
-            await _auditService.LogAsync("Deleted", "Ticket", id, $"Ticket ID {id} deleted (soft)");
-            TempData["Success"] = $"Ticket {ticket.Reference} deleted.";
+            if (!IsStaff) return Denied();
+            var op = await _tickets.SoftDeleteAsync(id);
+            if (op.Status == TicketOpStatus.NotFound) return NotFound();
+            if (op.Message != null) TempData[op.Status == TicketOpStatus.Ok ? "Success" : "Error"] = op.Message;
             return RedirectToAction("Index");
-        }
-
-        // ── notification helpers ─────────────────────────────────────────────────────
-        private async Task NotifyReplyAsync(Ticket ticket, bool replierIsOwner, string senderName, string message, string link)
-        {
-            var recipients = new List<User>();
-            if (replierIsOwner)
-            {
-                // Owner replied → notify the assignee, else all staff.
-                if (ticket.AssignedTo != null) recipients.Add(ticket.AssignedTo);
-                else recipients.AddRange(await StaffRecipientsAsync());
-            }
-            else
-            {
-                // Staff/assignee replied → notify the owner.
-                if (ticket.CreatedBy != null) recipients.Add(ticket.CreatedBy);
-            }
-
-            foreach (var r in recipients.DistinctBy(u => u.Id))
-            {
-                await TrySendEmailAsync(r.Email, r.FirstName,
-                    $"[{ticket.Reference}] New reply: {ticket.Title}",
-                    EmailTemplates.TicketReply(r.FirstName, ticket.Reference, ticket.Title, senderName, message, link));
-            }
-        }
-
-        private async Task NotifyStatusChangeAsync(Ticket ticket, TicketStatus oldStatus)
-        {
-            if (ticket.Status == oldStatus || ticket.CreatedBy == null) return;
-            var by = HttpContext.Session.GetString("UserName") ?? "Support";
-            await TrySendEmailAsync(ticket.CreatedBy.Email, ticket.CreatedBy.FirstName,
-                $"[{ticket.Reference}] Status: {ticket.Status}",
-                EmailTemplates.TicketStatusChanged(ticket.CreatedBy.FirstName, ticket.Reference,
-                    ticket.Title, ticket.Status.ToString(), by, TicketLink(ticket.Id)));
-        }
-
-        private async Task NotifyAssignmentAsync(Ticket ticket, int? oldAssignee)
-        {
-            if (ticket.AssignedToId == null || ticket.AssignedToId == oldAssignee) return;
-            var assignee = await _context.Users.FindAsync(ticket.AssignedToId.Value);
-            if (assignee == null) return;
-            var by = HttpContext.Session.GetString("UserName") ?? "Support";
-            await TrySendEmailAsync(assignee.Email, assignee.FirstName,
-                $"[{ticket.Reference}] Assigned to you: {ticket.Title}",
-                EmailTemplates.TicketAssigned(assignee.FirstName, ticket.Reference, ticket.Title,
-                    ticket.Priority.ToString(), by, TicketLink(ticket.Id)));
-        }
-
-        private static void ApplyStatusTimestamps(Ticket ticket, TicketStatus oldStatus)
-        {
-            if (ticket.Status == oldStatus) return;
-
-            // On-hold SLA pause: stamp when entering hold; on leaving, add the paused time and push
-            // the SLA targets out by that amount so the wait doesn't count against the agent.
-            if (ticket.Status == TicketStatus.OnHold && oldStatus != TicketStatus.OnHold)
-            {
-                ticket.OnHoldSince = DateTime.Now;
-            }
-            else if (oldStatus == TicketStatus.OnHold && ticket.OnHoldSince.HasValue)
-            {
-                var paused = (int)Math.Round((DateTime.Now - ticket.OnHoldSince.Value).TotalMinutes);
-                if (paused > 0)
-                {
-                    ticket.PausedMinutes += paused;
-                    if (ticket.DueAt.HasValue) ticket.DueAt = ticket.DueAt.Value.AddMinutes(paused);
-                    if (ticket.ResponseDueAt.HasValue && ticket.FirstRespondedAt == null)
-                        ticket.ResponseDueAt = ticket.ResponseDueAt.Value.AddMinutes(paused);
-                }
-                ticket.OnHoldSince = null;
-            }
-
-            if (ticket.Status == TicketStatus.Resolved) ticket.ResolvedAt = DateTime.Now;
-            if (ticket.Status == TicketStatus.Closed) ticket.ClosedAt = DateTime.Now;
-            if (ticket.Status == TicketStatus.Open || ticket.Status == TicketStatus.InProgress)
-            {
-                ticket.ResolvedAt = null;
-                ticket.ClosedAt = null;
-            }
-        }
-
-        private async Task SaveAttachments(List<IFormFile> files, int? ticketId = null, int? ticketMessageId = null)
-        {
-            if (files == null || files.Count == 0) return;
-
-            var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads");
-            if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
-
-            foreach (var file in files)
-            {
-                if (file.Length == 0) continue;
-                var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
-                var filePath = Path.Combine(uploadPath, fileName);
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                    await file.CopyToAsync(stream);
-
-                _context.TicketAttachments.Add(new TicketAttachment
-                {
-                    FileName = file.FileName,
-                    FilePath = "/uploads/" + fileName,
-                    TicketId = ticketId,
-                    TicketMessageId = ticketMessageId
-                });
-            }
-            await _context.SaveChangesAsync();
         }
     }
 }

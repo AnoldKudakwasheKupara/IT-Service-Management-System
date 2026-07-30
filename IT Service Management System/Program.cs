@@ -242,6 +242,11 @@ else
     builder.Services.AddScoped<IT_Service_Management_System.Services.Security.IMalwareScanner,
         IT_Service_Management_System.Services.Security.HeuristicMalwareScanner>();
 
+// Clock abstraction. Services take TimeProvider instead of reading DateTime.Now directly, so
+// time-dependent logic (SLA deadlines, on-hold pause arithmetic) can be driven from a fake clock
+// in tests. TimeProvider.System delegates to the real clock in production.
+builder.Services.AddSingleton(TimeProvider.System);
+
 // Real-time notifications (SignalR) + configurable SLA engine.
 builder.Services.AddScoped<IT_Service_Management_System.Services.Realtime.IRealtimeNotifier,
     IT_Service_Management_System.Services.Realtime.RealtimeNotifier>();
@@ -251,6 +256,9 @@ builder.Services.AddScoped<IT_Service_Management_System.Services.Itsm.SlaMonitor
 builder.Services.AddHostedService<IT_Service_Management_System.Services.Itsm.SlaMonitoringHostedService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Itsm.IMyWorkService,
     IT_Service_Management_System.Services.Itsm.MyWorkService>();
+// Helpdesk ticket workflow + secure attachment handling.
+builder.Services.AddScoped<IT_Service_Management_System.Services.Itsm.TicketService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Itsm.TicketAttachmentService>();
 
 // QuestPDF community licence (free for this use); required before any PDF is generated.
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
