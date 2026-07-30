@@ -35,9 +35,16 @@ namespace IT_Service_Management_System.Filters
 
             try
             {
-                var count = await _db.DocumentNotifications.CountAsync(n => !n.IsRead &&
+                // The bell opens one unified inbox, so its badge must count every module's
+                // notifications - otherwise the number and the list the user opens disagree.
+                var docCount = await _db.DocumentNotifications.CountAsync(n => !n.IsRead &&
                     (n.RecipientUserId == uid || (isStaff && n.RecipientUserId == null)));
-                controller.ViewData["EfmUnread"] = count;
+
+                var isImsManager = Helpers.Ims.ImsAccess.IsImsManager(role);
+                var isoCount = await _db.IsoNotifications.CountAsync(n => !n.IsRead &&
+                    (n.RecipientUserId == uid || (isImsManager && n.RecipientUserId == null)));
+
+                controller.ViewData["EfmUnread"] = docCount + isoCount;
                 controller.ViewData["EfmUnreadStaff"] = isStaff;
 
                 if (isStaff)

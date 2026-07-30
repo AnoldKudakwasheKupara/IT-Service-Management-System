@@ -1,0 +1,185 @@
+@using IT_Service_Management_System.ViewModels
+@model NotificationInboxVm
+@{
+    ViewData["Title"] = "Notifications";
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-bell me-2" style="color: var(--primary);"></i>
+                    Notifications
+                </h1>
+                <p class="text-muted mt-2">
+                    Everything that needs your attention, from every module
+                    @if (Model.UnreadCount > 0)
+                    {
+                        <span class="unread-pill">@Model.UnreadCount unread</span>
+                    }
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                @if (Model.UnreadOnly)
+                {
+                    <a class="btn-soft" asp-action="Index"><i class="fas fa-list"></i> Show all</a>
+                }
+                else
+                {
+                    <a class="btn-soft" asp-action="Index" asp-route-unreadOnly="true"><i class="fas fa-filter"></i> Unread only</a>
+                }
+                @if (Model.UnreadCount > 0)
+                {
+                    <form asp-action="MarkAllRead" method="post" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-primary-solid"><i class="fas fa-check-double"></i> Mark all read</button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (Model.DocumentsUnread > 0 || Model.IsoUnread > 0)
+    {
+        <div class="source-summary">
+            @if (Model.DocumentsUnread > 0)
+            {
+                <span class="source-chip"><i class="fas fa-folder-open"></i> Employee Files &middot; @Model.DocumentsUnread</span>
+            }
+            @if (Model.IsoUnread > 0)
+            {
+                <span class="source-chip"><i class="fas fa-certificate"></i> ISO / Compliance &middot; @Model.IsoUnread</span>
+            }
+        </div>
+    }
+
+    <div class="data-card">
+        @if (Model.Items.Any())
+        {
+            <ul class="notif-list">
+                @foreach (var n in Model.Items)
+                {
+                    <li class="notif-item @(n.IsRead ? "" : "is-unread")">
+                        <div class="notif-icon"><i class="fas @n.Icon"></i></div>
+                        <div class="notif-body">
+                            <div class="notif-top">
+                                @if (!string.IsNullOrEmpty(n.Url))
+                                {
+                                    <a href="@n.Url" class="notif-title">@n.Title</a>
+                                }
+                                else
+                                {
+                                    <span class="notif-title">@n.Title</span>
+                                }
+                                <span class="notif-kind">@n.Kind</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(n.Message))
+                            {
+                                <p class="notif-message">@n.Message</p>
+                            }
+                            <span class="notif-age"><i class="fas fa-clock"></i> @n.Age</span>
+                        </div>
+                        @if (!n.IsRead)
+                        {
+                            <form asp-action="MarkRead" method="post" class="notif-action">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="source" value="@n.Source" />
+                                <input type="hidden" name="id" value="@n.Id" />
+                                <input type="hidden" name="unreadOnly" value="@Model.UnreadOnly.ToString().ToLower()" />
+                                <button type="submit" class="action-btn btn-mark" title="Mark as read" aria-label="Mark &quot;@n.Title&quot; as read">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </form>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-bell-slash"></i>
+                <h3>@(Model.UnreadOnly ? "Nothing unread" : "No notifications")</h3>
+                <p>@(Model.UnreadOnly ? "You're all caught up." : "Notifications from across the system will appear here.")</p>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .page-container { max-width: 1000px; margin: 0 auto; }
+    .page-header { margin-bottom: 2rem; }
+    .page-title { font-size: 1.875rem; font-weight: 700; color: var(--gray-800); margin: 0; }
+
+    .unread-pill {
+        display: inline-block; margin-left: .5rem; padding: .1rem .6rem; border-radius: 2rem;
+        background: var(--primary); color: #fff; font-size: .72rem; font-weight: 700;
+    }
+
+    .btn-soft, .btn-primary-solid {
+        display: inline-flex; align-items: center; gap: .5rem; padding: .55rem 1.1rem;
+        border-radius: .7rem; font-weight: 600; font-size: .85rem; text-decoration: none;
+        border: 1px solid var(--gray-200); cursor: pointer; font-family: inherit; transition: all .2s;
+    }
+    .btn-soft { background: var(--gray-100); color: var(--gray-700); }
+    .btn-soft:hover { background: #fff; color: var(--primary); }
+    .btn-primary-solid { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-primary-solid:hover { filter: brightness(.94); color: #fff; }
+
+    .source-summary { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .source-chip {
+        display: inline-flex; align-items: center; gap: .4rem; padding: .25rem .7rem;
+        border-radius: 2rem; background: var(--gray-100); border: 1px solid var(--gray-200);
+        color: var(--gray-600); font-size: .75rem; font-weight: 600;
+    }
+
+    .data-card {
+        background: #fff; border: 1px solid var(--gray-200); border-radius: 1rem;
+        overflow: hidden; box-shadow: 0 1px 2px 0 rgb(0 0 0 / .05);
+    }
+
+    .notif-list { list-style: none; margin: 0; padding: 0; }
+    .notif-item {
+        display: flex; align-items: flex-start; gap: 1rem; padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--gray-100);
+    }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-item.is-unread { background: color-mix(in srgb, var(--primary) 4%, #fff); }
+
+    .notif-icon {
+        width: 38px; height: 38px; flex-shrink: 0; border-radius: .65rem;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--gray-100); color: var(--primary);
+    }
+    .notif-item.is-unread .notif-icon { background: var(--primary); color: #fff; }
+
+    .notif-body { flex: 1; min-width: 0; }
+    .notif-top { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+    .notif-title { font-weight: 600; color: var(--gray-800); text-decoration: none; }
+    a.notif-title:hover { color: var(--primary); text-decoration: underline; }
+    .notif-kind {
+        font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+        color: var(--gray-500); background: var(--gray-100); border: 1px solid var(--gray-200);
+        border-radius: 2rem; padding: .1rem .55rem; white-space: nowrap;
+    }
+    .notif-message { margin: .3rem 0 .35rem; color: var(--gray-600); font-size: .875rem; }
+    .notif-age { color: var(--gray-400); font-size: .72rem; }
+
+    .notif-action { flex-shrink: 0; }
+    .action-btn {
+        width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center;
+        border-radius: .55rem; border: 1px solid var(--gray-200); background: #fff;
+        color: var(--gray-500); cursor: pointer; transition: all .2s;
+    }
+    .action-btn:hover { background: var(--success, #2c9e6e); border-color: var(--success, #2c9e6e); color: #fff; }
+
+    .empty-state { text-align: center; padding: 3rem 1rem; color: var(--gray-500); }
+    .empty-state i { font-size: 3rem; color: var(--gray-200); display: block; margin-bottom: 1rem; }
+    .empty-state h3 { font-size: 1.1rem; color: var(--gray-700); margin: 0 0 .35rem; }
+
+    @@media (max-width: 640px) {
+        .notif-item { padding: .85rem 1rem; }
+        .notif-kind { display: none; }
+    }
+</style>

@@ -1111,13 +1111,11 @@
                         <span class="topbar-search-kbd">Ctrl K</span>
                     </button>
 
-                    <!-- Notification bell -->
+                    <!-- Notification bell — opens the unified inbox across all modules -->
                     @{
                         var efmUnread = ViewData["EfmUnread"] as int? ?? 0;
-                        var efmStaff = ViewData["EfmUnreadStaff"] as bool? ?? false;
-                        var bellAction = efmStaff ? "Notifications" : "MyNotifications";
                     }
-                    <a asp-controller="EmployeeDocuments" asp-action="@bellAction" class="topbar-bell" title="Notifications" aria-label="Notifications"
+                    <a asp-controller="Notifications" asp-action="Index" class="topbar-bell" title="Notifications" aria-label="Notifications"
                        style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;color:var(--gray-600);text-decoration:none;margin-right:0.75rem;transition:background .15s;">
                         <i class="fas fa-bell" style="font-size:1.1rem;"></i>
                         <span id="efmBellBadge" data-count="@efmUnread"
