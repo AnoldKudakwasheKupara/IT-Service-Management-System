@@ -166,8 +166,36 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ── DELETE ───────────────────────────────────────────────────────────────
-        [HttpPost, ValidateAntiForgeryToken]
+        // Confirmation page — deleting is destructive, so it gets the same explicit
+        // acknowledgement step as tickets rather than a browser confirm() popup.
         public async Task<IActionResult> Delete(int id)
+        {
+            if (!Can(ImsPermission.ManageEvidence)) return Denied();
+            var entity = await _db.IsoEvidences.Include(e => e.UploadedBy)
+                .FirstOrDefaultAsync(x => x.Id == id);
+            if (entity == null) return NotFound();
+
+            var vm = new ViewModels.DeleteConfirmationVm
+            {
+                EntityName = "Evidence",
+                Icon = "fa-paperclip",
+                RecordTitle = entity.Title,
+                Reference = entity.Reference,
+                Controller = "Evidence",
+                Id = entity.Id
+            };
+            vm.Add("Type", entity.Type.ToString());
+            vm.Add("ISO Clause", entity.IsoClause);
+            vm.Add("Standard", entity.Standard.ToString());
+            vm.Add("Uploaded By", entity.UploadedBy?.FullName);
+            vm.Add("File", entity.OriginalFileName);
+            vm.Consequences.Add("The evidence record and the file stored against it will be permanently removed.");
+            vm.Consequences.Add("Any audit, finding, CAPA or risk relying on it will lose this objective evidence of conformity.");
+            return View("DeleteConfirm", vm);
+        }
+
+        [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (!Can(ImsPermission.ManageEvidence)) return Denied();
             var evidence = await _db.IsoEvidences.FindAsync(id);
