@@ -82,11 +82,12 @@ namespace IT_Service_Management_System.Services.Ecie
             response.Query = ctx.Query;
             response.ScoreConfidence();
 
-            // Grounding guarantee: never present an answer without evidence.
+            // Grounding guarantee: never present an answer without evidence — and state it once.
+            // A specialist that found nothing usually sets a more specific line of its own
+            // ("No open risks are recorded for Finance."), which we keep in preference to the
+            // generic sentence; only fall back when it said nothing at all.
             if (!response.HasEvidence && string.IsNullOrWhiteSpace(response.Summary))
                 response.Summary = EcieResponse.NoEvidence;
-            if (!response.HasEvidence && response.Answer.Count == 0 && response.Recommendations.Count == 0)
-                response.Answer.Add(EcieResponse.NoEvidence);
 
             if (response.Suggestions.Count == 0) response.Suggestions = SampleQuestions.Take(6).ToList();
 
