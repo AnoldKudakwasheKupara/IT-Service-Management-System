@@ -169,8 +169,36 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ── DELETE ───────────────────────────────────────────────────────────────
-        [HttpPost, ValidateAntiForgeryToken]
+        // Confirmation page — deleting is destructive, so it gets the same explicit
+        // acknowledgement step as tickets rather than a browser confirm() popup.
         public async Task<IActionResult> Delete(int id)
+        {
+            if (!CanInvestigate()) return Denied();
+            var entity = await _db.NonConformances.Include(n => n.Department).Include(n => n.RaisedBy)
+                .FirstOrDefaultAsync(n => n.Id == id);
+            if (entity == null) return NotFound();
+
+            var vm = new ViewModels.DeleteConfirmationVm
+            {
+                EntityName = "Non-conformance",
+                Icon = "fa-bug",
+                RecordTitle = entity.Title,
+                Reference = entity.Reference,
+                Controller = "NonConformances",
+                Id = entity.Id
+            };
+            vm.Add("Severity", entity.Severity.ToString());
+            vm.Add("Status", entity.Status.ToString());
+            vm.Add("Department", entity.Department?.Name);
+            vm.Add("Raised By", entity.RaisedBy?.FullName);
+            vm.Add("Detected", entity.DetectedDate.ToString("dd MMM yyyy"));
+            vm.Consequences.Add("The non-conformance, its root cause and evidence will be removed from the register.");
+            vm.Consequences.Add("It will no longer appear in CAPA tracking, dashboards or ISO reports.");
+            return View("DeleteConfirm", vm);
+        }
+
+        [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (!CanInvestigate()) return Denied();
             var nc = await _db.NonConformances.FindAsync(id);
