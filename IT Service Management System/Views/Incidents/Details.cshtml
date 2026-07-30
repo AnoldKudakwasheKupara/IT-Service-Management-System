@@ -111,13 +111,9 @@
                             </button>
                         </form>
                     }
-                    <form asp-action="Delete" method="post" class="inline-form" onsubmit="return confirm('Delete this incident and all its investigation data?');" style="margin-left:auto;">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@Model.Id" />
-                        <button type="submit" class="btn-delete-workflow">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                    </form>
+                    <a class="btn-delete-workflow" asp-action="Delete" asp-route-id="@Model.Id" title="Delete incident" style="margin-left:auto;text-decoration:none;">
+                        <i class="fas fa-trash"></i>
+                    </a>
                 </div>
             </div>
         </div>

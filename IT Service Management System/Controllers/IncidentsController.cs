@@ -523,8 +523,37 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
+        // Confirmation page — deleting is destructive, so it gets the same explicit
+        // acknowledgement step as tickets rather than a browser confirm() popup.
         public async Task<IActionResult> Delete(int id)
+        {
+            if (!await CanManageIncidentAsync(id)) return Denied();
+            var incident = await _db.Incidents.Include(x => x.Department)
+                .FirstOrDefaultAsync(x => x.Id == id);
+            if (incident == null) return NotFound();
+
+            var vm = new ViewModels.DeleteConfirmationVm
+            {
+                EntityName = "Incident",
+                Icon = "fa-triangle-exclamation",
+                RecordTitle = incident.Title,
+                Reference = incident.Reference,
+                Controller = "Incidents",
+                Id = incident.Id
+            };
+            vm.Add("Severity", incident.Severity.ToString());
+            vm.Add("Status", incident.Status.ToString());
+            vm.Add("Date of Incident", incident.DateOfIncident?.ToString("dd MMM yyyy"));
+            vm.Add("Department", incident.Department?.Name);
+            vm.Add("Location", incident.LocationOfIncident);
+            vm.Consequences.Add("The full investigation report — description, evidence, critical factors and root-cause analysis — will be removed.");
+            vm.Consequences.Add("Its investigation team, damage lines, remedial actions and uploaded files will be deleted with it.");
+            vm.Consequences.Add("It will no longer appear in incident reporting or ISO improvement evidence.");
+            return View("DeleteConfirm", vm);
+        }
+
+        [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (!await CanManageIncidentAsync(id)) return Denied();
             var i = await _db.Incidents.Include(x => x.Attachments).FirstOrDefaultAsync(x => x.Id == id);
