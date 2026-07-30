@@ -150,8 +150,36 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ── DELETE ───────────────────────────────────────────────────────────────
-        [HttpPost, ValidateAntiForgeryToken]
+        // Confirmation page — deleting is destructive, so it gets the same explicit
+        // acknowledgement step as tickets rather than a browser confirm() popup.
         public async Task<IActionResult> Delete(int id)
+        {
+            if (!Can(ImsPermission.ManageManagementReview)) return Denied();
+            var review = await _db.ManagementReviews.Include(r => r.Chair)
+                .FirstOrDefaultAsync(r => r.Id == id);
+            if (review == null) return NotFound();
+
+            var vm = new ViewModels.DeleteConfirmationVm
+            {
+                EntityName = "Management Review",
+                Icon = "fa-people-group",
+                RecordTitle = review.Title,
+                Reference = review.Reference,
+                Controller = "ManagementReviews",
+                Id = review.Id
+            };
+            vm.Add("Meeting Date", review.MeetingDate.ToString("dd MMM yyyy"));
+            vm.Add("Status", review.Status.ToString());
+            vm.Add("Chairperson", review.Chair?.FullName);
+            vm.Add("Standard", IsoStandards.Label(review.Standard));
+            vm.Consequences.Add("The meeting record — its agenda, decisions and conclusions — will be removed.");
+            vm.Consequences.Add("Its attendees, gathered inputs and tracked actions will be deleted with it.");
+            vm.Consequences.Add("It will no longer appear in management-review reporting or ISO 9.3 evidence.");
+            return View("DeleteConfirm", vm);
+        }
+
+        [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (!Can(ImsPermission.ManageManagementReview)) return Denied();
             var review = await _db.ManagementReviews.FindAsync(id);
