@@ -1,0 +1,186 @@
+@model IT_Service_Management_System.ViewModels.DeleteConfirmationVm
+@{
+    ViewData["Title"] = $"Delete {Model.EntityName}";
+}
+
+<div class="page-container delete-confirm-page">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3">
+            <a class="btn-back"
+               asp-controller="@Model.Controller" asp-action="@Model.CancelAction"
+               asp-route-id="@(Model.CancelWithId ? Model.Id : (int?)null)">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="page-title"><i class="fas fa-trash-alt me-2"></i> Delete @Model.EntityName</h1>
+                <p class="text-muted mt-2 mb-0">This action cannot be undone</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="delete-warning-card">
+        <div class="warning-icon"><i class="fas fa-exclamation-triangle"></i></div>
+        <h3 class="warning-title">Are you absolutely sure?</h3>
+        <p class="warning-message">
+            This will permanently delete this @Model.EntityName.ToLower() and any data attached to it.
+        </p>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas @Model.Icon me-2"></i><span>@Model.EntityName to delete</span></div>
+            @if (!string.IsNullOrWhiteSpace(Model.Reference))
+            {
+                <div class="record-ref-badge"><i class="fas fa-hashtag"></i> @Model.Reference</div>
+            }
+        </div>
+
+        <div class="card-body-custom">
+            <div class="record-summary">
+                <div class="record-icon"><i class="fas @Model.Icon"></i></div>
+                <h3 class="record-title">@Model.RecordTitle</h3>
+            </div>
+
+            @if (Model.Details.Any())
+            {
+                <div class="record-details">
+                    @foreach (var d in Model.Details)
+                    {
+                        <div class="detail-row">
+                            <div class="detail-label">@d.Key</div>
+                            <div class="detail-value">@d.Value</div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (Model.Consequences.Any())
+            {
+                <div class="warning-details">
+                    @foreach (var c in Model.Consequences)
+                    {
+                        <div class="warning-detail-item">
+                            <i class="fas fa-circle-exclamation"></i>
+                            <span>@c</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            <form asp-controller="@Model.Controller" asp-action="Delete" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <partial name="_DeleteConfirmGate" />
+                <div class="action-buttons-container">
+                    <button type="submit" class="btn-delete">
+                        <i class="fas fa-trash-alt"></i> Permanently delete @Model.EntityName.ToLower()
+                    </button>
+                    <a class="btn-cancel"
+                       asp-controller="@Model.Controller" asp-action="@Model.CancelAction"
+                       asp-route-id="@(Model.CancelWithId ? Model.Id : (int?)null)">
+                        <i class="fas fa-times"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .delete-confirm-page { max-width: 860px; }
+
+    .delete-confirm-page .page-header .page-title i { color: #fff !important; }
+
+    .delete-warning-card {
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+        border: 1px solid #fed7d7;
+        border-radius: 1rem;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .warning-icon {
+        width: 76px; height: 76px;
+        background: var(--danger);
+        border-radius: 50%;
+        display: inline-flex; align-items: center; justify-content: center;
+        margin-bottom: 1rem;
+    }
+        .warning-icon i { font-size: 2.5rem; color: #fff; }
+
+    .warning-title { font-size: 1.5rem; font-weight: 700; color: #c53030; margin: 0 0 .5rem; }
+    .warning-message { color: var(--gray-600); margin: 0; }
+
+    .record-ref-badge {
+        background: #fff; padding: .25rem .75rem; border-radius: 2rem;
+        font-size: .75rem; color: var(--gray-600); border: 1px solid var(--gray-200);
+    }
+
+    .card-body-custom { padding: 2rem; }
+
+    .record-summary {
+        display: flex; align-items: center; gap: 1.25rem;
+        padding-bottom: 1.25rem; margin-bottom: 1.25rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .record-icon {
+        width: 56px; height: 56px; flex-shrink: 0;
+        background: linear-gradient(135deg, var(--gray-200), var(--gray-300));
+        border-radius: 1rem;
+        display: flex; align-items: center; justify-content: center;
+        color: var(--gray-500); font-size: 1.35rem;
+    }
+
+    .record-title { font-size: 1.2rem; font-weight: 700; color: var(--gray-800); margin: 0; }
+
+    .record-details {
+        background: var(--gray-50); border-radius: .75rem;
+        padding: .5rem 1rem; margin-bottom: 1.25rem;
+    }
+
+    .detail-row { display: flex; padding: .7rem .25rem; border-bottom: 1px solid var(--gray-200); }
+    .detail-row:last-child { border-bottom: none; }
+
+    .detail-label {
+        width: 160px; flex-shrink: 0; font-weight: 600; color: var(--gray-600);
+        font-size: .72rem; text-transform: uppercase; letter-spacing: .5px;
+        display: flex; align-items: center;
+    }
+
+    .detail-value { flex: 1; color: var(--gray-700); font-size: .875rem; }
+
+    .warning-details {
+        background: #fff5f5; border-radius: .75rem; padding: 1rem;
+        margin-bottom: 1.25rem; border-left: 3px solid var(--danger);
+        display: flex; flex-direction: column; gap: .6rem;
+    }
+
+    .warning-detail-item { display: flex; gap: .75rem; align-items: flex-start; }
+        .warning-detail-item i { color: var(--danger); margin-top: .15rem; }
+        .warning-detail-item span { font-size: .8rem; color: var(--gray-600); line-height: 1.45; }
+
+    .action-buttons-container { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+    .btn-delete, .btn-cancel {
+        padding: .75rem 1.5rem; border-radius: .75rem; font-weight: 600;
+        text-decoration: none; display: inline-flex; align-items: center;
+        justify-content: center; gap: .5rem; font-size: .875rem; flex: 1;
+        transition: all .2s; cursor: pointer; font-family: inherit;
+    }
+
+    .btn-delete { background: linear-gradient(100deg, #c53030, var(--danger)); color: #fff; border: none; }
+        .btn-delete:hover:not(:disabled) { transform: translateY(-2px); box-shadow: var(--shadow-md); color: #fff; }
+        .btn-delete:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-cancel { background: #fff; color: var(--gray-600); border: 1px solid var(--gray-300); }
+        .btn-cancel:hover { background: var(--gray-50); color: var(--gray-700); text-decoration: none; }
+
+    @@media (max-width: 640px) {
+        .card-body-custom { padding: 1.25rem; }
+        .detail-row { flex-direction: column; gap: .2rem; }
+        .detail-label { width: auto; }
+        .action-buttons-container { flex-direction: column; }
+    }
+</style>

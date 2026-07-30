@@ -128,8 +128,36 @@ namespace IT_Service_Management_System.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        [HttpPost, ValidateAntiForgeryToken]
+        // Confirmation page — deleting is destructive, so it gets the same explicit
+        // acknowledgement step as tickets rather than a browser confirm() popup.
         public async Task<IActionResult> Delete(int id)
+        {
+            if (!Can(ImsPermission.ManageRisk)) return Denied();
+            var risk = await _db.Risks.Include(r => r.Owner).Include(r => r.Department)
+                .FirstOrDefaultAsync(r => r.Id == id);
+            if (risk == null) return NotFound();
+
+            var vm = new ViewModels.DeleteConfirmationVm
+            {
+                EntityName = "Risk",
+                Icon = "fa-gauge-high",
+                RecordTitle = risk.Title,
+                Reference = risk.Reference,
+                Controller = "Risk",
+                Id = risk.Id
+            };
+            vm.Add("Category", risk.Category.ToString());
+            vm.Add("Score", $"{risk.Score} ({risk.Band})");
+            vm.Add("Owner", risk.Owner?.FullName);
+            vm.Add("Department", risk.Department?.Name);
+            vm.Add("Status", risk.Status.ToString());
+            vm.Consequences.Add("The risk, its scoring and treatment plan will be removed from the register.");
+            vm.Consequences.Add("It will no longer appear in the risk matrix, dashboards or ISO reports.");
+            return View("DeleteConfirm", vm);
+        }
+
+        [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (!Can(ImsPermission.ManageRisk)) return Denied();
             var risk = await _db.Risks.FindAsync(id);
