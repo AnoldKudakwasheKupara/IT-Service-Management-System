@@ -145,8 +145,38 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ── DELETE ───────────────────────────────────────────────────────────────
-        [HttpPost, ValidateAntiForgeryToken]
+        // Confirmation page — deleting a course also removes every attendance record
+        // against it, so it gets the same explicit acknowledgement step as tickets.
         public async Task<IActionResult> Delete(int id)
+        {
+            if (!Can(ImsPermission.ManageTraining)) return Denied();
+            var course = await _db.TrainingCourses
+                .Include(c => c.Records)
+                .Include(c => c.LinkedDocument)
+                .FirstOrDefaultAsync(c => c.Id == id);
+            if (course == null) return NotFound();
+
+            var vm = new ViewModels.DeleteConfirmationVm
+            {
+                EntityName = "Training course",
+                Icon = "fa-graduation-cap",
+                RecordTitle = course.Title,
+                Reference = course.Reference,
+                Controller = "Training",
+                Id = course.Id
+            };
+            vm.Add("Type", course.Type.ToString());
+            vm.Add("Provider", course.Provider);
+            vm.Add("Duration", $"{course.DurationHours:0.#} hour(s)");
+            vm.Add("Linked document", course.LinkedDocument?.Title);
+            vm.Add("Attendance records", course.Records.Count.ToString());
+            vm.Consequences.Add($"All {course.Records.Count} attendance record(s) for this course will be deleted, including completion dates and certificates.");
+            vm.Consequences.Add("Training completion figures on the ISO dashboard and reports will change accordingly.");
+            return View("DeleteConfirm", vm);
+        }
+
+        [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (!Can(ImsPermission.ManageTraining)) return Denied();
             var course = await _db.TrainingCourses.Include(c => c.Records).FirstOrDefaultAsync(c => c.Id == id);
