@@ -153,8 +153,36 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ── DELETE ─────────────────────────────────────────────────────────────────
-        [HttpPost, ValidateAntiForgeryToken]
+        // Confirmation page — deleting is destructive, so it gets the same explicit
+        // acknowledgement step as tickets rather than a browser confirm() popup.
         public async Task<IActionResult> Delete(int id)
+        {
+            if (!Can(ImsPermission.ManageCompliance)) return Denied();
+            var entity = await _db.ComplianceObligations.Include(o => o.Owner).Include(o => o.Department)
+                .FirstOrDefaultAsync(x => x.Id == id);
+            if (entity == null) return NotFound();
+
+            var vm = new ViewModels.DeleteConfirmationVm
+            {
+                EntityName = "Compliance Obligation",
+                Icon = "fa-scale-balanced",
+                RecordTitle = entity.Title,
+                Reference = entity.Reference,
+                Controller = "ComplianceRegister",
+                Id = entity.Id
+            };
+            vm.Add("Type", entity.Type.ToString());
+            vm.Add("Status", entity.Status.ToString());
+            vm.Add("Owner", entity.Owner?.FullName);
+            vm.Add("Department", entity.Department?.Name);
+            vm.Add("Next Review", entity.NextReviewDate?.ToString("dd MMM yyyy"));
+            vm.Consequences.Add("The obligation, its requirement text and evidence notes will be removed from the register.");
+            vm.Consequences.Add("Its assessment history and review dates will no longer appear in compliance dashboards or ISO reports.");
+            return View("DeleteConfirm", vm);
+        }
+
+        [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             if (!Can(ImsPermission.ManageCompliance)) return Denied();
             var obl = await _db.ComplianceObligations.FindAsync(id);
