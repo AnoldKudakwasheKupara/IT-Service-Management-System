@@ -1398,12 +1398,71 @@
             var selected = 0;
             var visible = [];
 
+            // Synonyms so people can search for what they call things, not just the menu
+            // wording: "helpdesk" finds Tickets, "policy" finds Document Control, "2fa"
+            // finds Two-Factor Auth. Matched against the destination's href.
+            var ALIASES = {
+                '/Tickets': 'helpdesk incident issue support ticket queue',
+                '/MyWork': 'my queue assigned to me todo tasks',
+                '/ServiceCatalog': 'service request catalogue order new request',
+                '/Activity': 'timesheet worklog activity log',
+                '/Problems': 'problem root cause known error itil',
+                '/Changes': 'change request cab release itil',
+                '/Cmdb': 'configuration item asset ci dependency itil',
+                '/SlaPolicies': 'sla target response resolution breach',
+                '/Incidents': 'major incident outage p1',
+                '/Assets': 'hardware equipment inventory device',
+                '/SSLCertificates': 'ssl tls certificate expiry',
+                '/Users': 'people staff employee account role',
+                '/Departments': 'department team org unit',
+                '/AuditLogs': 'audit trail history who did what',
+                '/Security': 'security dashboard threats sessions lockout',
+                '/Configuration': 'settings config options preferences',
+                '/Backup': 'backup restore disaster recovery',
+                '/MeetingMinutes': 'meeting minutes agenda action items',
+                '/ExitClearance': 'offboarding exit leaver clearance',
+                '/ExitInterview': 'exit interview leaver feedback',
+                '/EmployeeDocuments': 'hr files employee documents personnel folder',
+                '/EmployeeFiles': 'hr files employee documents personnel',
+                '/Ecie': 'ai assistant ask intelligence compliance question',
+                '/Ims': 'iso dashboard integrated management compliance overview',
+                '/IsoDocuments': 'policy procedure work instruction form record document control iso',
+                '/IsoAudits': 'internal audit finding programme iso 9001 27001',
+                '/Capa': 'corrective preventive action capa car',
+                '/NonConformances': 'non conformance nc defect',
+                '/Risk': 'risk register heat map threat treatment',
+                '/Suppliers': 'vendor supplier evaluation procurement',
+                '/Training': 'training competency course certificate skills',
+                '/ManagementReviews': 'management review iso 9.3',
+                '/Objectives': 'objective kpi target goal',
+                '/ComplianceRegister': 'compliance obligation legal regulatory',
+                '/Improvements': 'improvement kaizen suggestion opportunity',
+                '/Evidence': 'evidence repository proof attachment',
+                '/IsoReports': 'iso report export excel pdf',
+                '/Notifications': 'notifications alerts bell inbox',
+                '/Mfa': '2fa two factor authenticator otp security',
+                '/Reports': 'report analytics metrics dashboard export'
+            };
+
+            function aliasFor(item) {
+                if (item._alias !== undefined) return item._alias;
+                var found = '';
+                for (var key in ALIASES) {
+                    if (item.href.indexOf(key) === 0) { found = ALIASES[key]; break; }
+                }
+                item._alias = found;
+                return found;
+            }
+
             function rank(item, q) {
                 var l = item.label.toLowerCase(), g = item.group.toLowerCase();
                 if (l.indexOf(q) === 0) return 0;                          // label starts with
                 if (l.split(' ').some(function (w) { return w.indexOf(q) === 0; })) return 1;  // word starts with
                 if (l.indexOf(q) >= 0) return 2;                           // label contains
-                if (g.indexOf(q) >= 0) return 3;                           // group contains
+                var a = aliasFor(item);
+                if (a && a.split(' ').some(function (w) { return w.indexOf(q) === 0; })) return 3;  // synonym
+                if (g.indexOf(q) >= 0) return 4;                           // group contains
+                if (a && a.indexOf(q) >= 0) return 5;                      // synonym substring
                 return -1;
             }
 
