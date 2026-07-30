@@ -11,6 +11,12 @@
     --primary-light: #f8dcde;
     --primary-glow: rgba(177, 29, 35,0.25);
 
+    /* Pale tint used *behind* --primary-coloured text (badges, hover states).
+       Deliberately separate from --primary-light: individual pages redefine
+       --primary-light in their own :root block, which leaks into the shared
+       sidebar/topbar and would leave primary-on-primary text unreadable. */
+    --primary-surface: #f8dcde;
+
     /* Semantic colors */
     --success: #2c9e6e;
     --success-light: #e6f5e9;
