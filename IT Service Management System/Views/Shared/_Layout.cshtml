@@ -1545,6 +1545,45 @@
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
 
+    <script>
+        // Double-submit guard: once a POST form is genuinely being submitted, disable its
+        // button and show a spinner so an impatient double-click can't create duplicate
+        // records. Opt a form out with data-no-submit-guard.
+        (function () {
+            document.addEventListener('submit', function (e) {
+                // Anything that cancelled the submit (failed validation, a declined
+                // confirm()) has already set this by the time the event reaches document.
+                if (e.defaultPrevented) return;
+
+                var form = e.target;
+                if (!form || form.tagName !== 'FORM') return;
+                if ((form.getAttribute('method') || 'get').toLowerCase() !== 'post') return;
+                if (form.hasAttribute('data-no-submit-guard')) return;
+
+                var btn = e.submitter || form.querySelector('button[type=submit], input[type=submit]');
+                if (!btn || btn.disabled) return;
+
+                // Defer so the browser still serialises the button's own name/value.
+                setTimeout(function () {
+                    btn.disabled = true;
+                    btn.setAttribute('aria-busy', 'true');
+                    var icon = btn.querySelector('i');
+                    if (icon) {
+                        icon.dataset.prevClass = icon.className;
+                        icon.className = 'fas fa-spinner fa-spin';
+                    }
+                    // Safety net: if the page never navigates (download, blocked request),
+                    // give the control back rather than leaving it dead.
+                    setTimeout(function () {
+                        btn.disabled = false;
+                        btn.removeAttribute('aria-busy');
+                        if (icon && icon.dataset.prevClass) icon.className = icon.dataset.prevClass;
+                    }, 10000);
+                }, 0);
+            }, false);
+        })();
+    </script>
+
     @RenderSection("Scripts", required: false)
 
 </body>
