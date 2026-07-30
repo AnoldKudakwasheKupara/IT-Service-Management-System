@@ -487,3 +487,85 @@ textarea:focus-visible,
 .form-control:focus,
 .form-select:focus { border-color: #d9565d; box-shadow: 0 0 0 0.25rem rgba(177, 29, 35, 0.25); }
 .form-switch .form-check-input:checked { background-color: #b11d23; border-color: #b11d23; }
+
+/* ============================================================
+   SHARED PAGE SHELL
+   ------------------------------------------------------------
+   Gives every page the same "hero" header the Service Catalogue
+   established, without touching each view: pages already wrap
+   their heading in .page-container > .page-header, and most of
+   them only set margin-bottom there, so these rules supply the
+   visual treatment. The descendant selectors below deliberately
+   carry higher specificity than the single-class rules in each
+   page's own <style> block, so the hero text stays legible.
+   ============================================================ */
+
+.page-container > .page-header {
+    background: linear-gradient(120deg, #0f4c81, var(--primary-dark));
+    color: #fff;
+    border-radius: 1rem;
+    padding: 1.75rem 2rem;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Headings and supporting copy sit on the gradient, so force light text
+   over the per-page .page-title { color: var(--gray-800) } declarations. */
+.page-container > .page-header .page-title,
+.page-container > .page-header h1,
+.page-container > .page-header h2 {
+    color: #fff;
+}
+
+    .page-container > .page-header .page-title i,
+    .page-container > .page-header h1 i {
+        color: rgba(255, 255, 255, .85) !important;
+    }
+
+.page-container > .page-header .text-muted,
+.page-container > .page-header p {
+    color: rgba(255, 255, 255, .78) !important;
+}
+
+/* Header controls: translucent on the gradient rather than brand-on-brand. */
+.page-container > .page-header .btn-back {
+    background: rgba(255, 255, 255, .14);
+    border-color: rgba(255, 255, 255, .28);
+    color: #fff;
+}
+
+    .page-container > .page-header .btn-back:hover {
+        background: rgba(255, 255, 255, .24);
+        color: #fff;
+    }
+
+.page-container > .page-header .btn-create-ticket,
+.page-container > .page-header .btn-create-ticket-sm,
+.page-container > .page-header .btn-primary-solid,
+.page-container > .page-header .btn-soft {
+    background: rgba(255, 255, 255, .14);
+    border: 1px solid rgba(255, 255, 255, .28);
+    color: #fff;
+    box-shadow: none;
+}
+
+    .page-container > .page-header .btn-create-ticket:hover,
+    .page-container > .page-header .btn-create-ticket-sm:hover,
+    .page-container > .page-header .btn-primary-solid:hover,
+    .page-container > .page-header .btn-soft:hover {
+        background: rgba(255, 255, 255, .26);
+        color: #fff;
+        filter: none;
+    }
+
+/* Pills/badges shown next to the title (e.g. unread counts). */
+.page-container > .page-header .unread-pill {
+    background: rgba(255, 255, 255, .22);
+    color: #fff;
+}
+
+@media (max-width: 640px) {
+    .page-container > .page-header {
+        padding: 1.25rem 1.25rem;
+        border-radius: .85rem;
+    }
+}
