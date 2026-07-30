@@ -86,18 +86,47 @@ namespace IT_Service_Management_System.Controllers
 
         // ── login ────────────────────────────────────────────────────────────────────
 
+        /// <summary>Cookie holding the address to pre-fill for "remember me" on this device.</summary>
+        private const string RememberEmailCookie = "axis_remember_email";
+
         public IActionResult Login(bool expired = false, bool mfaFailed = false)
         {
             if (expired)
                 ViewBag.Error = "Your session ended. Please sign in again.";
             else if (mfaFailed)
                 ViewBag.Error = "Too many incorrect verification codes. Please sign in again.";
+
+            if (Request.Cookies.TryGetValue(RememberEmailCookie, out var remembered) &&
+                !string.IsNullOrWhiteSpace(remembered))
+            {
+                ViewBag.RememberedEmail = remembered;
+            }
+
             return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login(string email, string password)
+        public async Task<IActionResult> Login(string email, string password, bool rememberMe = false)
         {
+            // Remember (or forget) the address on this device. Deliberately scoped to the
+            // address only: the session itself still expires on the configured idle timeout
+            // and absolute lifetime, so ticking this never extends an authenticated session.
+            if (rememberMe && !string.IsNullOrWhiteSpace(email))
+            {
+                Response.Cookies.Append(RememberEmailCookie, email.Trim(), new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    IsEssential = true,
+                    Expires = DateTimeOffset.Now.AddDays(30)
+                });
+            }
+            else
+            {
+                Response.Cookies.Delete(RememberEmailCookie);
+            }
+
             var throttleKey = ClientKey("login");
             var config = _configService.Get();
 

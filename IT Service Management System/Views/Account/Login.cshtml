@@ -4,6 +4,9 @@
     ViewData["AuthIcon"] = "fa-right-to-bracket";
     ViewData["AuthTitle"] = "Sign in";
     ViewData["AuthSubtitle"] = "Use your work account to continue to Axis IT Operations.";
+
+    // Set when this device previously ticked "remember me".
+    var rememberedEmail = ViewBag.RememberedEmail as string;
 }
 
 @if (ViewBag.Error != null)
@@ -29,7 +32,8 @@
         <label class="auth-label" for="email">Email address</label>
         <div class="auth-input-wrap">
             <input type="email" id="email" name="email" class="auth-input"
-                   placeholder="name@company.com" required autocomplete="email" autofocus />
+                   placeholder="name@company.com" required autocomplete="email"
+                   value="@rememberedEmail" autofocus />
             <i class="fas fa-envelope lead-icon"></i>
         </div>
     </div>
@@ -46,11 +50,42 @@
         </div>
     </div>
 
+    <div class="auth-row">
+        <label class="auth-check">
+            <input type="checkbox" name="rememberMe" value="true"
+                   checked="@(rememberedEmail != null)" />
+            <span>Remember me</span>
+        </label>
+        <a class="auth-row-link" asp-controller="Account" asp-action="ForgotPassword">Forgot password?</a>
+    </div>
+
     <button type="submit" class="auth-btn" data-busy="Signing in…">
         <i class="fas fa-right-to-bracket"></i> Sign in
     </button>
 </form>
 
-<div class="auth-links">
-    <a asp-controller="Account" asp-action="ForgotPassword">Forgot your password?</a>
-</div>
+<style>
+    .auth-row {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 1rem; margin: .25rem 0 1.25rem;
+    }
+
+    .auth-check {
+        display: inline-flex; align-items: center; gap: .55rem;
+        font-size: .86rem; color: var(--gray-600);
+        cursor: pointer; user-select: none; margin: 0;
+    }
+
+        .auth-check input {
+            width: 1.05rem; height: 1.05rem;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+    .auth-row-link {
+        font-size: .86rem; font-weight: 600;
+        color: var(--primary); text-decoration: none; white-space: nowrap;
+    }
+
+        .auth-row-link:hover { text-decoration: underline; }
+</style>

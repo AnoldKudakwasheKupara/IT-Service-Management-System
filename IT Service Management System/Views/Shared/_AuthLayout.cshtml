@@ -11,6 +11,7 @@
       ViewData["AuthTitle"]    Heading                                  (default "Sign in")
       ViewData["AuthSubtitle"] Supporting line under the heading
 *@
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment HostEnv
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -107,13 +108,21 @@
                 font-size: 1.25rem;
             }
 
+            /* Official logo, when present. Height-constrained so any aspect ratio sits well. */
+            .auth-logo-img {
+                height: 44px;
+                width: auto;
+                max-width: 240px;
+                display: block;
+            }
+
         .auth-pitch h1 {
-            font-size: clamp(1.9rem, 2.6vw, 2.6rem);
+            font-size: clamp(2rem, 3vw, 3rem);
             font-weight: 700;
-            line-height: 1.18;
+            line-height: 1.15;
             letter-spacing: -.02em;
-            margin: 0 0 1rem;
-            max-width: 15ch;
+            margin: 0;
+            max-width: 17ch; /* breaks the line into a balanced three-line block */
         }
 
         .auth-pitch p {
@@ -330,28 +339,29 @@
 <body>
     <div class="auth-shell">
         <aside class="auth-brand">
+            @{
+                // Drop the official logo at wwwroot/images/axis-logo.(svg|png) and it is used
+                // automatically; until then fall back to the icon mark so nothing renders broken.
+                var logoFile = new[] { "axis-logo.svg", "axis-logo.png" }
+                    .FirstOrDefault(f => HostEnv.WebRootFileProvider.GetFileInfo($"images/{f}").Exists);
+            }
             <div class="auth-logo">
-                <span class="mark"><i class="fas fa-headset"></i></span>
-                <span>Axis IT Operations</span>
+                @if (logoFile != null)
+                {
+                    <img src="~/images/@logoFile" alt="Axis" class="auth-logo-img" />
+                }
+                else
+                {
+                    <span class="mark"><i class="fas fa-headset"></i></span>
+                    <span>Axis IT Operations</span>
+                }
             </div>
 
             <div class="auth-pitch">
-                <h1>Every request, asset and control in one place.</h1>
-                <p>
-                    The service desk, asset register and ISO 9001 / 27001 management system your
-                    teams rely on — with a full audit trail behind every action.
-                </p>
-                <ul class="auth-points">
-                    <li><i class="fas fa-check"></i><span>Service desk, assets, CMDB and change in one workspace</span></li>
-                    <li><i class="fas fa-check"></i><span>ISO 9001 &amp; 27001 document control, audits, CAPA and risk</span></li>
-                    <li><i class="fas fa-check"></i><span>Two-factor sign-in and a complete, exportable audit log</span></li>
-                </ul>
+                <h1>Manage IT Operations from a Single Workspace</h1>
             </div>
 
-            <div class="auth-brand-foot">
-                <span><i class="fas fa-lock"></i> Encrypted connection</span>
-                <span><i class="fas fa-shield-halved"></i> Two-factor protected</span>
-            </div>
+            <div class="auth-brand-foot"></div>
         </aside>
 
         <main class="auth-main">
