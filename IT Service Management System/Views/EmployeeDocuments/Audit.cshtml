@@ -279,7 +279,7 @@
                                 <td class="employee-cell">
                                     @if (!string.IsNullOrEmpty(r.EmployeeName))
                                     {
-                                        <a asp-action="Files" asp-route-id="@r.EmployeeDocumentId" class="employee-link">
+                                        <a asp-action="File" asp-route-id="@r.EmployeeId" class="employee-link">
                                             @r.EmployeeName
                                         </a>
                                     }

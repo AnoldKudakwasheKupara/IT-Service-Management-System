@@ -191,7 +191,7 @@
                                     <div class="employee-info">
                                         <div class="employee-avatar">@initials</div>
                                         <div>
-                                            <a asp-action="Files" asp-route-id="@r.EmployeeId" class="employee-link">
+                                            <a asp-action="File" asp-route-id="@r.EmployeeId" class="employee-link">
                                                 @r.EmployeeName
                                             </a>
                                             @if (r.Percent == 100)
@@ -242,10 +242,10 @@
                                     }
                                 </td>
                                 <td style="text-align:right;">
-                                    <a asp-action="Files" asp-route-id="@r.EmployeeId" class="action-btn btn-view" title="View Employee Files">
+                                    <a asp-action="File" asp-route-id="@r.EmployeeId" class="action-btn btn-view" title="View Employee Files">
                                         <i class="fas fa-folder-open"></i>
                                     </a>
-                                    <a asp-action="Edit" asp-route-id="@r.EmployeeId" class="action-btn btn-edit" title="Edit Employee">
+                                    <a asp-controller="Users" asp-action="Edit" asp-route-id="@r.EmployeeId" class="action-btn btn-edit" title="Edit Employee">
                                         <i class="fas fa-pencil-alt"></i>
                                     </a>
                                 </td>

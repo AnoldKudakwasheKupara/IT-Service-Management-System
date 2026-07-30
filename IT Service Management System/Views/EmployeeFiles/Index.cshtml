@@ -17,7 +17,7 @@
                 <p class="text-muted mt-2">Select an employee to view and manage their personal documents</p>
             </div>
             <div class="d-flex gap-2">
-                <a asp-action="Create" class="btn-create-ticket">
+                <a asp-controller="Users" asp-action="Create" class="btn-create-ticket">
                     <i class="fas fa-user-plus me-2"></i>
                     Add Employee
                 </a>
@@ -191,7 +191,7 @@
                                     <a asp-action="Files" asp-route-id="@u.Id" class="action-btn btn-manage">
                                         <i class="fas fa-folder-open"></i>
                                     </a>
-                                    <a asp-action="Edit" asp-route-id="@u.Id" class="action-btn btn-edit" title="Edit Employee">
+                                    <a asp-controller="Users" asp-action="Edit" asp-route-id="@u.Id" class="action-btn btn-edit" title="Edit Employee">
                                         <i class="fas fa-pencil-alt"></i>
                                     </a>
                                     <a asp-action="Delete" asp-route-id="@u.Id" class="action-btn btn-delete" title="Delete Employee">
@@ -209,7 +209,7 @@
                     <i class="fas fa-user-slash"></i>
                     <h3>No employees found</h3>
                     <p>@(string.IsNullOrEmpty(q) ? "Get started by adding your first employee." : $"No employees matching \"{q}\" were found.")</p>
-                    <a asp-action="Create" class="btn-create-ticket-sm">
+                    <a asp-controller="Users" asp-action="Create" class="btn-create-ticket-sm">
                         <i class="fas fa-user-plus"></i> Add Employee
                     </a>
                 </div>

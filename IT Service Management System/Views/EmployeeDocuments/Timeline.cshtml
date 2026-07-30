@@ -10,7 +10,7 @@
     <div class="page-header">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div class="d-flex align-items-center gap-3">
-                <a asp-action="Files" asp-route-id="@emp?.Id" class="btn-back">
+                <a asp-action="File" asp-route-id="@emp?.Id" class="btn-back">
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <div>
@@ -21,7 +21,7 @@
                     <p class="text-muted mt-2">@Model.Count document(s) in chronological order</p>
                 </div>
             </div>
-            <a asp-action="Create" asp-route-employeeId="@emp?.Id" class="btn-create-ticket">
+            <a asp-action="File" asp-route-id="@emp?.Id" class="btn-create-ticket">
                 <i class="fas fa-plus-circle me-2"></i>
                 Add Document
             </a>
@@ -129,9 +129,6 @@
                                             <a asp-action="Details" asp-route-id="@d.Id" class="action-btn btn-view" title="View Details">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a asp-action="Edit" asp-route-id="@d.Id" class="action-btn btn-edit" title="Edit Document">
-                                                <i class="fas fa-pencil-alt"></i>
-                                            </a>
                                             <a asp-action="Delete" asp-route-id="@d.Id" class="action-btn btn-delete" title="Delete Document">
                                                 <i class="fas fa-trash"></i>
                                             </a>
@@ -149,7 +146,7 @@
                     <i class="fas fa-timeline"></i>
                     <h3>No documents found</h3>
                     <p>Nothing has been filed for @(emp?.FullName ?? "this employee") yet.</p>
-                    <a asp-action="Create" asp-route-employeeId="@emp?.Id" class="btn-create-ticket-sm">
+                    <a asp-action="File" asp-route-id="@emp?.Id" class="btn-create-ticket-sm">
                         <i class="fas fa-plus-circle"></i> Add Document
                     </a>
                 </div>

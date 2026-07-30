@@ -161,14 +161,14 @@
                                         </td>
 
                                         <td>
-                                            <a asp-controller="Activities" asp-action="Details" asp-route-id="@activity.Id"
+                                            <a asp-controller="Activity" asp-action="Details" asp-route-id="@activity.Id"
                                                    class="action-link" title="View Activity">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a asp-controller="Activities" asp-action="Edit" asp-route-id="@activity.Id" class="action-link" title="Edit Activity">
+                                            <a asp-controller="Activity" asp-action="Edit" asp-route-id="@activity.Id" class="action-link" title="Edit Activity">
                                                 <i class="fas fa-pencil-alt"></i>
                                             </a>
-                                            <a asp-controller="Activities" asp-action="Delete" asp-route-id="@activity.Id" class="action-link" title="Delete Activity">
+                                            <a asp-controller="Activity" asp-action="Delete" asp-route-id="@activity.Id" class="action-link" title="Delete Activity">
                                                 <i class="fas fa-trash-alt"></i>
                                             </a>
                                         </td>
@@ -181,7 +181,7 @@
                     @if (Model.Activities.Count > 10)
                     {
                         <div class="view-all-link">
-                            <a asp-controller="Activities" asp-action="Index" class="view-all-btn">
+                            <a asp-controller="Activity" asp-action="Index" class="view-all-btn">
                                 <i class="fas fa-arrow-right"></i>
                                 View All @Model.Activities.Count Activities
                             </a>
@@ -193,7 +193,7 @@
                     <div class="empty-activities">
                         <i class="fas fa-tasks"></i>
                         <p>No activities found in this category</p>
-                        <a asp-controller="Activities" asp-action="Create" class="btn-create-activity">
+                        <a asp-controller="Activity" asp-action="Create" class="btn-create-activity">
                             <i class="fas fa-plus-circle"></i>
                             Create Activity
                         </a>
