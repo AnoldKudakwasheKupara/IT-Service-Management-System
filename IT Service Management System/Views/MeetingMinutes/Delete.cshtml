@@ -44,6 +44,7 @@
                     <form asp-action="Delete" method="post">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.Id" />
+                        <partial name="_DeleteConfirmGate" />
                         <div class="form-actions">
                             <button type="submit" class="btn-danger-mm" style="flex:1;justify-content:center;"><i class="fas fa-trash"></i> Delete meeting</button>
                             <a asp-action="Details" asp-route-id="@Model.Id" class="btn-ghost-mm" style="flex:1;justify-content:center;"><i class="fas fa-times"></i> Cancel</a>

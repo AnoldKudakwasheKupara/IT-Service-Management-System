@@ -1,0 +1,90 @@
+@*
+    Shared "are you sure?" gate for delete confirmation pages, matching the pattern
+    established by Views/Tickets/Delete.cshtml: the destructive button stays disabled
+    until the user explicitly acknowledges that the action is permanent.
+
+    Usage — drop it inside the delete <form>, immediately above the action buttons:
+
+        <form asp-action="Delete" method="post">
+            @@Html.AntiForgeryToken()
+            <input type="hidden" name="id" value="@@Model.Id" />
+            <partial name="_DeleteConfirmGate" />
+            <button type="submit" class="btn-delete">Delete</button>
+        </form>
+
+    The script binds by structure rather than by id, so a page may contain more than
+    one gated form and no particular element ids are required.
+*@
+
+<div class="confirmation-checkbox">
+    <input type="checkbox" id="confirmDelete-@Guid.NewGuid().ToString("N").Substring(0, 8)" class="js-delete-confirm" />
+    <label>I understand that this action is permanent and cannot be undone</label>
+</div>
+
+<style>
+    .confirmation-checkbox {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: var(--gray-50, #f8fafc);
+        border-radius: 0.75rem;
+        border-left: 3px solid var(--danger, #e53e3e);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+        .confirmation-checkbox input[type="checkbox"] {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        .confirmation-checkbox label {
+            color: var(--gray-700, #334155);
+            font-size: 0.875rem;
+            cursor: pointer;
+            user-select: none;
+            margin: 0;
+        }
+</style>
+
+<script>
+    (function () {
+        function wire(box) {
+            // Each rendered partial emits this script, so skip boxes already wired.
+            if (box.dataset.gateWired) return;
+            box.dataset.gateWired = '1';
+
+            // Pair the checkbox with its own label, then gate its form's submit button.
+            var label = box.parentElement.querySelector('label');
+            if (label && !label.getAttribute('for')) label.setAttribute('for', box.id);
+
+            var form = box.closest('form');
+            if (!form) return;
+            var btn = form.querySelector('button[type=submit], input[type=submit]');
+            if (!btn) return;
+
+            btn.disabled = !box.checked;
+            box.addEventListener('change', function () { btn.disabled = !box.checked; });
+
+            // Belt and braces: block submission if the box is somehow unchecked.
+            form.addEventListener('submit', function (e) {
+                if (!box.checked) {
+                    e.preventDefault();
+                    box.focus();
+                }
+            });
+        }
+
+        // Wire up once the document is parsed: this partial renders *above* the submit
+        // button it gates, so at inline-execution time that button does not exist yet.
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function () {
+                document.querySelectorAll('.js-delete-confirm').forEach(wire);
+            });
+        } else {
+            document.querySelectorAll('.js-delete-confirm').forEach(wire);
+        }
+    })();
+</script>

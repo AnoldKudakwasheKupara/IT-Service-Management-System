@@ -347,17 +347,20 @@
 
             <!-- Form Actions -->
             <div class="form-actions form-actions-danger">
-                <form asp-action="Delete" method="post" id="deleteForm" style="width: 100%; display: flex; gap: 1rem;">
+                <form asp-action="Delete" method="post" id="deleteForm" style="width: 100%;">
                     @Html.AntiForgeryToken()
                     <input asp-for="Id" type="hidden" />
-                    <a asp-action="Index" class="btn-cancel-main">
-                        <i class="fas fa-arrow-left"></i>
-                        Cancel
-                    </a>
-                    <button type="submit" class="btn-delete-main" id="deleteBtn">
-                        <i class="fas fa-trash"></i>
-                        Delete Access Rights
-                    </button>
+                    <partial name="_DeleteConfirmGate" />
+                    <div style="display: flex; gap: 1rem;">
+                        <a asp-action="Index" class="btn-cancel-main">
+                            <i class="fas fa-arrow-left"></i>
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn-delete-main" id="deleteBtn">
+                            <i class="fas fa-trash"></i>
+                            Delete Access Rights
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

@@ -46,16 +46,19 @@
             </div>
 
             <!-- Form Actions -->
-            <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="form-actions">
+            <form asp-action="Delete" asp-route-id="@Model.Id" method="post">
                 @Html.AntiForgeryToken()
-                <button type="submit" class="btn-delete-confirm">
-                    <i class="fas fa-trash-alt"></i>
-                    Delete
-                </button>
-                <a asp-action="Index" class="btn-cancel">
-                    <i class="fas fa-times"></i>
-                    Cancel
-                </a>
+                <partial name="_DeleteConfirmGate" />
+                <div class="form-actions">
+                    <button type="submit" class="btn-delete-confirm">
+                        <i class="fas fa-trash-alt"></i>
+                        Delete
+                    </button>
+                    <a asp-action="Index" class="btn-cancel">
+                        <i class="fas fa-times"></i>
+                        Cancel
+                    </a>
+                </div>
             </form>
         </div>
     </div>
