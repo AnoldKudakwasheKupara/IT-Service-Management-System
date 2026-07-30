@@ -1,117 +1,105 @@
 @{
-    Layout = null;
-    ViewData["Title"] = "Verify Sign-In - Axis IT Helpdesk";
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Verify sign-in";
+    ViewData["AuthIcon"] = "fa-shield-halved";
+    ViewData["AuthTitle"] = "Verify it's you";
+
     var masked = ViewBag.MaskedEmail as string ?? "your email";
     var method = ViewBag.Method as string ?? "Email";
     var isAuth = method == "Authenticator";
     var hasRecovery = ViewBag.HasRecovery as bool? ?? false;
+
+    ViewData["AuthSubtitle"] = isAuth
+        ? "Enter the current code from your authenticator app to finish signing in."
+        : $"We sent a 6-digit code to {masked}. Enter it below to finish signing in.";
 }
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Axis IT Helpdesk | Verify Sign-In</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --primary-dark:#8f171c; --primary:#b11d23; --success:#2c9e6e; --danger:#e53e3e; --gray-border:#e2e8f0; }
-        * { box-sizing:border-box; }
-        body { margin:0; font-family:'Inter',sans-serif; }
-        .mfa-container {
-            min-height:100vh; display:flex; align-items:center; justify-content:center;
-            background:linear-gradient(135deg,#0f2b3d 0%,#1b4f6e 50%,#208aae 100%); padding:1.5rem;
-        }
-        .mfa-card { background:#fff; border-radius:1.5rem; box-shadow:0 25px 50px -12px rgba(0,0,0,0.35);
-            overflow:hidden; width:100%; max-width:440px; }
-        .mfa-header { background:linear-gradient(115deg,var(--primary-dark),var(--primary));
-            padding:2rem 1.5rem; text-align:center; }
-        .brand-icon { font-size:2.5rem; color:#fff; background:rgba(255,255,255,0.15); width:70px; height:70px;
-            display:inline-flex; align-items:center; justify-content:center; border-radius:1.2rem; margin-bottom:1rem; }
-        .mfa-header h2 { font-weight:700; font-size:1.6rem; color:#fff; margin:0; }
-        .mfa-sub { color:rgba(255,255,255,0.85); font-size:0.85rem; margin-top:0.5rem; }
-        .mfa-body { padding:2rem; }
-        .mfa-body p.lead { font-size:0.9rem; color:#475569; text-align:center; margin:0 0 1.5rem; }
-        .mfa-body p.lead strong { color:#1e293b; }
-        .code-input { width:100%; text-align:center; font-size:2rem; font-weight:700; letter-spacing:0.7rem;
-            padding:0.85rem; border:1.5px solid var(--gray-border); border-radius:0.85rem; font-family:'Inter',sans-serif; }
-        .code-input:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(177, 29, 35,0.1); }
-        .btn-verify { width:100%; margin-top:1.25rem; padding:0.85rem; border:none; border-radius:0.85rem;
-            background:linear-gradient(100deg,var(--primary-dark),var(--primary)); color:#fff; font-weight:600;
-            font-size:0.95rem; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:0.5rem; }
-        .btn-verify:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(177, 29, 35,0.3); }
-        .alert { border-radius:0.75rem; padding:0.8rem 1rem; margin-bottom:1.25rem; font-size:0.85rem;
-            display:flex; align-items:center; gap:0.6rem; }
-        .alert.danger { background:#fee; border-left:4px solid var(--danger); color:#c53030; }
-        .alert.success { background:#e8f5e9; border-left:4px solid var(--success); color:#1f6e4a; }
-        .mfa-foot { text-align:center; margin-top:1.25rem; font-size:0.82rem; }
-        .mfa-foot a { color:var(--primary); text-decoration:none; font-weight:500; }
-        .mfa-foot a:hover { text-decoration:underline; }
-        .resend-form { display:inline; }
-        .resend-btn { background:none; border:none; color:var(--primary); font-weight:500; cursor:pointer;
-            font-size:0.82rem; padding:0; }
-        .resend-btn:hover { text-decoration:underline; }
-    </style>
-</head>
-<body>
-    <div class="mfa-container">
-        <div class="mfa-card">
-            <div class="mfa-header">
-                <div class="brand-icon"><i class="fas fa-shield-halved"></i></div>
-                <h2>Verify It's You</h2>
-                <div class="mfa-sub">Two-factor authentication</div>
-            </div>
-            <div class="mfa-body">
-                @if (ViewBag.Error != null)
-                {
-                    <div class="alert danger"><i class="fas fa-exclamation-circle"></i><span>@ViewBag.Error</span></div>
-                }
-                @if (TempData["Success"] != null)
-                {
-                    <div class="alert success"><i class="fas fa-check-circle"></i><span>@TempData["Success"]</span></div>
-                }
-                @if (ViewBag.DevOtp != null)
-                {
-                    <div class="alert" style="background:#fffbeb;border-left:4px solid #f5b042;color:#92400e;">
-                        <i class="fas fa-flask"></i>
-                        <span>Development mode — email delivery is bypassed. Your code is <strong style="letter-spacing:2px;">@ViewBag.DevOtp</strong></span>
-                    </div>
-                }
 
-                @if (isAuth)
-                {
-                    <p class="lead">Open your authenticator app and enter the current 6-digit code for <strong>@masked</strong>.</p>
-                }
-                else
-                {
-                    <p class="lead">We sent a 6-digit verification code to <strong>@masked</strong>. Enter it below to finish signing in.</p>
-                }
-
-                <form method="post" asp-action="VerifyMfa">
-                    @Html.AntiForgeryToken()
-                    <input type="text" name="code" class="code-input" maxlength="9"
-                           autocomplete="one-time-code" placeholder="••••••" autofocus required />
-                    <button type="submit" class="btn-verify"><i class="fas fa-check"></i> Verify &amp; Sign In</button>
-                </form>
-
-                <div class="mfa-foot">
-                    @if (!isAuth)
-                    {
-                        <text>Didn't get a code?
-                        <form method="post" asp-action="ResendMfa" class="resend-form">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="resend-btn">Resend code</button>
-                        </form>
-                        &middot; </text>
-                    }
-                    @if (hasRecovery)
-                    {
-                        <div style="margin-bottom:0.5rem;color:#64748b;">Lost your device? Enter one of your recovery codes above.</div>
-                    }
-                    <a asp-action="Login">Cancel</a>
-                </div>
-            </div>
-        </div>
+@if (ViewBag.Error != null)
+{
+    <div class="auth-alert is-error" role="alert">
+        <i class="fas fa-circle-exclamation"></i>
+        <span>@ViewBag.Error</span>
     </div>
-</body>
-</html>
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="auth-alert is-success" role="status">
+        <i class="fas fa-circle-check"></i>
+        <span>@TempData["Success"]</span>
+    </div>
+}
+
+@if (ViewBag.DevOtp != null)
+{
+    <div class="auth-alert is-dev" role="status">
+        <i class="fas fa-flask"></i>
+        <span>
+            Development mode — email delivery is bypassed. Your code is
+            <strong class="dev-code">@ViewBag.DevOtp</strong>
+        </span>
+    </div>
+}
+
+<form method="post" asp-action="VerifyMfa" data-auth-form>
+    @Html.AntiForgeryToken()
+
+    <div class="auth-field">
+        <label class="auth-label" for="code">
+            @(isAuth ? "Authenticator code" : "Verification code")
+        </label>
+        <input type="text" id="code" name="code" class="auth-input code-input" maxlength="9"
+               inputmode="numeric" autocomplete="one-time-code" placeholder="••••••"
+               autofocus required aria-describedby="codeHint" />
+        <p id="codeHint" class="field-hint">
+            @if (hasRecovery)
+            {
+                <text>Lost your device? You can enter one of your recovery codes here instead.</text>
+            }
+            else
+            {
+                <text>The code expires shortly after it is issued.</text>
+            }
+        </p>
+    </div>
+
+    <button type="submit" class="auth-btn" data-busy="Verifying…">
+        <i class="fas fa-check"></i> Verify &amp; sign in
+    </button>
+</form>
+
+<div class="auth-links">
+    @if (!isAuth)
+    {
+        <text>
+            Didn't get a code?
+            <form method="post" asp-action="ResendMfa" class="auth-inline-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="auth-linkbtn">Resend code</button>
+            </form>
+            &middot;
+        </text>
+    }
+    <a asp-action="Login">Cancel</a>
+</div>
+
+<style>
+    /* One-time code: wide tracking so the digits read as a code, not a word. */
+    .code-input {
+        padding-left: 1rem;
+        text-align: center;
+        font-size: 1.6rem;
+        font-weight: 700;
+        letter-spacing: .55rem;
+        text-indent: .55rem; /* keeps the glyphs optically centred despite tracking */
+    }
+
+    .field-hint {
+        margin: .5rem 0 0;
+        font-size: .8rem;
+        color: var(--gray-500);
+        line-height: 1.5;
+    }
+
+    .dev-code { letter-spacing: 2px; }
+</style>
