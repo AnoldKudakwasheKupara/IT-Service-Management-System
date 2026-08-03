@@ -1,5 +1,6 @@
 ﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
+using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,9 +11,12 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _context;
 
-        public EngagementStayInterviewController(ApplicationDbContext context)
+        private readonly AuditService _audit;
+
+        public EngagementStayInterviewController(ApplicationDbContext context, AuditService audit)
         {
             _context = context;
+            _audit = audit;
         }
 
         // GET: EngagementStayInterview
@@ -53,6 +57,9 @@ namespace IT_Service_Management_System.Controllers
 
                 _context.Add(model);
                 await _context.SaveChangesAsync();
+
+                await _audit.LogAsync("Created", nameof(EngagementStayInterview), model.Id,
+                    $"Stay interview recorded for {model.NameAndSurname}");
 
                 TempData["Success"] =
                     "Engagement Stay Interview saved successfully.";
@@ -97,6 +104,9 @@ namespace IT_Service_Management_System.Controllers
                     _context.Update(model);
 
                     await _context.SaveChangesAsync();
+
+                    await _audit.LogAsync("Updated", nameof(EngagementStayInterview), model.Id,
+                        $"Stay interview amended for {model.NameAndSurname}");
 
                     TempData["Success"] =
                         "Engagement Stay Interview updated successfully.";
@@ -148,6 +158,9 @@ namespace IT_Service_Management_System.Controllers
                 interview.ModifiedDate = DateTime.Now;
 
                 await _context.SaveChangesAsync();
+
+                await _audit.LogAsync("Deleted", nameof(EngagementStayInterview), interview.Id,
+                    $"Stay interview for {interview.NameAndSurname} withdrawn from view (retained)");
             }
 
             TempData["Success"] =

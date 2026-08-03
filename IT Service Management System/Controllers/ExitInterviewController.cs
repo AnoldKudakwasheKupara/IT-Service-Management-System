@@ -1,5 +1,6 @@
 ﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
+using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,9 +11,12 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _context;
 
-        public ExitInterviewController(ApplicationDbContext context)
+        private readonly AuditService _audit;
+
+        public ExitInterviewController(ApplicationDbContext context, AuditService audit)
         {
             _context = context;
+            _audit = audit;
         }
 
         // GET: ExitInterview
@@ -53,6 +57,9 @@ namespace IT_Service_Management_System.Controllers
 
                 _context.Add(model);
                 await _context.SaveChangesAsync();
+
+                await _audit.LogAsync("Created", nameof(ExitInterview), model.Id,
+                    $"Exit interview recorded for {model.EmployeeName}");
 
                 TempData["Success"] = "Exit Interview saved successfully.";
 
@@ -157,6 +164,9 @@ namespace IT_Service_Management_System.Controllers
 
                 await _context.SaveChangesAsync();
 
+                await _audit.LogAsync("Updated", nameof(ExitInterview), existing.Id,
+                    $"Exit interview amended for {existing.EmployeeName}");
+
                 TempData["Success"] = "Exit Interview updated successfully.";
 
                 return RedirectToAction(nameof(Index));
@@ -196,6 +206,9 @@ namespace IT_Service_Management_System.Controllers
                 interview.IsDeleted = true;
                 interview.ModifiedDate = DateTime.Now;
                 await _context.SaveChangesAsync();
+
+                await _audit.LogAsync("Deleted", nameof(ExitInterview), interview.Id,
+                    $"Exit interview for {interview.EmployeeName} withdrawn from view (retained)");
             }
 
             TempData["Success"] = "Exit Interview deleted successfully.";

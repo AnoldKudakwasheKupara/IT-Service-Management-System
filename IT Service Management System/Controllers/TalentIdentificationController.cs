@@ -1,5 +1,6 @@
 ﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
+using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,9 +11,12 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _context;
 
-        public TalentIdentificationController(ApplicationDbContext context)
+        private readonly AuditService _audit;
+
+        public TalentIdentificationController(ApplicationDbContext context, AuditService audit)
         {
             _context = context;
+            _audit = audit;
         }
 
         // GET: TalentIdentification
@@ -68,6 +72,12 @@ namespace IT_Service_Management_System.Controllers
                 _context.TalentIdentifications.Add(model);
 
                 await _context.SaveChangesAsync();
+
+                // A talent record carries a flight-risk rating and a readiness judgement about a
+                // named person. Who wrote it, and when, is part of the record.
+                await _audit.LogAsync("Created", nameof(TalentIdentification), model.Id,
+                    $"Talent assessment recorded for {model.EmployeeName} " +
+                    $"(9-box: {model.NineBoxAssessment}, flight risk: {model.RiskOfLeaving})");
 
                 TempData["Success"] =
                     "Talent Identification record saved successfully.";
@@ -169,6 +179,10 @@ namespace IT_Service_Management_System.Controllers
 
                 await _context.SaveChangesAsync();
 
+                await _audit.LogAsync("Updated", nameof(TalentIdentification), existing.Id,
+                    $"Talent assessment amended for {existing.EmployeeName} " +
+                    $"(9-box: {existing.NineBoxAssessment}, flight risk: {existing.RiskOfLeaving})");
+
                 TempData["Success"] =
                     "Talent Identification record updated successfully.";
 
@@ -206,8 +220,12 @@ namespace IT_Service_Management_System.Controllers
             if (record != null)
             {
                 record.IsDeleted = true;
+                record.ModifiedDate = DateTime.Now;
 
                 await _context.SaveChangesAsync();
+
+                await _audit.LogAsync("Deleted", nameof(TalentIdentification), record.Id,
+                    $"Talent assessment for {record.EmployeeName} withdrawn from view (retained)");
             }
 
             TempData["Success"] =

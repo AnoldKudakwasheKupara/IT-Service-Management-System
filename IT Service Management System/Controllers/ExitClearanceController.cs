@@ -1,5 +1,6 @@
 ﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
+using IT_Service_Management_System.Services;
 using IT_Service_Management_System.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -12,11 +13,28 @@ namespace IT_Service_Management_System.Controllers
     public class ExitClearanceController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly AuditService _audit;
 
-        public ExitClearanceController(ApplicationDbContext context)
+        public ExitClearanceController(ApplicationDbContext context, AuditService audit)
         {
             _context = context;
+            _audit = audit;
         }
+
+        /// <summary>
+        /// Record a clearance event. The actions in this controller are synchronous, and
+        /// <see cref="AuditService.LogAsync"/> only captures the request context and hands the
+        /// write to the background queue — it never awaits — so discarding the completed task here
+        /// blocks nothing and loses nothing.
+        /// </summary>
+        private void Audit(string action, int clearanceId, string details) =>
+            _ = _audit.LogAsync(action, nameof(ExitClearance), clearanceId, details);
+
+        /// <summary>The employee's name for the audit trail, without assuming the nav is loaded.</summary>
+        private string EmployeeLabel(int employeeId) =>
+            _context.Users.Where(u => u.Id == employeeId)
+                .Select(u => u.FirstName + " " + u.LastName)
+                .FirstOrDefault() ?? $"user #{employeeId}";
 
         // 👤 The current user's own exit clearance — visible to every role.
         [HttpGet]
@@ -276,6 +294,9 @@ namespace IT_Service_Management_System.Controllers
 
             _context.SaveChanges();
 
+            Audit("Created", clearance.Id,
+                $"Exit clearance opened for {EmployeeLabel(clearance.EmployeeId)}; awaiting the employee's section");
+
             return RedirectToAction(
                 "Complete",
                 new { id = clearance.AccessToken });
@@ -382,6 +403,8 @@ namespace IT_Service_Management_System.Controllers
                 });
 
             _context.SaveChanges();
+
+            Audit("StageCompleted", clearance.Id, "Employee section submitted; passed to Finance");
 
             return View("SubmissionSuccess");
         }
@@ -512,6 +535,8 @@ namespace IT_Service_Management_System.Controllers
                 });
 
             _context.SaveChanges();
+
+            Audit("StageCompleted", clearance.Id, "Finance clearance signed off; passed to Systems Admin");
 
             return RedirectToAction(nameof(FinanceQueue));
         }
@@ -691,6 +716,8 @@ namespace IT_Service_Management_System.Controllers
 
             _context.SaveChanges();
 
+            Audit("StageCompleted", clearance.Id, "Systems Admin clearance signed off; passed to Development");
+
             return RedirectToAction(nameof(SystemsAdminQueue));
         }
 
@@ -847,6 +874,8 @@ namespace IT_Service_Management_System.Controllers
 
             _context.SaveChanges();
 
+            Audit("StageCompleted", clearance.Id, "Development clearance signed off; passed to the supervisor");
+
             return RedirectToAction(nameof(DevelopmentQueue));
         }
 
@@ -964,6 +993,8 @@ namespace IT_Service_Management_System.Controllers
                 });
 
             _context.SaveChanges();
+
+            Audit("StageCompleted", clearance.Id, "Supervisor clearance signed off; passed to the HOD");
 
             return RedirectToAction(nameof(SupervisorQueue));
         }
@@ -1089,6 +1120,8 @@ namespace IT_Service_Management_System.Controllers
                 });
 
             _context.SaveChanges();
+
+            Audit("StageCompleted", clearance.Id, "HOD clearance signed off; passed to HR for final sign-off");
 
             return RedirectToAction(nameof(HodQueue));
         }
@@ -1245,6 +1278,9 @@ namespace IT_Service_Management_System.Controllers
 
             _context.SaveChanges();
 
+            Audit("Completed", clearance.Id,
+                $"Exit clearance completed for {EmployeeLabel(clearance.EmployeeId)} — all stages signed off");
+
             return RedirectToAction(nameof(HrQueue));
         }
 
@@ -1335,6 +1371,9 @@ namespace IT_Service_Management_System.Controllers
 
             _context.SaveChanges();
 
+            Audit("Updated", clearance.Id,
+                $"Exit clearance reassigned to {EmployeeLabel(clearance.EmployeeId)}");
+
             TempData["Success"] =
                 "Exit Clearance updated successfully.";
 
@@ -1404,9 +1443,14 @@ namespace IT_Service_Management_System.Controllers
                     _context.ClearanceWorkflows
                         .Where(x => x.ExitClearanceId == id));
 
+            // Capture the label before the row goes, or the audit entry has nothing to name.
+            var label = EmployeeLabel(clearance.EmployeeId);
+
             _context.ExitClearances.Remove(clearance);
 
             _context.SaveChanges();
+
+            Audit("Deleted", id, $"Exit clearance for {label} deleted, along with its stage records");
 
             TempData["Success"] =
                 "Exit Clearance deleted successfully.";
