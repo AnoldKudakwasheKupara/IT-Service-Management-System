@@ -73,7 +73,7 @@
                         Date Joined Axis
                     </div>
                     <div class="detail-value">
-                        @(Model.DateJoinedAxis?.ToString("dd MMM yyyy") ?? "—")
+                        @(Model.DateJoined?.ToString("dd MMM yyyy") ?? "—")
                     </div>
                 </div>
                 <div class="detail-row">
@@ -95,9 +95,9 @@
                             var statusClass = Model.OverallStatus switch
                             {
                                 EngagementStatus.HighlyMotivatedAndEngaged => "status-engaged",
-                                EngagementStatus.SatisfiedWithWorkingAtAxis => "status-satisfied",
-                                EngagementStatus.ConsideringOpportunitiesOutsideAxis => "status-considering",
-                                EngagementStatus.DissatisfiedWithWorkingAtAxis => "status-dissatisfied",
+                                EngagementStatus.Satisfied => "status-satisfied",
+                                EngagementStatus.ConsideringOpportunitiesElsewhere => "status-considering",
+                                EngagementStatus.Dissatisfied => "status-dissatisfied",
                                 _ => "status-unknown"
                             };
                         }
@@ -105,9 +105,9 @@
                             @Model.OverallStatus switch
                             {
                             EngagementStatus.HighlyMotivatedAndEngaged => "Highly Engaged",
-                            EngagementStatus.SatisfiedWithWorkingAtAxis => "Satisfied",
-                            EngagementStatus.ConsideringOpportunitiesOutsideAxis => "Considering Opportunities",
-                            EngagementStatus.DissatisfiedWithWorkingAtAxis => "Dissatisfied",
+                            EngagementStatus.Satisfied => "Satisfied",
+                            EngagementStatus.ConsideringOpportunitiesElsewhere => "Considering Opportunities",
+                            EngagementStatus.Dissatisfied => "Dissatisfied",
                             _ => "Not Set"
                             }
                         </span>

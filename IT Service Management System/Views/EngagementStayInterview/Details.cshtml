@@ -54,7 +54,7 @@
                 </div>
                 <div class="info-item">
                     <span class="info-label">Date Joined Axis</span>
-                    <span class="info-value">@(Model.DateJoinedAxis?.ToString("dd MMM yyyy") ?? "—")</span>
+                    <span class="info-value">@(Model.DateJoined?.ToString("dd MMM yyyy") ?? "—")</span>
                 </div>
                 <div class="info-item">
                     <span class="info-label">Manager Name</span>
@@ -168,7 +168,7 @@
             </div>
             <div class="question-body">
                 <div class="answer-content">
-                    @(string.IsNullOrEmpty(Model.ChangesToWorkingAtAxis) ? "No response provided" : Model.ChangesToWorkingAtAxis)
+                    @(string.IsNullOrEmpty(Model.ChangesToWorkingHere) ? "No response provided" : Model.ChangesToWorkingHere)
                 </div>
             </div>
         </div>
@@ -237,9 +237,9 @@
                         var statusClass = Model.OverallStatus switch
                         {
                             EngagementStatus.HighlyMotivatedAndEngaged => "status-engaged",
-                            EngagementStatus.SatisfiedWithWorkingAtAxis => "status-satisfied",
-                            EngagementStatus.ConsideringOpportunitiesOutsideAxis => "status-considering",
-                            EngagementStatus.DissatisfiedWithWorkingAtAxis => "status-dissatisfied",
+                            EngagementStatus.Satisfied => "status-satisfied",
+                            EngagementStatus.ConsideringOpportunitiesElsewhere => "status-considering",
+                            EngagementStatus.Dissatisfied => "status-dissatisfied",
                             _ => "status-unknown"
                         };
                     }
@@ -247,9 +247,9 @@
                         @Model.OverallStatus switch
                         {
                         EngagementStatus.HighlyMotivatedAndEngaged => "Highly Motivated and Engaged",
-                        EngagementStatus.SatisfiedWithWorkingAtAxis => "Satisfied with working for Axis Solutions",
-                        EngagementStatus.ConsideringOpportunitiesOutsideAxis => "Considering opportunities outside Axis",
-                        EngagementStatus.DissatisfiedWithWorkingAtAxis => "Dissatisfied with working at Axis Solutions",
+                        EngagementStatus.Satisfied => "Satisfied with working for Axis Solutions",
+                        EngagementStatus.ConsideringOpportunitiesElsewhere => "Considering opportunities outside Axis",
+                        EngagementStatus.Dissatisfied => "Dissatisfied with working at Axis Solutions",
                         _ => "Not Set"
                         }
                     </span>

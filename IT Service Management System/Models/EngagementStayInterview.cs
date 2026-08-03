@@ -29,7 +29,7 @@ namespace IT_Service_Management_System.Models
         [StringLength(120)]
         public string Department { get; set; } = string.Empty;
 
-        public DateTime? DateJoinedAxis { get; set; }
+        public DateTime? DateJoined { get; set; }
 
         [StringLength(150)]
         public string ManagerName { get; set; } = string.Empty;
@@ -59,7 +59,7 @@ namespace IT_Service_Management_System.Models
         public string ReasonsPeopleLeave { get; set; } = string.Empty;
 
         [StringLength(2000)]
-        public string ChangesToWorkingAtAxis { get; set; } = string.Empty;
+        public string ChangesToWorkingHere { get; set; } = string.Empty;
 
         [StringLength(1000)]
         public string NextCareerMilestone { get; set; } = string.Empty;
@@ -150,9 +150,9 @@ namespace IT_Service_Management_System.Models
     public enum EngagementStatus
     {
         NotSelected = 0,
-        ConsideringOpportunitiesOutsideAxis = 1,
-        DissatisfiedWithWorkingAtAxis = 2,
-        SatisfiedWithWorkingAtAxis = 3,
+        ConsideringOpportunitiesElsewhere = 1,
+        Dissatisfied = 2,
+        Satisfied = 3,
         HighlyMotivatedAndEngaged = 4
     }
 

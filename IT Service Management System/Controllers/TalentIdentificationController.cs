@@ -171,7 +171,7 @@ namespace IT_Service_Management_System.Controllers
                 existing.LeadershipDevelopmentAreas = model.LeadershipDevelopmentAreas;
 
                 // Living The Axis Values
-                existing.ChallengesApplyingAxisValues = model.ChallengesApplyingAxisValues;
+                existing.ChallengesApplyingCompanyValues = model.ChallengesApplyingCompanyValues;
                 existing.SelfDevelopmentActions = model.SelfDevelopmentActions;
                 existing.SelfInitiatedLeadershipDevelopment = model.SelfInitiatedLeadershipDevelopment;
 

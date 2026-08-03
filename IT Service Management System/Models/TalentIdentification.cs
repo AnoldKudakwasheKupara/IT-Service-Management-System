@@ -77,10 +77,10 @@ namespace IT_Service_Management_System.Models
         [StringLength(2000)]
         public string LeadershipDevelopmentAreas { get; set; } = string.Empty;
 
-        // Living The Axis Values
+        // Living the company values
 
         [StringLength(2000)]
-        public string ChallengesApplyingAxisValues { get; set; } = string.Empty;
+        public string ChallengesApplyingCompanyValues { get; set; } = string.Empty;
 
         [StringLength(2000)]
         public string SelfDevelopmentActions { get; set; } = string.Empty;
