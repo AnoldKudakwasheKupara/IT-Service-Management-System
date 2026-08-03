@@ -1,0 +1,194 @@
+@using IT_Service_Management_System.Models.Hr
+@model List<LeaveType>
+@{
+    ViewData["Title"] = "Leave Types";
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Register" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-sliders"></i> Leave Types</h1>
+                        <p class="page-sub">The entitlements and the rules that govern each</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <button type="button" class="btn-hr" onclick="hrToggle('type-form')">
+                        <i class="fas fa-plus-circle"></i> New type
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="notice">
+            <h4><i class="fas fa-scale-balanced"></i> These are minimums, not ceilings</h4>
+            <p>
+                The Labour Act [Chapter 28:01] sets the floor. A contract of employment or the
+                National Employment Council agreement for your sector may improve on any of these,
+                and where it does the better term applies — so raise the figure here rather than
+                leaving the statutory minimum in place.
+            </p>
+        </div>
+
+        <div class="card" id="type-form" style="display:none;">
+            <div class="card-head"><span class="t"><i class="fas fa-plus"></i> New leave type</span></div>
+            <div class="card-body">
+                <form asp-action="SaveType" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="0" />
+                    <div class="form-grid three">
+                        <div class="fg">
+                            <label class="lbl">Name <span class="req">*</span></label>
+                            <input name="Name" class="inp" required />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl">Code <span class="req">*</span></label>
+                            <input name="Code" class="inp" required placeholder="e.g. STUDY" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl">Authority</label>
+                            <input name="Authority" class="inp" placeholder="Act, SI or NEC agreement" />
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl">Description</label>
+                            <textarea name="Description" class="inp" rows="2"></textarea>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl">Annual entitlement (days)</label>
+                            <input name="AnnualEntitlementDays" type="number" step="0.5" value="0" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl">Accrues per month</label>
+                            <input name="AccrualPerMonth" type="number" step="0.01" value="0" class="inp" />
+                            <span class="hint">Leave at zero to grant the whole allowance up front.</span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl">Maximum carry-over</label>
+                            <input name="MaxCarryOverDays" type="number" step="0.5" value="0" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl">Qualifying service (months)</label>
+                            <input name="QualifyingMonths" type="number" value="0" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl">Notice required (days)</label>
+                            <input name="NoticeDaysRequired" type="number" value="0" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl">Display order</label>
+                            <input name="DisplayOrder" type="number" value="99" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl">Colour</label>
+                            <input name="Colour" type="color" value="#3b6ea5" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl">Restricted to</label>
+                            <input name="RestrictedToGender" class="inp" placeholder="Blank, Female or Male" />
+                        </div>
+                        <div class="fg full" style="display:flex; gap:1.25rem; flex-wrap:wrap;">
+                            <label class="check"><input type="checkbox" name="IsPaid" value="true" checked /> Paid</label>
+                            <label class="check"><input type="checkbox" name="CountsWorkingDaysOnly" value="true" checked /> Working days only</label>
+                            <label class="check"><input type="checkbox" name="RequiresMedicalCertificate" value="true" /> Needs a certificate</label>
+                            <label class="check"><input type="checkbox" name="PaidOutOnTermination" value="true" /> Paid out on termination</label>
+                            <label class="check"><input type="checkbox" name="IsActive" value="true" checked /> Active</label>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-hr btn-sm"><i class="fas fa-floppy-disk"></i> Add type</button>
+                </form>
+            </div>
+        </div>
+
+        @foreach (var t in Model)
+        {
+            <div class="card">
+                <div class="card-head">
+                    <span class="t">
+                        <i class="fas fa-circle" style="color:@(t.Colour ?? "#94a3b8"); font-size:.7rem;"></i>
+                        @t.Name
+                        <span class="chip">@t.Code</span>
+                        @if (!t.IsActive) { <span class="badge-hr b-left">Inactive</span> }
+                    </span>
+                    <button type="button" class="btn-ghost-hr btn-sm" onclick="hrToggle('edit-@t.Id')">
+                        <i class="fas fa-pen"></i> Edit
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(t.Description))
+                    {
+                        <p style="color:var(--gray-700); line-height:1.6; margin-bottom:.75rem;">@t.Description</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(t.Authority))
+                    {
+                        <p class="meta" style="margin-bottom:1rem;"><strong>@t.Authority</strong></p>
+                    }
+
+                    <div class="dl">
+                        <div><div class="k">Annual entitlement</div><div class="v">@t.AnnualEntitlementDays.ToString("0.##") day(s)</div></div>
+                        <div><div class="k">Accrual</div><div class="v">@(t.AccrualPerMonth > 0 ? $"{t.AccrualPerMonth:0.##} per month" : "granted up front")</div></div>
+                        <div><div class="k">Carry-over</div><div class="v">@(t.MaxCarryOverDays > 0 ? $"up to {t.MaxCarryOverDays:0.##}" : "none")</div></div>
+                        <div><div class="k">Counted in</div><div class="v">@(t.CountsWorkingDaysOnly ? "working days" : "calendar days")</div></div>
+                        <div><div class="k">Pay</div><div class="v">@(t.IsPaid ? t.HasHalfPayTier ? $"full pay, then {t.HalfPayDays} day(s) at half pay" : "full pay" : "unpaid")</div></div>
+                        <div><div class="k">Qualifying service</div><div class="v">@(t.QualifyingMonths > 0 ? $"{t.QualifyingMonths} month(s)" : "none")</div></div>
+                        <div><div class="k">Certificate</div><div class="v">@(t.RequiresMedicalCertificate ? $"after {t.CertificateRequiredAfterDays} day(s)" : "not required")</div></div>
+                        <div><div class="k">Paid out on termination</div><div class="v">@(t.PaidOutOnTermination ? "yes" : "no")</div></div>
+                        @if (!string.IsNullOrWhiteSpace(t.RestrictedToGender))
+                        {
+                            <div><div class="k">Restricted to</div><div class="v">@t.RestrictedToGender</div></div>
+                        }
+                    </div>
+
+                    <form asp-action="SaveType" method="post" id="edit-@t.Id" style="display:none; margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="@t.Id" />
+                        <input type="hidden" name="Code" value="@t.Code" />
+                        <div class="form-grid three">
+                            <div class="fg"><label class="lbl">Name</label><input name="Name" class="inp" value="@t.Name" required /></div>
+                            <div class="fg"><label class="lbl">Authority</label><input name="Authority" class="inp" value="@t.Authority" /></div>
+                            <div class="fg"><label class="lbl">Display order</label><input name="DisplayOrder" type="number" class="inp" value="@t.DisplayOrder" /></div>
+                            <div class="fg full"><label class="lbl">Description</label><textarea name="Description" class="inp" rows="2">@t.Description</textarea></div>
+                            <div class="fg"><label class="lbl">Annual entitlement</label><input name="AnnualEntitlementDays" type="number" step="0.5" class="inp" value="@t.AnnualEntitlementDays" /></div>
+                            <div class="fg"><label class="lbl">Accrues per month</label><input name="AccrualPerMonth" type="number" step="0.01" class="inp" value="@t.AccrualPerMonth" /></div>
+                            <div class="fg"><label class="lbl">Maximum carry-over</label><input name="MaxCarryOverDays" type="number" step="0.5" class="inp" value="@t.MaxCarryOverDays" /></div>
+                            <div class="fg"><label class="lbl">Half-pay days</label><input name="HalfPayDays" type="number" class="inp" value="@t.HalfPayDays" /></div>
+                            <div class="fg"><label class="lbl">Qualifying months</label><input name="QualifyingMonths" type="number" class="inp" value="@t.QualifyingMonths" /></div>
+                            <div class="fg"><label class="lbl">Certificate after (days)</label><input name="CertificateRequiredAfterDays" type="number" class="inp" value="@t.CertificateRequiredAfterDays" /></div>
+                            <div class="fg"><label class="lbl">Notice (days)</label><input name="NoticeDaysRequired" type="number" class="inp" value="@t.NoticeDaysRequired" /></div>
+                            <div class="fg"><label class="lbl">Restricted to</label><input name="RestrictedToGender" class="inp" value="@t.RestrictedToGender" /></div>
+                            <div class="fg"><label class="lbl">Colour</label><input name="Colour" type="color" class="inp" value="@(t.Colour ?? "#3b6ea5")" /></div>
+                            <div class="fg full" style="display:flex; gap:1.25rem; flex-wrap:wrap;">
+                                <label class="check"><input type="checkbox" name="IsPaid" value="true" checked="@t.IsPaid" /> Paid</label>
+                                <label class="check"><input type="checkbox" name="HasHalfPayTier" value="true" checked="@t.HasHalfPayTier" /> Half-pay tier</label>
+                                <label class="check"><input type="checkbox" name="CountsWorkingDaysOnly" value="true" checked="@t.CountsWorkingDaysOnly" /> Working days only</label>
+                                <label class="check"><input type="checkbox" name="RequiresMedicalCertificate" value="true" checked="@t.RequiresMedicalCertificate" /> Needs a certificate</label>
+                                <label class="check"><input type="checkbox" name="PaidOutOnTermination" value="true" checked="@t.PaidOutOnTermination" /> Paid out on termination</label>
+                                <label class="check"><input type="checkbox" name="IsActive" value="true" checked="@t.IsActive" /> Active</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-hr btn-sm"><i class="fas fa-floppy-disk"></i> Save</button>
+                    </form>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function hrToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

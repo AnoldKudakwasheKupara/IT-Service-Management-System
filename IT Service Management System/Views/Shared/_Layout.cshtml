@@ -835,6 +835,14 @@
                     <i class="fas fa-user-check"></i> My ISO Documents
                 </a>
 
+                <a class="nav-item @(currentController == "Leave" && currentAction != "Queue" && currentAction != "Register" && currentAction != "Balances" && currentAction != "Types" ? "active" : "")"
+                   asp-controller="Leave" asp-action="Index">
+                    <i class="fas fa-umbrella-beach"></i> My Leave
+                </a>
+                <a class="nav-item @(currentController == "Leave" && currentAction == "Queue" ? "active" : "")"
+                   asp-controller="Leave" asp-action="Queue">
+                    <i class="fas fa-inbox"></i> Leave Approvals
+                </a>
                 <a class="nav-item @(currentController == "Mfa" ? "active" : "")"
                    asp-controller="Mfa" asp-action="Index">
                     <i class="fas fa-shield-halved"></i> Two-Factor Auth
@@ -1121,6 +1129,16 @@
                        asp-controller="Departments" asp-action="Index">
                         <i class="fas fa-building"></i>
                         Departments
+                    </a>
+                    <a class="nav-item @(currentController == "Leave" && currentAction == "Register" ? "active" : "")"
+                       asp-controller="Leave" asp-action="Register">
+                        <i class="fas fa-umbrella-beach"></i>
+                        Leave Register
+                    </a>
+                    <a class="nav-item @(currentController == "Leave" && (currentAction == "Balances" || currentAction == "Types") ? "active" : "")"
+                       asp-controller="Leave" asp-action="Balances">
+                        <i class="fas fa-scale-balanced"></i>
+                        Leave Balances
                     </a>
                     <a class="nav-item @(currentController == "ExitClearance" && currentAction != "Mine" ? "active" : "")"
                        asp-controller="ExitClearance" asp-action="Index">

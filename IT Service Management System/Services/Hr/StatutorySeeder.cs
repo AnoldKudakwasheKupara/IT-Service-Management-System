@@ -35,11 +35,108 @@ namespace IT_Service_Management_System.Services.Hr
         {
             var added = await SeedParametersAsync(ct);
             var holidays = await SeedHolidaysAsync(ct);
+            var leaveTypes = await SeedLeaveTypesAsync(ct);
 
-            if (added > 0 || holidays > 0)
+            if (added > 0 || holidays > 0 || leaveTypes > 0)
                 _log.LogInformation(
-                    "Zimbabwe statutory seed: {Parameters} parameter(s) and {Holidays} public holiday(s) added.",
-                    added, holidays);
+                    "Zimbabwe statutory seed: {Parameters} parameter(s), {Holidays} public holiday(s) "
+                    + "and {LeaveTypes} leave type(s) added.",
+                    added, holidays, leaveTypes);
+        }
+
+        // ── Leave types ──────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// The leave categories the Labour Act provides for. Added only if the code is not already
+        /// present, so an employer that has tuned an entitlement upwards keeps its version.
+        /// </summary>
+        private async Task<int> SeedLeaveTypesAsync(CancellationToken ct)
+        {
+            var existing = await _db.LeaveTypes.Select(t => t.Code).ToListAsync(ct);
+
+            var defaults = new List<LeaveType>
+            {
+                new()
+                {
+                    Code = "VACATION", Name = "Vacation leave", DisplayOrder = 1, Colour = "#2c9e6e",
+                    Authority = "Labour Act [Chapter 28:01] s.14A",
+                    Description = "Accrues at one twelfth of 30 days for each month of service — "
+                                + "30 days a year. A statutory minimum; a contract or NEC agreement may give more.",
+                    AccrualPerMonth = 2.5m, AnnualEntitlementDays = 30m,
+                    IsPaid = true, CountsWorkingDaysOnly = true,
+                    MaxCarryOverDays = 30m, NoticeDaysRequired = 14,
+                    PaidOutOnTermination = true
+                },
+                new()
+                {
+                    Code = "SICK", Name = "Sick leave", DisplayOrder = 2, Colour = "#e53e3e",
+                    Authority = "Labour Act [Chapter 28:01] s.14",
+                    Description = "Ninety days on full pay in any twelve-month period, then a further "
+                                + "ninety at half pay. Once both are exhausted the incapacity "
+                                + "provisions of s.14 may apply.",
+                    AnnualEntitlementDays = 90m, HasHalfPayTier = true, HalfPayDays = 90,
+                    IsPaid = true, CountsWorkingDaysOnly = true,
+                    RequiresMedicalCertificate = true, CertificateRequiredAfterDays = 1,
+                    PaidOutOnTermination = false
+                },
+                new()
+                {
+                    Code = "MATERNITY", Name = "Maternity leave", DisplayOrder = 3, Colour = "#8b5cf6",
+                    Authority = "Labour Act [Chapter 28:01] s.18",
+                    Description = "Ninety-eight days on full pay. Counted in calendar days.",
+                    AnnualEntitlementDays = 98m, QualifyingMonths = 12,
+                    IsPaid = true, CountsWorkingDaysOnly = false,
+                    RestrictedToGender = "Female",
+                    RequiresMedicalCertificate = true, CertificateRequiredAfterDays = 1,
+                    NoticeDaysRequired = 30, PaidOutOnTermination = false
+                },
+                new()
+                {
+                    Code = "PATERNITY", Name = "Paternity leave", DisplayOrder = 4, Colour = "#3b6ea5",
+                    Authority = "Labour Amendment Act, 2023",
+                    Description = "Introduced by the 2023 amendment. Confirm the entitlement and its "
+                                + "conditions against the Act as amended.",
+                    AnnualEntitlementDays = 14m,
+                    IsPaid = true, CountsWorkingDaysOnly = false,
+                    RestrictedToGender = "Male",
+                    NoticeDaysRequired = 14, PaidOutOnTermination = false
+                },
+                new()
+                {
+                    Code = "SPECIAL", Name = "Special leave", DisplayOrder = 5, Colour = "#f5b042",
+                    Authority = "Labour Act [Chapter 28:01] s.14B",
+                    Description = "Up to twelve days a year on full pay — bereavement, detention or "
+                                + "remand, or sitting an approved examination.",
+                    AnnualEntitlementDays = 12m,
+                    IsPaid = true, CountsWorkingDaysOnly = true,
+                    PaidOutOnTermination = false
+                },
+                new()
+                {
+                    Code = "UNPAID", Name = "Unpaid leave", DisplayOrder = 6, Colour = "#64748b",
+                    Authority = "Employer discretion",
+                    Description = "Granted at the employer's discretion. Not statutory, and unpaid.",
+                    IsPaid = false, CountsWorkingDaysOnly = true,
+                    NoticeDaysRequired = 30, PaidOutOnTermination = false
+                },
+                new()
+                {
+                    Code = "COMPASSIONATE", Name = "Compassionate leave", DisplayOrder = 7, Colour = "#0d9488",
+                    Authority = "Employer policy",
+                    Description = "Employer policy rather than statute. Bereavement may alternatively "
+                                + "be taken as special leave under s.14B.",
+                    AnnualEntitlementDays = 5m,
+                    IsPaid = true, CountsWorkingDaysOnly = true,
+                    PaidOutOnTermination = false
+                }
+            };
+
+            var missing = defaults.Where(d => !existing.Contains(d.Code)).ToList();
+            if (missing.Count == 0) return 0;
+
+            _db.LeaveTypes.AddRange(missing);
+            await _db.SaveChangesAsync(ct);
+            return missing.Count;
         }
 
         // ── Parameters ───────────────────────────────────────────────────────────

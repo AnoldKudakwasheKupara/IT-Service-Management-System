@@ -1,0 +1,25 @@
+@* Success / warning / error banners for the HR module. Include once near the top of each view. *@
+@if (TempData["Success"] != null)
+{
+    <div class="card" style="border-left:3px solid var(--success); margin-bottom:1rem;">
+        <div class="card-body" style="padding:.8rem 1.25rem; color:var(--success); display:flex; gap:.6rem; align-items:center;">
+            <i class="fas fa-circle-check"></i> <span>@TempData["Success"]</span>
+        </div>
+    </div>
+}
+@if (TempData["Warning"] != null)
+{
+    <div class="card" style="border-left:3px solid var(--warning); margin-bottom:1rem;">
+        <div class="card-body" style="padding:.8rem 1.25rem; color:#9a5b00; display:flex; gap:.6rem; align-items:center;">
+            <i class="fas fa-triangle-exclamation"></i> <span>@TempData["Warning"]</span>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="card" style="border-left:3px solid var(--danger); margin-bottom:1rem;">
+        <div class="card-body" style="padding:.8rem 1.25rem; color:var(--danger); display:flex; gap:.6rem; align-items:center;">
+            <i class="fas fa-circle-exclamation"></i> <span>@TempData["Error"]</span>
+        </div>
+    </div>
+}

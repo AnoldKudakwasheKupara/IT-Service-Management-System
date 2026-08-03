@@ -1,0 +1,150 @@
+@using IT_Service_Management_System.Models.Hr
+@{
+    var anchor = (DateTime)(ViewBag.Anchor ?? DateTime.Today);
+    ViewData["Title"] = $"Who's away — {anchor:MMMM yyyy}";
+    var leave = ViewBag.Leave as List<LeaveRequest> ?? new List<LeaveRequest>();
+    var holidays = ViewBag.Holidays as List<PublicHoliday> ?? new List<PublicHoliday>();
+    var departments = ViewBag.Departments as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var departmentId = ViewBag.DepartmentId as int?;
+
+    var firstOfMonth = new DateTime(anchor.Year, anchor.Month, 1);
+    var gridStart = firstOfMonth.AddDays(-(((int)firstOfMonth.DayOfWeek + 6) % 7));
+    var holidayDates = holidays.ToDictionary(h => h.Date.Date, h => h.Name);
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr wide">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-calendar-days"></i> Who's away</h1>
+                        <p class="page-sub">Approved leave and Zimbabwean public holidays</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body" style="display:flex; gap:.6rem; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <a asp-action="Calendar" asp-route-year="@anchor.AddMonths(-1).Year" asp-route-month="@anchor.AddMonths(-1).Month"
+                       asp-route-departmentId="@departmentId" class="btn-ghost-hr btn-sm"><i class="fas fa-chevron-left"></i></a>
+                    <strong style="font-size:1.1rem; color:var(--gray-800); min-width:170px; text-align:center;">@anchor.ToString("MMMM yyyy")</strong>
+                    <a asp-action="Calendar" asp-route-year="@anchor.AddMonths(1).Year" asp-route-month="@anchor.AddMonths(1).Month"
+                       asp-route-departmentId="@departmentId" class="btn-ghost-hr btn-sm"><i class="fas fa-chevron-right"></i></a>
+                    <a asp-action="Calendar" asp-route-departmentId="@departmentId" class="btn-ghost-hr btn-sm">Today</a>
+                </div>
+
+                <form method="get" style="display:inline-flex; gap:.4rem; align-items:center;">
+                    <input type="hidden" name="year" value="@anchor.Year" />
+                    <input type="hidden" name="month" value="@anchor.Month" />
+                    <select name="departmentId" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                        <option value="">All departments</option>
+                        @foreach (var d in departments)
+                        {
+                            <option value="@d.Id" selected="@(departmentId == (int)d.Id)">@d.Name</option>
+                        }
+                    </select>
+                </form>
+
+                <span class="meta">@leave.Count person-booking(s) this month</span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body flush">
+                <div style="display:grid; grid-template-columns:repeat(7,1fr); border-top:1px solid var(--gray-200);">
+                    @foreach (var day in new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" })
+                    {
+                        <div style="padding:.6rem; text-align:center; font-size:.72rem; font-weight:700; color:var(--gray-500);
+                                    text-transform:uppercase; letter-spacing:.04em; background:var(--gray-50); border-bottom:1px solid var(--gray-200);">
+                            @day
+                        </div>
+                    }
+
+                    @for (var i = 0; i < 42; i++)
+                    {
+                        var date = gridStart.AddDays(i);
+                        var inMonth = date.Month == anchor.Month;
+                        var isToday = date.Date == DateTime.Today;
+                        var isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+                        var isHoliday = holidayDates.ContainsKey(date.Date);
+                        var away = leave.Where(l => l.StartDate.Date <= date.Date && l.EndDate.Date >= date.Date).ToList();
+
+                        var background = isToday ? "var(--primary-surface)"
+                            : isHoliday ? "#fdf3e1"
+                            : isWeekend ? "var(--gray-50)"
+                            : inMonth ? "white" : "var(--gray-50)";
+
+                        <div style="min-height:112px; padding:.45rem; border-right:1px solid var(--gray-100);
+                                    border-bottom:1px solid var(--gray-100); background:@background; overflow:hidden;">
+                            <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:.3rem;">
+                                <span style="font-size:.78rem; font-weight:@(isToday ? "700" : "500");
+                                             color:@(isToday ? "var(--primary-dark)" : inMonth ? "var(--gray-700)" : "var(--gray-400)");">
+                                    @date.Day
+                                </span>
+                                @if (away.Count > 0)
+                                {
+                                    <span class="chip" style="font-size:.62rem;">@away.Count</span>
+                                }
+                            </div>
+
+                            @if (isHoliday)
+                            {
+                                <div style="font-size:.63rem; color:#9a5b00; font-weight:600; margin-bottom:.2rem;">
+                                    <i class="fas fa-star"></i> @holidayDates[date.Date]
+                                </div>
+                            }
+
+                            @foreach (var l in away.Take(3))
+                            {
+                                <div title="@l.Employee?.DisplayName — @l.LeaveType?.Name"
+                                     style="font-size:.66rem; padding:.1rem .3rem; margin-bottom:.15rem; border-radius:.3rem;
+                                            background:@(l.LeaveType?.Colour ?? "#94a3b8")22;
+                                            color:@(l.LeaveType?.Colour ?? "#475569");
+                                            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                    @l.Employee?.FirstName @(l.Employee?.LastName.FirstOrDefault())
+                                </div>
+                            }
+                            @if (away.Count > 3)
+                            {
+                                <span class="meta" style="font-size:.62rem;">+@(away.Count - 3) more</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (holidays.Count > 0)
+        {
+            <div class="card">
+                <div class="card-head">
+                    <span class="t"><i class="fas fa-star"></i> Public holidays this month</span>
+                    <span class="meta">Public Holidays and Prohibition of Business Act [Chapter 10:21]</span>
+                </div>
+                <div class="card-body">
+                    @foreach (var h in holidays.OrderBy(h => h.Date))
+                    {
+                        <div style="display:flex; justify-content:space-between; padding:.35rem 0; border-bottom:1px solid var(--gray-100); font-size:.85rem;">
+                            <span>
+                                @h.Name
+                                @if (h.IsObservedShift)
+                                {
+                                    <span class="chip" title="Moved because the actual date fell on a Sunday">observed</span>
+                                }
+                            </span>
+                            <span class="meta">@h.Date.ToString("dddd d MMMM")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+    </div>
+</div>

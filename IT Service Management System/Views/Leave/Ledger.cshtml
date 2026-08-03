@@ -1,0 +1,123 @@
+@using IT_Service_Management_System.Models.Hr
+@model List<LeaveLedgerEntry>
+@{
+    var employee = ViewBag.Employee as Employee;
+    var type = ViewBag.LeaveType as LeaveType;
+    var balance = ViewBag.Balance as LeaveBalance;
+    var year = (int)(ViewBag.Year ?? DateTime.Today.Year);
+    ViewData["Title"] = $"Leave ledger — {employee?.DisplayName}";
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+    string KindIcon(LeaveLedgerKind k) => k switch
+    {
+        LeaveLedgerKind.Accrual => "fa-plus",
+        LeaveLedgerKind.Taken => "fa-minus",
+        LeaveLedgerKind.Cancelled => "fa-rotate-left",
+        LeaveLedgerKind.Adjustment => "fa-pen",
+        LeaveLedgerKind.CarriedOver => "fa-arrow-right",
+        LeaveLedgerKind.Forfeited => "fa-trash",
+        LeaveLedgerKind.PaidOut => "fa-money-bill",
+        _ => "fa-flag"
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-list"></i> Leave ledger</h1>
+                        <p class="page-sub">
+                            @employee?.DisplayName · @type?.Name · @year
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (balance != null)
+        {
+            <div class="stats">
+                <div class="stat">
+                    <div class="ic brand"><i class="fas fa-scale-balanced"></i></div>
+                    <div><h3>@balance.Entitlement.ToString("0.##")</h3><p>Entitlement</p></div>
+                </div>
+                <div class="stat">
+                    <div class="ic amber"><i class="fas fa-plane-departure"></i></div>
+                    <div><h3>@balance.Taken.ToString("0.##")</h3><p>Taken</p></div>
+                </div>
+                <div class="stat">
+                    <div class="ic blue"><i class="fas fa-calendar-check"></i></div>
+                    <div><h3>@balance.Booked.ToString("0.##")</h3><p>Booked</p></div>
+                </div>
+                <div class="stat">
+                    <div class="ic green"><i class="fas fa-circle-check"></i></div>
+                    <div><h3>@balance.Available.ToString("0.##")</h3><p>Available</p></div>
+                </div>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(type?.Authority))
+        {
+            <div class="notice">
+                <h4><i class="fas fa-scale-balanced"></i> @type.Name</h4>
+                <p>@type.Description</p>
+                <p class="meta" style="margin-top:.4rem;"><strong>@type.Authority</strong></p>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-clock-rotate-left"></i> Movements</span>
+                <span class="meta">@Model.Count entr(ies)</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-list"></i>
+                        <h3>No movements recorded</h3>
+                        <p>Accrual, leave taken and adjustments will all appear here.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th>When</th><th>Movement</th><th>Narrative</th><th class="num">Days</th><th class="num">Balance after</th><th>By</th></tr></thead>
+                        <tbody>
+                            @foreach (var l in Model)
+                            {
+                                <tr>
+                                    <td class="meta" style="white-space:nowrap;">@l.At.ToString("d MMM yyyy HH:mm")</td>
+                                    <td>
+                                        <span class="chip"><i class="fas @KindIcon(l.Kind)"></i> @Spaced(l.Kind.ToString())</span>
+                                    </td>
+                                    <td class="meta">
+                                        @l.Narrative
+                                        @if (l.LeaveRequest != null)
+                                        {
+                                            <a asp-action="Details" asp-route-id="@l.LeaveRequestId" class="ref">@l.LeaveRequest.Reference</a>
+                                        }
+                                    </td>
+                                    <td class="num">
+                                        <strong style="color:@(l.Days >= 0 ? "var(--success)" : "var(--danger)");">
+                                            @l.Days.ToString("+0.##;-0.##;0")
+                                        </strong>
+                                    </td>
+                                    <td class="num">@l.BalanceAfter.ToString("0.##")</td>
+                                    <td class="meta">@(l.RecordedBy == null ? "System" : $"{l.RecordedBy.FirstName} {l.RecordedBy.LastName}")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

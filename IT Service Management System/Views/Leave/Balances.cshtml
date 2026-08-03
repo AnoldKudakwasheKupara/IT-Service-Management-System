@@ -1,0 +1,175 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Helpers
+@model List<Employee>
+@{
+    ViewData["Title"] = "Leave Balances";
+    var year = (int)(ViewBag.Year ?? DateTime.Today.Year);
+    var paging = ViewBag.Paging as PagingInfo;
+    var types = ViewBag.Types as List<LeaveType> ?? new List<LeaveType>();
+    var balances = ViewBag.Balances as List<LeaveBalance> ?? new List<LeaveBalance>();
+    var departments = ViewBag.Departments as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    decimal Available(int employeeId, int typeId) =>
+        balances.FirstOrDefault(b => b.EmployeeId == employeeId && b.LeaveTypeId == typeId)?.Available ?? 0m;
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr wide">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Register" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-scale-balanced"></i> Leave Balances</h1>
+                        <p class="page-sub">Available days per employee for @year</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <form asp-action="RunAccrual" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="year" value="@year" />
+                        <button type="submit" class="btn-ghost-hr">
+                            <i class="fas fa-arrows-rotate"></i> Run accrual
+                        </button>
+                    </form>
+                    @if (year < DateTime.Today.Year)
+                    {
+                        <form asp-action="CloseCycle" method="post" class="inline-form"
+                              onsubmit="return confirm('Close @year? Unused days are carried over up to each type’s limit, and the rest forfeited.');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="year" value="@year" />
+                            <button type="submit" class="btn-outline-hr">
+                                <i class="fas fa-lock"></i> Close @year
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="notice">
+            <h4><i class="fas fa-circle-info"></i> How accrual works</h4>
+            <p>
+                Vacation leave accrues at one twelfth of 30 days for each completed month of service
+                (Labour Act s.14A) and stops at today, so nobody can book days they have not yet
+                earned. Running accrual writes only the difference and is safe to repeat.
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="toolbar">
+                    <div class="fg">
+                        <label class="lbl">Year</label>
+                        <select name="year" class="inp">
+                            @for (var y = DateTime.Today.Year + 1; y >= DateTime.Today.Year - 3; y--)
+                            {
+                                <option value="@y" selected="@(y == year)">@y</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Department</label>
+                        <select name="departmentId" class="inp">
+                            <option value="">All</option>
+                            @foreach (var d in departments)
+                            {
+                                <option value="@d.Id" selected="@(ViewBag.DepartmentId as int? == (int)d.Id)">@d.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg" style="flex:2; min-width:180px;">
+                        <label class="lbl">Employee</label>
+                        <input type="text" name="q" value="@ViewBag.Q" class="inp" placeholder="Name or number…" />
+                    </div>
+                    <button type="submit" class="btn-hr"><i class="fas fa-magnifying-glass"></i> Search</button>
+                    <a asp-action="Balances" class="btn-ghost-hr"><i class="fas fa-rotate-left"></i> Clear</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-table"></i> Available days</span>
+                <span class="meta">@(paging?.TotalCount ?? Model.Count) employee(s)</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-scale-balanced"></i>
+                        <h3>No employees match</h3>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Employee</th><th>Department</th>
+                                @foreach (var t in types)
+                                {
+                                    <th class="num" title="@t.Authority">@t.Name</th>
+                                }
+                                <th style="text-align:right;">Adjust</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var e in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-controller="Employees" asp-action="Details" asp-route-id="@e.Id" class="strong-link">
+                                            @e.DisplayName
+                                        </a>
+                                        <div class="meta" style="font-size:.7rem;">@e.EmployeeNumber</div>
+                                    </td>
+                                    <td class="meta">@(e.Department?.Name ?? "—")</td>
+                                    @foreach (var t in types)
+                                    {
+                                        var available = Available(e.Id, t.Id);
+                                        <td class="num">
+                                            <a asp-action="Ledger" asp-route-employeeId="@e.Id"
+                                               asp-route-leaveTypeId="@t.Id" asp-route-year="@year"
+                                               style="text-decoration:none; color:@(available > 0 ? "var(--gray-800)" : "var(--gray-400)");">
+                                                @available.ToString("0.##")
+                                            </a>
+                                        </td>
+                                    }
+                                    <td style="text-align:right;">
+                                        <form asp-action="Adjust" method="post" style="display:inline-flex; gap:.3rem; align-items:center;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="employeeId" value="@e.Id" />
+                                            <input type="hidden" name="cycleYear" value="@year" />
+                                            <select name="leaveTypeId" class="inp" style="width:auto; padding:.25rem .4rem; font-size:.72rem;">
+                                                @foreach (var t in types)
+                                                {
+                                                    <option value="@t.Id">@t.Name</option>
+                                                }
+                                            </select>
+                                            <input type="number" name="days" step="0.5" class="inp"
+                                                   style="width:70px; padding:.25rem .4rem; font-size:.72rem;" placeholder="±days" required />
+                                            <input type="text" name="reason" class="inp"
+                                                   style="width:120px; padding:.25rem .4rem; font-size:.72rem;" placeholder="Reason" required />
+                                            <button type="submit" class="act ok" title="Apply adjustment">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <partial name="_HrPager" model="@paging" />
+
+    </div>
+</div>

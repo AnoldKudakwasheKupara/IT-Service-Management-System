@@ -203,6 +203,12 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<PayeTaxBand> PayeTaxBands { get; set; }
         public DbSet<PublicHoliday> PublicHolidays { get; set; }
 
+        // ── HR: leave ──────────────────────────────────────────────────────────────
+        public DbSet<LeaveType> LeaveTypes { get; set; }
+        public DbSet<LeaveBalance> LeaveBalances { get; set; }
+        public DbSet<LeaveRequest> LeaveRequests { get; set; }
+        public DbSet<LeaveLedgerEntry> LeaveLedgerEntries { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -895,6 +901,60 @@ namespace IT_Service_Management_System.DbContexts
                 .HasIndex(x => new { x.Currency, x.Period, x.EffectiveFrom, x.FromAmount });
 
             b.Entity<PublicHoliday>().HasIndex(x => x.Date);
+
+            // ── Leave ─────────────────────────────────────────────────────────────
+            // Employee references are Restrict throughout: an employee is touched from several
+            // angles here (the applicant, the cover, both approvers) and SQL Server rejects the
+            // multiple cascade paths that would otherwise result.
+            b.Entity<LeaveType>(e =>
+            {
+                e.HasIndex(x => x.Code).IsUnique();
+                e.HasIndex(x => new { x.IsActive, x.DisplayOrder });
+            });
+
+            b.Entity<LeaveBalance>(e =>
+            {
+                // One balance per employee, per type, per cycle — the unique index is what stops a
+                // race creating two and halving somebody's entitlement.
+                e.HasIndex(x => new { x.EmployeeId, x.LeaveTypeId, x.CycleYear }).IsUnique();
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.LeaveType).WithMany().HasForeignKey(x => x.LeaveTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<LeaveRequest>(e =>
+            {
+                e.HasIndex(x => new { x.EmployeeId, x.StartDate });
+                e.HasIndex(x => x.Status);
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.LeaveType).WithMany(t => t.Requests).HasForeignKey(x => x.LeaveTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(x => x.CoveringEmployee).WithMany().HasForeignKey(x => x.CoveringEmployeeId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.ManagerApprovedBy).WithMany().HasForeignKey(x => x.ManagerApprovedById)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.HrApprovedBy).WithMany().HasForeignKey(x => x.HrApprovedById)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.SubmittedBy).WithMany().HasForeignKey(x => x.SubmittedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<LeaveLedgerEntry>(e =>
+            {
+                e.HasIndex(x => new { x.EmployeeId, x.LeaveTypeId, x.CycleYear });
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.LeaveType).WithMany().HasForeignKey(x => x.LeaveTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                // The ledger outlives the request it describes — deleting a request must not erase
+                // the movement it caused.
+                e.HasOne(x => x.LeaveRequest).WithMany().HasForeignKey(x => x.LeaveRequestId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(x => x.RecordedBy).WithMany().HasForeignKey(x => x.RecordedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
 
             b.Entity<TalentKpiYear>(e =>
             {

@@ -1,0 +1,282 @@
+@using IT_Service_Management_System.Models.Hr
+@model LeaveRequest
+@{
+    ViewData["Title"] = $"{Model.Reference} — Leave";
+    var balance = ViewBag.Balance as LeaveBalance;
+    var canManager = ViewBag.CanApproveAsManager as bool? ?? false;
+    var canHr = ViewBag.CanApproveAsHr as bool? ?? false;
+    var isMine = ViewBag.IsMine as bool? ?? false;
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+    string StatusClass(LeaveRequestStatus s) => s switch
+    {
+        LeaveRequestStatus.Approved or LeaveRequestStatus.Taken => "b-active",
+        LeaveRequestStatus.Rejected => "b-danger",
+        LeaveRequestStatus.Cancelled => "b-left",
+        LeaveRequestStatus.ManagerApproved => "b-leave",
+        LeaveRequestStatus.Submitted => "b-probation",
+        _ => "b-neutral"
+    };
+
+    // The four stages a request passes through, so its position is visible at a glance.
+    var stages = new[] { "Submitted", "Manager", "HR", "Taken" };
+    var reached = Model.Status switch
+    {
+        LeaveRequestStatus.Draft => 0,
+        LeaveRequestStatus.Submitted => 1,
+        LeaveRequestStatus.ManagerApproved => 2,
+        LeaveRequestStatus.Approved => 3,
+        LeaveRequestStatus.Taken => 4,
+        _ => 0
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title">
+                            <i class="fas fa-umbrella-beach"></i> @Model.LeaveType?.Name
+                        </h1>
+                        <div class="page-sub" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                            <span class="ref">@Model.Reference</span>
+                            <span>@Model.Employee?.DisplayName</span>
+                            <span class="badge-hr @StatusClass(Model.Status)">@Spaced(Model.Status.ToString())</span>
+                            @if (Model.IsInProgress) { <span class="chip"><i class="fas fa-plane-departure"></i> away now</span> }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (Model.Status is not (LeaveRequestStatus.Rejected or LeaveRequestStatus.Cancelled))
+        {
+            <div class="card">
+                <div class="card-body" style="display:flex; gap:.25rem; flex-wrap:wrap;">
+                    @for (var i = 0; i < stages.Length; i++)
+                    {
+                        var done = i < reached;
+                        var current = i == reached - 1;
+                        <div style="flex:1 1 0; min-width:110px; text-align:center; padding:.55rem .5rem;
+                                    font-size:.75rem; font-weight:600;
+                                    border-radius:@(i == 0 ? ".5rem 0 0 .5rem" : i == stages.Length - 1 ? "0 .5rem .5rem 0" : "0");
+                                    background:@(current ? "linear-gradient(100deg,var(--primary-dark),var(--primary))"
+                                                        : done ? "#e9f6ee" : "var(--gray-100)");
+                                    color:@(current ? "white" : done ? "#1e6b45" : "var(--gray-500)");">
+                            @stages[i]
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="grid-2-1">
+            <div>
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
+                    <div class="card-body">
+                        <div class="dl">
+                            <div><div class="k">Employee</div><div class="v">@Model.Employee?.DisplayName</div></div>
+                            <div><div class="k">Leave type</div><div class="v">@Model.LeaveType?.Name</div></div>
+                            <div><div class="k">First day</div><div class="v">@Model.StartDate.ToString("dddd d MMMM yyyy")</div></div>
+                            <div><div class="k">Last day</div><div class="v">@Model.EndDate.ToString("dddd d MMMM yyyy")</div></div>
+                            <div>
+                                <div class="k">Days charged</div>
+                                <div class="v">
+                                    @Model.Days.ToString("0.##")
+                                    <span class="meta" style="font-size:.72rem;">
+                                        @(Model.LeaveType?.CountsWorkingDaysOnly == true ? "working days" : "calendar days")
+                                    </span>
+                                </div>
+                            </div>
+                            <div><div class="k">Cover</div><div class="v">@(Model.CoveringEmployee?.DisplayName ?? "—")</div></div>
+                            <div><div class="k">Contact while away</div><div class="v">@(Model.ContactWhileAway ?? "—")</div></div>
+                            <div><div class="k">Applied</div><div class="v">@Model.CreatedAt.ToString("d MMM yyyy")</div></div>
+                        </div>
+
+                        @if (Model.HalfPayDays > 0 || Model.UnpaidDays > 0)
+                        {
+                            <div class="notice warn" style="margin-top:1rem;">
+                                <h4><i class="fas fa-scale-balanced"></i> How this is paid</h4>
+                                <p>
+                                    @if (Model.FullPayDays > 0) { <text>@Model.FullPayDays.ToString("0.##") day(s) at full pay. </text> }
+                                    @if (Model.HalfPayDays > 0) { <text>@Model.HalfPayDays.ToString("0.##") day(s) at half pay. </text> }
+                                    @if (Model.UnpaidDays > 0) { <text>@Model.UnpaidDays.ToString("0.##") day(s) unpaid. </text> }
+                                    Sick leave runs at full pay for 90 days, then half pay for a further 90,
+                                    under Labour Act s.14.
+                                </p>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Reason))
+                        {
+                            <div style="margin-top:1rem;">
+                                <div class="k" style="font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--gray-400);">Reason</div>
+                                <p style="color:var(--gray-700); line-height:1.6; margin-top:.25rem;">@Model.Reason</p>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.DocumentPath))
+                        {
+                            <div style="margin-top:1rem;">
+                                <a href="@Model.DocumentPath" target="_blank" rel="noopener" class="btn-ghost-hr btn-sm">
+                                    <i class="fas fa-paperclip"></i> @Model.DocumentFileName
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @* ── DECISIONS ───────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-stamp"></i> Approval</span></div>
+                    <div class="card-body">
+                        <div class="dl">
+                            <div>
+                                <div class="k">Line manager</div>
+                                <div class="v">
+                                    @if (Model.ManagerApprovedAt.HasValue)
+                                    {
+                                        <text>@Model.ManagerApprovedBy?.DisplayName · @Model.ManagerApprovedAt.Value.ToString("d MMM yyyy")</text>
+                                    }
+                                    else { <span class="meta">Awaiting</span> }
+                                </div>
+                            </div>
+                            <div>
+                                <div class="k">HR</div>
+                                <div class="v">
+                                    @if (Model.HrApprovedAt.HasValue)
+                                    {
+                                        <text>@Model.HrApprovedBy?.DisplayName · @Model.HrApprovedAt.Value.ToString("d MMM yyyy")</text>
+                                    }
+                                    else { <span class="meta">Awaiting</span> }
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.DecisionNote))
+                        {
+                            <div class="notice @(Model.Status == LeaveRequestStatus.Rejected ? "bad" : "")" style="margin-top:1rem;">
+                                <h4><i class="fas fa-comment"></i> Decision note</h4>
+                                <p>@Model.DecisionNote</p>
+                            </div>
+                        }
+                        @if (Model.Status == LeaveRequestStatus.Cancelled)
+                        {
+                            <div class="notice" style="margin-top:1rem;">
+                                <h4><i class="fas fa-ban"></i> Cancelled @Model.CancelledAt?.ToString("d MMM yyyy")</h4>
+                                <p>@(Model.CancellationReason ?? "No reason recorded.")</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                @if (balance != null)
+                {
+                    <div class="card">
+                        <div class="card-head"><span class="t"><i class="fas fa-scale-balanced"></i> Balance</span></div>
+                        <div class="card-body">
+                            <div class="dl" style="grid-template-columns:1fr;">
+                                <div><div class="k">Entitlement</div><div class="v">@balance.Entitlement.ToString("0.##")</div></div>
+                                <div><div class="k">Taken</div><div class="v">@balance.Taken.ToString("0.##")</div></div>
+                                <div><div class="k">Booked</div><div class="v">@balance.Booked.ToString("0.##")</div></div>
+                                <div><div class="k">Pending</div><div class="v">@balance.Pending.ToString("0.##")</div></div>
+                                <div>
+                                    <div class="k">Available</div>
+                                    <div class="v" style="color:var(--success); font-size:1.1rem;">@balance.Available.ToString("0.##")</div>
+                                </div>
+                            </div>
+                            <a asp-action="Ledger" asp-route-employeeId="@Model.EmployeeId"
+                               asp-route-leaveTypeId="@Model.LeaveTypeId" asp-route-year="@Model.StartDate.Year"
+                               class="btn-ghost-hr btn-sm" style="width:100%; justify-content:center; margin-top:.75rem;">
+                                <i class="fas fa-list"></i> Movement history
+                            </a>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.Status == LeaveRequestStatus.Draft && (isMine || canHr))
+                {
+                    <div class="card">
+                        <div class="card-body">
+                            <form asp-action="Submit" asp-route-id="@Model.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-hr" style="width:100%; justify-content:center;">
+                                    <i class="fas fa-paper-plane"></i> Submit for approval
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.IsOpen && Model.Status != LeaveRequestStatus.Draft && (canManager || canHr))
+                {
+                    var asHr = canHr && Model.Status == LeaveRequestStatus.ManagerApproved;
+                    var canActNow = asHr || (canManager && Model.Status == LeaveRequestStatus.Submitted);
+
+                    if (canActNow)
+                    {
+                        <div class="card">
+                            <div class="card-head">
+                                <span class="t"><i class="fas fa-gavel"></i> Your decision</span>
+                                <span class="chip">@(asHr ? "as HR" : "as line manager")</span>
+                            </div>
+                            <div class="card-body">
+                                <form asp-action="Decide" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@Model.Id" />
+                                    <input type="hidden" name="asHr" value="@asHr.ToString().ToLower()" />
+                                    <div class="fg">
+                                        <label class="lbl">Note</label>
+                                        <textarea name="note" class="inp" rows="2"
+                                                  placeholder="Required when rejecting."></textarea>
+                                    </div>
+                                    <div style="display:flex; gap:.5rem;">
+                                        <button type="submit" name="approve" value="true" class="btn-success-hr" style="flex:1; justify-content:center;">
+                                            <i class="fas fa-check"></i> Approve
+                                        </button>
+                                        <button type="submit" name="approve" value="false" class="btn-danger-hr" style="flex:1; justify-content:center;">
+                                            <i class="fas fa-xmark"></i> Reject
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    }
+                }
+
+                @if (Model.Status is not (LeaveRequestStatus.Taken or LeaveRequestStatus.Cancelled
+                        or LeaveRequestStatus.Rejected) && (isMine || canHr))
+                {
+                    <div class="card">
+                        <div class="card-head"><span class="t"><i class="fas fa-ban"></i> Cancel</span></div>
+                        <div class="card-body">
+                            <form asp-action="Cancel" method="post"
+                                  onsubmit="return confirm('Cancel this leave request? The days go back to the balance.');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <div class="fg">
+                                    <input type="text" name="reason" class="inp" placeholder="Reason" />
+                                </div>
+                                <button type="submit" class="btn-danger-hr btn-sm" style="width:100%; justify-content:center;">
+                                    <i class="fas fa-ban"></i> Cancel request
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

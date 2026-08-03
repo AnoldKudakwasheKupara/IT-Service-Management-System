@@ -1,0 +1,225 @@
+@using IT_Service_Management_System.Models.Hr
+@model LeaveRequest
+@{
+    ViewData["Title"] = "Apply for Leave";
+    var target = ViewBag.Target as Employee;
+    var types = ViewBag.LeaveTypes as List<LeaveType> ?? new List<LeaveType>();
+    var balances = ViewBag.Balances as List<LeaveBalance> ?? new List<LeaveBalance>();
+    var colleagues = ViewBag.Colleagues as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var isHr = ViewBag.IsHr as bool? ?? false;
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-umbrella-beach"></i> Apply for leave</h1>
+                        <p class="page-sub">
+                            @if (isHr && target != null)
+                            {
+                                <text>On behalf of @target.DisplayName (@target.EmployeeNumber)</text>
+                            }
+                            else
+                            {
+                                <text>Days are checked against your balance and the statutory entitlement before submission</text>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <form asp-action="Apply" method="post" enctype="multipart/form-data" id="leave-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="EmployeeId" />
+
+            <div asp-validation-summary="All" class="field-error" style="margin-bottom:1rem;"></div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-calendar-days"></i> The leave</span></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg full">
+                            <label class="lbl" asp-for="LeaveTypeId"><i class="fas fa-tag"></i> Leave type <span class="req">*</span></label>
+                            <select asp-for="LeaveTypeId" id="lv-type" class="inp" required>
+                                <option value="">— Choose —</option>
+                                @foreach (var t in types)
+                                {
+                                    var bal = balances.FirstOrDefault(b => b.LeaveTypeId == t.Id);
+                                    <option value="@t.Id" data-authority="@t.Authority" data-desc="@t.Description">
+                                        @t.Name
+                                        @if (t.IsPaid && bal != null) { <text>— @bal.Available.ToString("0.##") day(s) available</text> }
+                                        else if (!t.IsPaid) { <text>— unpaid</text> }
+                                    </option>
+                                }
+                            </select>
+                            <span class="hint" id="lv-authority"></span>
+                        </div>
+
+                        <div class="fg">
+                            <label class="lbl" asp-for="StartDate"><i class="far fa-calendar-plus"></i> First day <span class="req">*</span></label>
+                            <input asp-for="StartDate" id="lv-start" type="date" class="inp" required />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="EndDate"><i class="far fa-calendar-check"></i> Last day <span class="req">*</span></label>
+                            <input asp-for="EndDate" id="lv-end" type="date" class="inp" required />
+                        </div>
+
+                        <div class="fg full">
+                            <label class="check">
+                                <input asp-for="IsHalfDay" id="lv-half" type="checkbox" /> Half day only
+                            </label>
+                            <span class="hint">A half day applies to a single date.</span>
+                        </div>
+
+                        <div class="fg full">
+                            <div id="lv-preview" class="notice" style="display:none;">
+                                <h4><i class="fas fa-calculator"></i> <span id="lv-days">—</span></h4>
+                                <p id="lv-detail"></p>
+                            </div>
+                        </div>
+
+                        <div class="fg full">
+                            <label class="lbl" asp-for="Reason"><i class="fas fa-comment"></i> Reason</label>
+                            <textarea asp-for="Reason" class="inp" rows="3"
+                                      placeholder="Brief context. Required for special leave under s.14B."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-people-arrows"></i> Cover and contact</span></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label class="lbl" asp-for="CoveringEmployeeId"><i class="fas fa-user-check"></i> Who covers your work</label>
+                            <select asp-for="CoveringEmployeeId" class="inp">
+                                <option value="">— Nobody nominated —</option>
+                                @foreach (var c in colleagues)
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="ContactWhileAway"><i class="fas fa-phone"></i> Contact while away</label>
+                            <input asp-for="ContactWhileAway" class="inp" placeholder="Phone number, if you can be reached" />
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl"><i class="fas fa-paperclip"></i> Supporting document</label>
+                            <input type="file" name="document" class="inp"
+                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                            <span class="hint">
+                                A medical certificate is required for sick and maternity leave.
+                                PDF, image or Word, up to 10 MB.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" name="submit" value="true" class="btn-hr">
+                    <i class="fas fa-paper-plane"></i> Submit for approval
+                </button>
+                <button type="submit" name="submit" value="false" class="btn-ghost-hr">
+                    <i class="fas fa-floppy-disk"></i> Save as draft
+                </button>
+                <a asp-action="Index" class="btn-ghost-hr">Cancel</a>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Cost the request as the dates change, so the day count, the pay split and any warning
+        // are visible before submission rather than after it.
+        (function () {
+            const type = document.getElementById('lv-type');
+            const start = document.getElementById('lv-start');
+            const end = document.getElementById('lv-end');
+            const half = document.getElementById('lv-half');
+            const panel = document.getElementById('lv-preview');
+            const daysEl = document.getElementById('lv-days');
+            const detailEl = document.getElementById('lv-detail');
+            const authorityEl = document.getElementById('lv-authority');
+            const employeeId = document.querySelector('input[name="EmployeeId"]').value;
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            function showAuthority() {
+                const opt = type.options[type.selectedIndex];
+                const authority = opt?.dataset.authority || '';
+                const desc = opt?.dataset.desc || '';
+                authorityEl.textContent = [desc, authority].filter(Boolean).join(' · ');
+            }
+
+            let timer;
+            async function preview() {
+                if (!type.value || !start.value || !end.value) { panel.style.display = 'none'; return; }
+
+                const body = new URLSearchParams({
+                    employeeId, leaveTypeId: type.value,
+                    startDate: start.value, endDate: end.value,
+                    isHalfDay: half.checked
+                });
+
+                try {
+                    const res = await fetch('@Url.Action("Preview")', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
+                        body
+                    });
+                    const d = await res.json();
+                    if (!d.ok) { panel.style.display = 'none'; return; }
+
+                    panel.style.display = 'block';
+                    panel.className = 'notice' + (d.errors.length ? ' bad' : d.warnings.length ? ' warn' : '');
+
+                    daysEl.textContent = d.days.toFixed(2).replace(/\.00$/, '') + ' day(s)'
+                        + (d.countsWorkingDaysOnly ? ' — working days, excluding weekends and public holidays'
+                                                   : ' — calendar days');
+
+                    const parts = [];
+                    if (d.fullPay > 0) parts.push(d.fullPay + ' at full pay');
+                    if (d.halfPay > 0) parts.push(d.halfPay + ' at half pay');
+                    if (d.unpaid > 0) parts.push(d.unpaid + ' unpaid');
+                    if (parts.length) parts.unshift('<strong>' + parts.shift() + '</strong>');
+
+                    const lines = [];
+                    if (parts.length) lines.push(parts.join(', ') + '.');
+                    lines.push('Balance available: ' + d.available.toFixed(2).replace(/\.00$/, '') + ' day(s).');
+                    if (d.requiresDocument) lines.push('<strong>A supporting document is required.</strong>');
+                    d.errors.forEach(e => lines.push('⛔ ' + e));
+                    d.warnings.forEach(w => lines.push('⚠ ' + w));
+
+                    detailEl.innerHTML = lines.join('<br>');
+                } catch {
+                    panel.style.display = 'none';
+                }
+            }
+
+            function debounce() { clearTimeout(timer); timer = setTimeout(preview, 250); }
+
+            [type, start, end, half].forEach(el => el.addEventListener('change', () => { showAuthority(); debounce(); }));
+
+            // Keep the end date from falling before the start.
+            start.addEventListener('change', () => {
+                if (end.value && end.value < start.value) end.value = start.value;
+            });
+
+            showAuthority();
+        })();
+    </script>
+}
