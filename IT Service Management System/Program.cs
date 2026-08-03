@@ -231,6 +231,7 @@ builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.ProjectMetri
 builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.ProjectSchedulingService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.ProjectApprovalService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.ProjectIntelligenceService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.PmFileService>();
 
 // Defensive, idempotent demo-data top-up seeder (gated by Demo:Seed, default ON).
 builder.Services.AddScoped<IT_Service_Management_System.Services.DemoDataSeeder>();
