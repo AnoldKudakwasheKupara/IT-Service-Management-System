@@ -1,0 +1,297 @@
+@using IT_Service_Management_System.Models.Hr
+@model Employee
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "Add Employee" : $"Edit {Model.FullName}";
+    var departments = ViewBag.Departments as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var managers = ViewBag.Managers as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var accounts = ViewBag.Accounts as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a href="@(isNew ? Url.Action("Index") : Url.Action("Details", new { id = Model.Id }))" class="btn-back">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-user-pen"></i> @(isNew ? "Add employee" : "Edit employee")</h1>
+                        <p class="page-sub">
+                            @(isNew
+                                ? "Only the name, job title and employee number are required — the rest can be filled in later."
+                                : $"{Model.EmployeeNumber} — {Model.FullName}")
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="notice bad"><p><i class="fas fa-circle-exclamation"></i> @TempData["Error"]</p></div>
+        }
+
+        <form asp-action="@(isNew ? "Create" : "Edit")" method="post">
+            @Html.AntiForgeryToken()
+            @if (!isNew) { <input type="hidden" asp-for="Id" /> }
+            <div asp-validation-summary="ModelOnly" class="field-error" style="margin-bottom:1rem;"></div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-id-card"></i> Who they are</span></div>
+                <div class="card-body">
+                    <div class="form-grid three">
+                        <div class="fg">
+                            <label class="lbl" asp-for="EmployeeNumber"><i class="fas fa-hashtag"></i> Employee number <span class="req">*</span></label>
+                            <input asp-for="EmployeeNumber" class="inp" required />
+                            <span asp-validation-for="EmployeeNumber" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="FirstName"><i class="fas fa-user"></i> First name <span class="req">*</span></label>
+                            <input asp-for="FirstName" class="inp" required />
+                            <span asp-validation-for="FirstName" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="LastName"><i class="fas fa-user"></i> Last name <span class="req">*</span></label>
+                            <input asp-for="LastName" class="inp" required />
+                            <span asp-validation-for="LastName" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="MiddleName">Middle name</label>
+                            <input asp-for="MiddleName" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="PreferredName">Preferred name</label>
+                            <input asp-for="PreferredName" class="inp" />
+                            <span class="hint">Shown in place of the first name where the system displays them.</span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Gender">Gender</label>
+                            <input asp-for="Gender" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="DateOfBirth"><i class="fas fa-cake-candles"></i> Date of birth</label>
+                            <input asp-for="DateOfBirth" type="date" class="inp" />
+                            <span asp-validation-for="DateOfBirth" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Nationality">Nationality</label>
+                            <input asp-for="Nationality" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="MaritalStatus">Marital status</label>
+                            <input asp-for="MaritalStatus" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="NationalId"><i class="fas fa-passport"></i> National ID</label>
+                            <input asp-for="NationalId" class="inp" />
+                            <span class="hint">Restricted — visible to HR and administrators only.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-briefcase"></i> Their job</span></div>
+                <div class="card-body">
+                    <div class="form-grid three">
+                        <div class="fg">
+                            <label class="lbl" asp-for="JobTitle"><i class="fas fa-briefcase"></i> Job title <span class="req">*</span></label>
+                            <input asp-for="JobTitle" class="inp" required />
+                            <span asp-validation-for="JobTitle" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="DepartmentId"><i class="fas fa-building"></i> Department</label>
+                            <select asp-for="DepartmentId" class="inp">
+                                <option value="">— None —</option>
+                                @foreach (var d in departments)
+                                {
+                                    <option value="@d.Id" selected="@(Model.DepartmentId == (int)d.Id)">@d.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="ManagerId"><i class="fas fa-user-tie"></i> Reports to</label>
+                            <select asp-for="ManagerId" class="inp">
+                                <option value="">— Nobody —</option>
+                                @foreach (var m in managers)
+                                {
+                                    <option value="@m.Id" selected="@(Model.ManagerId == (int)m.Id)">@m.Name</option>
+                                }
+                            </select>
+                            <span asp-validation-for="ManagerId" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="EmploymentType"><i class="fas fa-file-signature"></i> Employment type</label>
+                            <select asp-for="EmploymentType" class="inp">
+                                @foreach (var t in Enum.GetValues<EmploymentType>())
+                                {
+                                    <option value="@t" selected="@(Model.EmploymentType == t)">@Spaced(t.ToString())</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Status"><i class="fas fa-chart-simple"></i> Status</label>
+                            <select asp-for="Status" class="inp">
+                                @foreach (var s in Enum.GetValues<EmploymentStatus>())
+                                {
+                                    <option value="@s" selected="@(Model.Status == s)">@Spaced(s.ToString())</option>
+                                }
+                            </select>
+                            <span class="hint">To record a departure, use Terminate on the employee's page instead.</span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Grade">Grade</label>
+                            <input asp-for="Grade" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Location"><i class="fas fa-location-dot"></i> Work location</label>
+                            <input asp-for="Location" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Client"><i class="fas fa-handshake"></i> Client / engagement</label>
+                            <input asp-for="Client" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="UserId"><i class="fas fa-link"></i> Linked account</label>
+                            <select asp-for="UserId" class="inp">
+                                <option value="">— No system account —</option>
+                                @foreach (var a in accounts)
+                                {
+                                    <option value="@a.Id" selected="@(Model.UserId == (int)a.Id)">@a.Name</option>
+                                }
+                            </select>
+                            <span class="hint">Accounts already claimed by another employee are not listed.</span>
+                            <span asp-validation-for="UserId" class="field-error"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-calendar-days"></i> Key dates</span></div>
+                <div class="card-body">
+                    <div class="form-grid three">
+                        <div class="fg">
+                            <label class="lbl" asp-for="HireDate"><i class="far fa-calendar-plus"></i> Hire date</label>
+                            <input asp-for="HireDate" type="date" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="ProbationEndDate">Probation ends</label>
+                            <input asp-for="ProbationEndDate" type="date" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="ContractEndDate">Contract ends</label>
+                            <input asp-for="ContractEndDate" type="date" class="inp" />
+                            <span class="hint">Fixed-term and contractor engagements only.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-address-book"></i> Contact &amp; emergency</span></div>
+                <div class="card-body">
+                    <div class="form-grid three">
+                        <div class="fg">
+                            <label class="lbl" asp-for="WorkEmail"><i class="fas fa-envelope"></i> Work email</label>
+                            <input asp-for="WorkEmail" type="email" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="PersonalEmail">Personal email</label>
+                            <input asp-for="PersonalEmail" type="email" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="MobileNumber"><i class="fas fa-mobile-screen"></i> Mobile</label>
+                            <input asp-for="MobileNumber" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="WorkNumber">Work telephone</label>
+                            <input asp-for="WorkNumber" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="City">City</label>
+                            <input asp-for="City" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Country">Country</label>
+                            <input asp-for="Country" class="inp" />
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl" asp-for="Address"><i class="fas fa-house"></i> Residential address</label>
+                            <textarea asp-for="Address" class="inp" rows="2"></textarea>
+                        </div>
+
+                        <div class="section-title">Next of kin &amp; emergency contact</div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="NextOfKinName">Next of kin</label>
+                            <input asp-for="NextOfKinName" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="NextOfKinRelationship">Relationship</label>
+                            <input asp-for="NextOfKinRelationship" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="NextOfKinPhone">Phone</label>
+                            <input asp-for="NextOfKinPhone" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="EmergencyContactName">Emergency contact</label>
+                            <input asp-for="EmergencyContactName" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="EmergencyContactPhone">Emergency phone</label>
+                            <input asp-for="EmergencyContactPhone" class="inp" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <span class="t"><i class="fas fa-building-columns"></i> Payroll identifiers</span>
+                    <span class="meta">Restricted</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-grid three">
+                        <div class="fg">
+                            <label class="lbl" asp-for="BankName">Bank</label>
+                            <input asp-for="BankName" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="BankAccountNumber">Account number</label>
+                            <input asp-for="BankAccountNumber" class="inp" autocomplete="off" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="TaxNumber">Tax number</label>
+                            <input asp-for="TaxNumber" class="inp" autocomplete="off" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="SocialSecurityNumber">Social security number</label>
+                            <input asp-for="SocialSecurityNumber" class="inp" autocomplete="off" />
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl" asp-for="Notes"><i class="fas fa-note-sticky"></i> Notes</label>
+                            <textarea asp-for="Notes" class="inp" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-hr"><i class="fas fa-floppy-disk"></i> @(isNew ? "Add employee" : "Save changes")</button>
+                <a href="@(isNew ? Url.Action("Index") : Url.Action("Details", new { id = Model.Id }))" class="btn-ghost-hr">Cancel</a>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1102,6 +1102,21 @@
                             <i class="fas fa-chart-pie"></i> HR Report
                         </a>
                     }
+                    <a class="nav-item @(currentController == "Employees" && currentAction != "OrgChart" ? "active" : "")"
+                       asp-controller="Employees" asp-action="Index">
+                        <i class="fas fa-address-book"></i>
+                        Employee Register
+                    </a>
+                    <a class="nav-item @(currentController == "Employees" && currentAction == "OrgChart" ? "active" : "")"
+                       asp-controller="Employees" asp-action="OrgChart">
+                        <i class="fas fa-sitemap"></i>
+                        Org Chart
+                    </a>
+                    <a class="nav-item @(currentController == "Departments" ? "active" : "")"
+                       asp-controller="Departments" asp-action="Index">
+                        <i class="fas fa-building"></i>
+                        Departments
+                    </a>
                     <a class="nav-item @(currentController == "ExitClearance" && currentAction != "Mine" ? "active" : "")"
                        asp-controller="ExitClearance" asp-action="Index">
                         <i class="fas fa-file-signature"></i>

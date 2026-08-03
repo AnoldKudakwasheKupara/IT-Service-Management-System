@@ -1,0 +1,113 @@
+@using IT_Service_Management_System.Models.Hr
+@model List<Employee>
+@{
+    ViewData["Title"] = "Org Chart";
+    var rootId = ViewBag.RootId as int?;
+    var byManager = Model.GroupBy(e => e.ManagerId).ToDictionary(g => g.Key ?? 0, g => g.OrderBy(e => e.LastName).ToList());
+}
+
+<partial name="_HrStyles" />
+
+@*
+    Renders the reporting line recursively. Depth is capped so a cycle that somehow survived the
+    controller's validation cannot hang the page.
+*@
+@functions {
+    // Plain hrefs rather than asp-action: a tag helper inside a @@functions block forces the whole
+    // method to be async, which recursion here does not need.
+    void RenderBranch(Dictionary<int, List<Employee>> byManager, int managerKey, int depth)
+    {
+        if (depth > 12 || !byManager.TryGetValue(managerKey, out var children)) return;
+
+        foreach (var e in children)
+        {
+            <div class="org-node">
+                <span class="avatar sm">@e.FirstName.FirstOrDefault()@e.LastName.FirstOrDefault()</span>
+                <div style="flex:1; min-width:0;">
+                    <a href="/Employees/Details/@e.Id" class="strong-link" style="font-size:.88rem;">@e.DisplayName</a>
+                    <div class="meta" style="font-size:.74rem;">
+                        @e.JobTitle
+                        @if (e.Department != null) { <text>· @e.Department.Name</text> }
+                    </div>
+                </div>
+                @if (byManager.TryGetValue(e.Id, out var reports) && reports.Count > 0)
+                {
+                    <span class="chip"><i class="fas fa-users"></i> @reports.Count</span>
+                }
+            </div>
+
+            if (byManager.ContainsKey(e.Id))
+            {
+                <div class="org-children">
+                    @{ RenderBranch(byManager, e.Id, depth + 1); }
+                </div>
+            }
+        }
+    }
+}
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-sitemap"></i> Org Chart</h1>
+                        <p class="page-sub">The reporting line as recorded on the employee register</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="ic brand"><i class="fas fa-users"></i></div>
+                <div><h3>@Model.Count</h3><p>People shown</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic amber"><i class="fas fa-user-slash"></i></div>
+                <div><h3>@ViewBag.Unmanaged</h3><p>Without a manager</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic blue"><i class="fas fa-user-tie"></i></div>
+                <div><h3>@Model.Count(e => byManager.ContainsKey(e.Id))</h3><p>With direct reports</p></div>
+            </div>
+        </div>
+
+        @if ((int)(ViewBag.Unmanaged ?? 0) > 1)
+        {
+            <div class="notice warn">
+                <h4><i class="fas fa-triangle-exclamation"></i> @ViewBag.Unmanaged people have no manager</h4>
+                <p>
+                    They appear at the top level below. Most organisations expect exactly one person
+                    there — set a manager on the rest so the reporting line is complete.
+                </p>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-sitemap"></i> Reporting line</span>
+                <span class="meta">Current staff only</span>
+            </div>
+            <div class="card-body">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-sitemap"></i>
+                        <h3>Nobody on the register</h3>
+                        <p>Add employees and set who they report to.</p>
+                        <a asp-action="Create" class="btn-hr"><i class="fas fa-user-plus"></i> Add employee</a>
+                    </div>
+                }
+                else
+                {
+                    RenderBranch(byManager, rootId ?? 0, 0);
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

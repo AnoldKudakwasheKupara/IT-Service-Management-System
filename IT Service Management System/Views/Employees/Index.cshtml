@@ -1,0 +1,233 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Helpers
+@model List<Employee>
+@{
+    ViewData["Title"] = "Employee Register";
+    var paging = ViewBag.Paging as PagingInfo;
+    var departments = ViewBag.Departments as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var currentOnly = ViewBag.CurrentOnly as bool? ?? true;
+
+    string StatusClass(EmploymentStatus s) => s switch
+    {
+        EmploymentStatus.Active => "b-active",
+        EmploymentStatus.OnProbation => "b-probation",
+        EmploymentStatus.OnLeave => "b-leave",
+        EmploymentStatus.Suspended => "b-suspended",
+        _ => "b-left"
+    };
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-address-book"></i> Employee Register</h1>
+                    <p class="page-sub">The single record of who works here — and the spine every other HR module hangs off</p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="OrgChart" class="btn-ghost-hr"><i class="fas fa-sitemap"></i> Org chart</a>
+                    <form asp-action="RunBackfill" method="post" class="inline-form"
+                          onsubmit="return confirm('Re-scan user accounts and historical records for anything not yet linked?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-ghost-hr"><i class="fas fa-wand-magic-sparkles"></i> Re-scan &amp; link</button>
+                    </form>
+                    <a asp-action="Create" class="btn-hr"><i class="fas fa-user-plus"></i> Add employee</a>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="card" style="border-left:3px solid var(--success);">
+                <div class="card-body" style="padding:.8rem 1.25rem; color:var(--success);">
+                    <i class="fas fa-circle-check"></i> @TempData["Success"]
+                </div>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="card" style="border-left:3px solid var(--danger);">
+                <div class="card-body" style="padding:.8rem 1.25rem; color:var(--danger);">
+                    <i class="fas fa-circle-exclamation"></i> @TempData["Error"]
+                </div>
+            </div>
+        }
+
+        <div class="stats">
+            <div class="stat">
+                <div class="ic brand"><i class="fas fa-users"></i></div>
+                <div><h3>@ViewBag.Headcount</h3><p>Current headcount</p></div>
+            </div>
+            <a asp-action="Index" asp-route-status="@EmploymentStatus.OnProbation" class="stat">
+                <div class="ic amber"><i class="fas fa-hourglass-half"></i></div>
+                <div>
+                    <h3>@ViewBag.OnProbation</h3>
+                    <p>On probation</p>
+                    <span class="sub">@ViewBag.ProbationDue due within 30 days</span>
+                </div>
+            </a>
+            <div class="stat">
+                <div class="ic red"><i class="fas fa-file-contract"></i></div>
+                <div>
+                    <h3>@ViewBag.ContractsExpiring</h3>
+                    <p>Contracts expiring</p>
+                    <span class="sub">within 60 days</span>
+                </div>
+            </div>
+            <a asp-action="Index" asp-route-currentOnly="false" class="stat">
+                <div class="ic slate"><i class="fas fa-user-slash"></i></div>
+                <div><h3>@ViewBag.Leavers</h3><p>Leavers on record</p></div>
+            </a>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-filter"></i> Find someone</span></div>
+            <div class="card-body">
+                <form method="get" class="toolbar">
+                    <div class="fg" style="flex:2; min-width:200px;">
+                        <label class="lbl">Search</label>
+                        <input type="text" name="q" value="@ViewBag.Q" class="inp" placeholder="Name, number, job title or email…" />
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Department</label>
+                        <select name="departmentId" class="inp">
+                            <option value="">All</option>
+                            @foreach (var d in departments)
+                            {
+                                <option value="@d.Id" selected="@(ViewBag.DepartmentId as int? == (int)d.Id)">@d.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Status</label>
+                        <select name="status" class="inp">
+                            <option value="">All</option>
+                            @foreach (var s in Enum.GetValues<EmploymentStatus>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Status as EmploymentStatus? == s)">@Spaced(s.ToString())</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Type</label>
+                        <select name="type" class="inp">
+                            <option value="">All</option>
+                            @foreach (var t in Enum.GetValues<EmploymentType>())
+                            {
+                                <option value="@t" selected="@(ViewBag.Type as EmploymentType? == t)">@Spaced(t.ToString())</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="check">
+                            <input type="checkbox" name="currentOnly" value="true" checked="@currentOnly" /> Current staff only
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-hr"><i class="fas fa-magnifying-glass"></i> Search</button>
+                    <a asp-action="Index" class="btn-ghost-hr"><i class="fas fa-rotate-left"></i> Clear</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Employees</span>
+                <span class="meta">
+                    @if (paging != null && paging.TotalCount > 0)
+                    {
+                        <text>Showing @paging.FirstItem–@paging.LastItem of @paging.TotalCount</text>
+                    }
+                </span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-address-book"></i>
+                        <h3>Nobody matches</h3>
+                        <p>Adjust the filters, or add the first employee.</p>
+                        <a asp-action="Create" class="btn-hr"><i class="fas fa-user-plus"></i> Add employee</a>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Employee</th><th>Number</th><th>Job title</th><th>Department</th>
+                                <th>Manager</th><th>Type</th><th>Status</th><th>Service</th>
+                                <th>Account</th><th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var e in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="with-avatar">
+                                            <span class="avatar sm">@e.FirstName.FirstOrDefault()@e.LastName.FirstOrDefault()</span>
+                                            <span>
+                                                <a asp-action="Details" asp-route-id="@e.Id" class="strong-link">@e.DisplayName</a>
+                                                @if (e.ProbationDueSoon)
+                                                {
+                                                    <div><span class="badge-hr b-warn">Probation ends @e.ProbationEndDate!.Value.ToString("d MMM")</span></div>
+                                                }
+                                                else if (e.ContractExpiringSoon)
+                                                {
+                                                    <div><span class="badge-hr b-danger">Contract ends @e.ContractEndDate!.Value.ToString("d MMM")</span></div>
+                                                }
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td class="ref">@e.EmployeeNumber</td>
+                                    <td class="meta">@e.JobTitle</td>
+                                    <td class="meta">@(e.Department?.Name ?? "—")</td>
+                                    <td class="meta">@(e.Manager == null ? "—" : e.Manager.FullName)</td>
+                                    <td class="meta">@Spaced(e.EmploymentType.ToString())</td>
+                                    <td><span class="badge-hr @StatusClass(e.Status)">@Spaced(e.Status.ToString())</span></td>
+                                    <td class="meta">@e.LengthOfService</td>
+                                    <td>
+                                        @if (e.UserId.HasValue)
+                                        {
+                                            <span class="chip"><i class="fas fa-link"></i> Linked</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="chip muted">No account</span>
+                                        }
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <div class="act-btns">
+                                            <a asp-action="Details" asp-route-id="@e.Id" class="act view" title="Open"><i class="fas fa-eye"></i></a>
+                                            <a asp-action="Edit" asp-route-id="@e.Id" class="act edit" title="Edit"><i class="fas fa-pen"></i></a>
+                                            <a asp-action="Delete" asp-route-id="@e.Id" class="act del" title="Remove"><i class="fas fa-trash"></i></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        @if (paging != null && paging.TotalPages > 1)
+        {
+            <div style="display:flex; gap:.4rem; justify-content:center; flex-wrap:wrap;">
+                @for (var i = 1; i <= paging.TotalPages && i <= 25; i++)
+                {
+                    <a asp-action="Index" asp-route-page="@i" asp-route-q="@ViewBag.Q"
+                       asp-route-departmentId="@ViewBag.DepartmentId" asp-route-status="@ViewBag.Status"
+                       asp-route-type="@ViewBag.Type" asp-route-currentOnly="@currentOnly"
+                       class="@(i == paging.Page ? "btn-hr" : "btn-ghost-hr") btn-sm">@i</a>
+                }
+            </div>
+        }
+
+    </div>
+</div>

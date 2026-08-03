@@ -1,0 +1,342 @@
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Hr
+@model Employee
+@{
+    ViewData["Title"] = Model.FullName;
+    var reports = ViewBag.DirectReports as List<Employee> ?? new List<Employee>();
+    var talent = ViewBag.TalentAssessments as List<TalentIdentification> ?? new List<TalentIdentification>();
+    var exits = ViewBag.ExitInterviews as List<ExitInterview> ?? new List<ExitInterview>();
+    var stays = ViewBag.StayInterviews as List<EngagementStayInterview> ?? new List<EngagementStayInterview>();
+    var clearances = ViewBag.Clearances as List<ExitClearance> ?? new List<ExitClearance>();
+    var documents = ViewBag.Documents as List<IT_Service_Management_System.Models.Efm.EmployeeDocument>
+                    ?? new List<IT_Service_Management_System.Models.Efm.EmployeeDocument>();
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+    string StatusClass(EmploymentStatus s) => s switch
+    {
+        EmploymentStatus.Active => "b-active",
+        EmploymentStatus.OnProbation => "b-probation",
+        EmploymentStatus.OnLeave => "b-leave",
+        EmploymentStatus.Suspended => "b-suspended",
+        _ => "b-left"
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start; min-width:0;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div style="display:flex; gap:.85rem; align-items:center; min-width:0;">
+                        <span class="avatar" style="width:52px; height:52px; font-size:1.1rem;">
+                            @Model.FirstName.FirstOrDefault()@Model.LastName.FirstOrDefault()
+                        </span>
+                        <div style="min-width:0;">
+                            <h1 class="page-title" style="font-size:1.5rem;">@Model.DisplayName</h1>
+                            <div class="page-sub" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                                <span class="ref">@Model.EmployeeNumber</span>
+                                <span>@Model.JobTitle</span>
+                                <span class="badge-hr @StatusClass(Model.Status)">@Spaced(Model.Status.ToString())</span>
+                                @if (Model.Department != null) { <span class="chip"><i class="fas fa-building"></i> @Model.Department.Name</span> }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-outline-hr"><i class="fas fa-pen"></i> Edit</a>
+                    <a asp-action="Delete" asp-route-id="@Model.Id" class="btn-danger-hr"><i class="fas fa-trash"></i> Remove</a>
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="notice"><p><i class="fas fa-circle-check" style="color:var(--success);"></i> @TempData["Success"]</p></div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="notice bad"><p><i class="fas fa-circle-exclamation"></i> @TempData["Error"]</p></div>
+        }
+
+        @if (Model.ProbationDueSoon)
+        {
+            <div class="notice warn">
+                <h4><i class="fas fa-hourglass-half"></i> Probation ends @Model.ProbationEndDate!.Value.ToString("d MMMM yyyy")</h4>
+                <p>Confirm them in post, or record a decision before the date passes.</p>
+                <form asp-action="ConfirmProbation" asp-route-id="@Model.Id" method="post" style="margin-top:.6rem;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn-success-hr btn-sm"><i class="fas fa-check"></i> Confirm in post</button>
+                </form>
+            </div>
+        }
+        @if (Model.ContractExpiringSoon)
+        {
+            <div class="notice bad">
+                <h4><i class="fas fa-file-contract"></i> Contract ends @Model.ContractEndDate!.Value.ToString("d MMMM yyyy")</h4>
+                <p>Renew the contract or start the leaver process.</p>
+            </div>
+        }
+
+        <div class="stats">
+            <div class="stat">
+                <div class="ic brand"><i class="fas fa-clock"></i></div>
+                <div><h3>@Model.LengthOfService</h3><p>Length of service</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic blue"><i class="fas fa-users"></i></div>
+                <div><h3>@reports.Count</h3><p>Direct reports</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-chart-line"></i></div>
+                <div><h3>@talent.Count</h3><p>Talent assessments</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic teal"><i class="fas fa-comments"></i></div>
+                <div><h3>@(stays.Count + exits.Count)</h3><p>Interviews on record</p></div>
+            </div>
+        </div>
+
+        <div class="grid-2-1">
+            <div>
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-id-card"></i> Record</span></div>
+                    <div class="card-body">
+                        <div class="dl">
+                            <div><div class="k">Full name</div><div class="v">@Model.FirstName @Model.MiddleName @Model.LastName</div></div>
+                            <div><div class="k">Employee number</div><div class="v">@Model.EmployeeNumber</div></div>
+                            <div><div class="k">Job title</div><div class="v">@Model.JobTitle</div></div>
+                            <div><div class="k">Department</div><div class="v">@(Model.Department?.Name ?? "—")</div></div>
+                            <div>
+                                <div class="k">Reports to</div>
+                                <div class="v">
+                                    @if (Model.Manager != null)
+                                    {
+                                        <a asp-action="Details" asp-route-id="@Model.ManagerId" class="strong-link">@Model.Manager.FullName</a>
+                                    }
+                                    else { <text>—</text> }
+                                </div>
+                            </div>
+                            <div><div class="k">Employment type</div><div class="v">@Spaced(Model.EmploymentType.ToString())</div></div>
+                            <div><div class="k">Grade</div><div class="v">@(Model.Grade ?? "—")</div></div>
+                            <div><div class="k">Location</div><div class="v">@(Model.Location ?? "—")</div></div>
+                            <div><div class="k">Client</div><div class="v">@(Model.Client ?? "—")</div></div>
+                            <div><div class="k">Hire date</div><div class="v">@(Model.HireDate?.ToString("d MMM yyyy") ?? "—")</div></div>
+                            <div><div class="k">Probation ends</div><div class="v">@(Model.ProbationEndDate?.ToString("d MMM yyyy") ?? "—")</div></div>
+                            <div><div class="k">Contract ends</div><div class="v">@(Model.ContractEndDate?.ToString("d MMM yyyy") ?? "—")</div></div>
+                            @if (Model.TerminationDate.HasValue)
+                            {
+                                <div><div class="k">Left on</div><div class="v">@Model.TerminationDate.Value.ToString("d MMM yyyy")</div></div>
+                                <div><div class="k">Reason</div><div class="v">@(Model.TerminationReason ?? "—")</div></div>
+                            }
+                            <div><div class="k">Age</div><div class="v">@(Model.Age?.ToString() ?? "—")</div></div>
+                            <div><div class="k">Work email</div><div class="v">@(Model.WorkEmail ?? "—")</div></div>
+                            <div><div class="k">Mobile</div><div class="v">@(Model.MobileNumber ?? "—")</div></div>
+                            <div>
+                                <div class="k">System account</div>
+                                <div class="v">
+                                    @if (Model.User != null)
+                                    {
+                                        <text>@Model.User.Email</text>
+                                        <span class="badge-hr @(Model.User.IsActive ? "b-active" : "b-left")">@(Model.User.IsActive ? "Active" : "Deactivated")</span>
+                                    }
+                                    else { <span class="chip muted">Not linked</span> }
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Notes))
+                        {
+                            <div class="notice" style="margin-top:1.25rem;">
+                                <h4><i class="fas fa-note-sticky"></i> Notes</h4>
+                                <p>@Model.Notes</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @* ── The point of the register: one person's whole HR history ─────── *@
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-clock-rotate-left"></i> HR history</span>
+                        <span class="meta">Everything on record for this person</span>
+                    </div>
+                    <div class="card-body flush">
+                        @if (talent.Count == 0 && stays.Count == 0 && exits.Count == 0 && clearances.Count == 0)
+                        {
+                            <div class="empty">
+                                <i class="fas fa-folder-open"></i>
+                                <h3>Nothing recorded yet</h3>
+                                <p>Talent assessments, interviews and clearances for this person will collect here.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <table class="tbl">
+                                <thead><tr><th>Record</th><th>Detail</th><th>Date</th><th style="text-align:right;"></th></tr></thead>
+                                <tbody>
+                                    @foreach (var t in talent)
+                                    {
+                                        <tr>
+                                            <td><span class="chip"><i class="fas fa-chart-line"></i> Talent assessment</span></td>
+                                            <td class="meta">
+                                                9-box: @(string.IsNullOrWhiteSpace(t.NineBoxAssessment) ? "—" : t.NineBoxAssessment)
+                                                <span class="badge-hr b-warn">Flight risk: @Spaced(t.RiskOfLeaving.ToString())</span>
+                                            </td>
+                                            <td class="meta">@t.CreatedDate.ToString("d MMM yyyy")</td>
+                                            <td style="text-align:right;">
+                                                <a asp-controller="TalentIdentification" asp-action="Details" asp-route-id="@t.Id" class="act view"><i class="fas fa-eye"></i></a>
+                                            </td>
+                                        </tr>
+                                    }
+                                    @foreach (var s in stays)
+                                    {
+                                        <tr>
+                                            <td><span class="chip"><i class="fas fa-user-friends"></i> Stay interview</span></td>
+                                            <td class="meta">@Spaced(s.OverallStatus.ToString())</td>
+                                            <td class="meta">@(s.DiscussionDate?.ToString("d MMM yyyy") ?? s.CreatedDate.ToString("d MMM yyyy"))</td>
+                                            <td style="text-align:right;">
+                                                <a asp-controller="EngagementStayInterview" asp-action="Details" asp-route-id="@s.Id" class="act view"><i class="fas fa-eye"></i></a>
+                                            </td>
+                                        </tr>
+                                    }
+                                    @foreach (var x in exits)
+                                    {
+                                        <tr>
+                                            <td><span class="chip"><i class="fas fa-door-open"></i> Exit interview</span></td>
+                                            <td class="meta">@(string.IsNullOrWhiteSpace(x.PrimaryReasonForDeparture) ? "—" : x.PrimaryReasonForDeparture)</td>
+                                            <td class="meta">@(x.InterviewDate?.ToString("d MMM yyyy") ?? x.CreatedDate.ToString("d MMM yyyy"))</td>
+                                            <td style="text-align:right;">
+                                                <a asp-controller="ExitInterview" asp-action="Details" asp-route-id="@x.Id" class="act view"><i class="fas fa-eye"></i></a>
+                                            </td>
+                                        </tr>
+                                    }
+                                    @foreach (var c in clearances)
+                                    {
+                                        <tr>
+                                            <td><span class="chip"><i class="fas fa-file-signature"></i> Exit clearance</span></td>
+                                            <td class="meta">@c.Status · stage: @c.CurrentStage</td>
+                                            <td class="meta">@c.CreatedDate.ToString("d MMM yyyy")</td>
+                                            <td style="text-align:right;">
+                                                <a asp-controller="ExitClearance" asp-action="Details" asp-route-id="@c.Id" class="act view"><i class="fas fa-eye"></i></a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+
+                @if (documents.Count > 0)
+                {
+                    <div class="card">
+                        <div class="card-head">
+                            <span class="t"><i class="fas fa-folder-tree"></i> Recent documents</span>
+                            <a asp-controller="EmployeeDocuments" asp-action="Index" class="meta">All files</a>
+                        </div>
+                        <div class="card-body flush">
+                            <table class="tbl">
+                                <tbody>
+                                    @foreach (var d in documents)
+                                    {
+                                        <tr>
+                                            <td><i class="fas fa-file" style="color:var(--gray-400);"></i> @d.Title</td>
+                                            <td class="meta">@d.CreatedAt.ToString("d MMM yyyy")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-users"></i> Direct reports</span></div>
+                    <div class="card-body">
+                        @if (reports.Count == 0)
+                        {
+                            <p class="meta">Nobody reports to this employee.</p>
+                        }
+                        @foreach (var r in reports)
+                        {
+                            <div style="display:flex; align-items:center; gap:.55rem; padding:.4rem 0; border-bottom:1px solid var(--gray-100);">
+                                <span class="avatar sm">@r.FirstName.FirstOrDefault()@r.LastName.FirstOrDefault()</span>
+                                <div style="flex:1; min-width:0;">
+                                    <a asp-action="Details" asp-route-id="@r.Id" class="strong-link" style="font-size:.85rem;">@r.DisplayName</a>
+                                    <div class="meta" style="font-size:.72rem;">@r.JobTitle</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-shield-halved"></i> Emergency contact</span></div>
+                    <div class="card-body">
+                        <div class="dl" style="grid-template-columns:1fr;">
+                            <div><div class="k">Next of kin</div><div class="v">@(Model.NextOfKinName ?? "—")</div></div>
+                            <div><div class="k">Relationship</div><div class="v">@(Model.NextOfKinRelationship ?? "—")</div></div>
+                            <div><div class="k">Phone</div><div class="v">@(Model.NextOfKinPhone ?? "—")</div></div>
+                            <div><div class="k">Emergency contact</div><div class="v">@(Model.EmergencyContactName ?? "—")</div></div>
+                            <div><div class="k">Emergency phone</div><div class="v">@(Model.EmergencyContactPhone ?? "—")</div></div>
+                        </div>
+                        @if (string.IsNullOrWhiteSpace(Model.NextOfKinPhone) && string.IsNullOrWhiteSpace(Model.EmergencyContactPhone))
+                        {
+                            <div class="notice warn" style="margin-top:.9rem;">
+                                <p><i class="fas fa-triangle-exclamation"></i> No emergency number on record for this employee.</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @if (Model.IsCurrentEmployee)
+                {
+                    <div class="card">
+                        <div class="card-head"><span class="t"><i class="fas fa-door-open"></i> Record a departure</span></div>
+                        <div class="card-body">
+                            <form asp-action="Terminate" method="post"
+                                  onsubmit="return confirm('Record this employee as having left? Their account will be closed unless you untick that option.');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <div class="fg">
+                                    <label class="lbl">Leaving as</label>
+                                    <select name="status" class="inp" required>
+                                        <option value="@EmploymentStatus.Resigned">Resigned</option>
+                                        <option value="@EmploymentStatus.Terminated">Terminated</option>
+                                        <option value="@EmploymentStatus.Retired">Retired</option>
+                                        <option value="@EmploymentStatus.EndOfContract">End of contract</option>
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">Last working day</label>
+                                    <input type="date" name="terminationDate" class="inp" required
+                                           value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">Reason</label>
+                                    <input type="text" name="reason" class="inp" placeholder="e.g. Better offer elsewhere" />
+                                </div>
+                                <div class="fg">
+                                    <label class="check">
+                                        <input type="checkbox" name="deactivateAccount" value="true" checked /> Close their system account
+                                    </label>
+                                    <span class="hint">Also signs them out of any session they still have open.</span>
+                                </div>
+                                <button type="submit" class="btn-danger-hr btn-sm" style="width:100%; justify-content:center;">
+                                    <i class="fas fa-user-slash"></i> Record departure
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
