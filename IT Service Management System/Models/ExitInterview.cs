@@ -19,21 +19,27 @@ namespace IT_Service_Management_System.Models
         // Employee Information — kept as a snapshot of what the person's details were at the time
         // of the interview, which is what an exit record should preserve.
         [Required]
+        [StringLength(150)]
         public string EmployeeName { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Enter the position held.")]
+        [StringLength(150)]
         public string Position { get; set; } = string.Empty;
 
+        [StringLength(200)]
         public string? Client { get; set; }
 
         public DateTime? DateOfResignation { get; set; }
 
         public DateTime? LastWorkingDay { get; set; }
 
+        [StringLength(150)]
         public string? InterviewConductedBy { get; set; }
 
         public DateTime? InterviewDate { get; set; }
 
         // Primary Reason for Leaving
+        [StringLength(200)]
         public string? PrimaryReasonForDeparture { get; set; }
 
         // Section 1: Overall Views
@@ -51,6 +57,7 @@ namespace IT_Service_Management_System.Models
 
         public Rating RelationshipWithManagerRating { get; set; }
 
+        [StringLength(1000)]
         public string? OtherReasonDescription { get; set; }
 
         public Rating? OtherRating { get; set; }
@@ -62,30 +69,38 @@ namespace IT_Service_Management_System.Models
 
         public bool? AdequateTrainingAndResources { get; set; }
 
+        [StringLength(2000)]
         public string? JobSatisfactionComments { get; set; }
 
         // Section 3: Management & Team Dynamics
+        [StringLength(2000)]
         public string? RelationshipWithManagerDescription { get; set; }
 
         public bool? SupportedByTeamAndLeadership { get; set; }
 
+        [StringLength(2000)]
         public string? CommunicationCollaborationSuggestions { get; set; }
 
         // Section 4: Compensation & Benefits
         public bool? SatisfiedWithSalaryAndBenefits { get; set; }
 
+        [StringLength(1000)]
         public string? CompensationMarketCompetitiveness { get; set; }
 
         // Section 5: Work Environment & Culture
         public bool? FeltValuedAndRecognized { get; set; }
 
+        [StringLength(2000)]
         public string? MostLikedAboutCompany { get; set; }
 
+        [StringLength(2000)]
         public string? CultureImprovementSuggestions { get; set; }
 
         // Section 6: Suggestions for Improvement
+        [StringLength(2000)]
         public string? EmployeeRetentionRecommendations { get; set; }
 
+        [StringLength(2000)]
         public string? ResignationPreventionSuggestions { get; set; }
 
         // Section 7: Future Engagement
@@ -94,14 +109,18 @@ namespace IT_Service_Management_System.Models
         public bool? WouldRecommendCompany { get; set; }
 
         // Section 8: Work-Life Balance
+        [StringLength(2000)]
         public string? WorkLifeBalanceComments { get; set; }
 
         // Section 9: Additional Comments
+        [StringLength(4000)]
         public string? AdditionalComments { get; set; }
 
         // Sign-off
+        [StringLength(200)]
         public string? EmployeeSignature { get; set; }
 
+        [StringLength(200)]
         public string? HRRepresentativeSignature { get; set; }
 
         public DateTime? SignOffDate { get; set; }
