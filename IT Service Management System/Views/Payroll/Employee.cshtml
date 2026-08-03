@@ -1,0 +1,293 @@
+@using IT_Service_Management_System.Models.Hr
+@model Employee
+@{
+    ViewData["Title"] = $"Pay — {Model.DisplayName}";
+    var structures = ViewBag.Structures as List<SalaryStructure> ?? new List<SalaryStructure>();
+    var components = ViewBag.Components as List<PayComponent> ?? new List<PayComponent>();
+    var payslips = ViewBag.Payslips as List<Payslip> ?? new List<Payslip>();
+    var current = structures.FirstOrDefault(s => s.IsCurrent);
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Salaries" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-money-check-dollar"></i> @Model.DisplayName</h1>
+                        <p class="page-sub">@Model.EmployeeNumber · @Model.JobTitle · @(Model.Department?.Name ?? "no department")</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-controller="Employees" asp-action="Details" asp-route-id="@Model.Id" class="btn-ghost-hr">
+                        <i class="fas fa-address-book"></i> Employee record
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="grid-2-1">
+            <div>
+                @* ── SALARY HISTORY ──────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-sack-dollar"></i> Salary</span>
+                        @if (current != null)
+                        {
+                            <strong>@current.Currency @current.BasicSalary.ToString("N2") / @Spaced(current.Period.ToString().ToLower())</strong>
+                        }
+                    </div>
+                    <div class="card-body flush">
+                        @if (structures.Count == 0)
+                        {
+                            <div class="empty" style="padding:2rem 1rem;">
+                                <i class="fas fa-sack-dollar"></i>
+                                <h3>No salary set</h3>
+                                <p>This employee will not appear on a payroll run until one is recorded.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <table class="tbl">
+                                <thead><tr><th>From</th><th>To</th><th class="num">Basic</th><th>Currency</th><th class="num">Pension</th><th class="num">Medical</th><th>Reason</th></tr></thead>
+                                <tbody>
+                                    @foreach (var s in structures)
+                                    {
+                                        <tr style="@(s.IsCurrent ? "" : "opacity:.6;")">
+                                            <td class="meta">@s.EffectiveFrom.ToString("d MMM yyyy")</td>
+                                            <td class="meta">
+                                                @(s.EffectiveTo?.ToString("d MMM yyyy") ?? "—")
+                                                @if (s.IsCurrent) { <span class="badge-hr b-active">Current</span> }
+                                            </td>
+                                            <td class="num"><strong>@s.BasicSalary.ToString("N2")</strong></td>
+                                            <td class="meta">@s.Currency</td>
+                                            <td class="num meta">@s.PensionContribution.ToString("N2")</td>
+                                            <td class="num meta">@s.MedicalAidContribution.ToString("N2")</td>
+                                            <td class="meta" style="font-size:.75rem;">@(s.Reason ?? "—")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+
+                @* ── COMPONENTS ──────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-list-ul"></i> Allowances and deductions</span>
+                        <button type="button" class="btn-ghost-hr btn-sm" onclick="hrToggle('component-form')">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="SaveComponent" method="post" id="component-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="EmployeeId" value="@Model.Id" />
+                            <input type="hidden" name="Id" value="0" />
+                            <div class="form-grid three">
+                                <div class="fg full">
+                                    <label class="lbl">Name</label>
+                                    <input name="Name" class="inp" required placeholder="e.g. Housing allowance" />
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">Type</label>
+                                    <select name="Type" class="inp">
+                                        @foreach (var t in Enum.GetValues<PayComponentType>())
+                                        {
+                                            <option value="@t">@Spaced(t.ToString())</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">Amount</label>
+                                    <input name="Amount" type="number" step="0.01" value="0" class="inp" />
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">Or % of basic</label>
+                                    <input name="PercentageOfBasic" type="number" step="0.01" class="inp" placeholder="leave blank for a fixed sum" />
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">From</label>
+                                    <input name="EffectiveFrom" type="date" class="inp" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">To</label>
+                                    <input name="EffectiveTo" type="date" class="inp" />
+                                </div>
+                                <div class="fg full" style="display:flex; gap:1.25rem; flex-wrap:wrap;">
+                                    <label class="check"><input type="checkbox" name="IsTaxable" value="true" checked /> Subject to PAYE</label>
+                                    <label class="check"><input type="checkbox" name="IsPensionable" value="true" checked /> Counts towards NSSA</label>
+                                    <label class="check"><input type="checkbox" name="IsRecurring" value="true" checked /> Recurring</label>
+                                    <label class="check"><input type="checkbox" name="IsActive" value="true" checked /> Active</label>
+                                </div>
+                                <div class="fg full">
+                                    <span class="hint">
+                                        A reimbursement of actual expense is never taxed and never counts towards
+                                        NSSA, whatever these boxes say — it is not income.
+                                    </span>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-hr btn-sm"><i class="fas fa-floppy-disk"></i> Save component</button>
+                        </form>
+
+                        @if (components.Count == 0)
+                        {
+                            <p class="meta">No allowances or deductions recorded.</p>
+                        }
+                        else
+                        {
+                            <table class="tbl">
+                                <thead><tr><th>Name</th><th>Type</th><th class="num">Amount</th><th>Tax</th><th>NSSA</th><th>Period</th><th></th></tr></thead>
+                                <tbody>
+                                    @foreach (var c in components)
+                                    {
+                                        <tr style="@(c.IsActive ? "" : "opacity:.55;")">
+                                            <td>@c.Name</td>
+                                            <td class="meta">@Spaced(c.Type.ToString())</td>
+                                            <td class="num">
+                                                @if (c.PercentageOfBasic.HasValue)
+                                                {
+                                                    <text>@c.PercentageOfBasic.Value.ToString("0.##")% of basic</text>
+                                                }
+                                                else
+                                                {
+                                                    <text>@c.Amount.ToString("N2")</text>
+                                                }
+                                            </td>
+                                            <td>@(c.IsTaxable ? "taxable" : "exempt")</td>
+                                            <td>@(c.IsPensionable ? "yes" : "no")</td>
+                                            <td class="meta" style="font-size:.75rem;">
+                                                @c.EffectiveFrom.ToString("d MMM yy") – @(c.EffectiveTo?.ToString("d MMM yy") ?? "ongoing")
+                                                @if (!c.IsRecurring) { <span class="chip">one-off</span> }
+                                            </td>
+                                            <td style="text-align:right;">
+                                                @if (c.IsActive)
+                                                {
+                                                    <form asp-action="DeleteComponent" method="post" class="inline-form"
+                                                          onsubmit="return confirm('End this component? It stays on past payslips.');">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@c.Id" />
+                                                        <input type="hidden" name="employeeId" value="@Model.Id" />
+                                                        <button type="submit" class="act del"><i class="fas fa-ban"></i></button>
+                                                    </form>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+
+                @* ── PAYSLIP HISTORY ─────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-receipt"></i> Recent payslips</span></div>
+                    <div class="card-body flush">
+                        @if (payslips.Count == 0)
+                        {
+                            <p class="meta" style="padding:1.25rem;">No payslips yet.</p>
+                        }
+                        else
+                        {
+                            <table class="tbl">
+                                <thead><tr><th>Period</th><th class="num">Gross</th><th class="num">PAYE</th><th class="num">NSSA</th><th class="num">Net</th><th></th></tr></thead>
+                                <tbody>
+                                    @foreach (var p in payslips)
+                                    {
+                                        <tr>
+                                            <td>@p.PayrollRun?.PeriodName</td>
+                                            <td class="num">@p.Gross.ToString("N2")</td>
+                                            <td class="num">@((p.Paye + p.AidsLevy).ToString("N2"))</td>
+                                            <td class="num">@p.NssaEmployee.ToString("N2")</td>
+                                            <td class="num"><strong>@p.Net.ToString("N2")</strong></td>
+                                            <td style="text-align:right;">
+                                                <a asp-action="Payslip" asp-route-id="@p.Id" class="act view"><i class="fas fa-eye"></i></a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-pen"></i> Set salary</span></div>
+                    <div class="card-body">
+                        <form asp-action="SaveSalary" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="EmployeeId" value="@Model.Id" />
+                            <div class="fg">
+                                <label class="lbl">Basic salary</label>
+                                <input name="BasicSalary" type="number" step="0.01" min="0" class="inp"
+                                       value="@(current?.BasicSalary ?? 0)" required />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Currency</label>
+                                <input name="Currency" class="inp" value="@(current?.Currency ?? "USD")" maxlength="10" required />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Period</label>
+                                <select name="Period" class="inp">
+                                    @foreach (var p in Enum.GetValues<PayPeriod>())
+                                    {
+                                        <option value="@p" selected="@(current?.Period == p || (current == null && p == PayPeriod.Monthly))">@p</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Effective from</label>
+                                <input name="EffectiveFrom" type="date" class="inp" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                                <span class="hint">
+                                    The previous structure is closed the day before, so payslips already
+                                    issued keep the figure they were calculated on.
+                                </span>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Occupational pension</label>
+                                <input name="PensionContribution" type="number" step="0.01" min="0" class="inp"
+                                       value="@(current?.PensionContribution ?? 0)" />
+                                <span class="hint">Allowable against taxable income.</span>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Medical aid</label>
+                                <input name="MedicalAidContribution" type="number" step="0.01" min="0" class="inp"
+                                       value="@(current?.MedicalAidContribution ?? 0)" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Reason</label>
+                                <input name="Reason" class="inp" placeholder="e.g. Annual review, promotion" />
+                            </div>
+                            <button type="submit" class="btn-hr" style="width:100%; justify-content:center;">
+                                <i class="fas fa-floppy-disk"></i> Save salary
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function hrToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

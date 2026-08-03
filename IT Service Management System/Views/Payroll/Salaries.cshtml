@@ -1,0 +1,104 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Helpers
+@model List<Employee>
+@{
+    ViewData["Title"] = "Salaries";
+    var paging = ViewBag.Paging as PagingInfo;
+    var structures = ViewBag.Structures as Dictionary<int, SalaryStructure> ?? new Dictionary<int, SalaryStructure>();
+    var departments = ViewBag.Departments as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-users"></i> Salaries</h1>
+                        <p class="page-sub">Current salary structures. Anybody without one is not paid by a run.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="toolbar">
+                    <div class="fg" style="flex:2; min-width:200px;">
+                        <label class="lbl">Employee</label>
+                        <input type="text" name="q" value="@ViewBag.Q" class="inp" placeholder="Name or number…" />
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Department</label>
+                        <select name="departmentId" class="inp">
+                            <option value="">All</option>
+                            @foreach (var d in departments)
+                            {
+                                <option value="@d.Id" selected="@(ViewBag.DepartmentId as int? == (int)d.Id)">@d.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-hr"><i class="fas fa-magnifying-glass"></i> Search</button>
+                    <a asp-action="Salaries" class="btn-ghost-hr"><i class="fas fa-rotate-left"></i> Clear</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Employees</span>
+                <span class="meta">
+                    @(paging?.TotalCount ?? Model.Count) · @Model.Count(e => !structures.ContainsKey(e.Id)) without a salary
+                </span>
+            </div>
+            <div class="card-body flush">
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>Employee</th><th>Job title</th><th>Department</th>
+                            <th class="num">Basic</th><th>Currency</th><th>Effective from</th><th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var e in Model)
+                        {
+                            structures.TryGetValue(e.Id, out var s);
+                            <tr>
+                                <td>
+                                    <a asp-action="Employee" asp-route-id="@e.Id" class="strong-link">@e.DisplayName</a>
+                                    <div class="meta" style="font-size:.7rem;">@e.EmployeeNumber</div>
+                                </td>
+                                <td class="meta">@e.JobTitle</td>
+                                <td class="meta">@(e.Department?.Name ?? "—")</td>
+                                <td class="num">
+                                    @if (s != null)
+                                    {
+                                        <strong>@s.BasicSalary.ToString("N2")</strong>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-hr b-warn">Not set</span>
+                                    }
+                                </td>
+                                <td class="meta">@(s?.Currency ?? "—")</td>
+                                <td class="meta">@(s?.EffectiveFrom.ToString("d MMM yyyy") ?? "—")</td>
+                                <td style="text-align:right;">
+                                    <a asp-action="Employee" asp-route-id="@e.Id" class="act view"><i class="fas fa-eye"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <partial name="_HrPager" model="@paging" />
+
+    </div>
+</div>

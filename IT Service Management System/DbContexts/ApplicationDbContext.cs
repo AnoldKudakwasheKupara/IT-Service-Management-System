@@ -209,6 +209,13 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<LeaveRequest> LeaveRequests { get; set; }
         public DbSet<LeaveLedgerEntry> LeaveLedgerEntries { get; set; }
 
+        // ── HR: payroll ────────────────────────────────────────────────────────────
+        public DbSet<SalaryStructure> SalaryStructures { get; set; }
+        public DbSet<PayComponent> PayComponents { get; set; }
+        public DbSet<PayrollRun> PayrollRuns { get; set; }
+        public DbSet<Payslip> Payslips { get; set; }
+        public DbSet<PayslipLine> PayslipLines { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -939,6 +946,52 @@ namespace IT_Service_Management_System.DbContexts
                     .OnDelete(DeleteBehavior.NoAction);
                 e.HasOne(x => x.SubmittedBy).WithMany().HasForeignKey(x => x.SubmittedById)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Payroll ───────────────────────────────────────────────────────────
+            b.Entity<SalaryStructure>(e =>
+            {
+                // Salary is effective-dated, so the lookup is always employee plus date.
+                e.HasIndex(x => new { x.EmployeeId, x.EffectiveFrom });
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.CreatedBy).WithMany().HasForeignKey(x => x.CreatedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<PayComponent>(e =>
+            {
+                e.HasIndex(x => new { x.EmployeeId, x.IsActive, x.EffectiveFrom });
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<PayrollRun>(e =>
+            {
+                // One run per period per currency — the unique index is what stops a month being
+                // paid twice.
+                e.HasIndex(x => new { x.PeriodYear, x.PeriodMonth, x.Currency }).IsUnique();
+                e.HasOne(x => x.PreparedBy).WithMany().HasForeignKey(x => x.PreparedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(x => x.ApprovedBy).WithMany().HasForeignKey(x => x.ApprovedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<Payslip>(e =>
+            {
+                e.HasIndex(x => new { x.PayrollRunId, x.EmployeeId }).IsUnique();
+                e.HasOne(x => x.PayrollRun).WithMany(r => r.Payslips).HasForeignKey(x => x.PayrollRunId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                // Restrict, not cascade: deleting an employee must never erase what they were paid.
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<PayslipLine>(e =>
+            {
+                e.HasIndex(x => new { x.PayslipId, x.DisplayOrder });
+                e.HasOne(x => x.Payslip).WithMany(p => p.Lines).HasForeignKey(x => x.PayslipId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             b.Entity<LeaveLedgerEntry>(e =>

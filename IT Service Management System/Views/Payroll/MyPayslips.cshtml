@@ -1,0 +1,63 @@
+@using IT_Service_Management_System.Models.Hr
+@model List<Payslip>
+@{
+    ViewData["Title"] = "My Payslips";
+    var me = ViewBag.Employee as Employee;
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-receipt"></i> My Payslips</h1>
+                    <p class="page-sub">@me?.DisplayName · @me?.EmployeeNumber</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Payslips</span>
+                <span class="meta">@Model.Count</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-receipt"></i>
+                        <h3>No payslips yet</h3>
+                        <p>A payslip appears here once the month's payroll has been approved.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Period</th><th class="num">Gross</th><th class="num">Deductions</th><th class="num">Net</th><th>Pay date</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var p in Model)
+                            {
+                                <tr>
+                                    <td><strong style="color:var(--gray-800);">@p.PayrollRun?.PeriodName</strong></td>
+                                    <td class="num">@p.Currency @p.Gross.ToString("N2")</td>
+                                    <td class="num meta">@p.TotalDeductions.ToString("N2")</td>
+                                    <td class="num"><strong>@p.Net.ToString("N2")</strong></td>
+                                    <td class="meta">@p.PayrollRun?.PayDate.ToString("d MMM yyyy")</td>
+                                    <td style="text-align:right;">
+                                        <a asp-action="MyPayslip" asp-route-id="@p.Id" class="act view" title="Open">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
