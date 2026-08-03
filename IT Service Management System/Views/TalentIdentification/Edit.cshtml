@@ -109,39 +109,7 @@
                 <span class="section-badge">KPIs & Projects</span>
             </div>
             <div class="section-body">
-                <div class="form-group-modern mb-3">
-                    <label class="form-label">What KPI achievement scores has this person achieved over the past 24 to 36 months?</label>
-                </div>
-                <div class="form-row-grid-4">
-                    <div class="form-group-modern">
-                        <label class="form-label">2023</label>
-                        <div class="textarea-wrapper-sm">
-                            <i class="fas fa-calendar-alt textarea-icon"></i>
-                            <textarea asp-for="KPI2023" class="form-control-textarea-sm" rows="4" placeholder="Enter KPI achievements for 2023..."></textarea>
-                        </div>
-                    </div>
-                    <div class="form-group-modern">
-                        <label class="form-label">2024</label>
-                        <div class="textarea-wrapper-sm">
-                            <i class="fas fa-calendar-alt textarea-icon"></i>
-                            <textarea asp-for="KPI2024" class="form-control-textarea-sm" rows="4" placeholder="Enter KPI achievements for 2024..."></textarea>
-                        </div>
-                    </div>
-                    <div class="form-group-modern">
-                        <label class="form-label">2025</label>
-                        <div class="textarea-wrapper-sm">
-                            <i class="fas fa-calendar-alt textarea-icon"></i>
-                            <textarea asp-for="KPI2025" class="form-control-textarea-sm" rows="4" placeholder="Enter KPI achievements for 2025..."></textarea>
-                        </div>
-                    </div>
-                    <div class="form-group-modern">
-                        <label class="form-label">Current Year - 2026</label>
-                        <div class="textarea-wrapper-sm">
-                            <i class="fas fa-calendar-alt textarea-icon"></i>
-                            <textarea asp-for="KPI2026" class="form-control-textarea-sm" rows="4" placeholder="Enter KPI achievements for 2026..."></textarea>
-                        </div>
-                    </div>
-                </div>
+                <partial name="_KpiYears" model="Model" />
 
                 <div class="form-group-modern mt-3">
                     <label asp-for="KeyProjectsLed" class="form-label">

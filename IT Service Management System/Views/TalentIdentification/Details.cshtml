@@ -76,22 +76,22 @@
         </div>
         <div class="card-body-custom">
             <div class="kpi-grid">
-                <div class="kpi-item">
-                    <span class="kpi-label">2023</span>
-                    <div class="kpi-value">@(string.IsNullOrEmpty(Model.KPI2023) ? "No data provided" : Model.KPI2023)</div>
-                </div>
-                <div class="kpi-item">
-                    <span class="kpi-label">2024</span>
-                    <div class="kpi-value">@(string.IsNullOrEmpty(Model.KPI2024) ? "No data provided" : Model.KPI2024)</div>
-                </div>
-                <div class="kpi-item">
-                    <span class="kpi-label">2025</span>
-                    <div class="kpi-value">@(string.IsNullOrEmpty(Model.KPI2025) ? "No data provided" : Model.KPI2025)</div>
-                </div>
-                <div class="kpi-item">
-                    <span class="kpi-label">2026</span>
-                    <div class="kpi-value">@(string.IsNullOrEmpty(Model.KPI2026) ? "No data provided" : Model.KPI2026)</div>
-                </div>
+                @if (!Model.KpiYears.Any())
+                {
+                    <div class="kpi-item">
+                        <span class="kpi-label">KPI history</span>
+                        <div class="kpi-value">No data provided</div>
+                    </div>
+                }
+                @foreach (var kpi in Model.KpiYears.OrderByDescending(k => k.Year))
+                {
+                    <div class="kpi-item">
+                        <span class="kpi-label">@kpi.Year</span>
+                        <div class="kpi-value">
+                            @(string.IsNullOrWhiteSpace(kpi.Achievement) ? "No data provided" : kpi.Achievement)
+                        </div>
+                    </div>
+                }
             </div>
 
             <div class="info-block">

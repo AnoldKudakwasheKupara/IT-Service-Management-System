@@ -19,6 +19,31 @@ namespace IT_Service_Management_System.Controllers
             _audit = audit;
         }
 
+        /// <summary>
+        /// Replace an assessment's KPI years with what the form posted. Blank achievements are
+        /// dropped so an untouched empty row does not become a stored year, and a duplicated year
+        /// keeps only its last entry — the unique index would otherwise reject the whole save.
+        /// </summary>
+        private static void SyncKpiYears(TalentIdentification existing, IEnumerable<TalentKpiYear>? posted)
+        {
+            existing.KpiYears.Clear();
+            if (posted == null) return;
+
+            foreach (var year in posted
+                .Where(k => k.Year > 0 && !string.IsNullOrWhiteSpace(k.Achievement))
+                .GroupBy(k => k.Year)
+                .Select(g => g.Last())
+                .OrderBy(k => k.Year))
+            {
+                existing.KpiYears.Add(new TalentKpiYear
+                {
+                    Year = year.Year,
+                    Achievement = year.Achievement.Trim(),
+                    Rating = year.Rating
+                });
+            }
+        }
+
         // GET: TalentIdentification
         public async Task<IActionResult> Index()
         {
@@ -40,6 +65,7 @@ namespace IT_Service_Management_System.Controllers
             var record = await _context.TalentIdentifications
                 .Include(x => x.DirectReports)
                 .Include(x => x.DevelopmentActions)
+                .Include(x => x.KpiYears)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (record == null)
@@ -97,6 +123,7 @@ namespace IT_Service_Management_System.Controllers
             var record = await _context.TalentIdentifications
                 .Include(x => x.DirectReports)
                 .Include(x => x.DevelopmentActions)
+                .Include(x => x.KpiYears)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (record == null)
@@ -129,11 +156,9 @@ namespace IT_Service_Management_System.Controllers
                 existing.Country = model.Country;
                 existing.HireDate = model.HireDate;
 
-                // Performance Track Record
-                existing.KPI2023 = model.KPI2023;
-                existing.KPI2024 = model.KPI2024;
-                existing.KPI2025 = model.KPI2025;
-                existing.KPI2026 = model.KPI2026;
+                // Performance Track Record — KPI years are replaced wholesale from what was posted,
+                // so removing a year on the form removes it here too.
+                SyncKpiYears(existing, model.KpiYears);
                 existing.KeyProjectsLed = model.KeyProjectsLed;
                 existing.DeliverySetbacks = model.DeliverySetbacks;
                 existing.LongTermBusinessInitiatives = model.LongTermBusinessInitiatives;
@@ -201,6 +226,7 @@ namespace IT_Service_Management_System.Controllers
             var record = await _context.TalentIdentifications
                 .Include(x => x.DirectReports)
                 .Include(x => x.DevelopmentActions)
+                .Include(x => x.KpiYears)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (record == null)

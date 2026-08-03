@@ -196,6 +196,7 @@ namespace IT_Service_Management_System.DbContexts
 
         // ── HR (employee master record) ────────────────────────────────────────────
         public DbSet<Employee> Employees { get; set; }
+        public DbSet<TalentKpiYear> TalentKpiYears { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -876,6 +877,16 @@ namespace IT_Service_Management_System.DbContexts
             // All three carry an IsDeleted flag. A global filter enforces it centrally, so a query
             // that forgets the predicate cannot leak a deleted record — which is exactly what was
             // happening before.
+            b.Entity<TalentKpiYear>(e =>
+            {
+                // One row per assessment per year; the unique index is what stops a duplicate year.
+                e.HasIndex(x => new { x.TalentIdentificationId, x.Year }).IsUnique();
+                e.HasQueryFilter(x => !x.TalentIdentification!.IsDeleted);
+                e.HasOne(x => x.TalentIdentification).WithMany(t => t.KpiYears)
+                    .HasForeignKey(x => x.TalentIdentificationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
             b.Entity<TalentIdentification>(e =>
             {
                 e.HasIndex(x => x.EmployeeId);

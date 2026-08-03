@@ -1,0 +1,77 @@
+@using IT_Service_Management_System.Models
+@model TalentIdentification
+@{
+    // Show the years already recorded, and offer the last four up to the current year so the form
+    // is useful on a blank assessment. No year is hard-coded — this follows the calendar.
+    var currentYear = DateTime.Today.Year;
+    var defaultYears = Enumerable.Range(currentYear - 3, 4);
+
+    var rows = Model.KpiYears
+        .Where(k => k.Year > 0)
+        .Concat(defaultYears
+            .Where(y => Model.KpiYears.All(k => k.Year != y))
+            .Select(y => new TalentKpiYear { Year = y }))
+        .OrderBy(k => k.Year)
+        .ToList();
+}
+
+<div class="form-group-modern">
+    <label class="form-label">
+        What KPI achievement scores has this person achieved over the past 24 to 36 months?
+    </label>
+    <small class="text-muted d-block mb-2">
+        Leave a year blank to leave it unrecorded. Add another year if you need to go further back.
+    </small>
+</div>
+
+<div class="form-row-grid-4" id="kpi-years">
+    @for (var i = 0; i < rows.Count; i++)
+    {
+        <div class="form-group-modern kpi-year-row">
+            <label class="form-label">
+                @rows[i].Year @(rows[i].Year == currentYear ? "(current year)" : "")
+            </label>
+            <input type="hidden" name="KpiYears[@i].Year" value="@rows[i].Year" />
+            <div class="textarea-wrapper-sm">
+                <i class="fas fa-calendar-alt textarea-icon"></i>
+                <textarea name="KpiYears[@i].Achievement" class="form-control-textarea-sm" rows="4"
+                          maxlength="1000"
+                          placeholder="Enter KPI achievements for @rows[i].Year...">@rows[i].Achievement</textarea>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="form-group-modern mt-2">
+    <button type="button" class="btn btn-sm btn-outline-secondary" id="kpi-add-year">
+        <i class="fas fa-plus"></i> Add an earlier year
+    </button>
+</div>
+
+<script>
+    // Adds a further year before the earliest one shown, so an assessment can reach back as far
+    // as it needs to without a schema change.
+    (function () {
+        const grid = document.getElementById('kpi-years');
+        const button = document.getElementById('kpi-add-year');
+        if (!grid || !button) return;
+
+        button.addEventListener('click', function () {
+            const years = [...grid.querySelectorAll('input[name$="].Year"]')].map(i => parseInt(i.value, 10));
+            const next = (years.length ? Math.min(...years) : new Date().getFullYear()) - 1;
+            const index = grid.querySelectorAll('.kpi-year-row').length;
+
+            const row = document.createElement('div');
+            row.className = 'form-group-modern kpi-year-row';
+            row.innerHTML =
+                '<label class="form-label">' + next + '</label>' +
+                '<input type="hidden" name="KpiYears[' + index + '].Year" value="' + next + '">' +
+                '<div class="textarea-wrapper-sm">' +
+                '<i class="fas fa-calendar-alt textarea-icon"></i>' +
+                '<textarea name="KpiYears[' + index + '].Achievement" class="form-control-textarea-sm" ' +
+                'rows="4" maxlength="1000" placeholder="Enter KPI achievements for ' + next + '..."></textarea>' +
+                '</div>';
+            grid.prepend(row);
+        });
+    })();
+</script>

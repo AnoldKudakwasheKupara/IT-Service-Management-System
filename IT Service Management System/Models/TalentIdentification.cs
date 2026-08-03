@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using IT_Service_Management_System.Enums;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace IT_Service_Management_System.Models
 {
@@ -42,18 +43,13 @@ namespace IT_Service_Management_System.Models
         public DateTime? HireDate { get; set; }
 
         // Performance Track Record
+        //
+        // KPI achievements live in KpiYears, one row per year. They used to be four fixed columns
+        // (KPI2023–KPI2026), which meant a schema change every January and no way to hold more
+        // than four years or anything before 2023.
 
-        [StringLength(1000)]
-        public string KPI2023 { get; set; } = string.Empty;
-
-        [StringLength(1000)]
-        public string KPI2024 { get; set; } = string.Empty;
-
-        [StringLength(1000)]
-        public string KPI2025 { get; set; } = string.Empty;
-
-        [StringLength(1000)]
-        public string KPI2026 { get; set; } = string.Empty;
+        [ValidateNever]
+        public List<TalentKpiYear> KpiYears { get; set; } = new();
 
         [StringLength(2000)]
         public string KeyProjectsLed { get; set; } = string.Empty;
