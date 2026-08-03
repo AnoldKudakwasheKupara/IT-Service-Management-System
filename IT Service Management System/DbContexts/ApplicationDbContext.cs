@@ -49,7 +49,11 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<AppConfiguration> AppConfigurations { get; set; }
         public DbSet<CannedResponse> CannedResponses { get; set; }
+        // Retired in favour of EFM. Mapped only so the existing table and its rows survive until
+        // they have been migrated across — see EmployeeFile for the plan.
+#pragma warning disable CS0618
         public DbSet<EmployeeFile> EmployeeFiles { get; set; }
+#pragma warning restore CS0618
 
         // ── Employee File Management (EFM) ─────────────────────────────────────────
         public DbSet<DocumentFolder> DocumentFolders { get; set; }
@@ -327,6 +331,8 @@ namespace IT_Service_Management_System.DbContexts
                 .HasIndex(s => new { s.UserId, s.RevokedAt });
 
             // EmployeeFile -> User (employee). Cascade so a user's files are removed with them.
+            // Retired store, kept mapped so its rows are not dropped before they are migrated.
+#pragma warning disable CS0618
             modelBuilder.Entity<EmployeeFile>()
                 .HasOne(f => f.Employee)
                 .WithMany()
@@ -335,6 +341,7 @@ namespace IT_Service_Management_System.DbContexts
 
             modelBuilder.Entity<EmployeeFile>()
                 .HasIndex(f => f.EmployeeId);
+#pragma warning restore CS0618
 
             // ── Employee File Management (EFM) relationships & indexes ──────────────
             modelBuilder.Entity<EmployeeDocument>().HasQueryFilter(d => !d.IsDeleted);
