@@ -36,12 +36,159 @@ namespace IT_Service_Management_System.Services.Hr
             var added = await SeedParametersAsync(ct);
             var holidays = await SeedHolidaysAsync(ct);
             var leaveTypes = await SeedLeaveTypesAsync(ct);
+            var offences = await SeedDisciplinaryOffencesAsync(ct);
 
-            if (added > 0 || holidays > 0 || leaveTypes > 0)
+            if (added > 0 || holidays > 0 || leaveTypes > 0 || offences > 0)
                 _log.LogInformation(
-                    "Zimbabwe statutory seed: {Parameters} parameter(s), {Holidays} public holiday(s) "
-                    + "and {LeaveTypes} leave type(s) added.",
-                    added, holidays, leaveTypes);
+                    "Zimbabwe statutory seed: {Parameters} parameter(s), {Holidays} public holiday(s), "
+                    + "{LeaveTypes} leave type(s) and {Offences} disciplinary offence(s) added.",
+                    added, holidays, leaveTypes, offences);
+        }
+
+        // ── Disciplinary offences ────────────────────────────────────────────────
+
+        /// <summary>
+        /// The acts of misconduct in the National Employment Code of Conduct, Statutory Instrument
+        /// 15 of 2006 — which applies wherever an employer has no registered code of its own.
+        /// <para>
+        /// The first five are the offences the model code treats as justifying dismissal even on a
+        /// first occasion. The rest run through progressive discipline. An employer with a code
+        /// registered through its NEC or works council should replace these with that code's list.
+        /// </para>
+        /// </summary>
+        private async Task<int> SeedDisciplinaryOffencesAsync(CancellationToken ct)
+        {
+            var existing = await _db.DisciplinaryOffences.Select(o => o.Code).ToListAsync(ct);
+            const string modelCode = "National Employment Code of Conduct, SI 15 of 2006";
+
+            var defaults = new List<DisciplinaryOffence>
+            {
+                // ── Dismissable on a first offence under the model code ──
+                new()
+                {
+                    Code = "THEFT", Name = "Theft or fraud", DisplayOrder = 1,
+                    Seriousness = OffenceSeriousness.Gross, Authority = modelCode,
+                    Description = "Any act of theft or fraud against the employer, a fellow employee, "
+                                + "a client or a supplier.",
+                    DismissableFirstOffence = true,
+                    DefaultFirstPenalty = DisciplinaryPenalty.SummaryDismissal
+                },
+                new()
+                {
+                    Code = "WILFULDAMAGE", Name = "Wilful damage to property", DisplayOrder = 2,
+                    Seriousness = OffenceSeriousness.Gross, Authority = modelCode,
+                    Description = "Deliberate damage to the employer's property.",
+                    DismissableFirstOffence = true,
+                    DefaultFirstPenalty = DisciplinaryPenalty.SummaryDismissal
+                },
+                new()
+                {
+                    Code = "INSUBORDINATION", Name = "Gross insubordination", DisplayOrder = 3,
+                    Seriousness = OffenceSeriousness.Gross, Authority = modelCode,
+                    Description = "Wilful disobedience of a lawful and reasonable instruction.",
+                    DismissableFirstOffence = true,
+                    DefaultFirstPenalty = DisciplinaryPenalty.SummaryDismissal
+                },
+                new()
+                {
+                    Code = "AWOL5", Name = "Absence without leave for five or more days", DisplayOrder = 4,
+                    Seriousness = OffenceSeriousness.Gross, Authority = modelCode,
+                    Description = "Absence from work for a period of five or more continuous working "
+                                + "days without leave or a reasonable excuse.",
+                    DismissableFirstOffence = true,
+                    DefaultFirstPenalty = DisciplinaryPenalty.SummaryDismissal
+                },
+                new()
+                {
+                    Code = "INCOMPETENCE", Name = "Gross incompetence or inefficiency", DisplayOrder = 5,
+                    Seriousness = OffenceSeriousness.Gross, Authority = modelCode,
+                    Description = "Habitual and substantial neglect of duties, or a lack of skill the "
+                                + "employee expressly or impliedly warranted they possessed.",
+                    DismissableFirstOffence = true,
+                    DefaultFirstPenalty = DisciplinaryPenalty.SummaryDismissal
+                },
+
+                // ── Progressive discipline ──
+                new()
+                {
+                    Code = "LATE", Name = "Persistent lateness", DisplayOrder = 10,
+                    Seriousness = OffenceSeriousness.Minor, Authority = modelCode,
+                    Description = "Repeated failure to report for duty at the appointed time.",
+                    DefaultFirstPenalty = DisciplinaryPenalty.VerbalWarning,
+                    WarningValidityMonths = 6
+                },
+                new()
+                {
+                    Code = "AWOL", Name = "Absence without leave", DisplayOrder = 11,
+                    Seriousness = OffenceSeriousness.Serious, Authority = modelCode,
+                    Description = "Absence without leave or a reasonable excuse, for fewer than five "
+                                + "continuous working days.",
+                    DefaultFirstPenalty = DisciplinaryPenalty.WrittenWarning
+                },
+                new()
+                {
+                    Code = "NEGLIGENCE", Name = "Negligence in the performance of duties", DisplayOrder = 12,
+                    Seriousness = OffenceSeriousness.Serious, Authority = modelCode,
+                    Description = "Careless performance of duties causing, or risking, loss or damage.",
+                    DefaultFirstPenalty = DisciplinaryPenalty.WrittenWarning
+                },
+                new()
+                {
+                    Code = "INSOLENCE", Name = "Insolence or abusive language", DisplayOrder = 13,
+                    Seriousness = OffenceSeriousness.Serious, Authority = modelCode,
+                    Description = "Abusive, threatening or insulting language or behaviour towards a "
+                                + "supervisor, a fellow employee or a client.",
+                    DefaultFirstPenalty = DisciplinaryPenalty.WrittenWarning
+                },
+                new()
+                {
+                    Code = "INTOXICATION", Name = "Reporting for duty under the influence", DisplayOrder = 14,
+                    Seriousness = OffenceSeriousness.Serious, Authority = modelCode,
+                    Description = "Reporting for or remaining on duty while under the influence of "
+                                + "alcohol or drugs.",
+                    DefaultFirstPenalty = DisciplinaryPenalty.FinalWritten
+                },
+                new()
+                {
+                    Code = "SAFETY", Name = "Breach of health and safety rules", DisplayOrder = 15,
+                    Seriousness = OffenceSeriousness.Serious, Authority = modelCode,
+                    Description = "Failure to observe safety rules, or to use protective equipment "
+                                + "provided.",
+                    DefaultFirstPenalty = DisciplinaryPenalty.WrittenWarning
+                },
+                new()
+                {
+                    Code = "CONFIDENTIALITY", Name = "Breach of confidentiality", DisplayOrder = 16,
+                    Seriousness = OffenceSeriousness.Serious, Authority = "Employer code of conduct",
+                    Description = "Unauthorised disclosure of confidential information belonging to "
+                                + "the employer, a client or a fellow employee.",
+                    DefaultFirstPenalty = DisciplinaryPenalty.FinalWritten
+                },
+                new()
+                {
+                    Code = "MISUSE", Name = "Unauthorised use of employer property", DisplayOrder = 17,
+                    Seriousness = OffenceSeriousness.Serious, Authority = modelCode,
+                    Description = "Using the employer's property, vehicles or systems for private "
+                                + "purposes without authority.",
+                    DefaultFirstPenalty = DisciplinaryPenalty.WrittenWarning
+                },
+                new()
+                {
+                    Code = "HARASSMENT", Name = "Harassment or discrimination", DisplayOrder = 18,
+                    Seriousness = OffenceSeriousness.Gross, Authority = "Labour Act [Chapter 28:01] s.8",
+                    Description = "Conduct amounting to harassment, including sexual harassment, or "
+                                + "discrimination on a prohibited ground.",
+                    DismissableFirstOffence = true,
+                    DefaultFirstPenalty = DisciplinaryPenalty.SummaryDismissal
+                }
+            };
+
+            var missing = defaults.Where(d => !existing.Contains(d.Code)).ToList();
+            if (missing.Count == 0) return 0;
+
+            _db.DisciplinaryOffences.AddRange(missing);
+            await _db.SaveChangesAsync(ct);
+            return missing.Count;
         }
 
         // ── Leave types ──────────────────────────────────────────────────────────

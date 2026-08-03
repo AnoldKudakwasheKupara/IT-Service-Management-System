@@ -1,0 +1,87 @@
+@using IT_Service_Management_System.Models.Hr
+@{
+    ViewData["Title"] = "Code of Conduct";
+    var offences = ViewBag.Offences as List<DisciplinaryOffence> ?? new List<DisciplinaryOffence>();
+    var useCounts = ViewBag.UseCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-book"></i> Code of Conduct</h1>
+                    <p class="page-sub">
+                        The acts of misconduct cases are charged under. Seeded from the National
+                        Employment Code of Conduct in SI 15 of 2006, which applies wherever an employer
+                        has no registered code of its own.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Cases</a>
+                    <a asp-action="EditOffence" class="btn-hr"><i class="fas fa-plus"></i> Add an offence</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="notice">
+            <i class="fas fa-circle-info"></i>
+            <div>
+                If your organisation has a code registered through its NEC or works council, that code
+                governs instead. Replace this list with it — the model code is the fallback, not the rule.
+            </div>
+        </div>
+
+        <div class="card flush">
+            <table class="tbl">
+                <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Offence</th>
+                        <th>Seriousness</th>
+                        <th>First penalty</th>
+                        <th>Warning valid</th>
+                        <th>Used</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in offences)
+                    {
+                        <tr class="@(o.IsActive ? "" : "muted")">
+                            <td class="ref">@o.Code</td>
+                            <td>
+                                <div class="strong-link">@o.Name</div>
+                                <div class="sub">@o.Description</div>
+                                @if (o.Authority != null) { <div class="sub muted">@o.Authority</div> }
+                            </td>
+                            <td>
+                                <span class="badge-hr @(o.Seriousness == OffenceSeriousness.Gross ? "b-danger"
+                                                        : o.Seriousness == OffenceSeriousness.Serious ? "b-warn" : "b-neutral")">
+                                    @o.Seriousness
+                                </span>
+                                @if (o.DismissableFirstOffence)
+                                {
+                                    <div class="sub red">Dismissable on a first offence</div>
+                                }
+                            </td>
+                            <td>@Spaced(o.DefaultFirstPenalty.ToString())</td>
+                            <td>@o.WarningValidityMonths months</td>
+                            <td class="num sm">@(useCounts.TryGetValue(o.Id, out var n) ? n : 0)</td>
+                            <td class="act">
+                                <a asp-action="EditOffence" asp-route-id="@o.Id" class="edit"><i class="fas fa-pen"></i></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,127 @@
+@using IT_Service_Management_System.Models.Hr
+@model DisciplinaryOffence
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "Add an Offence" : $"Edit {Model.Name}";
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-book"></i> @ViewData["Title"]</h1>
+                    <p class="page-sub">
+                        Cases charged under this offence take their penalty guidance from what is set here.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Offences" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <form asp-action="EditOffence" method="post">
+            <input type="hidden" asp-for="Id" />
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label asp-for="Code" class="req"></label>
+                            <input asp-for="Code" class="inp" placeholder="e.g. THEFT" />
+                            <span asp-validation-for="Code" class="field-error"></span>
+                        </div>
+
+                        <div class="fg">
+                            <label asp-for="Name" class="req"></label>
+                            <input asp-for="Name" class="inp" />
+                            <span asp-validation-for="Name" class="field-error"></span>
+                        </div>
+
+                        <div class="fg full">
+                            <label asp-for="Description"></label>
+                            <textarea asp-for="Description" class="inp" rows="3"></textarea>
+                        </div>
+
+                        <div class="fg full">
+                            <label asp-for="Authority"></label>
+                            <input asp-for="Authority" class="inp"
+                                   placeholder="e.g. National Employment Code of Conduct, SI 15 of 2006" />
+                            <span class="hint">
+                                Which code this offence comes from — the model code, or your own registered code.
+                            </span>
+                        </div>
+
+                        <div class="fg">
+                            <label asp-for="Seriousness"></label>
+                            <select asp-for="Seriousness" class="inp"
+                                    asp-items="@Html.GetEnumSelectList<OffenceSeriousness>()"></select>
+                        </div>
+
+                        <div class="fg">
+                            <label asp-for="DefaultFirstPenalty"></label>
+                            <select asp-for="DefaultFirstPenalty" class="inp">
+                                @foreach (DisciplinaryPenalty p in Enum.GetValues<DisciplinaryPenalty>())
+                                {
+                                    <option value="@p" selected="@(Model.DefaultFirstPenalty == p)">@Spaced(p.ToString())</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="fg">
+                            <label asp-for="WarningValidityMonths"></label>
+                            <input asp-for="WarningValidityMonths" type="number" min="1" max="60" class="inp" />
+                            <span class="hint">
+                                After this, a warning is spent and cannot count towards progression.
+                            </span>
+                        </div>
+
+                        <div class="fg">
+                            <label asp-for="DisplayOrder"></label>
+                            <input asp-for="DisplayOrder" type="number" class="inp" />
+                        </div>
+
+                        <div class="fg full">
+                            <label class="check">
+                                <input asp-for="DismissableFirstOffence" type="checkbox" />
+                                Dismissal available on a first offence
+                            </label>
+                            <span class="hint">
+                                Under the model code only a limited set of acts justify dismissal on a first
+                                occasion — theft, fraud, wilful damage, gross insubordination, and absence
+                                without leave for five or more days. Everything else runs through progressive
+                                discipline.
+                            </span>
+                        </div>
+
+                        <div class="fg full">
+                            <label class="check">
+                                <input asp-for="IsActive" type="checkbox" /> Active
+                            </label>
+                            <span class="hint">
+                                Deactivating keeps historical cases intact but stops new charges under it.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-hr"><i class="fas fa-save"></i> Save</button>
+                <a asp-action="Offences" class="btn-ghost-hr">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

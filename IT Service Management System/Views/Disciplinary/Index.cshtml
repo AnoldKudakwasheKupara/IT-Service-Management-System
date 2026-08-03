@@ -1,0 +1,185 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Helpers
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Disciplinary Cases";
+    var cases = ViewBag.Cases as List<DisciplinaryCase> ?? new List<DisciplinaryCase>();
+    var isHr = ViewBag.IsHr as bool? ?? false;
+    var page = (int)(ViewBag.Page ?? 1);
+    var pageSize = (int)(ViewBag.PageSize ?? 20);
+    var total = (int)(ViewBag.Total ?? 0);
+    var status = ViewBag.Status as DisciplinaryStatus?;
+    var openOnly = ViewBag.OpenOnly as bool? ?? false;
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+
+    string StatusClass(DisciplinaryStatus s) => s switch
+    {
+        DisciplinaryStatus.Reported or DisciplinaryStatus.UnderInvestigation => "b-neutral",
+        DisciplinaryStatus.ChargeServed or DisciplinaryStatus.HearingScheduled => "b-probation",
+        DisciplinaryStatus.HearingHeld => "b-warn",
+        DisciplinaryStatus.PenaltyImposed => "b-danger",
+        DisciplinaryStatus.UnderAppeal => "b-suspended",
+        DisciplinaryStatus.Withdrawn => "b-neutral",
+        _ => "b-left"
+    };
+
+    string PenaltyClass(DisciplinaryPenalty p) => p switch
+    {
+        DisciplinaryPenalty.None => "b-neutral",
+        DisciplinaryPenalty.VerbalWarning or DisciplinaryPenalty.WrittenWarning => "b-probation",
+        DisciplinaryPenalty.FinalWritten or DisciplinaryPenalty.SuspensionWithoutPay
+            or DisciplinaryPenalty.Demotion => "b-warn",
+        _ => "b-danger"
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-gavel"></i> Disciplinary Cases</h1>
+                    <p class="page-sub">
+                        Run to the National Employment Code of Conduct, SI 15 of 2006, unless a code
+                        registered through your NEC or works council applies instead.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="MyRecord" class="btn-ghost-hr"><i class="fas fa-user-shield"></i> My record</a>
+                    @if (isHr)
+                    {
+                        <a asp-action="Offences" class="btn-ghost-hr"><i class="fas fa-book"></i> Code of conduct</a>
+                    }
+                    <a asp-action="Create" class="btn-hr"><i class="fas fa-plus"></i> Raise a case</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="stats three">
+            <div class="stat">
+                <div class="num">@(ViewBag.OpenCount ?? 0)</div>
+                <div class="lbl">Open</div>
+            </div>
+            <div class="stat">
+                <div class="num amber">@(ViewBag.AwaitingHearing ?? 0)</div>
+                <div class="lbl">Awaiting hearing</div>
+            </div>
+            <div class="stat">
+                <div class="num purple">@(ViewBag.UnderAppeal ?? 0)</div>
+                <div class="lbl">Under appeal</div>
+            </div>
+        </div>
+
+        <form method="get" class="toolbar">
+            <input type="search" name="q" value="@ViewBag.Query" class="inp"
+                   placeholder="Search allegation, particulars or employee…" />
+
+            <select name="status" class="inp">
+                <option value="">Any status</option>
+                @foreach (DisciplinaryStatus s in Enum.GetValues<DisciplinaryStatus>())
+                {
+                    <option value="@s" selected="@(status == s)">@Spaced(s.ToString())</option>
+                }
+            </select>
+
+            @if (isHr)
+            {
+                <select name="employeeId" class="inp" asp-items="@(ViewBag.EmployeeList as SelectList)">
+                    <option value="">Anyone</option>
+                </select>
+            }
+
+            <label class="check">
+                <input type="checkbox" name="openOnly" value="true" checked="@openOnly" /> Open only
+            </label>
+
+            <button type="submit" class="btn-outline-hr"><i class="fas fa-filter"></i> Filter</button>
+            <a asp-action="Index" class="btn-ghost-hr">Clear</a>
+        </form>
+
+        <div class="card flush">
+            @if (cases.Count == 0)
+            {
+                <div class="empty">
+                    <i class="fas fa-scale-balanced"></i>
+                    <p>No cases match. That is the outcome to hope for.</p>
+                </div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>Ref</th>
+                            <th>Employee</th>
+                            <th>Allegation</th>
+                            <th>Incident</th>
+                            <th>Status</th>
+                            <th>Penalty</th>
+                            <th>Fairness</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in cases)
+                        {
+                            <tr>
+                                <td class="ref">@c.Reference</td>
+                                <td>
+                                    <div class="strong-link">@c.Employee?.DisplayName</div>
+                                    <div class="sub">@c.Employee?.EmployeeNumber</div>
+                                </td>
+                                <td>
+                                    <div>@c.Title</div>
+                                    @if (c.Offence != null)
+                                    {
+                                        <div class="sub">@c.Offence.Name · @c.Offence.Seriousness</div>
+                                    }
+                                </td>
+                                <td>@c.IncidentDate.ToString("d MMM yyyy")</td>
+                                <td><span class="badge-hr @StatusClass(c.Status)">@Spaced(c.Status.ToString())</span></td>
+                                <td>
+                                    @if (c.EffectivePenalty == DisciplinaryPenalty.None)
+                                    {
+                                        <span class="muted">—</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-hr @PenaltyClass(c.EffectivePenalty)">
+                                            @Spaced(c.EffectivePenalty.ToString())
+                                        </span>
+                                        @if (c.IsWarningLive)
+                                        {
+                                            <div class="sub">live until @c.WarningExpiryDate?.ToString("d MMM yyyy")</div>
+                                        }
+                                        else if (c.WarningExpiryDate.HasValue)
+                                        {
+                                            <div class="sub muted">spent @c.WarningExpiryDate?.ToString("d MMM yyyy")</div>
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @{ var score = c.FairnessScore; }
+                                    <span class="num sm @(score == 100 ? "green" : score >= 60 ? "amber" : "red")">@score%</span>
+                                </td>
+                                <td class="act">
+                                    <a asp-action="Details" asp-route-id="@c.Id" class="view" title="Open case file">
+                                        <i class="fas fa-folder-open"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <partial name="_HrPager" model="@(new PagingInfo { Page = page, PageSize = pageSize, TotalCount = total })" />
+    </div>
+</div>

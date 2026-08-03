@@ -1,0 +1,104 @@
+@using IT_Service_Management_System.Models.Hr
+@{
+    ViewData["Title"] = "My Disciplinary Record";
+    var me = ViewBag.Employee as Employee;
+    var cases = ViewBag.Cases as List<DisciplinaryCase> ?? new List<DisciplinaryCase>();
+    var live = ViewBag.LiveWarnings as List<DisciplinaryCase> ?? new List<DisciplinaryCase>();
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-user-shield"></i> My Disciplinary Record</h1>
+                    <p class="page-sub">
+                        @me?.DisplayName — everything on file about you, and nothing about anyone else.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (live.Count == 0)
+        {
+            <div class="notice">
+                <i class="fas fa-circle-check"></i>
+                <div>
+                    No live warnings. A warning stops counting once its validity period passes, so an
+                    older entry below may appear without affecting your record today.
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="notice warn">
+                <i class="fas fa-triangle-exclamation"></i>
+                <div>
+                    <strong>@live.Count live warning(s).</strong>
+                    @string.Join("; ", live.Select(w =>
+                        $"{Spaced(w.Penalty.ToString())} until {w.WarningExpiryDate:d MMM yyyy}")).
+                </div>
+            </div>
+        }
+
+        <div class="card flush">
+            <div class="card-head"><h2 class="section-title">Cases</h2></div>
+            @if (cases.Count == 0)
+            {
+                <div class="empty">
+                    <i class="fas fa-scale-balanced"></i>
+                    <p>Nothing on record.</p>
+                </div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead>
+                        <tr><th>Ref</th><th>Allegation</th><th>Incident</th><th>Status</th><th>Outcome</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in cases)
+                        {
+                            <tr>
+                                <td class="ref">@c.Reference</td>
+                                <td>
+                                    <div>@c.Title</div>
+                                    @if (c.Offence != null) { <div class="sub">@c.Offence.Name</div> }
+                                </td>
+                                <td>@c.IncidentDate.ToString("d MMM yyyy")</td>
+                                <td>@Spaced(c.Status.ToString())</td>
+                                <td>
+                                    @if (c.Finding == DisciplinaryFinding.Pending)
+                                    {
+                                        <span class="muted">Pending</span>
+                                    }
+                                    else
+                                    {
+                                        <div>@Spaced(c.Finding.ToString())</div>
+                                        <div class="sub">
+                                            @Spaced(c.EffectivePenalty.ToString())
+                                            @if (c.WarningExpiryDate.HasValue)
+                                            {
+                                                <text>· @(c.IsWarningLive ? "live until" : "spent") @c.WarningExpiryDate?.ToString("d MMM yyyy")</text>
+                                            }
+                                        </div>
+                                    }
+                                </td>
+                                <td class="act">
+                                    <a asp-action="Details" asp-route-id="@c.Id" class="view"><i class="fas fa-folder-open"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>

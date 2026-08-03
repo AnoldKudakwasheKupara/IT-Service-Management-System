@@ -222,6 +222,11 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<AttendanceRecord> AttendanceRecords { get; set; }
         public DbSet<OvertimeRequest> OvertimeRequests { get; set; }
 
+        // ── HR: discipline ─────────────────────────────────────────────────────────
+        public DbSet<DisciplinaryOffence> DisciplinaryOffences { get; set; }
+        public DbSet<DisciplinaryCase> DisciplinaryCases { get; set; }
+        public DbSet<DisciplinaryEvent> DisciplinaryEvents { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -1022,6 +1027,41 @@ namespace IT_Service_Management_System.DbContexts
                     .OnDelete(DeleteBehavior.SetNull);
                 e.HasOne(x => x.ApprovedBy).WithMany().HasForeignKey(x => x.ApprovedById)
                     .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.RecordedBy).WithMany().HasForeignKey(x => x.RecordedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Discipline ────────────────────────────────────────────────────────
+            b.Entity<DisciplinaryOffence>(e =>
+            {
+                e.HasIndex(x => x.Code).IsUnique();
+                e.HasIndex(x => new { x.IsActive, x.DisplayOrder });
+            });
+
+            b.Entity<DisciplinaryCase>(e =>
+            {
+                e.HasIndex(x => new { x.EmployeeId, x.Status });
+                e.HasIndex(x => x.WarningExpiryDate);
+
+                // Restrict, not cascade: a disciplinary file is evidence and must outlive tidying
+                // up of the employee record.
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(x => x.Offence).WithMany(o => o.Cases).HasForeignKey(x => x.OffenceId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(x => x.Chairperson).WithMany().HasForeignKey(x => x.ChairpersonId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.AppealHeardBy).WithMany().HasForeignKey(x => x.AppealHeardById)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.RaisedBy).WithMany().HasForeignKey(x => x.RaisedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<DisciplinaryEvent>(e =>
+            {
+                e.HasIndex(x => new { x.CaseId, x.At });
+                e.HasOne(x => x.Case).WithMany(c => c.Events).HasForeignKey(x => x.CaseId)
+                    .OnDelete(DeleteBehavior.Cascade);
                 e.HasOne(x => x.RecordedBy).WithMany().HasForeignKey(x => x.RecordedById)
                     .OnDelete(DeleteBehavior.Restrict);
             });

@@ -1,0 +1,113 @@
+@using IT_Service_Management_System.Models.Hr
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model DisciplinaryCase
+@{
+    ViewData["Title"] = "Raise a Disciplinary Case";
+    var offences = ViewBag.Offences as List<DisciplinaryOffence> ?? new List<DisciplinaryOffence>();
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-gavel"></i> Raise a Disciplinary Case</h1>
+                    <p class="page-sub">
+                        Record the allegation now, in the words it will be put to the employee.
+                        Nothing else — no suspension, no hearing — should happen before the charge is served.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <form asp-action="Create" method="post">
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">The allegation</h2></div>
+                <div class="card-body">
+                    <div class="form-grid">
+
+                        <div class="fg">
+                            <label class="req">Employee</label>
+                            <select asp-for="EmployeeId" class="inp"
+                                    asp-items="@(ViewBag.EmployeeList as SelectList)">
+                                <option value="">— select —</option>
+                            </select>
+                            <span asp-validation-for="EmployeeId" class="field-error"></span>
+                        </div>
+
+                        <div class="fg">
+                            <label>Offence under the code of conduct</label>
+                            <select asp-for="OffenceId" class="inp" id="offenceSelect"
+                                    asp-items="@(ViewBag.OffenceList as SelectList)">
+                                <option value="">— not yet classified —</option>
+                            </select>
+                            <span class="hint">
+                                Can be left open until the investigation shows what the charge should be.
+                            </span>
+                        </div>
+
+                        <div class="fg full">
+                            <label asp-for="Title" class="req"></label>
+                            <input asp-for="Title" class="inp"
+                                   placeholder="e.g. Absence from duty on 14 and 15 July without leave" />
+                            <span asp-validation-for="Title" class="field-error"></span>
+                        </div>
+
+                        <div class="fg full">
+                            <label asp-for="Particulars" class="req"></label>
+                            <textarea asp-for="Particulars" class="inp" rows="6"
+                                      placeholder="What happened, when, where, who was involved and what rule it breached."></textarea>
+                            <span class="hint">
+                                Detailed enough that the employee can answer it. A charge someone cannot
+                                understand is a charge they cannot defend, and a hearing on it will not stand.
+                            </span>
+                            <span asp-validation-for="Particulars" class="field-error"></span>
+                        </div>
+
+                        <div class="fg">
+                            <label asp-for="IncidentDate"></label>
+                            <input asp-for="IncidentDate" type="date" class="inp" />
+                            <span asp-validation-for="IncidentDate" class="field-error"></span>
+                        </div>
+
+                        <div class="fg">
+                            <label asp-for="ReportedDate"></label>
+                            <input asp-for="ReportedDate" type="date" class="inp" />
+                            <span class="hint">Long delays between incident and charge weaken the case.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (offences.Any(o => o.DismissableFirstOffence))
+            {
+                <div class="notice warn">
+                    <i class="fas fa-triangle-exclamation"></i>
+                    <div>
+                        <strong>Dismissable on a first offence:</strong>
+                        @string.Join(", ", offences.Where(o => o.DismissableFirstOffence).Select(o => o.Name)).
+                        Every other offence runs through progressive discipline — verbal, written,
+                        final written, then dismissal.
+                    </div>
+                </div>
+            }
+
+            <div class="form-actions">
+                <button type="submit" class="btn-hr"><i class="fas fa-folder-plus"></i> Open the case</button>
+                <a asp-action="Index" class="btn-ghost-hr">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

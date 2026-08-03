@@ -1,0 +1,680 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Services.Hr
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var c = ViewBag.Case as DisciplinaryCase;
+    ViewData["Title"] = $"Case {c?.Reference}";
+    var isHr = ViewBag.IsHr as bool? ?? false;
+    var isSubject = ViewBag.IsSubject as bool? ?? false;
+    var events = ViewBag.Events as List<DisciplinaryEvent> ?? new List<DisciplinaryEvent>();
+    var live = ViewBag.LiveWarnings as List<DisciplinaryCase> ?? new List<DisciplinaryCase>();
+    var guidance = ViewBag.Guidance as DisciplinaryService.PenaltyGuidance;
+    var cost = ViewBag.Cost as DisciplinaryService.TerminationCost;
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-folder-open"></i> @c!.Reference — @c.Title
+                    </h1>
+                    <p class="page-sub">
+                        @c.Employee?.DisplayName · @c.Employee?.EmployeeNumber
+                        @if (c.Employee?.JobTitle != null) { <text> · @c.Employee.JobTitle</text> }
+                        · incident @c.IncidentDate.ToString("d MMM yyyy")
+                        @if (c.Offence != null) { <text> · @c.Offence.Name</text> }
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <span class="badge-hr b-neutral">@Spaced(c.Status.ToString())</span>
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Register</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (c.IsSuspended)
+        {
+            <div class="notice warn">
+                <i class="fas fa-user-lock"></i>
+                <div>
+                    Suspended from @c.SuspensionFrom?.ToString("d MMM yyyy")
+                    @(c.SuspensionOnFullPay ? "on full pay" : "without pay").
+                    @if (!c.SuspensionOnFullPay)
+                    {
+                        <text>
+                            Suspension without pay before anything is proven is itself open to challenge —
+                            the usual position is suspension on full pay pending the hearing.
+                        </text>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="grid-2-1">
+            <div>
+                @* ── PARTICULARS ───────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><h2 class="section-title">Particulars of the allegation</h2></div>
+                    <div class="card-body">
+                        <p style="white-space:pre-wrap; margin:0;">@c.Particulars</p>
+                        @if (c.Offence != null)
+                        {
+                            <div class="notice" style="margin-top:1rem;">
+                                <i class="fas fa-book"></i>
+                                <div>
+                                    <strong>@c.Offence.Name</strong> — @Spaced(c.Offence.Seriousness.ToString()).
+                                    @c.Offence.Description
+                                    @if (c.Offence.Authority != null)
+                                    {
+                                        <div class="sub">@c.Offence.Authority</div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @* ── STAGE 1: CHARGE ───────────────────────────────────────── *@
+                @if (isHr && c.IsOpen && c.ChargeServedDate == null)
+                {
+                    <div class="card">
+                        <div class="card-head"><h2 class="section-title">1 · Serve the charge</h2></div>
+                        <div class="card-body">
+                            <form asp-action="ServeCharge" method="post">
+                                <input type="hidden" name="id" value="@c.Id" />
+                                <div class="form-grid">
+                                    <div class="fg">
+                                        <label class="req">Served on</label>
+                                        <input type="date" name="servedDate" class="inp"
+                                               value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                                    </div>
+                                    <div class="fg">
+                                        <label>Offence charged</label>
+                                        <select name="offenceId" class="inp"
+                                                asp-items="@(ViewBag.OffenceList as SelectList)">
+                                            <option value="">— unchanged —</option>
+                                        </select>
+                                    </div>
+                                    <div class="fg full">
+                                        <label>Revised particulars (optional)</label>
+                                        <textarea name="particulars" class="inp" rows="4"
+                                                  placeholder="Leave blank to keep the particulars above."></textarea>
+                                    </div>
+                                    <div class="fg full">
+                                        <label class="check">
+                                            <input type="checkbox" name="suspend" value="true" />
+                                            Suspend pending the hearing
+                                        </label>
+                                        <label class="check">
+                                            <input type="checkbox" name="suspensionOnFullPay" value="true" checked />
+                                            On full pay
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-hr">
+                                        <i class="fas fa-file-signature"></i> Record service of the charge
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+
+                @* ── STAGE 2: HEARING ──────────────────────────────────────── *@
+                @if (isHr && c.IsOpen && c.ChargeServedDate != null && c.Status < DisciplinaryStatus.HearingHeld)
+                {
+                    <div class="card">
+                        <div class="card-head">
+                            <h2 class="section-title">2 · Schedule the hearing</h2>
+                        </div>
+                        <div class="card-body">
+                            <form asp-action="ScheduleHearing" method="post">
+                                <input type="hidden" name="id" value="@c.Id" />
+                                <div class="form-grid">
+                                    <div class="fg">
+                                        <label class="req">Date and time</label>
+                                        <input type="datetime-local" name="hearingDate" class="inp"
+                                               value="@(c.HearingDate?.ToString("yyyy-MM-ddTHH:mm")
+                                                        ?? c.ChargeServedDate.Value.AddDays(3).ToString("yyyy-MM-ddT09:00"))"
+                                               required />
+                                        <span class="hint">
+                                            At least two clear days after the charge was served
+                                            (@c.ChargeServedDate.Value.ToString("d MMM yyyy")).
+                                        </span>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Venue</label>
+                                        <input name="venue" class="inp" value="@c.HearingVenue" />
+                                    </div>
+                                    <div class="fg">
+                                        <label>Chairperson</label>
+                                        <select name="chairpersonId" class="inp"
+                                                asp-items="@(ViewBag.EmployeeList as SelectList)">
+                                            <option value="">— select —</option>
+                                        </select>
+                                        <span class="hint">Not the complainant, and not a witness.</span>
+                                    </div>
+                                    <div class="fg">
+                                        <label class="check">
+                                            <input type="checkbox" name="representationOffered" value="true"
+                                                   checked="@c.RepresentationOffered" />
+                                            Right to representation explained
+                                        </label>
+                                        <span class="hint">
+                                            A fellow employee, a workers' committee member or a union representative.
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-hr">
+                                        <i class="fas fa-calendar-check"></i> Schedule
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+
+                @* ── STAGE 3: RECORD THE HEARING ───────────────────────────── *@
+                @if (c.IsOpen && c.HearingDate != null && c.Status <= DisciplinaryStatus.HearingHeld && isHr)
+                {
+                    <div class="card">
+                        <div class="card-head"><h2 class="section-title">3 · Record the hearing</h2></div>
+                        <div class="card-body">
+                            <form asp-action="RecordHearing" method="post">
+                                <input type="hidden" name="id" value="@c.Id" />
+                                <div class="form-grid">
+                                    <div class="fg">
+                                        <label class="check">
+                                            <input type="checkbox" name="employeeAttended" value="true"
+                                                   checked="@c.EmployeeAttended" />
+                                            Employee attended
+                                        </label>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Represented by</label>
+                                        <input name="representedBy" class="inp" value="@c.RepresentedBy"
+                                               placeholder="Name and capacity" />
+                                    </div>
+                                    <div class="fg full">
+                                        <label>If the employee did not attend, why the hearing went ahead</label>
+                                        <input name="absenceExplanation" class="inp" value="@c.AbsenceExplanation"
+                                               placeholder="e.g. Notified in writing on 3 July; did not attend and gave no reason." />
+                                    </div>
+                                    <div class="fg full">
+                                        <label>Employee's response to the charge</label>
+                                        <textarea name="employeeResponse" class="inp" rows="4">@c.EmployeeResponse</textarea>
+                                    </div>
+                                    <div class="fg full">
+                                        <label>Minutes</label>
+                                        <textarea name="minutes" class="inp" rows="8"
+                                                  placeholder="Who was present, the evidence led, what was put and what was answered.">@c.HearingMinutes</textarea>
+                                        <span class="hint">
+                                            This is what an arbitrator reads months later. Write it as a record,
+                                            not a summary.
+                                        </span>
+                                    </div>
+                                    <div class="fg full">
+                                        <label class="check">
+                                            <input type="checkbox" name="representationOffered" value="true"
+                                                   checked="@c.RepresentationOffered" />
+                                            Right to representation was explained
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-hr">
+                                        <i class="fas fa-file-lines"></i> Save the hearing record
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+                else if (c.HearingMinutes != null || c.EmployeeResponse != null)
+                {
+                    <div class="card">
+                        <div class="card-head"><h2 class="section-title">The hearing</h2></div>
+                        <div class="card-body">
+                            <dl class="dl">
+                                <div><dt class="k">Held</dt><dd class="v">@c.HearingDate?.ToString("d MMM yyyy HH:mm")</dd></div>
+                                <div><dt class="k">Venue</dt><dd class="v">@(c.HearingVenue ?? "—")</dd></div>
+                                <div><dt class="k">Chaired by</dt><dd class="v">@(c.Chairperson?.DisplayName ?? "—")</dd></div>
+                                <div>
+                                    <dt class="k">Employee</dt>
+                                    <dd class="v">
+                                        @(c.EmployeeAttended ? "Attended" : "Did not attend")
+                                        @if (!string.IsNullOrWhiteSpace(c.RepresentedBy))
+                                        {
+                                            <text> · represented by @c.RepresentedBy</text>
+                                        }
+                                    </dd>
+                                </div>
+                            </dl>
+
+                            @if (!string.IsNullOrWhiteSpace(c.AbsenceExplanation))
+                            {
+                                <h3 class="section-title sm">Why the hearing proceeded in absence</h3>
+                                <p style="white-space:pre-wrap;">@c.AbsenceExplanation</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(c.EmployeeResponse))
+                            {
+                                <h3 class="section-title sm">Employee's response</h3>
+                                <p style="white-space:pre-wrap;">@c.EmployeeResponse</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(c.HearingMinutes))
+                            {
+                                <h3 class="section-title sm">Minutes</h3>
+                                <p style="white-space:pre-wrap;">@c.HearingMinutes</p>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @* ── STAGE 4: FINDING AND PENALTY ──────────────────────────── *@
+                @if (isHr && c.IsOpen && c.Status == DisciplinaryStatus.HearingHeld)
+                {
+                    <div class="card">
+                        <div class="card-head"><h2 class="section-title">4 · Finding and penalty</h2></div>
+                        <div class="card-body">
+                            @if (guidance != null)
+                            {
+                                <div class="notice">
+                                    <i class="fas fa-scale-balanced"></i>
+                                    <div>
+                                        <strong>The code points to @Spaced(guidance.Suggested.ToString().ToLowerInvariant()).</strong>
+                                        @guidance.Summary
+                                        <ul class="hint" style="margin:.5rem 0 0 1rem;">
+                                            @foreach (var r in guidance.Reasoning)
+                                            {
+                                                <li>@r</li>
+                                            }
+                                        </ul>
+                                        <div class="hint" style="margin-top:.5rem;">
+                                            Advisory only. The chairperson decides, and records why.
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+
+                            <form asp-action="RecordOutcome" method="post">
+                                <input type="hidden" name="id" value="@c.Id" />
+                                <div class="form-grid">
+                                    <div class="fg">
+                                        <label class="req">Finding</label>
+                                        <select name="finding" class="inp" required>
+                                            @foreach (DisciplinaryFinding f in Enum.GetValues<DisciplinaryFinding>())
+                                            {
+                                                if (f == DisciplinaryFinding.Pending) { continue; }
+                                                <option value="@f">@Spaced(f.ToString())</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="fg">
+                                        <label class="req">Penalty</label>
+                                        <select name="penalty" class="inp" required>
+                                            @foreach (DisciplinaryPenalty p in Enum.GetValues<DisciplinaryPenalty>())
+                                            {
+                                                <option value="@p" selected="@(guidance != null && guidance.Suggested == p)">
+                                                    @Spaced(p.ToString())
+                                                </option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="fg full">
+                                        <label class="req">Reasons for the finding</label>
+                                        <textarea name="findingReasons" class="inp" rows="4"
+                                                  placeholder="What evidence was accepted, what was rejected, and why."></textarea>
+                                    </div>
+                                    <div class="fg full">
+                                        <label>Mitigation and aggravation considered</label>
+                                        <textarea name="mitigation" class="inp" rows="3"
+                                                  placeholder="Length of service, previous record, circumstances of the incident, remorse."></textarea>
+                                        <span class="hint">
+                                            A penalty set without weighing mitigation is vulnerable on review.
+                                        </span>
+                                    </div>
+                                    <div class="fg full">
+                                        <label>Reasons for the penalty</label>
+                                        <textarea name="penaltyReasons" class="inp" rows="3"></textarea>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Date of the penalty</label>
+                                        <input type="date" name="penaltyDate" class="inp"
+                                               value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                    </div>
+                                    <div class="fg">
+                                        <label>Days to appeal</label>
+                                        <input type="number" name="appealDays" class="inp" value="5" min="0" max="30" />
+                                    </div>
+                                    <div class="fg full">
+                                        <label class="check">
+                                            <input type="checkbox" name="appealRightExplained" value="true" checked />
+                                            The employee was told of the right to appeal, and by when
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-hr">
+                                        <i class="fas fa-gavel"></i> Record the outcome
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+                else if (c.Finding != DisciplinaryFinding.Pending)
+                {
+                    <div class="card">
+                        <div class="card-head"><h2 class="section-title">Finding and penalty</h2></div>
+                        <div class="card-body">
+                            <dl class="dl">
+                                <div><dt class="k">Finding</dt><dd class="v">@Spaced(c.Finding.ToString())</dd></div>
+                                <div><dt class="k">Penalty</dt><dd class="v">@Spaced(c.Penalty.ToString())</dd></div>
+                                @if (c.SubstitutedPenalty.HasValue)
+                                {
+                                    <div>
+                                        <dt class="k">Substituted on appeal</dt>
+                                        <dd class="v">@Spaced(c.SubstitutedPenalty.Value.ToString())</dd>
+                                    </div>
+                                }
+                                <div><dt class="k">Imposed</dt><dd class="v">@(c.PenaltyDate?.ToString("d MMM yyyy") ?? "—")</dd></div>
+                                <div>
+                                    <dt class="k">Warning</dt>
+                                    <dd class="v">
+                                        @if (c.WarningExpiryDate.HasValue)
+                                        {
+                                            @(c.IsWarningLive ? "Live until " : "Spent on ")
+                                            @c.WarningExpiryDate.Value.ToString("d MMM yyyy")
+                                        }
+                                        else
+                                        {
+                                            <text>Does not expire</text>
+                                        }
+                                    </dd>
+                                </div>
+                            </dl>
+
+                            @if (!string.IsNullOrWhiteSpace(c.FindingReasons))
+                            {
+                                <h3 class="section-title sm">Reasons for the finding</h3>
+                                <p style="white-space:pre-wrap;">@c.FindingReasons</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(c.MitigationConsidered))
+                            {
+                                <h3 class="section-title sm">Mitigation considered</h3>
+                                <p style="white-space:pre-wrap;">@c.MitigationConsidered</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(c.PenaltyReasons))
+                            {
+                                <h3 class="section-title sm">Reasons for the penalty</h3>
+                                <p style="white-space:pre-wrap;">@c.PenaltyReasons</p>
+                            }
+
+                            @if (cost != null && cost.Total > 0)
+                            {
+                                <div class="notice">
+                                    <i class="fas fa-coins"></i>
+                                    <div>
+                                        <strong>Termination cost:</strong>
+                                        @cost.Currency @cost.Total.ToString("N2")
+                                        — notice @cost.Currency @cost.NoticePay.ToString("N2")
+                                        (@cost.NoticePeriod),
+                                        leave payout @cost.Currency @cost.LeavePayout.ToString("N2")
+                                        (@cost.LeaveDays.ToString("0.##") days).
+                                        <div class="hint">@cost.NoticeAuthority</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @* ── STAGE 5: APPEAL ───────────────────────────────────────── *@
+                @if (c.AppealLodged)
+                {
+                    <div class="card">
+                        <div class="card-head"><h2 class="section-title">Appeal</h2></div>
+                        <div class="card-body">
+                            <dl class="dl">
+                                <div><dt class="k">Lodged</dt><dd class="v">@c.AppealLodgedDate?.ToString("d MMM yyyy")</dd></div>
+                                <div><dt class="k">Heard by</dt><dd class="v">@(c.AppealHeardBy?.DisplayName ?? "—")</dd></div>
+                                <div>
+                                    <dt class="k">Outcome</dt>
+                                    <dd class="v">@(c.AppealOutcome.HasValue ? Spaced(c.AppealOutcome.Value.ToString()) : "Pending")</dd>
+                                </div>
+                            </dl>
+
+                            <h3 class="section-title sm">Grounds</h3>
+                            <p style="white-space:pre-wrap;">@c.AppealGrounds</p>
+
+                            @if (!string.IsNullOrWhiteSpace(c.AppealDecision))
+                            {
+                                <h3 class="section-title sm">Decision</h3>
+                                <p style="white-space:pre-wrap;">@c.AppealDecision</p>
+                            }
+
+                            @if (isHr && c.AppealOutcome == null)
+                            {
+                                <form asp-action="DecideAppeal" method="post">
+                                    <input type="hidden" name="id" value="@c.Id" />
+                                    <div class="form-grid">
+                                        <div class="fg">
+                                            <label class="req">Outcome</label>
+                                            <select name="outcome" class="inp" required>
+                                                @foreach (AppealOutcome o in Enum.GetValues<AppealOutcome>())
+                                                {
+                                                    <option value="@o">@Spaced(o.ToString())</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="fg">
+                                            <label>Substituted penalty (if reduced)</label>
+                                            <select name="substitutedPenalty" class="inp">
+                                                <option value="">— none —</option>
+                                                @foreach (DisciplinaryPenalty p in Enum.GetValues<DisciplinaryPenalty>())
+                                                {
+                                                    <option value="@p">@Spaced(p.ToString())</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="fg">
+                                            <label>Heard by</label>
+                                            <select name="heardById" class="inp"
+                                                    asp-items="@(ViewBag.EmployeeList as SelectList)">
+                                                <option value="">— select —</option>
+                                            </select>
+                                            <span class="hint">Not the person who chaired the original hearing.</span>
+                                        </div>
+                                        <div class="fg">
+                                            <label>Date heard</label>
+                                            <input type="date" name="heardDate" class="inp"
+                                                   value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                        </div>
+                                        <div class="fg full">
+                                            <label class="req">Decision and reasons</label>
+                                            <textarea name="decision" class="inp" rows="5" required></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn-hr">
+                                            <i class="fas fa-scale-unbalanced"></i> Record the appeal decision
+                                        </button>
+                                    </div>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                }
+                else if ((isSubject || isHr) && c.Penalty != DisciplinaryPenalty.None
+                         && c.Status == DisciplinaryStatus.PenaltyImposed)
+                {
+                    <div class="card">
+                        <div class="card-head"><h2 class="section-title">Lodge an appeal</h2></div>
+                        <div class="card-body">
+                            @if (c.AppealDeadline.HasValue)
+                            {
+                                <p class="hint">
+                                    The appeal period closes on @c.AppealDeadline.Value.ToString("d MMM yyyy").
+                                    A late appeal is still recorded; whether to condone the delay is for the
+                                    appeal authority.
+                                </p>
+                            }
+                            <form asp-action="LodgeAppeal" method="post">
+                                <input type="hidden" name="id" value="@c.Id" />
+                                <div class="fg">
+                                    <label class="req">Grounds of appeal</label>
+                                    <textarea name="grounds" class="inp" rows="5" required
+                                              placeholder="Why the finding or the penalty is wrong."></textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-outline-hr">
+                                        <i class="fas fa-reply"></i> Lodge the appeal
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+
+                @* ── CASE FILE ─────────────────────────────────────────────── *@
+                <div class="card flush">
+                    <div class="card-head"><h2 class="section-title">Case file</h2></div>
+                    @if (events.Count == 0)
+                    {
+                        <div class="empty"><p>Nothing recorded yet.</p></div>
+                    }
+                    else
+                    {
+                        <table class="tbl">
+                            <thead>
+                                <tr><th>When</th><th>Step</th><th>Detail</th><th>Recorded by</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var e in events)
+                                {
+                                    <tr>
+                                        <td>@e.At.ToString("d MMM yyyy HH:mm")</td>
+                                        <td class="strong-link">@e.Step</td>
+                                        <td>@e.Detail</td>
+                                        <td class="sub">@(e.RecordedBy?.FullName ?? "System")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+
+            @* ── SIDEBAR ───────────────────────────────────────────────────── *@
+            <div>
+                <div class="card">
+                    <div class="card-head">
+                        <h2 class="section-title">Procedural fairness</h2>
+                        <span class="num sm @(c.FairnessScore == 100 ? "green" : c.FairnessScore >= 60 ? "amber" : "red")">
+                            @c.FairnessScore%
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p class="hint" style="margin-top:0;">
+                            What an employer has to be able to show if the dismissal is challenged.
+                            An unfair-dismissal claim turns on these more often than on the facts.
+                        </p>
+                        <ul style="list-style:none; padding:0; margin:0;">
+                            @foreach (var step in c.FairnessChecklist)
+                            {
+                                <li style="display:flex; gap:.6rem; padding:.5rem 0; border-top:1px solid var(--gray-100);">
+                                    <i class="fas @(step.Done ? "fa-circle-check green" : "fa-circle-exclamation red")"
+                                       style="margin-top:.15rem;"></i>
+                                    <div>
+                                        <div class="strong-link">@step.Step</div>
+                                        <div class="sub">@step.Why</div>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><h2 class="section-title">Live warnings on record</h2></div>
+                    <div class="card-body">
+                        @if (live.Count == 0)
+                        {
+                            <p class="muted" style="margin:0;">
+                                None. A spent warning cannot be counted towards progression, so this list
+                                shows only warnings still within their validity period.
+                            </p>
+                        }
+                        else
+                        {
+                            <ul style="list-style:none; padding:0; margin:0;">
+                                @foreach (var w in live)
+                                {
+                                    <li style="padding:.5rem 0; border-top:1px solid var(--gray-100);">
+                                        <div class="strong-link">@Spaced(w.Penalty.ToString())</div>
+                                        <div class="sub">
+                                            @(w.Offence?.Name ?? w.Title) ·
+                                            @w.PenaltyDate?.ToString("d MMM yyyy") ·
+                                            live until @w.WarningExpiryDate?.ToString("d MMM yyyy")
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+
+                @if (isHr && c.IsOpen)
+                {
+                    <div class="card">
+                        <div class="card-head"><h2 class="section-title">Case actions</h2></div>
+                        <div class="card-body act-btns">
+                            @if (c.Status == DisciplinaryStatus.Reported)
+                            {
+                                <form asp-action="StartInvestigation" method="post" class="inline-form">
+                                    <input type="hidden" name="id" value="@c.Id" />
+                                    <input name="note" class="inp" placeholder="Who is investigating, and what into." />
+                                    <button type="submit" class="btn-outline-hr">
+                                        <i class="fas fa-magnifying-glass"></i> Open an investigation
+                                    </button>
+                                </form>
+                            }
+
+                            @if (c.Status != DisciplinaryStatus.UnderAppeal
+                                 && c.Finding != DisciplinaryFinding.Pending)
+                            {
+                                <form asp-action="Close" method="post" class="inline-form">
+                                    <input type="hidden" name="id" value="@c.Id" />
+                                    <input name="note" class="inp" placeholder="Closing note (optional)" />
+                                    <button type="submit" class="btn-outline-hr">
+                                        <i class="fas fa-box-archive"></i> Close the case
+                                    </button>
+                                </form>
+                            }
+
+                            <form asp-action="Withdraw" method="post" class="inline-form"
+                                  onsubmit="return confirm('Withdraw this allegation? The file stays on record showing it was not pursued.');">
+                                <input type="hidden" name="id" value="@c.Id" />
+                                <input name="reason" class="inp" placeholder="Why it is not being pursued" required />
+                                <button type="submit" class="btn-danger-hr">
+                                    <i class="fas fa-ban"></i> Withdraw the allegation
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
