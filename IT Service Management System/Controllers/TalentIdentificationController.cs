@@ -1,4 +1,6 @@
 ﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Enums;
+using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +14,8 @@ namespace IT_Service_Management_System.Controllers
         private readonly ApplicationDbContext _context;
 
         private readonly AuditService _audit;
+
+        private const int PageSize = 25;
 
         public TalentIdentificationController(ApplicationDbContext context, AuditService audit)
         {
@@ -45,13 +49,37 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // GET: TalentIdentification
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? q, string? department,
+            RiskLevel? risk, ReadinessLevel? readiness, int page = 1)
         {
             // The IsDeleted predicate now lives in a global query filter, so it is applied here
             // whether or not this query remembers to ask for it.
-            var records = await _context.TalentIdentifications
+            IQueryable<TalentIdentification> query = _context.TalentIdentifications.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(x => x.EmployeeName.Contains(term)
+                    || x.JobTitle.Contains(term)
+                    || x.NineBoxAssessment.Contains(term));
+            }
+
+            if (!string.IsNullOrWhiteSpace(department)) query = query.Where(x => x.Department == department);
+            if (risk.HasValue) query = query.Where(x => x.RiskOfLeaving == risk.Value);
+            if (readiness.HasValue) query = query.Where(x => x.Readiness == readiness.Value);
+
+            var (records, paging) = await query
                 .OrderByDescending(x => x.CreatedDate)
-                .ToListAsync();
+                .PageAsync(page, PageSize);
+
+            ViewBag.Paging = paging;
+            ViewBag.Q = q; ViewBag.Department = department;
+            ViewBag.Risk = risk; ViewBag.Readiness = readiness;
+
+            ViewBag.Departments = await _context.TalentIdentifications.AsNoTracking()
+                .Where(x => x.Department != "")
+                .Select(x => x.Department)
+                .Distinct().OrderBy(d => d).ToListAsync();
 
             return View(records);
         }

@@ -63,6 +63,44 @@
         </div>
     </div>
 
+    <!-- Filters -->
+    <div class="interviews-card mb-4">
+        <div class="card-header-custom">
+            <div><i class="fas fa-filter me-2"></i><span>Filter interviews</span></div>
+        </div>
+        <div style="padding:1.25rem; display:flex; gap:.75rem; flex-wrap:wrap; align-items:flex-end;">
+            <form method="get" style="display:flex; gap:.75rem; flex-wrap:wrap; align-items:flex-end; width:100%;">
+                <div style="flex:2; min-width:200px;">
+                    <label style="display:block; font-size:.75rem; font-weight:600; color:var(--gray-600); margin-bottom:.35rem;">Search</label>
+                    <input type="text" name="q" value="@ViewBag.Q" class="form-control"
+                           placeholder="Name, position, client or interviewer…" />
+                </div>
+                <div style="min-width:180px;">
+                    <label style="display:block; font-size:.75rem; font-weight:600; color:var(--gray-600); margin-bottom:.35rem;">Reason for leaving</label>
+                    <select name="reason" class="form-control">
+                        <option value="">All reasons</option>
+                        @foreach (var r in (ViewBag.Reasons as List<string> ?? new List<string>()))
+                        {
+                            <option value="@r" selected="@((ViewBag.Reason as string) == r)">@r</option>
+                        }
+                    </select>
+                </div>
+                <div style="min-width:150px;">
+                    <label style="display:block; font-size:.75rem; font-weight:600; color:var(--gray-600); margin-bottom:.35rem;">Left on or after</label>
+                    <input type="date" name="from" class="form-control"
+                           value="@((ViewBag.From as DateTime?)?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <div style="min-width:150px;">
+                    <label style="display:block; font-size:.75rem; font-weight:600; color:var(--gray-600); margin-bottom:.35rem;">Left on or before</label>
+                    <input type="date" name="to" class="form-control"
+                           value="@((ViewBag.To as DateTime?)?.ToString("yyyy-MM-dd"))" />
+                </div>
+                <button type="submit" class="btn-create-interview"><i class="fas fa-search me-2"></i>Search</button>
+                <a asp-action="Index" class="btn btn-light">Clear</a>
+            </form>
+        </div>
+    </div>
+
     <!-- Interviews Table -->
     <div class="interviews-card">
         <div class="card-header-custom">
@@ -170,6 +208,8 @@
                 </div>
             }
         </div>
+
+        <partial name="_HrPager" model="@(ViewBag.Paging as IT_Service_Management_System.Helpers.PagingInfo)" />
     </div>
 </div>
 

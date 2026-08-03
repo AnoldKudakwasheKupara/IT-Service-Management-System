@@ -1,4 +1,5 @@
 ﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,8 @@ namespace IT_Service_Management_System.Controllers
 
         private readonly AuditService _audit;
 
+        private const int PageSize = 25;
+
         public ExitInterviewController(ApplicationDbContext context, AuditService audit)
         {
             _context = context;
@@ -20,9 +23,39 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // GET: ExitInterview
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? q, string? reason, DateTime? from, DateTime? to, int page = 1)
         {
-            return View(await _context.ExitInterviews.ToListAsync());
+            IQueryable<ExitInterview> query = _context.ExitInterviews.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(x => x.EmployeeName.Contains(term)
+                    || x.Position.Contains(term)
+                    || (x.Client != null && x.Client.Contains(term))
+                    || (x.InterviewConductedBy != null && x.InterviewConductedBy.Contains(term)));
+            }
+
+            if (!string.IsNullOrWhiteSpace(reason))
+                query = query.Where(x => x.PrimaryReasonForDeparture == reason);
+
+            if (from.HasValue) query = query.Where(x => x.LastWorkingDay >= from.Value);
+            if (to.HasValue) query = query.Where(x => x.LastWorkingDay <= to.Value);
+
+            var (items, paging) = await query
+                .OrderByDescending(x => x.LastWorkingDay ?? x.CreatedDate)
+                .PageAsync(page, PageSize);
+
+            ViewBag.Paging = paging;
+            ViewBag.Q = q; ViewBag.Reason = reason; ViewBag.From = from; ViewBag.To = to;
+
+            // The reasons actually used, so the filter reflects the data rather than a fixed list.
+            ViewBag.Reasons = await _context.ExitInterviews.AsNoTracking()
+                .Where(x => x.PrimaryReasonForDeparture != null && x.PrimaryReasonForDeparture != "")
+                .Select(x => x.PrimaryReasonForDeparture!)
+                .Distinct().OrderBy(r => r).ToListAsync();
+
+            return View(items);
         }
 
         // GET: ExitInterview/Details/5

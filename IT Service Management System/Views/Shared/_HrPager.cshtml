@@ -1,0 +1,89 @@
+@using IT_Service_Management_System.Helpers
+@model PagingInfo
+@*
+    Pagination for the HR list pages. Every current query-string value is carried through, so
+    paging never silently drops the filters the user set.
+*@
+@{
+    if (Model == null || Model.TotalPages <= 1) { return; }
+
+    var route = new Dictionary<string, string?>();
+    foreach (var key in Context.Request.Query.Keys)
+    {
+        if (string.Equals(key, "page", StringComparison.OrdinalIgnoreCase)) continue;
+        route[key] = Context.Request.Query[key];
+    }
+
+    string Url(int page)
+    {
+        var parts = route
+            .Where(kv => !string.IsNullOrEmpty(kv.Value))
+            .Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value!)}")
+            .Append($"page={page}");
+        return $"{Context.Request.Path}?{string.Join("&", parts)}";
+    }
+
+    // A window around the current page, so a long list does not produce a hundred links.
+    var first = Math.Max(1, Model.Page - 4);
+    var last = Math.Min(Model.TotalPages, first + 8);
+    first = Math.Max(1, last - 8);
+}
+
+<nav class="hr-pager" aria-label="Pagination">
+    <span class="hr-pager-summary">
+        Showing @Model.FirstItem–@Model.LastItem of @Model.TotalCount
+    </span>
+
+    <span class="hr-pager-links">
+        @if (Model.HasPrevious)
+        {
+            <a href="@Url(Model.Page - 1)" rel="prev"><i class="fas fa-chevron-left"></i> Previous</a>
+        }
+
+        @if (first > 1)
+        {
+            <a href="@Url(1)">1</a>
+            <span class="hr-pager-gap">…</span>
+        }
+
+        @for (var i = first; i <= last; i++)
+        {
+            if (i == Model.Page)
+            {
+                <span class="hr-pager-current" aria-current="page">@i</span>
+            }
+            else
+            {
+                <a href="@Url(i)">@i</a>
+            }
+        }
+
+        @if (last < Model.TotalPages)
+        {
+            <span class="hr-pager-gap">…</span>
+            <a href="@Url(Model.TotalPages)">@Model.TotalPages</a>
+        }
+
+        @if (Model.HasNext)
+        {
+            <a href="@Url(Model.Page + 1)" rel="next">Next <i class="fas fa-chevron-right"></i></a>
+        }
+    </span>
+</nav>
+
+<style>
+    .hr-pager {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        flex-wrap: wrap; padding: 1rem 0; font-size: .85rem;
+    }
+    .hr-pager-summary { color: var(--gray-500); }
+    .hr-pager-links { display: flex; gap: .3rem; flex-wrap: wrap; align-items: center; }
+    .hr-pager-links a, .hr-pager-current {
+        display: inline-flex; align-items: center; gap: .3rem; padding: .35rem .7rem;
+        border-radius: .5rem; text-decoration: none; font-weight: 600; font-size: .8rem;
+        border: 1px solid var(--gray-200); background: white; color: var(--gray-600);
+    }
+    .hr-pager-links a:hover { background: var(--gray-50); color: var(--primary); border-color: var(--gray-300); }
+    .hr-pager-current { background: var(--primary); border-color: var(--primary); color: white; }
+    .hr-pager-gap { color: var(--gray-400); padding: 0 .2rem; }
+</style>

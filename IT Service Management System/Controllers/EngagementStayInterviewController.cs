@@ -1,4 +1,5 @@
 ﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,8 @@ namespace IT_Service_Management_System.Controllers
 
         private readonly AuditService _audit;
 
+        private const int PageSize = 25;
+
         public EngagementStayInterviewController(ApplicationDbContext context, AuditService audit)
         {
             _context = context;
@@ -20,9 +23,38 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // GET: EngagementStayInterview
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? q, EngagementStatus? status,
+            string? department, DateTime? from, DateTime? to, int page = 1)
         {
-            return View(await _context.EngagementStayInterviews.ToListAsync());
+            IQueryable<EngagementStayInterview> query = _context.EngagementStayInterviews.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim();
+                query = query.Where(x => x.NameAndSurname.Contains(term)
+                    || x.JobTitle.Contains(term)
+                    || x.ManagerName.Contains(term));
+            }
+
+            if (status.HasValue) query = query.Where(x => x.OverallStatus == status.Value);
+            if (!string.IsNullOrWhiteSpace(department)) query = query.Where(x => x.Department == department);
+            if (from.HasValue) query = query.Where(x => x.DiscussionDate >= from.Value);
+            if (to.HasValue) query = query.Where(x => x.DiscussionDate <= to.Value);
+
+            var (items, paging) = await query
+                .OrderByDescending(x => x.DiscussionDate ?? x.CreatedDate)
+                .PageAsync(page, PageSize);
+
+            ViewBag.Paging = paging;
+            ViewBag.Q = q; ViewBag.Status = status; ViewBag.Department = department;
+            ViewBag.From = from; ViewBag.To = to;
+
+            ViewBag.Departments = await _context.EngagementStayInterviews.AsNoTracking()
+                .Where(x => x.Department != "")
+                .Select(x => x.Department)
+                .Distinct().OrderBy(d => d).ToListAsync();
+
+            return View(items);
         }
 
         // GET: EngagementStayInterview/Details/5
