@@ -3,6 +3,7 @@ using IT_Service_Management_System.Models.Efm;
 using IT_Service_Management_System.Models.Itsm;
 using IT_Service_Management_System.Models.Ims;
 using IT_Service_Management_System.Models.Pm;
+using IT_Service_Management_System.Models.Hr;
 using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.DbContexts
@@ -188,6 +189,9 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<ProjectTemplateItem> ProjectTemplateItems { get; set; }
         public DbSet<ProjectClosure> ProjectClosures { get; set; }
         public DbSet<LessonLearned> LessonsLearned { get; set; }
+
+        // ── HR (employee master record) ────────────────────────────────────────────
+        public DbSet<Employee> Employees { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -778,6 +782,9 @@ namespace IT_Service_Management_System.DbContexts
             // multiple cascade paths. Records owned by a project cascade from the project itself.
             ConfigurePmModule(modelBuilder);
 
+            // ── HR employee register ──────────────────────────────────────────────
+            ConfigureHrModule(modelBuilder);
+
             // Seed document categories
             modelBuilder.Entity<IsoDocumentCategory>().HasData(
                 new IsoDocumentCategory { Id = 1, Name = "Quality Management", Code = "QMS", IsActive = true },
@@ -823,6 +830,65 @@ namespace IT_Service_Management_System.DbContexts
                 new IsoClause { Id = 27, Standard = IsoStandard.Iso27001, ClauseNumber = "10", Title = "Improvement" },
                 new IsoClause { Id = 28, Standard = IsoStandard.Iso27001, ClauseNumber = "10.2", Title = "Nonconformity and corrective action" }
             );
+        }
+
+        /// <summary>
+        /// The employee register and the links from each HR process module back to it. Employee
+        /// records are soft-deleted and never destroyed, so a global query filter hides retired
+        /// rows while keeping them available to an administrator who ignores the filter.
+        /// </summary>
+        private static void ConfigureHrModule(ModelBuilder b)
+        {
+            b.Entity<Employee>(e =>
+            {
+                e.HasIndex(x => x.EmployeeNumber).IsUnique();
+                e.HasIndex(x => new { x.Status, x.DepartmentId });
+                e.HasIndex(x => x.HireDate);
+                e.HasIndex(x => x.UserId).IsUnique().HasFilter("[UserId] IS NOT NULL");
+                e.HasQueryFilter(x => !x.IsDeleted);
+
+                // One account maps to at most one employee. Deleting the account must never
+                // cascade away the employment record.
+                e.HasOne(x => x.User).WithOne()
+                    .HasForeignKey<Employee>(x => x.UserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                e.HasOne(x => x.Department).WithMany()
+                    .HasForeignKey(x => x.DepartmentId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // Self-reference for the reporting line.
+                e.HasOne(x => x.Manager).WithMany(x => x.DirectReports)
+                    .HasForeignKey(x => x.ManagerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Each process module points at the employee. The dependents carry a matching query
+            // filter so EF does not warn about the required-end mismatch, and so an assessment of
+            // a deleted employee disappears with them.
+            b.Entity<TalentIdentification>(e =>
+            {
+                e.HasIndex(x => x.EmployeeId);
+                e.HasOne(x => x.Employee).WithMany(x => x.TalentAssessments)
+                    .HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            b.Entity<ExitInterview>(e =>
+            {
+                e.HasIndex(x => x.EmployeeId);
+                e.HasOne(x => x.Employee).WithMany(x => x.ExitInterviews)
+                    .HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            b.Entity<EngagementStayInterview>(e =>
+            {
+                e.HasIndex(x => x.EmployeeId);
+                e.HasOne(x => x.Employee).WithMany(x => x.StayInterviews)
+                    .HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
         }
 
         /// <summary>

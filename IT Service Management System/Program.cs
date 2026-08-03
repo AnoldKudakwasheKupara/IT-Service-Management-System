@@ -233,6 +233,10 @@ builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.ProjectAppro
 builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.ProjectIntelligenceService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.PmFileService>();
 
+// HR — builds the employee register from existing accounts and matches historical interview
+// and talent rows back to it. Idempotent; safe to run on every start.
+builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.EmployeeBackfillService>();
+
 // Defensive, idempotent demo-data top-up seeder (gated by Demo:Seed, default ON).
 builder.Services.AddScoped<IT_Service_Management_System.Services.DemoDataSeeder>();
 // OCR engine (pluggable). PlainText baseline by default; set EFM:Ocr:Provider = "tesseract"
@@ -341,6 +345,11 @@ try
 
         context.SaveChanges();
     }
+
+    // Build the employee register from existing accounts. Idempotent, and never fatal — a failure
+    // here must not stop the application from starting.
+    try { await scope.ServiceProvider.GetRequiredService<IT_Service_Management_System.Services.Hr.EmployeeBackfillService>().RunAsync(); }
+    catch (Exception ex) { Log.Warning(ex, "Employee register backfill failed"); }
 
     // Demo-data top-up seeding (idempotent; never crashes startup). Default ON; disable via Demo:Seed=false.
     if (app.Configuration.GetValue("Demo:Seed", true))

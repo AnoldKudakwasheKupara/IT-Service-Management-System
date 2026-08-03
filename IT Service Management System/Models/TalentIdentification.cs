@@ -13,7 +13,16 @@ namespace IT_Service_Management_System.Models
         }
 
 
-        // Employee Information
+        /// <summary>
+        /// The employee this assessment belongs to. Nullable only so historical rows captured
+        /// before the employee register existed can be matched up gradually.
+        /// </summary>
+        public int? EmployeeId { get; set; }
+
+        [Microsoft.AspNetCore.Mvc.ModelBinding.Validation.ValidateNever]
+        public Hr.Employee? Employee { get; set; }
+
+        // Employee Information — a snapshot of the person's details at the time of assessment.
 
         public string EmployeeName { get; set; } = string.Empty;
 

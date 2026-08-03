@@ -7,7 +7,17 @@ namespace IT_Service_Management_System.Models
         [Key]
         public int Id { get; set; }
 
-        // Employee Information
+        /// <summary>
+        /// The employee this interview belongs to. Nullable only so historical rows captured before
+        /// the employee register existed can be matched up gradually; new interviews always set it.
+        /// </summary>
+        public int? EmployeeId { get; set; }
+
+        [Microsoft.AspNetCore.Mvc.ModelBinding.Validation.ValidateNever]
+        public Hr.Employee? Employee { get; set; }
+
+        // Employee Information — kept as a snapshot of what the person's details were at the time
+        // of the interview, which is what an exit record should preserve.
         [Required]
         public string EmployeeName { get; set; } = string.Empty;
 
