@@ -2,6 +2,7 @@
 using IT_Service_Management_System.Models.Efm;
 using IT_Service_Management_System.Models.Itsm;
 using IT_Service_Management_System.Models.Ims;
+using IT_Service_Management_System.Models.Pm;
 using Microsoft.EntityFrameworkCore;
 
 namespace IT_Service_Management_System.DbContexts
@@ -139,6 +140,54 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<IsoEvidence> IsoEvidences { get; set; }
         public DbSet<IsoClause> IsoClauses { get; set; }
         public DbSet<IsoNotification> IsoNotifications { get; set; }
+
+        // ── Project Management (portfolio, planning, delivery, finance, governance) ─
+        public DbSet<Project> Projects { get; set; }
+        public DbSet<ProjectTeamMember> ProjectTeamMembers { get; set; }
+        public DbSet<ProjectLink> ProjectLinks { get; set; }
+        public DbSet<ProjectAttachment> ProjectAttachments { get; set; }
+        public DbSet<ProjectActivityLog> ProjectActivityLogs { get; set; }
+        public DbSet<PmNotification> PmNotifications { get; set; }
+        // Planning
+        public DbSet<ProjectPhase> ProjectPhases { get; set; }
+        public DbSet<WbsItem> WbsItems { get; set; }
+        public DbSet<Milestone> Milestones { get; set; }
+        public DbSet<Deliverable> Deliverables { get; set; }
+        // Tasks
+        public DbSet<ProjectTask> ProjectTasks { get; set; }
+        public DbSet<TaskDependency> TaskDependencies { get; set; }
+        public DbSet<TaskChecklistItem> TaskChecklistItems { get; set; }
+        public DbSet<TaskComment> TaskComments { get; set; }
+        public DbSet<TaskAttachment> TaskAttachments { get; set; }
+        // Resources & time
+        public DbSet<Resource> Resources { get; set; }
+        public DbSet<ResourceAssignment> ResourceAssignments { get; set; }
+        public DbSet<ResourceUnavailability> ResourceUnavailabilities { get; set; }
+        public DbSet<TimeEntry> TimeEntries { get; set; }
+        // Finance & procurement
+        public DbSet<BudgetLine> BudgetLines { get; set; }
+        public DbSet<ProjectExpense> ProjectExpenses { get; set; }
+        public DbSet<ProcurementRequest> ProcurementRequests { get; set; }
+        public DbSet<ProcurementQuote> ProcurementQuotes { get; set; }
+        public DbSet<ProjectAsset> ProjectAssets { get; set; }
+        // Governance
+        public DbSet<ProjectRisk> ProjectRisks { get; set; }
+        public DbSet<ProjectIssue> ProjectIssues { get; set; }
+        public DbSet<ProjectChangeRequest> ProjectChangeRequests { get; set; }
+        public DbSet<QualityCheck> QualityChecks { get; set; }
+        public DbSet<ProjectApproval> ProjectApprovals { get; set; }
+        public DbSet<ProjectKpi> ProjectKpis { get; set; }
+        // Collaboration, templates & closure
+        public DbSet<ProjectDocument> ProjectDocuments { get; set; }
+        public DbSet<ProjectDocumentVersion> ProjectDocumentVersions { get; set; }
+        public DbSet<ProjectMeeting> ProjectMeetings { get; set; }
+        public DbSet<ProjectMeetingAttendee> ProjectMeetingAttendees { get; set; }
+        public DbSet<ProjectMeetingAction> ProjectMeetingActions { get; set; }
+        public DbSet<ProjectDiscussion> ProjectDiscussions { get; set; }
+        public DbSet<ProjectTemplate> ProjectTemplates { get; set; }
+        public DbSet<ProjectTemplateItem> ProjectTemplateItems { get; set; }
+        public DbSet<ProjectClosure> ProjectClosures { get; set; }
+        public DbSet<LessonLearned> LessonsLearned { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -723,6 +772,12 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<ComplianceObligation>().HasIndex(o => o.Status);
             modelBuilder.Entity<Improvement>().HasIndex(i => i.Status);
 
+            // ── Project Management ────────────────────────────────────────────────
+            // Every reference to a User is Restrict: a project touches the same person from many
+            // angles (manager, sponsor, assignee, approver) and SQL Server rejects the resulting
+            // multiple cascade paths. Records owned by a project cascade from the project itself.
+            ConfigurePmModule(modelBuilder);
+
             // Seed document categories
             modelBuilder.Entity<IsoDocumentCategory>().HasData(
                 new IsoDocumentCategory { Id = 1, Name = "Quality Management", Code = "QMS", IsActive = true },
@@ -767,6 +822,405 @@ namespace IT_Service_Management_System.DbContexts
                 new IsoClause { Id = 26, Standard = IsoStandard.Iso27001, ClauseNumber = "9.3", Title = "Management review" },
                 new IsoClause { Id = 27, Standard = IsoStandard.Iso27001, ClauseNumber = "10", Title = "Improvement" },
                 new IsoClause { Id = 28, Standard = IsoStandard.Iso27001, ClauseNumber = "10.2", Title = "Nonconformity and corrective action" }
+            );
+        }
+
+        /// <summary>
+        /// Relationships, indexes and seed data for the Project Management module. Split out of
+        /// <see cref="OnModelCreating"/> to keep that method readable.
+        /// </summary>
+        private static void ConfigurePmModule(ModelBuilder b)
+        {
+            // ── Project ───────────────────────────────────────────────────────────
+            b.Entity<Project>(e =>
+            {
+                e.HasIndex(p => p.Code).IsUnique();
+                e.HasIndex(p => new { p.Status, p.EndDate });
+                e.HasIndex(p => p.DepartmentId);
+                e.HasQueryFilter(p => !p.IsDeleted);
+
+                e.HasOne(p => p.Department).WithMany().HasForeignKey(p => p.DepartmentId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(p => p.Sponsor).WithMany().HasForeignKey(p => p.SponsorId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(p => p.ProjectManager).WithMany().HasForeignKey(p => p.ProjectManagerId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(p => p.CreatedBy).WithMany().HasForeignKey(p => p.CreatedById).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(p => p.ApprovedBy).WithMany().HasForeignKey(p => p.ApprovedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProjectTeamMember>(e =>
+            {
+                e.HasIndex(m => new { m.ProjectId, m.UserId });
+                e.HasOne(m => m.Project).WithMany(p => p.TeamMembers).HasForeignKey(m => m.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(m => m.User).WithMany().HasForeignKey(m => m.UserId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Two FKs onto Project — the second must not cascade, or SQL Server sees two paths.
+            b.Entity<ProjectLink>(e =>
+            {
+                e.HasOne(l => l.Project).WithMany(p => p.Dependencies).HasForeignKey(l => l.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(l => l.DependsOnProject).WithMany().HasForeignKey(l => l.DependsOnProjectId).OnDelete(DeleteBehavior.NoAction);
+            });
+
+            b.Entity<ProjectAttachment>(e =>
+            {
+                e.HasOne(a => a.Project).WithMany(p => p.Attachments).HasForeignKey(a => a.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(a => a.UploadedBy).WithMany().HasForeignKey(a => a.UploadedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProjectActivityLog>(e =>
+            {
+                e.HasIndex(l => new { l.ProjectId, l.At });
+                e.HasIndex(l => new { l.EntityType, l.EntityId });
+                e.HasOne(l => l.Project).WithMany().HasForeignKey(l => l.ProjectId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(l => l.User).WithMany().HasForeignKey(l => l.UserId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<PmNotification>(e =>
+            {
+                e.HasIndex(n => new { n.UserId, n.IsRead });
+                e.HasOne(n => n.User).WithMany().HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(n => n.Project).WithMany().HasForeignKey(n => n.ProjectId).OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ── Planning ──────────────────────────────────────────────────────────
+            b.Entity<ProjectPhase>(e =>
+            {
+                e.HasIndex(p => new { p.ProjectId, p.Sequence });
+                e.HasOne(p => p.Project).WithMany(x => x.Phases).HasForeignKey(p => p.ProjectId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<WbsItem>(e =>
+            {
+                e.HasIndex(w => new { w.ProjectId, w.WbsCode });
+                e.HasOne(w => w.Project).WithMany(p => p.WbsItems).HasForeignKey(w => w.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(w => w.Parent).WithMany(x => x.Children).HasForeignKey(w => w.ParentId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(w => w.Phase).WithMany(p => p.WbsItems).HasForeignKey(w => w.PhaseId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(w => w.Owner).WithMany().HasForeignKey(w => w.OwnerId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<Milestone>(e =>
+            {
+                e.HasIndex(m => new { m.ProjectId, m.DueDate });
+                e.HasIndex(m => m.Status);
+                e.HasOne(m => m.Project).WithMany(p => p.Milestones).HasForeignKey(m => m.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(m => m.Phase).WithMany().HasForeignKey(m => m.PhaseId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(m => m.Owner).WithMany().HasForeignKey(m => m.OwnerId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<Deliverable>(e =>
+            {
+                e.HasIndex(d => new { d.ProjectId, d.Status });
+                e.HasOne(d => d.Project).WithMany(p => p.Deliverables).HasForeignKey(d => d.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(d => d.Milestone).WithMany().HasForeignKey(d => d.MilestoneId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(d => d.Phase).WithMany().HasForeignKey(d => d.PhaseId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(d => d.Owner).WithMany().HasForeignKey(d => d.OwnerId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(d => d.AcceptedBy).WithMany().HasForeignKey(d => d.AcceptedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Tasks ─────────────────────────────────────────────────────────────
+            b.Entity<ProjectTask>(e =>
+            {
+                e.HasIndex(t => new { t.ProjectId, t.Status });
+                e.HasIndex(t => new { t.ProjectId, t.Column, t.BoardOrder });
+                e.HasIndex(t => new { t.AssignedToId, t.DueDate });
+                e.HasQueryFilter(t => !t.IsDeleted);
+
+                e.HasOne(t => t.Project).WithMany(p => p.Tasks).HasForeignKey(t => t.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(t => t.ParentTask).WithMany(t => t.Subtasks).HasForeignKey(t => t.ParentTaskId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(t => t.WbsItem).WithMany(w => w.Tasks).HasForeignKey(t => t.WbsItemId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(t => t.Phase).WithMany(p => p.Tasks).HasForeignKey(t => t.PhaseId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(t => t.Milestone).WithMany().HasForeignKey(t => t.MilestoneId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(t => t.AssignedTo).WithMany().HasForeignKey(t => t.AssignedToId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(t => t.Reviewer).WithMany().HasForeignKey(t => t.ReviewerId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(t => t.CreatedBy).WithMany().HasForeignKey(t => t.CreatedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<TaskDependency>(e =>
+            {
+                e.HasIndex(d => new { d.TaskId, d.PredecessorTaskId }).IsUnique();
+                e.HasOne(d => d.Task).WithMany(t => t.Dependencies).HasForeignKey(d => d.TaskId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(d => d.PredecessorTask).WithMany().HasForeignKey(d => d.PredecessorTaskId).OnDelete(DeleteBehavior.NoAction);
+            });
+
+            b.Entity<TaskChecklistItem>(e =>
+            {
+                e.HasOne(c => c.Task).WithMany(t => t.Checklist).HasForeignKey(c => c.TaskId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(c => c.CompletedBy).WithMany().HasForeignKey(c => c.CompletedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<TaskComment>(e =>
+            {
+                e.HasIndex(c => c.TaskId);
+                e.HasOne(c => c.Task).WithMany(t => t.Comments).HasForeignKey(c => c.TaskId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(c => c.Author).WithMany().HasForeignKey(c => c.AuthorId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<TaskAttachment>(e =>
+            {
+                e.HasOne(a => a.Task).WithMany(t => t.Attachments).HasForeignKey(a => a.TaskId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(a => a.UploadedBy).WithMany().HasForeignKey(a => a.UploadedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Resources & time ──────────────────────────────────────────────────
+            b.Entity<Resource>(e =>
+            {
+                e.HasIndex(r => new { r.Type, r.IsActive });
+                e.HasOne(r => r.User).WithMany().HasForeignKey(r => r.UserId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(r => r.Department).WithMany().HasForeignKey(r => r.DepartmentId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ResourceAssignment>(e =>
+            {
+                e.HasIndex(a => new { a.ResourceId, a.FromDate, a.ToDate });
+                e.HasOne(a => a.Resource).WithMany(r => r.Assignments).HasForeignKey(a => a.ResourceId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(a => a.Project).WithMany().HasForeignKey(a => a.ProjectId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(a => a.Task).WithMany().HasForeignKey(a => a.TaskId).OnDelete(DeleteBehavior.NoAction);
+            });
+
+            b.Entity<ResourceUnavailability>(e =>
+            {
+                e.HasIndex(u => new { u.ResourceId, u.FromDate });
+                e.HasOne(u => u.Resource).WithMany(r => r.Unavailability).HasForeignKey(u => u.ResourceId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<TimeEntry>(e =>
+            {
+                e.HasIndex(t => new { t.UserId, t.WorkDate });
+                e.HasIndex(t => new { t.ProjectId, t.WorkDate });
+                e.HasIndex(t => t.Status);
+                e.HasOne(t => t.Project).WithMany(p => p.TimeEntries).HasForeignKey(t => t.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(t => t.Task).WithMany(x => x.TimeEntries).HasForeignKey(t => t.TaskId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(t => t.User).WithMany().HasForeignKey(t => t.UserId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(t => t.ApprovedBy).WithMany().HasForeignKey(t => t.ApprovedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Finance & procurement ─────────────────────────────────────────────
+            b.Entity<BudgetLine>(e =>
+            {
+                e.HasIndex(l => new { l.ProjectId, l.Category });
+                e.HasOne(l => l.Project).WithMany(p => p.BudgetLines).HasForeignKey(l => l.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(l => l.Phase).WithMany().HasForeignKey(l => l.PhaseId).OnDelete(DeleteBehavior.SetNull);
+            });
+
+            b.Entity<ProjectExpense>(e =>
+            {
+                e.HasIndex(x => new { x.ProjectId, x.Status });
+                e.HasIndex(x => x.ExpenseDate);
+                e.HasOne(x => x.Project).WithMany(p => p.Expenses).HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.BudgetLine).WithMany().HasForeignKey(x => x.BudgetLineId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(x => x.Task).WithMany().HasForeignKey(x => x.TaskId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.SubmittedBy).WithMany().HasForeignKey(x => x.SubmittedById).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(x => x.ApprovedBy).WithMany().HasForeignKey(x => x.ApprovedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProcurementRequest>(e =>
+            {
+                e.HasIndex(p => new { p.ProjectId, p.Status });
+                e.HasOne(p => p.Project).WithMany().HasForeignKey(p => p.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(p => p.BudgetLine).WithMany().HasForeignKey(p => p.BudgetLineId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(p => p.RequestedBy).WithMany().HasForeignKey(p => p.RequestedById).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(p => p.ApprovedBy).WithMany().HasForeignKey(p => p.ApprovedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProcurementQuote>(e =>
+                e.HasOne(q => q.ProcurementRequest).WithMany().HasForeignKey(q => q.ProcurementRequestId).OnDelete(DeleteBehavior.Cascade));
+
+            b.Entity<ProjectAsset>(e =>
+            {
+                e.HasIndex(a => new { a.ProjectId, a.ReturnedDate });
+                e.HasOne(a => a.Project).WithMany().HasForeignKey(a => a.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(a => a.Asset).WithMany().HasForeignKey(a => a.AssetId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(a => a.IssuedTo).WithMany().HasForeignKey(a => a.IssuedToId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Governance ────────────────────────────────────────────────────────
+            b.Entity<ProjectRisk>(e =>
+            {
+                e.HasIndex(r => new { r.ProjectId, r.Status });
+                e.HasOne(r => r.Project).WithMany(p => p.Risks).HasForeignKey(r => r.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(r => r.Owner).WithMany().HasForeignKey(r => r.OwnerId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(r => r.CreatedBy).WithMany().HasForeignKey(r => r.CreatedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProjectIssue>(e =>
+            {
+                e.HasIndex(i => new { i.ProjectId, i.Status });
+                e.HasIndex(i => i.DueDate);
+                e.HasOne(i => i.Project).WithMany(p => p.Issues).HasForeignKey(i => i.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(i => i.RaisedFromRisk).WithMany().HasForeignKey(i => i.RaisedFromRiskId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(i => i.AssignedTo).WithMany().HasForeignKey(i => i.AssignedToId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(i => i.RaisedBy).WithMany().HasForeignKey(i => i.RaisedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProjectChangeRequest>(e =>
+            {
+                e.HasIndex(c => new { c.ProjectId, c.Status });
+                e.HasOne(c => c.Project).WithMany(p => p.ChangeRequests).HasForeignKey(c => c.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(c => c.RequestedBy).WithMany().HasForeignKey(c => c.RequestedById).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(c => c.ApprovedBy).WithMany().HasForeignKey(c => c.ApprovedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<QualityCheck>(e =>
+            {
+                e.HasIndex(q => new { q.ProjectId, q.Result });
+                e.HasOne(q => q.Project).WithMany().HasForeignKey(q => q.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(q => q.Deliverable).WithMany().HasForeignKey(q => q.DeliverableId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(q => q.Task).WithMany().HasForeignKey(q => q.TaskId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(q => q.Inspector).WithMany().HasForeignKey(q => q.InspectorId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProjectApproval>(e =>
+            {
+                e.HasIndex(a => new { a.ApproverId, a.Status });
+                e.HasIndex(a => new { a.Subject, a.SubjectId, a.Level });
+                e.HasOne(a => a.Project).WithMany().HasForeignKey(a => a.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(a => a.Approver).WithMany().HasForeignKey(a => a.ApproverId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(a => a.RequestedBy).WithMany().HasForeignKey(a => a.RequestedById).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(a => a.DelegatedTo).WithMany().HasForeignKey(a => a.DelegatedToId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProjectKpi>(e =>
+            {
+                e.HasOne(k => k.Project).WithMany().HasForeignKey(k => k.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(k => k.Owner).WithMany().HasForeignKey(k => k.OwnerId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Collaboration, templates & closure ────────────────────────────────
+            b.Entity<ProjectDocument>(e =>
+            {
+                e.HasIndex(d => new { d.ProjectId, d.Type });
+                e.HasQueryFilter(d => !d.IsDeleted);
+                e.HasOne(d => d.Project).WithMany(p => p.Documents).HasForeignKey(d => d.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(d => d.UploadedBy).WithMany().HasForeignKey(d => d.UploadedById).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(d => d.CheckedOutBy).WithMany().HasForeignKey(d => d.CheckedOutById).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(d => d.ApprovedBy).WithMany().HasForeignKey(d => d.ApprovedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProjectDocumentVersion>(e =>
+            {
+                // The parent document carries a query filter, so the dependent needs a matching one.
+                e.HasQueryFilter(v => !v.Document!.IsDeleted);
+                e.HasOne(v => v.Document).WithMany(d => d.Versions).HasForeignKey(v => v.DocumentId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(v => v.UploadedBy).WithMany().HasForeignKey(v => v.UploadedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProjectMeeting>(e =>
+            {
+                e.HasIndex(m => new { m.ProjectId, m.ScheduledAt });
+                e.HasOne(m => m.Project).WithMany().HasForeignKey(m => m.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(m => m.Organiser).WithMany().HasForeignKey(m => m.OrganiserId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProjectMeetingAttendee>(e =>
+            {
+                e.HasIndex(a => new { a.MeetingId, a.UserId });
+                e.HasOne(a => a.Meeting).WithMany(m => m.Attendees).HasForeignKey(a => a.MeetingId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(a => a.User).WithMany().HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProjectMeetingAction>(e =>
+            {
+                e.HasOne(a => a.Meeting).WithMany(m => m.Actions).HasForeignKey(a => a.MeetingId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(a => a.Owner).WithMany().HasForeignKey(a => a.OwnerId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(a => a.LinkedTask).WithMany().HasForeignKey(a => a.LinkedTaskId).OnDelete(DeleteBehavior.SetNull);
+            });
+
+            b.Entity<ProjectDiscussion>(e =>
+            {
+                e.HasIndex(d => new { d.ProjectId, d.CreatedAt });
+                e.HasQueryFilter(d => !d.IsDeleted);
+                e.HasOne(d => d.Project).WithMany().HasForeignKey(d => d.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(d => d.Parent).WithMany().HasForeignKey(d => d.ParentId).OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(d => d.Author).WithMany().HasForeignKey(d => d.AuthorId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<ProjectTemplate>(e =>
+                e.HasOne(t => t.CreatedBy).WithMany().HasForeignKey(t => t.CreatedById).OnDelete(DeleteBehavior.Restrict));
+
+            b.Entity<ProjectTemplateItem>(e =>
+            {
+                e.HasIndex(i => new { i.TemplateId, i.Sequence });
+                e.HasOne(i => i.Template).WithMany(t => t.Items).HasForeignKey(i => i.TemplateId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<ProjectClosure>(e =>
+            {
+                e.HasIndex(c => c.ProjectId).IsUnique();
+                e.HasOne(c => c.Project).WithMany().HasForeignKey(c => c.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(c => c.ClosedBy).WithMany().HasForeignKey(c => c.ClosedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<LessonLearned>(e =>
+            {
+                e.HasIndex(l => new { l.ProjectId, l.Category });
+                e.HasOne(l => l.Project).WithMany().HasForeignKey(l => l.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(l => l.RaisedBy).WithMany().HasForeignKey(l => l.RaisedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Built-in project templates — one per delivery domain the organisation runs.
+            b.Entity<ProjectTemplate>().HasData(
+                new ProjectTemplate { Id = 1, Name = "Software Delivery", Description = "Requirements → design → build → test → go-live, with the usual quality gates.", Category = ProjectCategory.Software, Type = ProjectType.Internal, DefaultDurationDays = 120, IsSystem = true, IsActive = true },
+                new ProjectTemplate { Id = 2, Name = "Construction / Site Works", Description = "Design, permits, mobilisation, construction, snagging and handover.", Category = ProjectCategory.Construction, Type = ProjectType.Capital, DefaultDurationDays = 180, IsSystem = true, IsActive = true },
+                new ProjectTemplate { Id = 3, Name = "Marketing Campaign", Description = "Brief, creative, production, launch and post-campaign review.", Category = ProjectCategory.Marketing, Type = ProjectType.Internal, DefaultDurationDays = 60, IsSystem = true, IsActive = true },
+                new ProjectTemplate { Id = 4, Name = "Research Study", Description = "Proposal, literature review, data collection, analysis and reporting.", Category = ProjectCategory.Research, Type = ProjectType.Research, DefaultDurationDays = 150, IsSystem = true, IsActive = true },
+                new ProjectTemplate { Id = 5, Name = "Maintenance Programme", Description = "Scheduled maintenance planning, execution, verification and close-out.", Category = ProjectCategory.Maintenance, Type = ProjectType.Maintenance, DefaultDurationDays = 45, IsSystem = true, IsActive = true },
+                new ProjectTemplate { Id = 6, Name = "ISO Implementation", Description = "Gap analysis, documentation, training, internal audit and certification.", Category = ProjectCategory.IsoCompliance, Type = ProjectType.Compliance, DefaultDurationDays = 240, IsSystem = true, IsActive = true }
+            );
+
+            b.Entity<ProjectTemplateItem>().HasData(
+                // 1 · Software Delivery
+                new ProjectTemplateItem { Id = 1, TemplateId = 1, ItemType = "Phase", Name = "Requirements", Sequence = 1, StartOffsetDays = 0, DurationDays = 20 },
+                new ProjectTemplateItem { Id = 2, TemplateId = 1, ItemType = "Task", Name = "Gather and document requirements", Sequence = 2, ParentSequence = 1, StartOffsetDays = 0, DurationDays = 15, EstimatedHours = 60 },
+                new ProjectTemplateItem { Id = 3, TemplateId = 1, ItemType = "Milestone", Name = "Requirements approved", Sequence = 3, ParentSequence = 1, StartOffsetDays = 20, DurationDays = 0 },
+                new ProjectTemplateItem { Id = 4, TemplateId = 1, ItemType = "Phase", Name = "Design", Sequence = 4, StartOffsetDays = 20, DurationDays = 20 },
+                new ProjectTemplateItem { Id = 5, TemplateId = 1, ItemType = "Task", Name = "Solution and data design", Sequence = 5, ParentSequence = 4, StartOffsetDays = 20, DurationDays = 18, EstimatedHours = 80 },
+                new ProjectTemplateItem { Id = 6, TemplateId = 1, ItemType = "Phase", Name = "Development", Sequence = 6, StartOffsetDays = 40, DurationDays = 45 },
+                new ProjectTemplateItem { Id = 7, TemplateId = 1, ItemType = "Task", Name = "Implement features", Sequence = 7, ParentSequence = 6, StartOffsetDays = 40, DurationDays = 45, EstimatedHours = 320 },
+                new ProjectTemplateItem { Id = 8, TemplateId = 1, ItemType = "Milestone", Name = "Development complete", Sequence = 8, ParentSequence = 6, StartOffsetDays = 85, DurationDays = 0 },
+                new ProjectTemplateItem { Id = 9, TemplateId = 1, ItemType = "Phase", Name = "Testing", Sequence = 9, StartOffsetDays = 85, DurationDays = 25 },
+                new ProjectTemplateItem { Id = 10, TemplateId = 1, ItemType = "Task", Name = "System and user acceptance testing", Sequence = 10, ParentSequence = 9, StartOffsetDays = 85, DurationDays = 25, EstimatedHours = 120 },
+                new ProjectTemplateItem { Id = 11, TemplateId = 1, ItemType = "Milestone", Name = "Testing complete", Sequence = 11, ParentSequence = 9, StartOffsetDays = 110, DurationDays = 0 },
+                new ProjectTemplateItem { Id = 12, TemplateId = 1, ItemType = "Phase", Name = "Go-live & handover", Sequence = 12, StartOffsetDays = 110, DurationDays = 10 },
+                new ProjectTemplateItem { Id = 13, TemplateId = 1, ItemType = "Milestone", Name = "Go-live", Sequence = 13, ParentSequence = 12, StartOffsetDays = 115, DurationDays = 0 },
+                new ProjectTemplateItem { Id = 14, TemplateId = 1, ItemType = "Milestone", Name = "Project closure", Sequence = 14, ParentSequence = 12, StartOffsetDays = 120, DurationDays = 0 },
+
+                // 2 · Construction
+                new ProjectTemplateItem { Id = 20, TemplateId = 2, ItemType = "Phase", Name = "Design & approvals", Sequence = 1, StartOffsetDays = 0, DurationDays = 45 },
+                new ProjectTemplateItem { Id = 21, TemplateId = 2, ItemType = "Task", Name = "Detailed drawings and permits", Sequence = 2, ParentSequence = 1, StartOffsetDays = 0, DurationDays = 45, EstimatedHours = 150 },
+                new ProjectTemplateItem { Id = 22, TemplateId = 2, ItemType = "Milestone", Name = "Permits issued", Sequence = 3, ParentSequence = 1, StartOffsetDays = 45, DurationDays = 0 },
+                new ProjectTemplateItem { Id = 23, TemplateId = 2, ItemType = "Phase", Name = "Mobilisation", Sequence = 4, StartOffsetDays = 45, DurationDays = 15 },
+                new ProjectTemplateItem { Id = 24, TemplateId = 2, ItemType = "Phase", Name = "Construction", Sequence = 5, StartOffsetDays = 60, DurationDays = 100 },
+                new ProjectTemplateItem { Id = 25, TemplateId = 2, ItemType = "Phase", Name = "Snagging & handover", Sequence = 6, StartOffsetDays = 160, DurationDays = 20 },
+                new ProjectTemplateItem { Id = 26, TemplateId = 2, ItemType = "Milestone", Name = "Practical completion", Sequence = 7, ParentSequence = 6, StartOffsetDays = 180, DurationDays = 0 },
+
+                // 3 · Marketing
+                new ProjectTemplateItem { Id = 30, TemplateId = 3, ItemType = "Phase", Name = "Brief & strategy", Sequence = 1, StartOffsetDays = 0, DurationDays = 10 },
+                new ProjectTemplateItem { Id = 31, TemplateId = 3, ItemType = "Phase", Name = "Creative & production", Sequence = 2, StartOffsetDays = 10, DurationDays = 25 },
+                new ProjectTemplateItem { Id = 32, TemplateId = 3, ItemType = "Phase", Name = "Launch", Sequence = 3, StartOffsetDays = 35, DurationDays = 15 },
+                new ProjectTemplateItem { Id = 33, TemplateId = 3, ItemType = "Milestone", Name = "Campaign live", Sequence = 4, ParentSequence = 3, StartOffsetDays = 40, DurationDays = 0 },
+                new ProjectTemplateItem { Id = 34, TemplateId = 3, ItemType = "Phase", Name = "Review & reporting", Sequence = 5, StartOffsetDays = 50, DurationDays = 10 },
+
+                // 4 · Research
+                new ProjectTemplateItem { Id = 40, TemplateId = 4, ItemType = "Phase", Name = "Proposal & ethics", Sequence = 1, StartOffsetDays = 0, DurationDays = 25 },
+                new ProjectTemplateItem { Id = 41, TemplateId = 4, ItemType = "Phase", Name = "Literature review", Sequence = 2, StartOffsetDays = 25, DurationDays = 30 },
+                new ProjectTemplateItem { Id = 42, TemplateId = 4, ItemType = "Phase", Name = "Data collection", Sequence = 3, StartOffsetDays = 55, DurationDays = 50 },
+                new ProjectTemplateItem { Id = 43, TemplateId = 4, ItemType = "Phase", Name = "Analysis", Sequence = 4, StartOffsetDays = 105, DurationDays = 25 },
+                new ProjectTemplateItem { Id = 44, TemplateId = 4, ItemType = "Phase", Name = "Reporting", Sequence = 5, StartOffsetDays = 130, DurationDays = 20 },
+                new ProjectTemplateItem { Id = 45, TemplateId = 4, ItemType = "Milestone", Name = "Final report published", Sequence = 6, ParentSequence = 5, StartOffsetDays = 150, DurationDays = 0 },
+
+                // 5 · Maintenance
+                new ProjectTemplateItem { Id = 50, TemplateId = 5, ItemType = "Phase", Name = "Planning & scheduling", Sequence = 1, StartOffsetDays = 0, DurationDays = 10 },
+                new ProjectTemplateItem { Id = 51, TemplateId = 5, ItemType = "Phase", Name = "Execution", Sequence = 2, StartOffsetDays = 10, DurationDays = 25 },
+                new ProjectTemplateItem { Id = 52, TemplateId = 5, ItemType = "Phase", Name = "Verification & close-out", Sequence = 3, StartOffsetDays = 35, DurationDays = 10 },
+                new ProjectTemplateItem { Id = 53, TemplateId = 5, ItemType = "Milestone", Name = "Maintenance signed off", Sequence = 4, ParentSequence = 3, StartOffsetDays = 45, DurationDays = 0 },
+
+                // 6 · ISO implementation
+                new ProjectTemplateItem { Id = 60, TemplateId = 6, ItemType = "Phase", Name = "Gap analysis", Sequence = 1, StartOffsetDays = 0, DurationDays = 30 },
+                new ProjectTemplateItem { Id = 61, TemplateId = 6, ItemType = "Phase", Name = "Documentation", Sequence = 2, StartOffsetDays = 30, DurationDays = 70 },
+                new ProjectTemplateItem { Id = 62, TemplateId = 6, ItemType = "Phase", Name = "Training & awareness", Sequence = 3, StartOffsetDays = 100, DurationDays = 40 },
+                new ProjectTemplateItem { Id = 63, TemplateId = 6, ItemType = "Phase", Name = "Internal audit", Sequence = 4, StartOffsetDays = 140, DurationDays = 40 },
+                new ProjectTemplateItem { Id = 64, TemplateId = 6, ItemType = "Milestone", Name = "Management review held", Sequence = 5, ParentSequence = 4, StartOffsetDays = 180, DurationDays = 0 },
+                new ProjectTemplateItem { Id = 65, TemplateId = 6, ItemType = "Phase", Name = "Certification audit", Sequence = 6, StartOffsetDays = 180, DurationDays = 60 },
+                new ProjectTemplateItem { Id = 66, TemplateId = 6, ItemType = "Milestone", Name = "Certification achieved", Sequence = 7, ParentSequence = 6, StartOffsetDays = 240, DurationDays = 0 }
             );
         }
     }

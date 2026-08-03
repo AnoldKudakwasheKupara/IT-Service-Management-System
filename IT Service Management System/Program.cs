@@ -222,6 +222,16 @@ builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpeci
 builder.Services.AddScoped<IT_Service_Management_System.Services.Ecie.IEcieSpecialist,
     IT_Service_Management_System.Services.Ecie.Specialists.ExecutiveAdvisorSpecialist>();
 
+// ── Project Management module ──
+// Metrics/scheduling do the arithmetic; activity writes the audit trail and notifications;
+// approvals route multi-level sign-off; intelligence derives forecasts and suggestions from
+// the organisation's own data (no external model is called).
+builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.ProjectActivityService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.ProjectMetricsService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.ProjectSchedulingService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.ProjectApprovalService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.ProjectIntelligenceService>();
+
 // Defensive, idempotent demo-data top-up seeder (gated by Demo:Seed, default ON).
 builder.Services.AddScoped<IT_Service_Management_System.Services.DemoDataSeeder>();
 // OCR engine (pluggable). PlainText baseline by default; set EFM:Ocr:Provider = "tesseract"

@@ -161,7 +161,14 @@ namespace IT_Service_Management_System.Models
             // ── Helpdesk (ITSM) ──
             // A front-line support agent: full ticket-queue access without system-admin rights.
             // Appended last so existing persisted role values are unchanged.
-            SupportAgent
+            SupportAgent,
+            // ── Project Management ──
+            // Owns projects end-to-end; leads a workstream; buys goods and services; an external
+            // client with portal-only access. Appended last, again to preserve persisted values.
+            ProjectManager,
+            TeamLead,
+            Procurement,
+            Client
         }
     }
 }

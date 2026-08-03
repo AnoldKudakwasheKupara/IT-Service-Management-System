@@ -19,6 +19,12 @@ namespace IT_Service_Management_System.Helpers
         public const string DocumentController = "DocumentController";
         public const string ExternalAuditor = "ExternalAuditor";
 
+        // ── Project Management roles ──
+        public const string ProjectManager = "ProjectManager";
+        public const string TeamLead = "TeamLead";
+        public const string Procurement = "Procurement";
+        public const string Client = "Client";
+
         /// <summary>Roles with full visibility across every module.</summary>
         public static readonly string[] FullAccess = { Admin, SystemsAdmin };
 
@@ -49,6 +55,37 @@ namespace IT_Service_Management_System.Helpers
 
         /// <summary>Every role permitted to open an IMS / ISO surface, including signatories and read-only users.</summary>
         public static readonly string[] ImsAll = { Admin, SystemsAdmin, QualityManager, GeneralManager, DocumentController, DepartmentManager, Auditor, Employee, ExternalAuditor };
+
+        // ── Project Management access groups ──────────────────────────────────────
+
+        /// <summary>Roles that own the portfolio — create projects, approve them, and see everything.</summary>
+        public static readonly string[] PmManagers = { Admin, SystemsAdmin, ProjectManager, GeneralManager };
+
+        /// <summary>Roles that maintain project records (plan, tasks, risks, issues, documents…).</summary>
+        public static readonly string[] PmContributors =
+            { Admin, SystemsAdmin, ProjectManager, GeneralManager, TeamLead, DepartmentManager };
+
+        /// <summary>Every role permitted to open a project-management surface, read-only roles included.</summary>
+        public static readonly string[] PmAll =
+            { Admin, SystemsAdmin, ProjectManager, GeneralManager, TeamLead, DepartmentManager,
+              Finance, Procurement, HR, Employee, Auditor, Client };
+
+        /// <summary>Roles that approve money — budgets, expenses and purchases.</summary>
+        public static readonly string[] PmFinance = { Admin, SystemsAdmin, Finance, GeneralManager };
+
+        /// <summary>Roles that run the procurement chain (RFQ → order → receipt → payment).</summary>
+        public static readonly string[] PmProcurement = { Admin, SystemsAdmin, Procurement, Finance, ProjectManager };
+
+        /// <summary>True when the role may create projects and edit any project in the portfolio.</summary>
+        public static bool IsPmManager(string? role) =>
+            role is Admin or SystemsAdmin or ProjectManager or GeneralManager;
+
+        /// <summary>True when the role may edit project records it has been given access to.</summary>
+        public static bool IsPmContributor(string? role) =>
+            IsPmManager(role) || role is TeamLead or DepartmentManager;
+
+        /// <summary>True for external client users, who get the read-mostly portal instead of the full module.</summary>
+        public static bool IsClient(string? role) => role == Client;
 
         public static bool IsFullAccess(string? role) => role == Admin || role == SystemsAdmin;
         public static bool IsHr(string? role) => role == HR;
