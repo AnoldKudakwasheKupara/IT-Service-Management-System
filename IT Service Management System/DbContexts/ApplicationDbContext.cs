@@ -831,6 +831,17 @@ namespace IT_Service_Management_System.DbContexts
         /// </summary>
         private static void ConfigurePmModule(ModelBuilder b)
         {
+            // Seed rows must be byte-for-byte identical on every build. A property defaulting to
+            // DateTime.Now would make the model non-deterministic and fail migration validation at
+            // startup, so seeded timestamps are pinned to a fixed date.
+            var PmSeedDate = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Unspecified);
+
+            // Cascade rules. A project owns its children, so those cascade from Project. Every
+            // *secondary* link between two of those children (a task to its phase, an expense to its
+            // budget line) is NoAction: both ends already cascade from the project, and SQL Server
+            // rejects two cascade paths converging on one table. In practice this costs nothing —
+            // projects are soft-deleted, so a hard cascade never runs.
+
             // ── Project ───────────────────────────────────────────────────────────
             b.Entity<Project>(e =>
             {
@@ -893,7 +904,7 @@ namespace IT_Service_Management_System.DbContexts
                 e.HasIndex(w => new { w.ProjectId, w.WbsCode });
                 e.HasOne(w => w.Project).WithMany(p => p.WbsItems).HasForeignKey(w => w.ProjectId).OnDelete(DeleteBehavior.Cascade);
                 e.HasOne(w => w.Parent).WithMany(x => x.Children).HasForeignKey(w => w.ParentId).OnDelete(DeleteBehavior.Restrict);
-                e.HasOne(w => w.Phase).WithMany(p => p.WbsItems).HasForeignKey(w => w.PhaseId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(w => w.Phase).WithMany(p => p.WbsItems).HasForeignKey(w => w.PhaseId).OnDelete(DeleteBehavior.NoAction);
                 e.HasOne(w => w.Owner).WithMany().HasForeignKey(w => w.OwnerId).OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -902,7 +913,7 @@ namespace IT_Service_Management_System.DbContexts
                 e.HasIndex(m => new { m.ProjectId, m.DueDate });
                 e.HasIndex(m => m.Status);
                 e.HasOne(m => m.Project).WithMany(p => p.Milestones).HasForeignKey(m => m.ProjectId).OnDelete(DeleteBehavior.Cascade);
-                e.HasOne(m => m.Phase).WithMany().HasForeignKey(m => m.PhaseId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(m => m.Phase).WithMany().HasForeignKey(m => m.PhaseId).OnDelete(DeleteBehavior.NoAction);
                 e.HasOne(m => m.Owner).WithMany().HasForeignKey(m => m.OwnerId).OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -910,8 +921,8 @@ namespace IT_Service_Management_System.DbContexts
             {
                 e.HasIndex(d => new { d.ProjectId, d.Status });
                 e.HasOne(d => d.Project).WithMany(p => p.Deliverables).HasForeignKey(d => d.ProjectId).OnDelete(DeleteBehavior.Cascade);
-                e.HasOne(d => d.Milestone).WithMany().HasForeignKey(d => d.MilestoneId).OnDelete(DeleteBehavior.SetNull);
-                e.HasOne(d => d.Phase).WithMany().HasForeignKey(d => d.PhaseId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(d => d.Milestone).WithMany().HasForeignKey(d => d.MilestoneId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(d => d.Phase).WithMany().HasForeignKey(d => d.PhaseId).OnDelete(DeleteBehavior.NoAction);
                 e.HasOne(d => d.Owner).WithMany().HasForeignKey(d => d.OwnerId).OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(d => d.AcceptedBy).WithMany().HasForeignKey(d => d.AcceptedById).OnDelete(DeleteBehavior.Restrict);
             });
@@ -926,9 +937,9 @@ namespace IT_Service_Management_System.DbContexts
 
                 e.HasOne(t => t.Project).WithMany(p => p.Tasks).HasForeignKey(t => t.ProjectId).OnDelete(DeleteBehavior.Cascade);
                 e.HasOne(t => t.ParentTask).WithMany(t => t.Subtasks).HasForeignKey(t => t.ParentTaskId).OnDelete(DeleteBehavior.Restrict);
-                e.HasOne(t => t.WbsItem).WithMany(w => w.Tasks).HasForeignKey(t => t.WbsItemId).OnDelete(DeleteBehavior.SetNull);
-                e.HasOne(t => t.Phase).WithMany(p => p.Tasks).HasForeignKey(t => t.PhaseId).OnDelete(DeleteBehavior.SetNull);
-                e.HasOne(t => t.Milestone).WithMany().HasForeignKey(t => t.MilestoneId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(t => t.WbsItem).WithMany(w => w.Tasks).HasForeignKey(t => t.WbsItemId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(t => t.Phase).WithMany(p => p.Tasks).HasForeignKey(t => t.PhaseId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(t => t.Milestone).WithMany().HasForeignKey(t => t.MilestoneId).OnDelete(DeleteBehavior.NoAction);
                 e.HasOne(t => t.AssignedTo).WithMany().HasForeignKey(t => t.AssignedToId).OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(t => t.Reviewer).WithMany().HasForeignKey(t => t.ReviewerId).OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(t => t.CreatedBy).WithMany().HasForeignKey(t => t.CreatedById).OnDelete(DeleteBehavior.Restrict);
@@ -998,7 +1009,7 @@ namespace IT_Service_Management_System.DbContexts
             {
                 e.HasIndex(l => new { l.ProjectId, l.Category });
                 e.HasOne(l => l.Project).WithMany(p => p.BudgetLines).HasForeignKey(l => l.ProjectId).OnDelete(DeleteBehavior.Cascade);
-                e.HasOne(l => l.Phase).WithMany().HasForeignKey(l => l.PhaseId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(l => l.Phase).WithMany().HasForeignKey(l => l.PhaseId).OnDelete(DeleteBehavior.NoAction);
             });
 
             b.Entity<ProjectExpense>(e =>
@@ -1006,7 +1017,7 @@ namespace IT_Service_Management_System.DbContexts
                 e.HasIndex(x => new { x.ProjectId, x.Status });
                 e.HasIndex(x => x.ExpenseDate);
                 e.HasOne(x => x.Project).WithMany(p => p.Expenses).HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Cascade);
-                e.HasOne(x => x.BudgetLine).WithMany().HasForeignKey(x => x.BudgetLineId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(x => x.BudgetLine).WithMany().HasForeignKey(x => x.BudgetLineId).OnDelete(DeleteBehavior.NoAction);
                 e.HasOne(x => x.Task).WithMany().HasForeignKey(x => x.TaskId).OnDelete(DeleteBehavior.NoAction);
                 e.HasOne(x => x.SubmittedBy).WithMany().HasForeignKey(x => x.SubmittedById).OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(x => x.ApprovedBy).WithMany().HasForeignKey(x => x.ApprovedById).OnDelete(DeleteBehavior.Restrict);
@@ -1016,7 +1027,7 @@ namespace IT_Service_Management_System.DbContexts
             {
                 e.HasIndex(p => new { p.ProjectId, p.Status });
                 e.HasOne(p => p.Project).WithMany().HasForeignKey(p => p.ProjectId).OnDelete(DeleteBehavior.Cascade);
-                e.HasOne(p => p.BudgetLine).WithMany().HasForeignKey(p => p.BudgetLineId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(p => p.BudgetLine).WithMany().HasForeignKey(p => p.BudgetLineId).OnDelete(DeleteBehavior.NoAction);
                 e.HasOne(p => p.RequestedBy).WithMany().HasForeignKey(p => p.RequestedById).OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(p => p.ApprovedBy).WithMany().HasForeignKey(p => p.ApprovedById).OnDelete(DeleteBehavior.Restrict);
             });
@@ -1121,7 +1132,7 @@ namespace IT_Service_Management_System.DbContexts
             {
                 e.HasOne(a => a.Meeting).WithMany(m => m.Actions).HasForeignKey(a => a.MeetingId).OnDelete(DeleteBehavior.Cascade);
                 e.HasOne(a => a.Owner).WithMany().HasForeignKey(a => a.OwnerId).OnDelete(DeleteBehavior.Restrict);
-                e.HasOne(a => a.LinkedTask).WithMany().HasForeignKey(a => a.LinkedTaskId).OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(a => a.LinkedTask).WithMany().HasForeignKey(a => a.LinkedTaskId).OnDelete(DeleteBehavior.NoAction);
             });
 
             b.Entity<ProjectDiscussion>(e =>
@@ -1158,12 +1169,12 @@ namespace IT_Service_Management_System.DbContexts
 
             // Built-in project templates — one per delivery domain the organisation runs.
             b.Entity<ProjectTemplate>().HasData(
-                new ProjectTemplate { Id = 1, Name = "Software Delivery", Description = "Requirements → design → build → test → go-live, with the usual quality gates.", Category = ProjectCategory.Software, Type = ProjectType.Internal, DefaultDurationDays = 120, IsSystem = true, IsActive = true },
-                new ProjectTemplate { Id = 2, Name = "Construction / Site Works", Description = "Design, permits, mobilisation, construction, snagging and handover.", Category = ProjectCategory.Construction, Type = ProjectType.Capital, DefaultDurationDays = 180, IsSystem = true, IsActive = true },
-                new ProjectTemplate { Id = 3, Name = "Marketing Campaign", Description = "Brief, creative, production, launch and post-campaign review.", Category = ProjectCategory.Marketing, Type = ProjectType.Internal, DefaultDurationDays = 60, IsSystem = true, IsActive = true },
-                new ProjectTemplate { Id = 4, Name = "Research Study", Description = "Proposal, literature review, data collection, analysis and reporting.", Category = ProjectCategory.Research, Type = ProjectType.Research, DefaultDurationDays = 150, IsSystem = true, IsActive = true },
-                new ProjectTemplate { Id = 5, Name = "Maintenance Programme", Description = "Scheduled maintenance planning, execution, verification and close-out.", Category = ProjectCategory.Maintenance, Type = ProjectType.Maintenance, DefaultDurationDays = 45, IsSystem = true, IsActive = true },
-                new ProjectTemplate { Id = 6, Name = "ISO Implementation", Description = "Gap analysis, documentation, training, internal audit and certification.", Category = ProjectCategory.IsoCompliance, Type = ProjectType.Compliance, DefaultDurationDays = 240, IsSystem = true, IsActive = true }
+                new ProjectTemplate { Id = 1, Name = "Software Delivery", Description = "Requirements → design → build → test → go-live, with the usual quality gates.", Category = ProjectCategory.Software, Type = ProjectType.Internal, DefaultDurationDays = 120, IsSystem = true, IsActive = true, CreatedAt = PmSeedDate },
+                new ProjectTemplate { Id = 2, Name = "Construction / Site Works", Description = "Design, permits, mobilisation, construction, snagging and handover.", Category = ProjectCategory.Construction, Type = ProjectType.Capital, DefaultDurationDays = 180, IsSystem = true, IsActive = true, CreatedAt = PmSeedDate },
+                new ProjectTemplate { Id = 3, Name = "Marketing Campaign", Description = "Brief, creative, production, launch and post-campaign review.", Category = ProjectCategory.Marketing, Type = ProjectType.Internal, DefaultDurationDays = 60, IsSystem = true, IsActive = true, CreatedAt = PmSeedDate },
+                new ProjectTemplate { Id = 4, Name = "Research Study", Description = "Proposal, literature review, data collection, analysis and reporting.", Category = ProjectCategory.Research, Type = ProjectType.Research, DefaultDurationDays = 150, IsSystem = true, IsActive = true, CreatedAt = PmSeedDate },
+                new ProjectTemplate { Id = 5, Name = "Maintenance Programme", Description = "Scheduled maintenance planning, execution, verification and close-out.", Category = ProjectCategory.Maintenance, Type = ProjectType.Maintenance, DefaultDurationDays = 45, IsSystem = true, IsActive = true, CreatedAt = PmSeedDate },
+                new ProjectTemplate { Id = 6, Name = "ISO Implementation", Description = "Gap analysis, documentation, training, internal audit and certification.", Category = ProjectCategory.IsoCompliance, Type = ProjectType.Compliance, DefaultDurationDays = 240, IsSystem = true, IsActive = true, CreatedAt = PmSeedDate }
             );
 
             b.Entity<ProjectTemplateItem>().HasData(

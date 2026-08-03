@@ -1,0 +1,173 @@
+@using IT_Service_Management_System.Models.Pm
+@model ProjectTemplate
+@{
+    ViewData["Title"] = Model.Name;
+    var items = ViewBag.Items as List<ProjectTemplateItem> ?? new List<ProjectTemplateItem>();
+    var canManage = ViewBag.CanManage as bool? ?? false;
+
+    string ItemIcon(string type) => type switch
+    {
+        "Phase" => "fa-layer-group",
+        "Milestone" => "fa-flag-checkered",
+        _ => "fa-list-check"
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Templates" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-clone"></i> @Model.Name</h1>
+                        <div class="page-sub" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                            <span class="chip">@System.Text.RegularExpressions.Regex.Replace(Model.Category.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</span>
+                            <span class="chip">@Model.Type</span>
+                            <span class="chip">@Model.DefaultDurationDays days</span>
+                            @if (Model.IsSystem) { <span class="badge-pm b-planning">Built-in</span> }
+                        </div>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-controller="Projects" asp-action="Create" class="btn-pm"><i class="fas fa-plus-circle"></i> Start a project from this</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <div class="card">
+                <div class="card-body">
+                    <p style="color:var(--gray-700); line-height:1.6; margin:0;">@Model.Description</p>
+                </div>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list-ol"></i> Template items</span>
+                @if (canManage)
+                {
+                    <button type="button" class="btn-pm btn-sm" onclick="pmToggle('item-form')"><i class="fas fa-plus"></i> Add item</button>
+                }
+            </div>
+            <div class="card-body">
+                @if (canManage)
+                {
+                    <form asp-action="SaveTemplateItem" method="post" id="item-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="TemplateId" value="@Model.Id" />
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg">
+                                <label class="lbl">Kind</label>
+                                <select name="ItemType" class="inp">
+                                    <option value="Phase">Phase</option>
+                                    <option value="Task" selected>Task</option>
+                                    <option value="Milestone">Milestone</option>
+                                </select>
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl">Name</label>
+                                <input name="Name" class="inp" required />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Start offset (days)</label>
+                                <input name="StartOffsetDays" type="number" min="0" value="0" class="inp" />
+                                <span class="hint">Days after the project start date.</span>
+                            </div>
+                            <div class="fg"><label class="lbl">Duration (days)</label><input name="DurationDays" type="number" min="0" value="1" class="inp" /></div>
+                            <div class="fg"><label class="lbl">Estimated hours</label><input name="EstimatedHours" type="number" step="0.25" min="0" value="0" class="inp" /></div>
+                            <div class="fg">
+                                <label class="lbl">Belongs to phase (sequence)</label>
+                                <select name="ParentSequence" class="inp">
+                                    <option value="">— Top level —</option>
+                                    @foreach (var phase in items.Where(i => i.ItemType == "Phase"))
+                                    {
+                                        <option value="@phase.Sequence">@phase.Sequence. @phase.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg full"><label class="lbl">Description</label><input name="Description" class="inp" /></div>
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Add item</button>
+                    </form>
+                }
+
+                @if (items.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-list-ol"></i>
+                        <h3>This template is empty</h3>
+                        <p>Add phases, tasks and milestones so a project created from it starts with a plan.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr><th class="num">#</th><th>Item</th><th>Kind</th><th class="num">Starts (day)</th><th class="num">Duration</th><th class="num">Hours</th><th>Phase</th>@if (canManage) { <th></th> }</tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var i in items)
+                            {
+                                <tr>
+                                    <td class="num meta">@i.Sequence</td>
+                                    <td style="padding-left:@(i.ParentSequence.HasValue ? "2.5rem" : "1.25rem");">
+                                        <i class="fas @ItemIcon(i.ItemType) meta"></i>
+                                        <strong style="color:var(--gray-800);">@i.Name</strong>
+                                        @if (!string.IsNullOrWhiteSpace(i.Description))
+                                        {
+                                            <div class="meta" style="font-size:.75rem;">@i.Description</div>
+                                        }
+                                    </td>
+                                    <td><span class="chip">@i.ItemType</span></td>
+                                    <td class="num">+@i.StartOffsetDays</td>
+                                    <td class="num">@(i.DurationDays == 0 ? "—" : $"{i.DurationDays} d")</td>
+                                    <td class="num meta">@(i.EstimatedHours > 0 ? i.EstimatedHours.ToString("N1") : "—")</td>
+                                    <td class="meta">@(i.ParentSequence?.ToString() ?? "—")</td>
+                                    @if (canManage)
+                                    {
+                                        <td style="text-align:right;">
+                                            <form asp-action="DeleteTemplateItem" method="post" class="inline-form">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="templateId" value="@Model.Id" />
+                                                <input type="hidden" name="itemId" value="@i.Id" />
+                                                <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <p class="hint">
+            <i class="fas fa-circle-info"></i>
+            When a project is created from this template, phases are created first, then tasks and
+            milestones are attached to the phase whose sequence number they name. Every date is offset
+            from the project's start date.
+        </p>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

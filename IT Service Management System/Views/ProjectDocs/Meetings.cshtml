@@ -1,0 +1,161 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectMeeting>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Meetings — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var openActions = ViewBag.OpenActions as Dictionary<int, int> ?? new Dictionary<int, int>();
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-users-rectangle"></i></div><div><h3>@Model.Count</h3><p>Meetings</p></div></div>
+            <div class="stat"><div class="ic blue"><i class="far fa-calendar"></i></div><div><h3>@ViewBag.Upcoming</h3><p>Upcoming</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@Model.Count(m => m.Status == ProjectMeetingStatus.Completed)</h3><p>Minuted</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-list-check"></i></div><div><h3>@openActions.Values.Sum()</h3><p>Open actions</p></div></div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-users-rectangle"></i> Meetings</span>
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <form method="get" style="display:inline-flex;">
+                        <input type="hidden" name="projectId" value="@project!.Id" />
+                        <select name="status" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                            <option value="">All statuses</option>
+                            @foreach (var s in Enum.GetValues<ProjectMeetingStatus>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Status as ProjectMeetingStatus? == s)">@s</option>
+                            }
+                        </select>
+                    </form>
+                    @if (canContribute)
+                    {
+                        <button type="button" class="btn-pm btn-sm" onclick="pmToggle('mt-form')"><i class="fas fa-plus"></i> Schedule meeting</button>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                @if (canContribute)
+                {
+                    <form asp-action="SaveMeeting" method="post" id="mt-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ProjectId" value="@project.Id" />
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> Title</label>
+                                <input name="Title" class="inp" required placeholder="e.g. Weekly delivery stand-up" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="far fa-clock"></i> When</label>
+                                <input name="ScheduledAt" type="datetime-local" class="inp" required
+                                       value="@DateTime.Now.AddDays(1).ToString("yyyy-MM-ddTHH:mm")" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-hourglass"></i> Duration (minutes)</label>
+                                <input name="DurationMinutes" type="number" min="5" step="5" value="60" class="inp" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-location-dot"></i> Location</label>
+                                <input name="Location" class="inp" />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-video"></i> Meeting link</label>
+                                <input name="MeetingLink" class="inp" placeholder="Teams / Meet / Zoom URL" />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-list-ol"></i> Agenda</label>
+                                <textarea name="Agenda" class="inp" rows="4" placeholder="One item per line."></textarea>
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-users"></i> Invite</label>
+                                <select name="attendeeIds" class="inp" multiple size="6">
+                                    @foreach (var u in users)
+                                    {
+                                        <option value="@u.Id">@u.Name</option>
+                                    }
+                                </select>
+                                <span class="hint">Hold Ctrl (or Cmd) to select several. Everyone invited is notified.</span>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-calendar-plus"></i> Schedule</button>
+                    </form>
+                }
+
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-users-rectangle"></i>
+                        <h3>No meetings</h3>
+                        <p>Schedule a meeting to capture its agenda, attendance, minutes and actions in one place.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr><th>Meeting</th><th>When</th><th>Location</th><th>Organiser</th><th class="num">Invited</th><th class="num">Open actions</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var m in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-action="MeetingDetails" asp-route-id="@m.Id" class="strong-link">@m.Title</a>
+                                        @if (!string.IsNullOrWhiteSpace(m.Agenda))
+                                        {
+                                            <div class="meta" style="font-size:.75rem; max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@m.Agenda</div>
+                                        }
+                                    </td>
+                                    <td class="meta">
+                                        @m.ScheduledAt.ToString("ddd d MMM yyyy")
+                                        <div style="font-size:.72rem;">@m.ScheduledAt.ToString("HH:mm") · @m.DurationMinutes min</div>
+                                    </td>
+                                    <td class="meta">
+                                        @(m.Location ?? "—")
+                                        @if (!string.IsNullOrWhiteSpace(m.MeetingLink))
+                                        {
+                                            <a href="@m.MeetingLink" target="_blank" rel="noopener" class="chip" style="text-decoration:none;"><i class="fas fa-video"></i> Join</a>
+                                        }
+                                    </td>
+                                    <td class="meta">@(m.Organiser == null ? "—" : $"{m.Organiser.FirstName} {m.Organiser.LastName}")</td>
+                                    <td class="num meta">@m.Attendees.Count</td>
+                                    <td class="num">
+                                        @{ var open = openActions.GetValueOrDefault(m.Id); }
+                                        @if (open > 0) { <span class="badge-pm b-pending">@open</span> } else { <span class="meta">—</span> }
+                                    </td>
+                                    <td>
+                                        <span class="badge-pm b-@(m.Status == ProjectMeetingStatus.Completed ? "completed" : m.Status == ProjectMeetingStatus.Cancelled ? "cancelled" : "planning")">
+                                            @System.Text.RegularExpressions.Regex.Replace(m.Status.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

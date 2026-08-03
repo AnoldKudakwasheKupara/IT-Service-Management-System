@@ -1,0 +1,152 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<TimeEntry>
+@{
+    ViewData["Title"] = "Timesheet Approvals";
+    var projects = ViewBag.Projects as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-stamp"></i> Timesheet Approvals</h1>
+                        <p class="page-sub">Submitted time awaiting your decision. Approved hours become project cost.</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Report" class="btn-outline-pm"><i class="fas fa-chart-line"></i> Time reports</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-inbox"></i></div><div><h3>@Model.Count</h3><p>Entries pending</p></div></div>
+            <div class="stat">
+                <div class="ic blue"><i class="fas fa-clock"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalHours ?? 0m)).ToString("N1"))</h3><p>Hours</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-coins"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalCost ?? 0m)).ToString("N0"))</h3><p>Cost at stake</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic teal"><i class="fas fa-users"></i></div>
+                <div><h3>@Model.Select(e => e.UserId).Distinct().Count()</h3><p>People</p></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="toolbar" style="margin:0;">
+                    <div class="fg">
+                        <label class="lbl">Project</label>
+                        <select name="projectId" class="inp" onchange="this.form.submit()">
+                            <option value="">All</option>
+                            @foreach (var p in projects)
+                            {
+                                <option value="@p.Id" selected="@(ViewBag.ProjectId as int? == (int)p.Id)">@p.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Employee</label>
+                        <select name="userId" class="inp" onchange="this.form.submit()">
+                            <option value="">Everyone</option>
+                            @foreach (var u in users)
+                            {
+                                <option value="@u.Id" selected="@(ViewBag.UserId as int? == (int)u.Id)">@u.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <a asp-action="Approvals" class="btn-ghost-pm"><i class="fas fa-rotate-left"></i> Clear</a>
+                </form>
+            </div>
+        </div>
+
+        <form asp-action="Decide" method="post">
+            @Html.AntiForgeryToken()
+            <div class="card">
+                <div class="card-head">
+                    <span class="t"><i class="fas fa-list"></i> Submitted time</span>
+                    @if (Model.Count > 0)
+                    {
+                        <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
+                            <input type="text" name="reason" class="inp" placeholder="Reason (required to reject)"
+                                   style="width:auto; min-width:200px; padding:.35rem .6rem; font-size:.8rem;" />
+                            <button type="submit" name="approve" value="true" class="btn-success-pm btn-sm">
+                                <i class="fas fa-check"></i> Approve selected
+                            </button>
+                            <button type="submit" name="approve" value="false" class="btn-danger-pm btn-sm">
+                                <i class="fas fa-xmark"></i> Reject selected
+                            </button>
+                        </div>
+                    }
+                </div>
+                <div class="card-body flush">
+                    @if (Model.Count == 0)
+                    {
+                        <div class="empty">
+                            <i class="fas fa-circle-check" style="color:var(--success);"></i>
+                            <h3>Nothing to approve</h3>
+                            <p>Every submitted timesheet has been dealt with.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="tbl">
+                            <thead>
+                                <tr>
+                                    <th style="width:36px;"><input type="checkbox" id="check-all" title="Select all" /></th>
+                                    <th>Employee</th><th>Date</th><th>Project</th><th>Task</th>
+                                    <th>Type</th><th class="num">Hours</th><th class="num">Cost</th><th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var e in Model)
+                                {
+                                    <tr>
+                                        <td><input type="checkbox" name="entryIds" value="@e.Id" class="entry-check" /></td>
+                                        <td>
+                                            <span class="with-avatar">
+                                                <span class="avatar sm">@(e.User == null ? "?" : $"{e.User.FirstName.FirstOrDefault()}{e.User.LastName.FirstOrDefault()}")</span>
+                                                <span>@(e.User == null ? "—" : $"{e.User.FirstName} {e.User.LastName}")</span>
+                                            </span>
+                                        </td>
+                                        <td class="meta">@e.WorkDate.ToString("ddd d MMM")</td>
+                                        <td class="meta">@e.Project?.Name</td>
+                                        <td class="meta">@(e.Task?.Name ?? "—")</td>
+                                        <td>
+                                            <span class="chip">@e.Type</span>
+                                            @if (e.IsBillable) { <span class="badge-pm b-closed">Billable</span> }
+                                        </td>
+                                        <td class="num"><strong>@e.NetHours.ToString("N2")</strong></td>
+                                        <td class="num money">@e.Cost.ToString("N2")</td>
+                                        <td class="meta" style="font-size:.78rem;">@(e.Notes ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('check-all')?.addEventListener('change', function () {
+            document.querySelectorAll('.entry-check').forEach(c => c.checked = this.checked);
+        });
+    </script>
+}

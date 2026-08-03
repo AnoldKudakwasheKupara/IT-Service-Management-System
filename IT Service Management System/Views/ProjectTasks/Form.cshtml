@@ -1,0 +1,220 @@
+@using IT_Service_Management_System.Models.Pm
+@model ProjectTask
+@{
+    var project = ViewBag.Project as Project;
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "New Task" : $"Edit {Model.Reference}";
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var phases = ViewBag.Phases as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var milestones = ViewBag.Milestones as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var wbs = ViewBag.WbsItems as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var parents = ViewBag.ParentOptions as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a href="@(isNew ? Url.Action("Index", new { projectId = Model.ProjectId }) : Url.Action("Details", new { id = Model.Id }))" class="btn-back">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-list-check"></i> @(isNew ? "New task" : "Edit task")</h1>
+                        <p class="page-sub">@project?.Reference — @project?.Name</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        <form asp-action="@(isNew ? "Create" : "Edit")" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ProjectId" />
+            @if (!isNew)
+            {
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="ActualHours" />
+                <input type="hidden" asp-for="BoardOrder" />
+            }
+
+            <div asp-validation-summary="ModelOnly" class="field-error" style="margin-bottom:1rem;"></div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> The work</span></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg full">
+                            <label class="lbl" asp-for="Name"><i class="fas fa-heading"></i> Task name <span class="req">*</span></label>
+                            <input asp-for="Name" class="inp" placeholder="e.g. Configure the core switches" />
+                            <span asp-validation-for="Name" class="field-error"></span>
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl" asp-for="Description"><i class="fas fa-align-left"></i> Description</label>
+                            <textarea asp-for="Description" class="inp" rows="4"></textarea>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="ParentTaskId"><i class="fas fa-sitemap"></i> Parent task</label>
+                            <select asp-for="ParentTaskId" class="inp">
+                                <option value="">— None (top level) —</option>
+                                @foreach (var p in parents)
+                                {
+                                    <option value="@p.Id" selected="@(Model.ParentTaskId == (int)p.Id)">@p.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Tags"><i class="fas fa-tags"></i> Tags</label>
+                            <input asp-for="Tags" class="inp" placeholder="comma, separated" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-users"></i> Ownership &amp; state</span></div>
+                <div class="card-body">
+                    <div class="form-grid three">
+                        <div class="fg">
+                            <label class="lbl" asp-for="AssignedToId"><i class="fas fa-user"></i> Assigned to</label>
+                            <select asp-for="AssignedToId" class="inp">
+                                <option value="">— Unassigned —</option>
+                                @foreach (var u in users)
+                                {
+                                    <option value="@u.Id" selected="@(Model.AssignedToId == (int)u.Id)">@u.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="ReviewerId"><i class="fas fa-user-check"></i> Reviewer</label>
+                            <select asp-for="ReviewerId" class="inp">
+                                <option value="">— None —</option>
+                                @foreach (var u in users)
+                                {
+                                    <option value="@u.Id" selected="@(Model.ReviewerId == (int)u.Id)">@u.Name</option>
+                                }
+                            </select>
+                            <span class="hint">Notified when the task moves to Under review.</span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Priority"><i class="fas fa-flag"></i> Priority</label>
+                            <select asp-for="Priority" class="inp">
+                                @foreach (var v in Enum.GetValues<TaskPriority>())
+                                {
+                                    <option value="@v" selected="@(Model.Priority == v)">@v</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Status"><i class="fas fa-chart-simple"></i> Status</label>
+                            <select asp-for="Status" class="inp">
+                                @foreach (var v in Enum.GetValues<ProjectTaskStatus>())
+                                {
+                                    <option value="@v" selected="@(Model.Status == v)">@v</option>
+                                }
+                            </select>
+                            <span class="hint">The board lane follows the status automatically.</span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="PercentComplete"><i class="fas fa-percent"></i> Percent complete</label>
+                            <input asp-for="PercentComplete" type="number" min="0" max="100" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="BlockedReason"><i class="fas fa-ban"></i> Blocked because</label>
+                            <input asp-for="BlockedReason" class="inp" placeholder="Only if the task is blocked" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-calendar-days"></i> Schedule &amp; effort</span></div>
+                <div class="card-body">
+                    <div class="form-grid three">
+                        <div class="fg">
+                            <label class="lbl" asp-for="StartDate"><i class="far fa-calendar-plus"></i> Start</label>
+                            <input asp-for="StartDate" type="date" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="DueDate"><i class="far fa-calendar-check"></i> Due</label>
+                            <input asp-for="DueDate" type="date" class="inp" />
+                            <span asp-validation-for="DueDate" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="EstimatedHours"><i class="fas fa-hourglass"></i> Estimated hours</label>
+                            <input asp-for="EstimatedHours" type="number" step="0.25" min="0" class="inp" />
+                            <span class="hint">Used to weight the project's progress roll-up.</span>
+                        </div>
+                    </div>
+                    <label class="check">
+                        <input asp-for="IsBillable" type="checkbox" /> Hours booked to this task are billable
+                    </label>
+                </div>
+            </div>
+
+            @if (phases.Any() || milestones.Any() || wbs.Any())
+            {
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-sitemap"></i> Place in the plan</span></div>
+                    <div class="card-body">
+                        <div class="form-grid three">
+                            @if (phases.Any())
+                            {
+                                <div class="fg">
+                                    <label class="lbl" asp-for="PhaseId"><i class="fas fa-layer-group"></i> Phase</label>
+                                    <select asp-for="PhaseId" class="inp">
+                                        <option value="">— None —</option>
+                                        @foreach (var p in phases)
+                                        {
+                                            <option value="@p.Id" selected="@(Model.PhaseId == (int)p.Id)">@p.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+                            @if (wbs.Any())
+                            {
+                                <div class="fg">
+                                    <label class="lbl" asp-for="WbsItemId"><i class="fas fa-diagram-project"></i> Work package</label>
+                                    <select asp-for="WbsItemId" class="inp">
+                                        <option value="">— None —</option>
+                                        @foreach (var w in wbs)
+                                        {
+                                            <option value="@w.Id" selected="@(Model.WbsItemId == (int)w.Id)">@w.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+                            @if (milestones.Any())
+                            {
+                                <div class="fg">
+                                    <label class="lbl" asp-for="MilestoneId"><i class="fas fa-flag-checkered"></i> Milestone</label>
+                                    <select asp-for="MilestoneId" class="inp">
+                                        <option value="">— None —</option>
+                                        @foreach (var m in milestones)
+                                        {
+                                            <option value="@m.Id" selected="@(Model.MilestoneId == (int)m.Id)">@m.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <div class="form-actions">
+                <button type="submit" class="btn-pm"><i class="fas fa-floppy-disk"></i> @(isNew ? "Create task" : "Save changes")</button>
+                <a href="@(isNew ? Url.Action("Index", new { projectId = Model.ProjectId }) : Url.Action("Details", new { id = Model.Id }))" class="btn-ghost-pm">Cancel</a>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

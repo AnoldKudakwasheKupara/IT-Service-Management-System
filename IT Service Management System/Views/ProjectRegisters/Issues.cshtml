@@ -1,0 +1,204 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectIssue>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Issues — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    string SevClass(IssueSeverity s) => s switch
+    {
+        IssueSeverity.Critical => "critical", IssueSeverity.High => "high",
+        IssueSeverity.Medium => "medium", _ => "low"
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-circle-exclamation"></i></div><div><h3>@ViewBag.OpenCount</h3><p>Open</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-fire"></i></div><div><h3>@ViewBag.CriticalCount</h3><p>Critical</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-calendar-xmark"></i></div><div><h3>@ViewBag.OverdueCount</h3><p>Overdue</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@Model.Count(i => !i.IsOpen)</h3><p>Resolved</p></div></div>
+            <div class="stat"><div class="ic teal"><i class="fas fa-handshake"></i></div><div><h3>@Model.Count(i => i.RaisedByClient)</h3><p>Raised by client</p></div></div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Issue register</span>
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <form method="get" style="display:inline-flex; gap:.4rem;">
+                        <input type="hidden" name="projectId" value="@project!.Id" />
+                        <select name="status" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                            <option value="">All statuses</option>
+                            @foreach (var s in Enum.GetValues<IssueStatus>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Status as IssueStatus? == s)">@s</option>
+                            }
+                        </select>
+                        <select name="severity" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                            <option value="">All severities</option>
+                            @foreach (var s in Enum.GetValues<IssueSeverity>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Severity as IssueSeverity? == s)">@s</option>
+                            }
+                        </select>
+                    </form>
+                    @if (canContribute)
+                    {
+                        <button type="button" class="btn-pm btn-sm" onclick="pmToggle('issue-form')"><i class="fas fa-plus"></i> Raise issue</button>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                @if (canContribute)
+                {
+                    <form asp-action="SaveIssue" method="post" id="issue-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ProjectId" value="@project.Id" />
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> Title</label>
+                                <input name="Title" class="inp" required />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-align-left"></i> Description</label>
+                                <textarea name="Description" class="inp" rows="3" required
+                                          placeholder="What has gone wrong, and what is the effect on the project?"></textarea>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-gauge-high"></i> Severity</label>
+                                <select name="Severity" class="inp">
+                                    @foreach (var s in Enum.GetValues<IssueSeverity>())
+                                    {
+                                        <option value="@s" selected="@(s == IssueSeverity.Medium)">@s</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-flag"></i> Priority</label>
+                                <select name="Priority" class="inp">
+                                    @foreach (var p in Enum.GetValues<TaskPriority>())
+                                    {
+                                        <option value="@p" selected="@(p == TaskPriority.Medium)">@p</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-user"></i> Assign to</label>
+                                <select name="AssignedToId" class="inp">
+                                    <option value="">— Unassigned —</option>
+                                    @foreach (var u in users) { <option value="@u.Id">@u.Name</option> }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="far fa-calendar"></i> Due</label>
+                                <input name="DueDate" type="date" class="inp" value="@DateTime.Today.AddDays(7).ToString("yyyy-MM-dd")" />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-magnifying-glass"></i> Root cause (if known)</label>
+                                <textarea name="RootCause" class="inp" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Save issue</button>
+                    </form>
+                }
+
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-circle-check" style="color:var(--success);"></i>
+                        <h3>No issues</h3>
+                        <p>Nothing has gone wrong on this project — or nothing has been logged.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Ref</th><th>Issue</th><th>Severity</th><th>Assignee</th>
+                                <th>Due</th><th>Status</th><th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var i in Model)
+                            {
+                                <tr>
+                                    <td class="ref">@i.Reference</td>
+                                    <td>
+                                        <strong style="color:var(--gray-800);">@i.Title</strong>
+                                        @if (i.RaisedByClient) { <span class="chip"><i class="fas fa-handshake"></i> Client</span> }
+                                        @if (i.RaisedFromRisk != null) { <span class="chip"><i class="fas fa-bolt"></i> From @i.RaisedFromRisk.Reference</span> }
+                                        <div class="meta" style="font-size:.78rem; margin-top:.2rem;">@i.Description</div>
+                                        @if (!string.IsNullOrWhiteSpace(i.Resolution))
+                                        {
+                                            <div class="meta" style="font-size:.75rem; color:var(--success); margin-top:.2rem;">
+                                                <i class="fas fa-circle-check"></i> @i.Resolution
+                                            </div>
+                                        }
+                                    </td>
+                                    <td><span class="badge-pm b-@SevClass(i.Severity)">@i.Severity</span></td>
+                                    <td class="meta">@(i.AssignedTo == null ? "Unassigned" : $"{i.AssignedTo.FirstName} {i.AssignedTo.LastName}")</td>
+                                    <td class="meta @(i.IsOverdue ? "overdue" : "")">@(i.DueDate?.ToString("d MMM yy") ?? "—")</td>
+                                    <td><span class="badge-pm b-@(i.IsOpen ? "open" : "closed")">@i.Status</span></td>
+                                    <td style="text-align:right;">
+                                        <div class="act-btns" style="align-items:center;">
+                                            @if (canContribute)
+                                            {
+                                                <form asp-action="SetIssueStatus" method="post" style="display:inline-flex; gap:.3rem;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="issueId" value="@i.Id" />
+                                                    <input type="text" name="resolution" class="inp" placeholder="Resolution"
+                                                           style="width:130px; padding:.25rem .45rem; font-size:.75rem;" />
+                                                    <select name="status" class="inp" style="width:auto; padding:.25rem .45rem; font-size:.75rem;">
+                                                        @foreach (var s in Enum.GetValues<IssueStatus>())
+                                                        {
+                                                            <option value="@s" selected="@(i.Status == s)">@s</option>
+                                                        }
+                                                    </select>
+                                                    <button type="submit" class="act ok" title="Update"><i class="fas fa-check"></i></button>
+                                                </form>
+                                            }
+                                            @if (canEdit)
+                                            {
+                                                <form asp-action="DeleteIssue" method="post" class="inline-form"
+                                                      onsubmit="return confirm('Remove this issue?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="issueId" value="@i.Id" />
+                                                    <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

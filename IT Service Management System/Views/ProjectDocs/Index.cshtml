@@ -1,0 +1,214 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectDocument>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Documents — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+
+    string Cls(ProjectDocumentStatus s) => s switch
+    {
+        ProjectDocumentStatus.Approved => "completed",
+        ProjectDocumentStatus.Rejected => "rejected",
+        ProjectDocumentStatus.UnderReview => "pending",
+        ProjectDocumentStatus.Superseded or ProjectDocumentStatus.Archived => "archived",
+        _ => "draft"
+    };
+    string Icon(ProjectDocumentType t) => t switch
+    {
+        ProjectDocumentType.Contract => "fa-file-contract",
+        ProjectDocumentType.Quotation or ProjectDocumentType.Invoice => "fa-file-invoice-dollar",
+        ProjectDocumentType.Design or ProjectDocumentType.Drawing => "fa-compass-drafting",
+        ProjectDocumentType.Report => "fa-file-lines",
+        ProjectDocumentType.MeetingMinutes => "fa-file-pen",
+        ProjectDocumentType.Photo => "fa-image",
+        ProjectDocumentType.Video => "fa-video",
+        ProjectDocumentType.Certificate => "fa-certificate",
+        _ => "fa-file"
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-folder-open"></i></div><div><h3>@Model.Count</h3><p>Documents</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@ViewBag.Approved</h3><p>Approved</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-hourglass-half"></i></div><div><h3>@ViewBag.PendingReview</h3><p>Under review</p></div></div>
+            <div class="stat"><div class="ic blue"><i class="fas fa-lock"></i></div><div><h3>@ViewBag.CheckedOut</h3><p>Checked out</p></div></div>
+            <div class="stat"><div class="ic teal"><i class="fas fa-handshake"></i></div><div><h3>@Model.Count(d => d.VisibleToClient)</h3><p>Shared with client</p></div></div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-filter"></i> Find a document</span>
+                @if (canContribute)
+                {
+                    <button type="button" class="btn-pm btn-sm" onclick="pmToggle('doc-form')"><i class="fas fa-upload"></i> Upload</button>
+                }
+            </div>
+            <div class="card-body">
+                <form method="get" class="toolbar">
+                    <input type="hidden" name="projectId" value="@project!.Id" />
+                    <div class="fg">
+                        <label class="lbl">Type</label>
+                        <select name="type" class="inp">
+                            <option value="">All</option>
+                            @foreach (var t in Enum.GetValues<ProjectDocumentType>())
+                            {
+                                <option value="@t" selected="@(ViewBag.Type as ProjectDocumentType? == t)">
+                                    @System.Text.RegularExpressions.Regex.Replace(t.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Status</label>
+                        <select name="status" class="inp">
+                            <option value="">All</option>
+                            @foreach (var s in Enum.GetValues<ProjectDocumentStatus>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Status as ProjectDocumentStatus? == s)">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg" style="flex:2; min-width:200px;">
+                        <label class="lbl">Search</label>
+                        <input type="text" name="q" value="@ViewBag.Q" class="inp" placeholder="Title, description, tag or filename…" />
+                    </div>
+                    <button type="submit" class="btn-pm"><i class="fas fa-magnifying-glass"></i> Search</button>
+                    <a asp-action="Index" asp-route-projectId="@project.Id" class="btn-ghost-pm"><i class="fas fa-rotate-left"></i> Clear</a>
+                </form>
+
+                @if (canContribute)
+                {
+                    <form asp-action="Upload" method="post" enctype="multipart/form-data" id="doc-form"
+                          style="display:none; margin-top:1.25rem; padding-top:1.25rem; border-top:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="projectId" value="@project.Id" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> Title</label>
+                                <input name="Title" class="inp" required />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-shapes"></i> Type</label>
+                                <select name="Type" class="inp">
+                                    @foreach (var t in Enum.GetValues<ProjectDocumentType>())
+                                    {
+                                        <option value="@t">@System.Text.RegularExpressions.Regex.Replace(t.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-folder"></i> Category</label>
+                                <input name="Category" class="inp" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-tags"></i> Tags</label>
+                                <input name="Tags" class="inp" placeholder="comma, separated" />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-align-left"></i> Description</label>
+                                <textarea name="Description" class="inp" rows="2"></textarea>
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-file-arrow-up"></i> File</label>
+                                <input type="file" name="file" class="inp" required />
+                                <span class="hint">Documents, images, video and CAD drawings up to 25 MB. Every upload is malware-scanned.</span>
+                            </div>
+                            <div class="fg full">
+                                <label class="check">
+                                    <input type="checkbox" name="VisibleToClient" value="true" />
+                                    Visible to the client in the portal
+                                </label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-upload"></i> Upload document</button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-folder-open"></i> Documents</span>
+                <span class="meta">@Model.Count document(s)</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-folder-open"></i>
+                        <h3>No documents</h3>
+                        <p>Contracts, drawings, reports, photos and minutes live here, with version history.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Document</th><th>Type</th><th class="num">Version</th><th>Status</th>
+                                <th>Uploaded by</th><th>Updated</th><th>Client</th><th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="with-avatar">
+                                            <span class="avatar sm"><i class="fas @Icon(d.Type)"></i></span>
+                                            <span>
+                                                <a asp-action="Details" asp-route-id="@d.Id" class="strong-link">@d.Title</a>
+                                                @if (d.IsCheckedOut)
+                                                {
+                                                    <span class="badge-pm b-pending">
+                                                        <i class="fas fa-lock"></i> @(d.CheckedOutBy == null ? "Checked out" : $"With {d.CheckedOutBy.FirstName}")
+                                                    </span>
+                                                }
+                                                <div class="meta" style="font-size:.72rem;">@d.FileName</div>
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td class="meta">@System.Text.RegularExpressions.Regex.Replace(d.Type.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</td>
+                                    <td class="num">v@d.CurrentVersion</td>
+                                    <td><span class="badge-pm b-@Cls(d.Status)">@d.Status</span></td>
+                                    <td class="meta">@(d.UploadedBy == null ? "—" : $"{d.UploadedBy.FirstName} {d.UploadedBy.LastName}")</td>
+                                    <td class="meta">@((d.UpdatedAt ?? d.CreatedAt).ToString("d MMM yy"))</td>
+                                    <td>@if (d.VisibleToClient) { <i class="fas fa-eye" style="color:var(--success);" title="Visible to the client"></i> }</td>
+                                    <td style="text-align:right;">
+                                        <div class="act-btns">
+                                            <a asp-action="Details" asp-route-id="@d.Id" class="act view"><i class="fas fa-eye"></i></a>
+                                            @if (!string.IsNullOrWhiteSpace(d.StoredPath))
+                                            {
+                                                <a href="@d.StoredPath" target="_blank" rel="noopener" class="act ok" title="Download"><i class="fas fa-download"></i></a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

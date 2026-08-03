@@ -1,0 +1,161 @@
+@using IT_Service_Management_System.Models.Pm
+@{
+    ViewData["Title"] = "Risk & Issue Exposure";
+    var matrix = ViewBag.Matrix as int[,] ?? new int[5, 5];
+    var risks = ViewBag.Risks as List<ProjectRisk> ?? new List<ProjectRisk>();
+    var issues = ViewBag.Issues as List<ProjectIssue> ?? new List<ProjectIssue>();
+    var byCategory = ViewBag.ByCategory as Dictionary<string, int> ?? new Dictionary<string, int>();
+    var maxCategory = byCategory.Count == 0 ? 1 : byCategory.Values.Max();
+
+    string CellClass(int score) => score switch { >= 15 => "s-crit", >= 10 => "s-high", >= 5 => "s-med", _ => "s-low" };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-triangle-exclamation"></i> Risk &amp; Issue Exposure</h1>
+                        <p class="page-sub">Open risks and issues across the whole portfolio</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <button type="button" onclick="window.print()" class="btn-ghost-pm"><i class="fas fa-print"></i> Print</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-triangle-exclamation"></i></div><div><h3>@risks.Count</h3><p>Open risks (top 30 shown)</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-fire"></i></div><div><h3>@ViewBag.CriticalRisks</h3><p>Score 15+</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-circle-exclamation"></i></div><div><h3>@issues.Count</h3><p>Open issues (top 30)</p></div></div>
+            <div class="stat"><div class="ic slate"><i class="fas fa-calendar-xmark"></i></div><div><h3>@ViewBag.OverdueIssues</h3><p>Overdue issues</p></div></div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-piggy-bank"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalContingency ?? 0m)).ToString("N0"))</h3><p>Contingency held</p></div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-table-cells"></i> Portfolio risk matrix</span></div>
+                <div class="card-body">
+                    <div class="matrix">
+                        <div class="axis"></div>
+                        @for (var p = 1; p <= 5; p++) { <div class="axis">P@p</div> }
+                        @for (var impact = 5; impact >= 1; impact--)
+                        {
+                            <div class="axis">I@impact</div>
+                            @for (var prob = 1; prob <= 5; prob++)
+                            {
+                                var count = matrix[impact - 1, prob - 1];
+                                var score = impact * prob;
+                                <div class="cell @CellClass(score) @(count == 0 ? "empty" : "")"
+                                     title="Probability @prob × impact @impact = @score · @count risk(s)">@count</div>
+                            }
+                        }
+                    </div>
+                    <p class="hint" style="margin-top:.75rem;">Rows are impact (5 at the top), columns probability.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-tags"></i> Risks by category</span></div>
+                <div class="card-body">
+                    @if (byCategory.Count == 0)
+                    {
+                        <div class="empty"><i class="fas fa-tags"></i><h3>Nothing categorised</h3></div>
+                    }
+                    else
+                    {
+                        <div class="hbars">
+                            @foreach (var kv in byCategory)
+                            {
+                                <div class="hbar">
+                                    <span class="nm" title="@kv.Key">@kv.Key</span>
+                                    <span class="track"><i style="width:@(kv.Value * 100 / maxCategory)%"></i></span>
+                                    <span class="vl">@kv.Value</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-triangle-exclamation"></i> Highest-scoring open risks</span></div>
+            <div class="card-body flush">
+                @if (risks.Count == 0)
+                {
+                    <div class="empty"><i class="fas fa-shield-halved"></i><h3>No open risks</h3></div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Ref</th><th>Risk</th><th>Project</th><th class="num">Score</th><th>Band</th><th>Owner</th><th>Status</th><th>Mitigation</th></tr></thead>
+                        <tbody>
+                            @foreach (var r in risks)
+                            {
+                                <tr>
+                                    <td class="ref">@r.Reference</td>
+                                    <td>@r.Title</td>
+                                    <td class="meta">
+                                        <a asp-controller="ProjectRegisters" asp-action="Risks" asp-route-projectId="@r.ProjectId" class="strong-link">@r.Project?.Name</a>
+                                    </td>
+                                    <td class="num"><span class="badge-pm b-@(r.Score >= 15 ? "critical" : r.Score >= 10 ? "high" : "medium")">@r.Score</span></td>
+                                    <td class="meta">@r.Band</td>
+                                    <td class="meta">@(r.Owner == null ? "—" : $"{r.Owner.FirstName} {r.Owner.LastName}")</td>
+                                    <td><span class="badge-pm b-open">@r.Status</span></td>
+                                    <td class="meta" style="font-size:.78rem; max-width:280px;">@(r.Mitigation ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-circle-exclamation"></i> Open issues</span></div>
+            <div class="card-body flush">
+                @if (issues.Count == 0)
+                {
+                    <div class="empty"><i class="fas fa-circle-check" style="color:var(--success);"></i><h3>No open issues</h3></div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Ref</th><th>Issue</th><th>Project</th><th>Severity</th><th>Owner</th><th>Due</th><th>Status</th></tr></thead>
+                        <tbody>
+                            @foreach (var i in issues)
+                            {
+                                <tr>
+                                    <td class="ref">@i.Reference</td>
+                                    <td>@i.Title</td>
+                                    <td class="meta">
+                                        <a asp-controller="ProjectRegisters" asp-action="Issues" asp-route-projectId="@i.ProjectId" class="strong-link">@i.Project?.Name</a>
+                                    </td>
+                                    <td>
+                                        <span class="badge-pm b-@(i.Severity == IssueSeverity.Critical ? "critical" : i.Severity == IssueSeverity.High ? "high" : i.Severity == IssueSeverity.Medium ? "medium" : "low")">
+                                            @i.Severity
+                                        </span>
+                                    </td>
+                                    <td class="meta">@(i.AssignedTo == null ? "Unassigned" : $"{i.AssignedTo.FirstName} {i.AssignedTo.LastName}")</td>
+                                    <td class="meta @(i.IsOverdue ? "overdue" : "")">@(i.DueDate?.ToString("d MMM yy") ?? "—")</td>
+                                    <td><span class="badge-pm b-open">@i.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

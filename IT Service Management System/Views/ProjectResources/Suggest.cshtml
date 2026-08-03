@@ -1,0 +1,94 @@
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.Services.Pm
+@model List<AllocationSuggestion>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = "Allocation suggestions";
+    var skills = ViewBag.Skills as string;
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-controller="Projects" asp-action="Details" asp-route-id="@project?.Id" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-user-plus"></i> Who should take this work?</h1>
+                        <p class="page-sub">@project?.Reference — @project?.Name</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="get" style="display:flex; gap:.6rem; flex-wrap:wrap;">
+                    <input type="hidden" name="projectId" value="@project?.Id" />
+                    <input type="text" name="skills" value="@skills" class="inp" style="flex:1; min-width:220px;"
+                           placeholder="Skills needed, comma separated (e.g. networking, cisco)" />
+                    <button type="submit" class="btn-pm"><i class="fas fa-magnifying-glass"></i> Rank</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="insight">
+            <h4><i class="fas fa-circle-info"></i> How the ranking works</h4>
+            <p>
+                Each person scores on three things: how many of the requested skills their resource
+                record lists, how much spare capacity they have over the next four weeks, and whether
+                they are already on this project's team. Anyone already over capacity is pushed down.
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-ranking-star"></i> Ranked candidates</span>
+                <span class="meta">@Model.Count person resource(s)</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-users-gear"></i>
+                        <h3>No person resources</h3>
+                        <p>Add people to the resource pool, with their skills and weekly capacity.</p>
+                        <a asp-action="Index" class="btn-outline-pm">Resource pool</a>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th class="num">Score</th><th>Person</th><th>Skills</th><th style="min-width:130px;">Utilisation</th><th>Why</th></tr></thead>
+                        <tbody>
+                            @foreach (var s in Model)
+                            {
+                                <tr>
+                                    <td class="num"><span class="badge-pm b-@(s.Score >= 50 ? "closed" : s.Score >= 20 ? "medium" : "low")">@s.Score</span></td>
+                                    <td>
+                                        <span class="with-avatar">
+                                            <span class="avatar sm">@(s.Name.Length > 0 ? s.Name[0].ToString() : "?")</span>
+                                            <a asp-action="Details" asp-route-id="@s.ResourceId" class="strong-link">@s.Name</a>
+                                        </span>
+                                    </td>
+                                    <td class="meta" style="font-size:.78rem;">@(s.Skills ?? "—")</td>
+                                    <td>
+                                        <div class="progress-pm thin @(s.UtilisationPercent > 100 ? "red" : s.UtilisationPercent > 85 ? "amber" : "green")">
+                                            <span style="width:@Math.Min(100, s.UtilisationPercent)%"></span>
+                                        </div>
+                                        <span class="meta" style="font-size:.72rem;">@s.UtilisationPercent%</span>
+                                    </td>
+                                    <td class="meta" style="font-size:.78rem;">@s.Reason</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

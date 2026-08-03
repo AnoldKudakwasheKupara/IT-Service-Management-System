@@ -1,0 +1,184 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<Resource>
+@{
+    ViewData["Title"] = "Resource Pool";
+    var canManage = ViewBag.CanManage as bool? ?? false;
+    var utilisation = ViewBag.Utilisation as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var departments = ViewBag.Departments as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    string TypeIcon(ResourceType t) => t switch
+    {
+        ResourceType.Person => "fa-user",
+        ResourceType.Equipment => "fa-screwdriver-wrench",
+        ResourceType.Vehicle => "fa-truck",
+        ResourceType.SoftwareLicence => "fa-key",
+        ResourceType.MeetingRoom => "fa-door-open",
+        ResourceType.Material => "fa-boxes-stacked",
+        _ => "fa-building"
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-controller="Projects" asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-users-gear"></i> Resource Pool</h1>
+                        <p class="page-sub">People, equipment, vehicles, licences and rooms available to projects</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Capacity" class="btn-outline-pm"><i class="fas fa-chart-simple"></i> Capacity planning</a>
+                    @if (canManage)
+                    {
+                        <a asp-action="Create" class="btn-pm"><i class="fas fa-plus-circle"></i> Add resource</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-users"></i></div><div><h3>@ViewBag.TotalPeople</h3><p>People</p></div></div>
+            <div class="stat"><div class="ic blue"><i class="fas fa-screwdriver-wrench"></i></div><div><h3>@ViewBag.TotalEquipment</h3><p>Equipment &amp; other</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@Model.Count(r => r.Status == ResourceStatus.Available)</h3><p>Available</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-triangle-exclamation"></i></div><div><h3>@ViewBag.Overallocated</h3><p>Over capacity</p></div></div>
+            <div class="stat"><div class="ic slate"><i class="fas fa-ban"></i></div><div><h3>@Model.Count(r => !r.IsActive)</h3><p>Inactive</p></div></div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-filter"></i> Filter</span></div>
+            <div class="card-body">
+                <form method="get" class="toolbar">
+                    <div class="fg">
+                        <label class="lbl">Type</label>
+                        <select name="type" class="inp">
+                            <option value="">All</option>
+                            @foreach (var t in Enum.GetValues<ResourceType>())
+                            {
+                                <option value="@t" selected="@(ViewBag.Type as ResourceType? == t)">
+                                    @System.Text.RegularExpressions.Regex.Replace(t.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Status</label>
+                        <select name="status" class="inp">
+                            <option value="">All</option>
+                            @foreach (var s in Enum.GetValues<ResourceStatus>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Status as ResourceStatus? == s)">
+                                    @System.Text.RegularExpressions.Regex.Replace(s.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Department</label>
+                        <select name="departmentId" class="inp">
+                            <option value="">All</option>
+                            @foreach (var d in departments)
+                            {
+                                <option value="@d.Id" selected="@(ViewBag.DepartmentId as int? == (int)d.Id)">@d.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg" style="flex:2; min-width:200px;">
+                        <label class="lbl">Search</label>
+                        <input type="text" name="q" value="@ViewBag.Q" class="inp" placeholder="Name, skill or asset tag…" />
+                    </div>
+                    <button type="submit" class="btn-pm"><i class="fas fa-magnifying-glass"></i> Search</button>
+                    <a asp-action="Index" class="btn-ghost-pm"><i class="fas fa-rotate-left"></i> Clear</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Resources</span>
+                <span class="meta">@Model.Count resource(s)</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-users-gear"></i>
+                        <h3>No resources</h3>
+                        <p>Add people and equipment so workload, capacity and cost can be tracked.</p>
+                        @if (canManage)
+                        {
+                            <a asp-action="Create" class="btn-pm"><i class="fas fa-plus-circle"></i> Add resource</a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Resource</th><th>Type</th><th>Department</th><th>Skills</th>
+                                <th class="num">Capacity</th><th class="num">Rate</th>
+                                <th style="min-width:130px;">Utilisation (4 wks)</th><th>Status</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model)
+                            {
+                                var used = utilisation.GetValueOrDefault(r.Id);
+                                <tr style="@(r.IsActive ? "" : "opacity:.55;")">
+                                    <td>
+                                        <span class="with-avatar">
+                                            <span class="avatar sm"><i class="fas @TypeIcon(r.Type)"></i></span>
+                                            <span>
+                                                <a asp-action="Details" asp-route-id="@r.Id" class="strong-link">@r.Name</a>
+                                                @if (!string.IsNullOrWhiteSpace(r.IdentifierCode))
+                                                {
+                                                    <div class="meta" style="font-size:.7rem;">@r.IdentifierCode</div>
+                                                }
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td class="meta">@System.Text.RegularExpressions.Regex.Replace(r.Type.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</td>
+                                    <td class="meta">@(r.Department?.Name ?? "—")</td>
+                                    <td class="meta" style="font-size:.78rem; max-width:200px;">@(r.Skills ?? "—")</td>
+                                    <td class="num meta">@r.WeeklyCapacityHours.ToString("N0") h/wk</td>
+                                    <td class="num money">@r.HourlyRate.ToString("N2")</td>
+                                    <td>
+                                        <div class="progress-pm thin @(used > 100 ? "red" : used > 85 ? "amber" : "green")">
+                                            <span style="width:@Math.Min(100, used)%"></span>
+                                        </div>
+                                        <span class="meta @(used > 100 ? "overdue" : "")" style="font-size:.72rem;">@used%</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge-pm b-@(r.Status == ResourceStatus.Available ? "closed" : r.Status == ResourceStatus.Allocated ? "active" : "onhold")">
+                                            @System.Text.RegularExpressions.Regex.Replace(r.Status.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                                        </span>
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <div class="act-btns">
+                                            <a asp-action="Details" asp-route-id="@r.Id" class="act view"><i class="fas fa-eye"></i></a>
+                                            @if (canManage)
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@r.Id" class="act edit"><i class="fas fa-pen"></i></a>
+                                                <a asp-action="Delete" asp-route-id="@r.Id" class="act del"><i class="fas fa-trash"></i></a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

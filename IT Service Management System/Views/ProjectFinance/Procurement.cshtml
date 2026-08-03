@@ -1,0 +1,212 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProcurementRequest>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Procurement — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+    var canProcure = ViewBag.CanProcure as bool? ?? false;
+    var budgetLines = ViewBag.BudgetLines as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var quoteCounts = ViewBag.QuoteCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+
+    string Cls(ProcurementStatus s) => s switch
+    {
+        ProcurementStatus.Paid => "completed",
+        ProcurementStatus.Rejected or ProcurementStatus.Cancelled => "rejected",
+        ProcurementStatus.Draft => "draft",
+        ProcurementStatus.Submitted => "pending",
+        _ => "active"
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div style="display:flex; gap:.5rem; margin-bottom:1rem; flex-wrap:wrap;">
+            <a asp-action="Budget" asp-route-projectId="@project!.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-sack-dollar"></i> Budget</a>
+            <a asp-action="Expenses" asp-route-projectId="@project.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-receipt"></i> Expenses</a>
+            <a asp-action="Procurement" asp-route-projectId="@project.Id" class="btn-pm btn-sm"><i class="fas fa-cart-shopping"></i> Procurement</a>
+            <a asp-action="Assets" asp-route-projectId="@project.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-laptop"></i> Assets</a>
+        </div>
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-cart-shopping"></i></div><div><h3>@Model.Count</h3><p>Purchase requests</p></div></div>
+            <div class="stat">
+                <div class="ic blue"><i class="fas fa-file-signature"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalOrdered ?? 0m)).ToString("N0"))</h3><p>Ordered</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic green"><i class="fas fa-money-check-dollar"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalPaid ?? 0m)).ToString("N0"))</h3><p>Paid</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic amber"><i class="fas fa-file-invoice"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalOutstanding ?? 0m)).ToString("N0"))</h3><p>Outstanding</p></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Purchase requests</span>
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <form method="get" style="display:inline-flex;">
+                        <input type="hidden" name="projectId" value="@project.Id" />
+                        <select name="status" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                            <option value="">All statuses</option>
+                            @foreach (var s in Enum.GetValues<ProcurementStatus>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Status as ProcurementStatus? == s)">
+                                    @System.Text.RegularExpressions.Regex.Replace(s.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                                </option>
+                            }
+                        </select>
+                    </form>
+                    @if (canContribute)
+                    {
+                        <button type="button" class="btn-pm btn-sm" onclick="pmToggle('pr-form')"><i class="fas fa-plus"></i> New request</button>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                @if (canContribute)
+                {
+                    <form asp-action="SaveProcurement" method="post" id="pr-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ProjectId" value="@project.Id" />
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> What is being bought</label>
+                                <input name="Title" class="inp" required placeholder="e.g. 4 × core switches" />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-align-left"></i> Specification</label>
+                                <textarea name="Description" class="inp" rows="3"></textarea>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-shapes"></i> Category</label>
+                                <select name="Category" class="inp">
+                                    @foreach (var c in Enum.GetValues<CostCategory>())
+                                    {
+                                        <option value="@c">@System.Text.RegularExpressions.Regex.Replace(c.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-coins"></i> Estimated cost</label>
+                                <input name="EstimatedCost" type="number" step="0.01" min="0" value="0" class="inp" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="far fa-calendar"></i> Required by</label>
+                                <input name="RequiredByDate" type="date" class="inp" />
+                            </div>
+                            @if (budgetLines.Any())
+                            {
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-sack-dollar"></i> Budget line</label>
+                                    <select name="BudgetLineId" class="inp">
+                                        <option value="">— Unattributed —</option>
+                                        @foreach (var l in budgetLines) { <option value="@l.Id">@l.Name</option> }
+                                    </select>
+                                    <span class="hint">Orders reserve against the line; payments convert it to actual spend.</span>
+                                </div>
+                            }
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Save as draft</button>
+                    </form>
+                }
+
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-cart-shopping"></i>
+                        <h3>No purchase requests</h3>
+                        <p>Requests run through approval, RFQ, supplier selection, order, receipt, invoice and payment.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Ref</th><th>Item</th><th>Supplier</th><th class="num">Estimated</th>
+                                <th class="num">Ordered</th><th class="num">Paid</th><th class="num">Outstanding</th>
+                                <th>Status</th><th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model)
+                            {
+                                <tr>
+                                    <td class="ref">@p.Reference</td>
+                                    <td>
+                                        <a asp-action="ProcurementDetails" asp-route-id="@p.Id" class="strong-link">@p.Title</a>
+                                        @if (quoteCounts.TryGetValue(p.Id, out var qc) && qc > 0)
+                                        {
+                                            <span class="chip">@qc quote(s)</span>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(p.PurchaseOrderNumber))
+                                        {
+                                            <div class="meta" style="font-size:.72rem;">PO @p.PurchaseOrderNumber</div>
+                                        }
+                                    </td>
+                                    <td class="meta">@(p.SelectedSupplierName ?? "—")</td>
+                                    <td class="num money">@p.EstimatedCost.ToString("N2")</td>
+                                    <td class="num money">@p.OrderedAmount.ToString("N2")</td>
+                                    <td class="num money">@p.PaidAmount.ToString("N2")</td>
+                                    <td class="num money @(p.OutstandingAmount > 0 ? "neg" : "")">@p.OutstandingAmount.ToString("N2")</td>
+                                    <td>
+                                        <span class="badge-pm b-@Cls(p.Status)">
+                                            @System.Text.RegularExpressions.Regex.Replace(p.Status.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                                        </span>
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <div class="act-btns">
+                                            <a asp-action="ProcurementDetails" asp-route-id="@p.Id" class="act view"><i class="fas fa-eye"></i></a>
+                                            @if (canContribute && p.Status == ProcurementStatus.Draft)
+                                            {
+                                                <form asp-action="SubmitProcurement" method="post" class="inline-form">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="requestId" value="@p.Id" />
+                                                    <button type="submit" class="act edit" title="Submit for approval"><i class="fas fa-paper-plane"></i></button>
+                                                </form>
+                                            }
+                                            @if (canEdit && p.Status != ProcurementStatus.Paid && p.Status != ProcurementStatus.Invoiced)
+                                            {
+                                                <form asp-action="DeleteProcurement" method="post" class="inline-form"
+                                                      onsubmit="return confirm('Remove this purchase request?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="requestId" value="@p.Id" />
+                                                    <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

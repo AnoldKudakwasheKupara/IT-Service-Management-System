@@ -213,6 +213,10 @@ namespace IT_Service_Management_System.Controllers
             to = new DateTime(to.Year, to.Month, 1).AddMonths(1).AddDays(-1);
             if ((to - from).TotalDays < 30) to = from.AddDays(60);
 
+            // Populate the shared dropdown lists first: it also writes a ViewBag.Milestones
+            // projection, which would otherwise clobber the full milestone records the chart needs.
+            await PopulateListsAsync(projectId);
+
             ViewBag.From = from;
             ViewBag.To = to;
             ViewBag.Months = MonthsBetween(from, to);
@@ -220,7 +224,6 @@ namespace IT_Service_Management_System.Controllers
             ViewBag.Dependencies = dependencies.ToLookup(d => d.TaskId);
             ViewBag.ShowBaseline = showBaseline;
             ViewBag.CriticalCount = tasks.Count(t => t.IsOnCriticalPath);
-            await PopulateListsAsync(projectId);
 
             return View(tasks);
         }

@@ -1,0 +1,325 @@
+@using IT_Service_Management_System.Models.Pm
+@model ProjectClosure
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Closure — {project?.Reference}";
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+    var deliverables = ViewBag.Deliverables as List<Deliverable> ?? new List<Deliverable>();
+    var lessons = ViewBag.Lessons as List<LessonLearned> ?? new List<LessonLearned>();
+    var outstandingIssues = ViewBag.OutstandingIssues as List<ProjectIssue> ?? new List<ProjectIssue>();
+    var outstandingAssets = ViewBag.OutstandingAssets as List<ProjectAsset> ?? new List<ProjectAsset>();
+    var ready = Model.ChecklistCompletePercent >= 100 && outstandingIssues.Count == 0;
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        @* ── READINESS ───────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-flag"></i> Closure readiness</span>
+                <span class="badge-pm b-@(Model.Status == ClosureStatus.Closed ? "completed" : Model.Status == ClosureStatus.NotStarted ? "draft" : "planning")">
+                    @Model.Status
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="progress-pm @(ready ? "green" : "amber")" style="height:14px;">
+                    <span style="width:@Model.ChecklistCompletePercent%"></span>
+                </div>
+                <div class="meta" style="margin-top:.5rem;">
+                    @Model.ChecklistCompletePercent% of the closure checklist complete@(outstandingIssues.Count > 0 ? $" · {outstandingIssues.Count} issue(s) still open" : "")
+                </div>
+
+                @if (Model.Status == ClosureStatus.Closed)
+                {
+                    <div class="insight" style="margin-top:1rem; border-left-color:var(--success); background:#f6fdf9;">
+                        <h4><i class="fas fa-circle-check"></i> Project closed</h4>
+                        <p>Closed on @Model.ClosedAt?.ToString("d MMMM yyyy") @(Model.ClosedBy != null ? $"by {Model.ClosedBy.FirstName} {Model.ClosedBy.LastName}" : "").</p>
+                    </div>
+                }
+                else if (canEdit)
+                {
+                    <form asp-action="CloseProject" asp-route-id="@project!.Id" method="post" style="margin-top:1rem;"
+                          onsubmit="return confirm('Close this project? The team will be released and the project marked Completed.');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-pm" disabled="@(!ready)">
+                            <i class="fas fa-flag-checkered"></i> Close the project
+                        </button>
+                        @if (!ready)
+                        {
+                            <span class="hint" style="margin-left:.75rem;">
+                                Every checklist item must be ticked and every issue settled first.
+                            </span>
+                        }
+                    </form>
+                }
+            </div>
+        </div>
+
+        <form asp-action="SaveClosure" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="ProjectId" />
+
+            <div class="grid-2">
+                @* ── CHECKLIST ───────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-list-check"></i> Wrap-up checklist</span></div>
+                    <div class="card-body">
+                        <div class="checklist">
+                            <label class="ci @(Model.DeliverablesSignedOff ? "done" : "")">
+                                <input type="checkbox" asp-for="DeliverablesSignedOff" disabled="@(!canEdit)" />
+                                Deliverables signed off
+                                <span class="meta" style="margin-left:auto;">@deliverables.Count(d => d.Status == DeliverableStatus.Accepted)/@deliverables.Count accepted</span>
+                            </label>
+                            <label class="ci @(Model.ClientAccepted ? "done" : "")">
+                                <input type="checkbox" asp-for="ClientAccepted" disabled="@(!canEdit)" />
+                                Client acceptance obtained
+                            </label>
+                            <label class="ci @(Model.ResourcesReleased ? "done" : "")">
+                                <input type="checkbox" asp-for="ResourcesReleased" disabled="@(!canEdit)" />
+                                Resources released
+                            </label>
+                            <label class="ci @(Model.AssetsReturned ? "done" : "")">
+                                <input type="checkbox" asp-for="AssetsReturned" disabled="@(!canEdit)" />
+                                Assets returned
+                                @if (outstandingAssets.Count > 0)
+                                {
+                                    <span class="badge-pm b-critical" style="margin-left:auto;">@outstandingAssets.Count outstanding</span>
+                                }
+                            </label>
+                            <label class="ci @(Model.DocumentationArchived ? "done" : "")">
+                                <input type="checkbox" asp-for="DocumentationArchived" disabled="@(!canEdit)" />
+                                Documentation archived
+                            </label>
+                            <label class="ci @(Model.FinancesReconciled ? "done" : "")">
+                                <input type="checkbox" asp-for="FinancesReconciled" disabled="@(!canEdit)" />
+                                Finances reconciled
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                @* ── FINAL FINANCIALS ────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-sack-dollar"></i> Final financial summary</span></div>
+                    <div class="card-body">
+                        <div class="dl">
+                            <div><div class="k">Final budget</div><div class="v money">@project?.Currency @Model.FinalBudget.ToString("N2")</div></div>
+                            <div><div class="k">Actual spend</div><div class="v money">@project?.Currency @Model.FinalActualSpend.ToString("N2")</div></div>
+                            <div>
+                                <div class="k">Variance</div>
+                                <div class="v money @(Model.BudgetVariance < 0 ? "neg" : "pos")">
+                                    @project?.Currency @Model.BudgetVariance.ToString("N2")
+                                    <span class="meta" style="font-size:.72rem;">(@(Model.BudgetVariance < 0 ? "over" : "under") budget)</span>
+                                </div>
+                            </div>
+                            <div><div class="k">Hours booked</div><div class="v">@Model.FinalActualHours.ToString("N1")</div></div>
+                        </div>
+                        <p class="hint" style="margin-top:.75rem;">
+                            These figures refresh from the live record every time this page is saved.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            @* ── CLIENT ACCEPTANCE ───────────────────────────────────────── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-handshake"></i> Client acceptance</span></div>
+                <div class="card-body">
+                    <div class="form-grid three">
+                        <div class="fg">
+                            <label class="lbl" asp-for="ClientAcceptedBy"><i class="fas fa-user-check"></i> Accepted by</label>
+                            <input asp-for="ClientAcceptedBy" class="inp" readonly="@(!canEdit)" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="ClientAcceptedDate"><i class="far fa-calendar"></i> Date</label>
+                            <input asp-for="ClientAcceptedDate" type="date" class="inp" readonly="@(!canEdit)" />
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl" asp-for="ClientAcceptanceNotes"><i class="fas fa-note-sticky"></i> Acceptance notes</label>
+                            <textarea asp-for="ClientAcceptanceNotes" class="inp" rows="3" readonly="@(!canEdit)"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* ── REVIEW ──────────────────────────────────────────────────── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-clipboard-check"></i> Post-implementation review</span></div>
+                <div class="card-body">
+                    <div class="fg">
+                        <label class="lbl" asp-for="PostImplementationReview"><i class="fas fa-magnifying-glass-chart"></i> Review</label>
+                        <textarea asp-for="PostImplementationReview" class="inp" rows="5" readonly="@(!canEdit)"
+                                  placeholder="Did the project deliver the benefits in the business case? What would you do differently?"></textarea>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl" asp-for="OutstandingIssues"><i class="fas fa-circle-exclamation"></i> Outstanding issues at closure</label>
+                        <textarea asp-for="OutstandingIssues" class="inp" rows="3" readonly="@(!canEdit)"
+                                  placeholder="Anything handed over to business-as-usual."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            @if (canEdit)
+            {
+                <div class="form-actions">
+                    <button type="submit" class="btn-pm"><i class="fas fa-floppy-disk"></i> Save closure record</button>
+                </div>
+            }
+        </form>
+
+        @* ── DELIVERABLES & OUTSTANDING WORK ─────────────────────────────── *@
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-head">
+                    <span class="t"><i class="fas fa-box-open"></i> Deliverables</span>
+                    <a asp-controller="ProjectPlan" asp-action="Deliverables" asp-route-projectId="@project!.Id" class="meta">Manage</a>
+                </div>
+                <div class="card-body flush">
+                    @if (deliverables.Count == 0)
+                    {
+                        <div class="empty"><i class="fas fa-box-open"></i><h3>No deliverables recorded</h3></div>
+                    }
+                    else
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Deliverable</th><th>Status</th><th>Accepted</th></tr></thead>
+                            <tbody>
+                                @foreach (var d in deliverables)
+                                {
+                                    <tr>
+                                        <td>@d.Name</td>
+                                        <td><span class="badge-pm b-@(d.Status == DeliverableStatus.Accepted ? "completed" : d.Status == DeliverableStatus.Rejected ? "rejected" : "open")">@d.Status</span></td>
+                                        <td class="meta">
+                                            @(d.AcceptedDate?.ToString("d MMM yyyy") ?? "—")
+                                            @if (d.AcceptedBy != null) { <div style="font-size:.72rem;">@d.AcceptedBy.FirstName @d.AcceptedBy.LastName</div> }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-triangle-exclamation"></i> Blocking closure</span></div>
+                <div class="card-body">
+                    @if (outstandingIssues.Count == 0 && outstandingAssets.Count == 0)
+                    {
+                        <div class="empty" style="padding:2rem 1rem;">
+                            <i class="fas fa-circle-check" style="color:var(--success);"></i>
+                            <h3>Nothing outstanding</h3>
+                            <p>All issues are settled and every asset has been returned.</p>
+                        </div>
+                    }
+                    @if (outstandingIssues.Count > 0)
+                    {
+                        <h4 style="font-size:.85rem; margin-bottom:.5rem; color:var(--gray-700);">Open issues</h4>
+                        <div class="feed">
+                            @foreach (var i in outstandingIssues)
+                            {
+                                <div class="it">
+                                    <span class="dot" style="background:#fdecea; color:#b3261e;"><i class="fas fa-circle-exclamation"></i></span>
+                                    <div class="bd">
+                                        <div class="ln">@i.Title</div>
+                                        <div class="tm">@i.Severity · @i.Status</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (outstandingAssets.Count > 0)
+                    {
+                        <h4 style="font-size:.85rem; margin:1rem 0 .5rem; color:var(--gray-700);">Assets not returned</h4>
+                        <div class="feed">
+                            @foreach (var a in outstandingAssets)
+                            {
+                                <div class="it">
+                                    <span class="dot"><i class="fas fa-laptop"></i></span>
+                                    <div class="bd">
+                                        <div class="ln">@a.Name</div>
+                                        <div class="tm">
+                                            @(a.IssuedTo == null ? "Unassigned" : $"{a.IssuedTo.FirstName} {a.IssuedTo.LastName}")
+                                            @if (a.DueBackDate.HasValue) { <text>· due back @a.DueBackDate.Value.ToString("d MMM yyyy")</text> }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── LESSONS LEARNED ─────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-graduation-cap"></i> Lessons learned</span></div>
+            <div class="card-body">
+                @if (lessons.Count == 0)
+                {
+                    <p class="meta" style="margin-bottom:1rem;">Nothing captured yet. Record what worked and what did not while it is fresh.</p>
+                }
+                @foreach (var group in lessons.GroupBy(l => l.Category))
+                {
+                    <h4 style="font-size:.85rem; margin:.75rem 0 .5rem; color:var(--gray-700);">
+                        @System.Text.RegularExpressions.Regex.Replace(group.Key.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                    </h4>
+                    @foreach (var l in group)
+                    {
+                        <div class="insight @(l.Category == LessonCategory.WhatWentWrong ? "warn" : "")">
+                            <h4>@l.Title @if (!string.IsNullOrWhiteSpace(l.Area)) { <span class="chip">@l.Area</span> }</h4>
+                            <p>@l.Description</p>
+                            @if (!string.IsNullOrWhiteSpace(l.Recommendation))
+                            {
+                                <div class="why"><i class="fas fa-lightbulb"></i> @l.Recommendation</div>
+                            }
+                            <div class="meta" style="font-size:.72rem; margin-top:.4rem;">
+                                @(l.RaisedBy == null ? "" : $"{l.RaisedBy.FirstName} {l.RaisedBy.LastName} · ")@l.CreatedAt.ToString("d MMM yyyy")
+                            </div>
+                        </div>
+                    }
+                }
+
+                <form asp-action="AddLesson" asp-route-id="@project.Id" method="post" style="margin-top:1.25rem; border-top:1px solid var(--gray-200); padding-top:1.25rem;">
+                    @Html.AntiForgeryToken()
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-heading"></i> Title</label>
+                            <input name="Title" class="inp" required placeholder="e.g. Early supplier engagement paid off" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-shapes"></i> Category</label>
+                            <select name="Category" class="inp">
+                                @foreach (var c in Enum.GetValues<LessonCategory>())
+                                {
+                                    <option value="@c">@System.Text.RegularExpressions.Regex.Replace(c.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl"><i class="fas fa-align-left"></i> What happened</label>
+                            <textarea name="Description" class="inp" rows="3" required></textarea>
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl"><i class="fas fa-lightbulb"></i> Recommendation for future projects</label>
+                            <textarea name="Recommendation" class="inp" rows="2"></textarea>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl"><i class="fas fa-tag"></i> Area</label>
+                            <input name="Area" class="inp" placeholder="e.g. Procurement" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-outline-pm"><i class="fas fa-plus"></i> Record lesson</button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>

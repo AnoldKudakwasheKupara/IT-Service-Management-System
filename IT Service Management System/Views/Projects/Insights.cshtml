@@ -1,0 +1,231 @@
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.Services.Pm
+@model Project
+@{
+    ViewData["Title"] = $"Insights — {Model.Reference}";
+    var schedule = ViewBag.ScheduleForecast as Forecast ?? new Forecast();
+    var budget = ViewBag.BudgetForecast as BudgetForecast ?? new BudgetForecast();
+    var risks = ViewBag.PredictedRisks as List<RiskPrediction> ?? new List<RiskPrediction>();
+    var priorities = ViewBag.Priorities as List<TaskPrioritySuggestion> ?? new List<TaskPrioritySuggestion>();
+    var allocation = ViewBag.Allocation as List<AllocationSuggestion> ?? new List<AllocationSuggestion>();
+    var summary = ViewBag.Summary as string ?? "";
+
+    string Band(string level) => level switch { "High" => "bad", "Medium" => "warn", _ => "" };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div class="insight">
+            <h4><i class="fas fa-circle-info"></i> How these figures are produced</h4>
+            <p>
+                Everything on this page is derived from this organisation's own records using explicit
+                arithmetic — velocity, burn rate, dependency counts and comparable past projects. No
+                external model is consulted, so the same data always produces the same answer, and the
+                reasoning behind every number is shown alongside it.
+            </p>
+        </div>
+
+        <div class="grid-2">
+            @* ── SCHEDULE FORECAST ───────────────────────────────────────── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-calendar-day"></i> Predicted completion</span></div>
+                <div class="card-body">
+                    <div style="display:flex; align-items:baseline; gap:.75rem; flex-wrap:wrap; margin-bottom:.75rem;">
+                        <span style="font-size:1.6rem; font-weight:700; color:var(--gray-800);">
+                            @(schedule.PredictedDate?.ToString("d MMM yyyy") ?? "Not predictable")
+                        </span>
+                        <span class="badge-pm b-@(schedule.Confidence == "High" ? "closed" : schedule.Confidence == "Medium" ? "high" : "low")">
+                            @schedule.Confidence confidence
+                        </span>
+                        @if (schedule.SlipDays > 0)
+                        {
+                            <span class="badge-pm b-critical">@schedule.SlipDays days late</span>
+                        }
+                        else if (schedule.SlipDays < 0)
+                        {
+                            <span class="badge-pm b-closed">@(-schedule.SlipDays) days early</span>
+                        }
+                    </div>
+                    <p class="meta" style="line-height:1.6;">@schedule.Basis</p>
+                    @if (Model.EndDate.HasValue)
+                    {
+                        <div class="dl" style="margin-top:1rem;">
+                            <div><div class="k">Planned end</div><div class="v">@Model.EndDate.Value.ToString("d MMM yyyy")</div></div>
+                            <div><div class="k">Progress</div><div class="v">@Model.ProgressPercent%</div></div>
+                            <div><div class="k">Schedule elapsed</div><div class="v">@Model.SchedulePercentElapsed%</div></div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @* ── BUDGET FORECAST ─────────────────────────────────────────── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-chart-line"></i> Forecast outturn</span></div>
+                <div class="card-body">
+                    <div style="display:flex; align-items:baseline; gap:.75rem; flex-wrap:wrap; margin-bottom:.75rem;">
+                        <span style="font-size:1.6rem; font-weight:700; color:var(--gray-800);">
+                            @Model.Currency @budget.Forecast.ToString("N0")
+                        </span>
+                        <span class="badge-pm b-@(budget.OverrunRiskLevel == "High" ? "critical" : budget.OverrunRiskLevel == "Medium" ? "high" : "closed")">
+                            @budget.OverrunRiskLevel overrun risk
+                        </span>
+                    </div>
+                    <p class="meta" style="line-height:1.6;">@budget.Basis</p>
+                    <div class="dl" style="margin-top:1rem;">
+                        <div><div class="k">Budget</div><div class="v money">@budget.Budget.ToString("N0")</div></div>
+                        <div><div class="k">Spent</div><div class="v money">@budget.Spent.ToString("N0")</div></div>
+                        <div><div class="k">Committed</div><div class="v money">@budget.Committed.ToString("N0")</div></div>
+                        <div>
+                            <div class="k">Forecast variance</div>
+                            <div class="v money @(budget.Variance < 0 ? "neg" : "pos")">@budget.Variance.ToString("N0")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ── EXECUTIVE SUMMARY ───────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-file-lines"></i> Executive summary</span>
+                <button type="button" class="btn-ghost-pm btn-sm" onclick="copySummary()">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+            </div>
+            <div class="card-body">
+                <p id="pm-summary" style="white-space:pre-line; line-height:1.7; color:var(--gray-700);">@summary</p>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            @* ── PREDICTED RISKS ─────────────────────────────────────────── *@
+            <div class="card">
+                <div class="card-head">
+                    <span class="t"><i class="fas fa-triangle-exclamation"></i> Risks this project is likely to face</span>
+                    <a asp-controller="ProjectRegisters" asp-action="Risks" asp-route-projectId="@Model.Id" class="meta">Register</a>
+                </div>
+                <div class="card-body">
+                    @if (risks.Count == 0)
+                    {
+                        <div class="empty">
+                            <i class="fas fa-shield-halved"></i>
+                            <h3>Nothing flagged</h3>
+                            <p>Schedule, budget, resourcing and blocked work all look healthy.</p>
+                        </div>
+                    }
+                    @foreach (var r in risks)
+                    {
+                        <div class="insight @Band(r.Likelihood)">
+                            <h4>
+                                @r.Title
+                                <span class="badge-pm b-@(r.Likelihood == "High" ? "critical" : "high")">@r.Likelihood likelihood</span>
+                            </h4>
+                            <p>@r.Evidence</p>
+                            <div class="why"><i class="fas fa-lightbulb"></i> @r.SuggestedMitigation</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @* ── SUGGESTED PRIORITIES ────────────────────────────────────── *@
+            <div class="card">
+                <div class="card-head">
+                    <span class="t"><i class="fas fa-ranking-star"></i> What to work on next</span>
+                    <a asp-controller="ProjectTasks" asp-action="Priorities" asp-route-projectId="@Model.Id" class="meta">Full list</a>
+                </div>
+                <div class="card-body flush">
+                    @if (priorities.Count == 0)
+                    {
+                        <div class="empty"><i class="fas fa-list-check"></i><h3>No open tasks</h3></div>
+                    }
+                    else
+                    {
+                        <table class="tbl">
+                            <thead><tr><th class="num">Score</th><th>Task</th><th>Why</th><th>Due</th></tr></thead>
+                            <tbody>
+                                @foreach (var t in priorities)
+                                {
+                                    <tr>
+                                        <td class="num">
+                                            <span class="badge-pm b-@(t.Score >= 60 ? "critical" : t.Score >= 35 ? "high" : "low")">@t.Score</span>
+                                        </td>
+                                        <td>
+                                            <a asp-controller="ProjectTasks" asp-action="Details" asp-route-id="@t.TaskId" class="strong-link">@t.Name</a>
+                                            <div class="meta" style="font-size:.72rem;">@(t.Assignee ?? "Unassigned")</div>
+                                        </td>
+                                        <td class="meta" style="font-size:.78rem;">@t.Reason</td>
+                                        <td class="meta @(t.DueDate < DateTime.Today ? "overdue" : "")">@(t.DueDate?.ToString("d MMM") ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── ALLOCATION SUGGESTIONS ──────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-users-gear"></i> Who has capacity</span>
+                <a asp-controller="ProjectResources" asp-action="Suggest" asp-route-projectId="@Model.Id" class="meta">Search by skill</a>
+            </div>
+            <div class="card-body flush">
+                @if (allocation.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-users-gear"></i>
+                        <h3>No people in the resource pool</h3>
+                        <p>Add person resources so workload and availability can be tracked.</p>
+                        <a asp-controller="ProjectResources" asp-action="Index" class="btn-outline-pm">Resource pool</a>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Person</th><th>Skills</th><th style="min-width:130px;">Utilisation</th><th>Why</th></tr></thead>
+                        <tbody>
+                            @foreach (var a in allocation)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="with-avatar">
+                                            <span class="avatar sm">@(a.Name.Length > 0 ? a.Name[0].ToString() : "?")</span>
+                                            <strong>@a.Name</strong>
+                                        </span>
+                                    </td>
+                                    <td class="meta" style="font-size:.78rem;">@(a.Skills ?? "—")</td>
+                                    <td>
+                                        <div class="progress-pm thin @(a.UtilisationPercent > 100 ? "red" : a.UtilisationPercent > 85 ? "amber" : "green")">
+                                            <span style="width:@Math.Min(100, a.UtilisationPercent)%"></span>
+                                        </div>
+                                        <span class="meta" style="font-size:.72rem;">@a.UtilisationPercent%</span>
+                                    </td>
+                                    <td class="meta" style="font-size:.78rem;">@a.Reason</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copySummary() {
+            const text = document.getElementById('pm-summary').innerText;
+            navigator.clipboard.writeText(text)
+                .then(() => toastr && toastr.success('Executive summary copied.'))
+                .catch(() => alert('Could not copy. Select the text and copy it manually.'));
+        }
+    </script>
+}

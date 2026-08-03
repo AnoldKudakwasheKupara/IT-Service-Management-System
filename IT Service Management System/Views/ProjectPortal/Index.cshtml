@@ -1,0 +1,101 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<Project>
+@{
+    ViewData["Title"] = "Your Projects";
+    var clientName = ViewBag.ClientName as string;
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-handshake"></i> Your Projects</h1>
+                    <p class="page-sub">
+                        @(string.IsNullOrWhiteSpace(clientName)
+                            ? "Projects delivered for your organisation"
+                            : $"Projects delivered for {clientName}")
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        @if (string.IsNullOrWhiteSpace(clientName))
+        {
+            <div class="insight warn">
+                <h4><i class="fas fa-circle-exclamation"></i> Your account is not linked to an organisation</h4>
+                <p>
+                    Client access is matched on your organisation name. Ask your project contact to set
+                    the department on your account so your projects appear here.
+                </p>
+            </div>
+        }
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-diagram-project"></i></div><div><h3>@Model.Count</h3><p>Projects</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-play"></i></div><div><h3>@Model.Count(p => p.Status == ProjectStatus.Active)</h3><p>Active</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-stamp"></i></div><div><h3>@ViewBag.PendingApprovals</h3><p>Awaiting your sign-off</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-circle-exclamation"></i></div><div><h3>@ViewBag.OpenIssues</h3><p>Your open issues</p></div></div>
+            <div class="stat"><div class="ic teal"><i class="fas fa-folder-open"></i></div><div><h3>@ViewBag.SharedDocuments</h3><p>Shared documents</p></div></div>
+        </div>
+
+        @if (Model.Count == 0)
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="empty">
+                        <i class="fas fa-diagram-project"></i>
+                        <h3>No projects yet</h3>
+                        <p>Once work is booked to your organisation it will appear here.</p>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="grid-2">
+                @foreach (var p in Model)
+                {
+                    <div class="card">
+                        <div class="card-head">
+                            <span class="t">
+                                <i class="fas fa-diagram-project"></i>
+                                <a asp-action="Project" asp-route-id="@p.Id" class="strong-link">@p.Name</a>
+                            </span>
+                            <span class="badge-pm b-@p.Status.ToString().ToLower()">@p.Status</span>
+                        </div>
+                        <div class="card-body">
+                            @if (!string.IsNullOrWhiteSpace(p.Description))
+                            {
+                                <p class="meta" style="line-height:1.55; margin-bottom:1rem;">@p.Description</p>
+                            }
+                            <div style="margin-bottom:1rem;">
+                                <div style="display:flex; justify-content:space-between; font-size:.75rem; color:var(--gray-500); margin-bottom:.3rem;">
+                                    <span>Progress</span><span class="pct">@p.ProgressPercent%</span>
+                                </div>
+                                <div class="progress-pm"><span style="width:@p.ProgressPercent%"></span></div>
+                            </div>
+                            <div class="dl">
+                                <div><div class="k">Started</div><div class="v">@(p.StartDate?.ToString("d MMM yyyy") ?? "—")</div></div>
+                                <div><div class="k">Target finish</div><div class="v">@(p.EndDate?.ToString("d MMM yyyy") ?? "—")</div></div>
+                                <div>
+                                    <div class="k">Your contact</div>
+                                    <div class="v">@(p.ProjectManager == null ? "—" : $"{p.ProjectManager.FirstName} {p.ProjectManager.LastName}")</div>
+                                </div>
+                            </div>
+                            <a asp-action="Project" asp-route-id="@p.Id" class="btn-pm btn-sm" style="margin-top:1rem;">
+                                <i class="fas fa-arrow-right"></i> Open
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+    </div>
+</div>

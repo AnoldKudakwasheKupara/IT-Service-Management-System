@@ -1,0 +1,238 @@
+@using IT_Service_Management_System.Models.Pm
+@model ProcurementRequest
+@{
+    ViewData["Title"] = $"{Model.Reference} — {Model.Title}";
+    var quotes = ViewBag.Quotes as List<ProcurementQuote> ?? new List<ProcurementQuote>();
+    var canProcure = ViewBag.CanProcure as bool? ?? false;
+    var suppliers = ViewBag.Suppliers as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    // The chain a purchase walks through, in order.
+    var chain = new[]
+    {
+        ProcurementStatus.Draft, ProcurementStatus.Submitted, ProcurementStatus.Approved,
+        ProcurementStatus.RfqIssued, ProcurementStatus.SupplierSelected, ProcurementStatus.Ordered,
+        ProcurementStatus.GoodsReceived, ProcurementStatus.Invoiced, ProcurementStatus.Paid
+    };
+    var currentIndex = Array.IndexOf(chain, Model.Status);
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Procurement" asp-route-projectId="@Model.ProjectId" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-cart-shopping"></i> @Model.Title</h1>
+                        <div class="page-sub" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                            <span class="ref">@Model.Reference</span>
+                            <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId" class="chip" style="text-decoration:none;">
+                                <i class="fas fa-diagram-project"></i> @Model.Project?.Name
+                            </a>
+                            <span class="badge-pm b-@(Model.Status == ProcurementStatus.Paid ? "completed" : Model.Status == ProcurementStatus.Rejected ? "rejected" : "active")">
+                                @System.Text.RegularExpressions.Regex.Replace(Model.Status.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        @* ── PROGRESS THROUGH THE CHAIN ──────────────────────────────────── *@
+        <div class="card">
+            <div class="card-body">
+                <div style="display:flex; flex-wrap:wrap; gap:.25rem;">
+                    @for (var i = 0; i < chain.Length; i++)
+                    {
+                        var done = currentIndex >= 0 && i < currentIndex;
+                        var active = i == currentIndex;
+                        <div style="flex:1 1 0; min-width:96px; text-align:center; padding:.5rem .4rem; font-size:.7rem; font-weight:600;
+                                    border-radius:@(i == 0 ? ".5rem 0 0 .5rem" : i == chain.Length - 1 ? "0 .5rem .5rem 0" : "0");
+                                    background:@(active ? "linear-gradient(100deg, var(--primary-dark), var(--primary))" : done ? "#e9f6ee" : "var(--gray-100)");
+                                    color:@(active ? "white" : done ? "#1e6b45" : "var(--gray-500)");">
+                            @System.Text.RegularExpressions.Regex.Replace(chain[i].ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2-1">
+            <div>
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Request</span></div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrWhiteSpace(Model.Description))
+                        {
+                            <p style="color:var(--gray-700); line-height:1.6; margin-bottom:1.25rem; white-space:pre-wrap;">@Model.Description</p>
+                        }
+                        <div class="dl">
+                            <div><div class="k">Category</div><div class="v">@System.Text.RegularExpressions.Regex.Replace(Model.Category.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</div></div>
+                            <div><div class="k">Budget line</div><div class="v">@(Model.BudgetLine?.Name ?? "Unattributed")</div></div>
+                            <div><div class="k">Requested by</div><div class="v">@(Model.RequestedBy == null ? "—" : $"{Model.RequestedBy.FirstName} {Model.RequestedBy.LastName}")</div></div>
+                            <div><div class="k">Required by</div><div class="v">@(Model.RequiredByDate?.ToString("d MMM yyyy") ?? "—")</div></div>
+                            <div><div class="k">Estimated cost</div><div class="v money">@Model.Currency @Model.EstimatedCost.ToString("N2")</div></div>
+                            <div><div class="k">Approved by</div><div class="v">@(Model.ApprovedBy == null ? "Pending" : $"{Model.ApprovedBy.FirstName} {Model.ApprovedBy.LastName}")</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                @* ── QUOTES ──────────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-file-invoice"></i> Quotations</span>
+                        @if (canProcure)
+                        {
+                            <button type="button" class="btn-ghost-pm btn-sm" onclick="pmToggle('quote-form')"><i class="fas fa-plus"></i> Record quote</button>
+                        }
+                    </div>
+                    <div class="card-body">
+                        @if (canProcure)
+                        {
+                            <form asp-action="AddQuote" method="post" id="quote-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                <input type="hidden" name="ProcurementRequestId" value="@Model.Id" />
+                                <div class="form-grid three">
+                                    <div class="fg">
+                                        <label class="lbl">Supplier</label>
+                                        <input name="SupplierName" class="inp" required list="supplier-list" />
+                                        <datalist id="supplier-list">
+                                            @foreach (var s in suppliers) { <option value="@s.Name"></option> }
+                                        </datalist>
+                                    </div>
+                                    <div class="fg"><label class="lbl">Amount</label><input name="QuotedAmount" type="number" step="0.01" min="0.01" class="inp" required /></div>
+                                    <div class="fg"><label class="lbl">Lead time (days)</label><input name="LeadTimeDays" type="number" min="0" value="0" class="inp" /></div>
+                                    <div class="fg">
+                                        <label class="lbl">Evaluation score (0–100)</label>
+                                        <input name="Score" type="number" min="0" max="100" value="0" class="inp" />
+                                        <span class="hint">Price, quality and delivery combined.</span>
+                                    </div>
+                                    <div class="fg"><label class="lbl">Received</label><input name="ReceivedDate" type="date" class="inp" value="@DateTime.Today.ToString("yyyy-MM-dd")" /></div>
+                                    <div class="fg full"><label class="lbl">Notes</label><input name="Notes" class="inp" /></div>
+                                </div>
+                                <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Save quote</button>
+                            </form>
+                        }
+
+                        @if (quotes.Count == 0)
+                        {
+                            <p class="meta">No quotations recorded. Add at least two to make the selection defensible.</p>
+                        }
+                        else
+                        {
+                            <table class="tbl">
+                                <thead><tr><th>Supplier</th><th class="num">Amount</th><th class="num">Lead time</th><th class="num">Score</th><th>Notes</th><th></th></tr></thead>
+                                <tbody>
+                                    @foreach (var q in quotes)
+                                    {
+                                        <tr style="@(q.IsSelected ? "background:#e9f6ee;" : "")">
+                                            <td>
+                                                <strong style="color:var(--gray-800);">@q.SupplierName</strong>
+                                                @if (q.IsSelected) { <span class="badge-pm b-closed"><i class="fas fa-check"></i> Selected</span> }
+                                            </td>
+                                            <td class="num money">@q.Currency @q.QuotedAmount.ToString("N2")</td>
+                                            <td class="num meta">@q.LeadTimeDays d</td>
+                                            <td class="num">
+                                                <div class="progress-pm thin"><span style="width:@q.Score%"></span></div>
+                                                <span class="meta" style="font-size:.7rem;">@q.Score</span>
+                                            </td>
+                                            <td class="meta" style="font-size:.78rem;">@(q.Notes ?? "—")</td>
+                                            <td style="text-align:right;">
+                                                @if (canProcure && !q.IsSelected && Model.Status is ProcurementStatus.Approved or ProcurementStatus.RfqIssued)
+                                                {
+                                                    <form asp-action="AdvanceProcurement" method="post" class="inline-form">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@Model.Id" />
+                                                        <input type="hidden" name="status" value="@ProcurementStatus.SupplierSelected" />
+                                                        <input type="hidden" name="selectedQuoteId" value="@q.Id" />
+                                                        <button type="submit" class="act ok" title="Select this supplier"><i class="fas fa-check"></i></button>
+                                                    </form>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-money-check-dollar"></i> Financial position</span></div>
+                    <div class="card-body">
+                        <div class="dl">
+                            <div><div class="k">Ordered</div><div class="v money">@Model.OrderedAmount.ToString("N2")</div></div>
+                            <div><div class="k">Invoiced</div><div class="v money">@Model.InvoicedAmount.ToString("N2")</div></div>
+                            <div><div class="k">Paid</div><div class="v money">@Model.PaidAmount.ToString("N2")</div></div>
+                            <div><div class="k">Outstanding</div><div class="v money @(Model.OutstandingAmount > 0 ? "neg" : "pos")">@Model.OutstandingAmount.ToString("N2")</div></div>
+                        </div>
+                        <div class="dl" style="margin-top:1rem;">
+                            <div><div class="k">PO number</div><div class="v">@(Model.PurchaseOrderNumber ?? "—")</div></div>
+                            <div><div class="k">GRN number</div><div class="v">@(Model.GoodsReceivedNoteNumber ?? "—")</div></div>
+                            <div><div class="k">Invoice number</div><div class="v">@(Model.InvoiceNumber ?? "—")</div></div>
+                            <div><div class="k">Ordered</div><div class="v">@(Model.OrderedDate?.ToString("d MMM yy") ?? "—")</div></div>
+                            <div><div class="k">Received</div><div class="v">@(Model.ReceivedDate?.ToString("d MMM yy") ?? "—")</div></div>
+                            <div><div class="k">Paid</div><div class="v">@(Model.PaidDate?.ToString("d MMM yy") ?? "—")</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (canProcure && Model.Status is not (ProcurementStatus.Draft or ProcurementStatus.Submitted or ProcurementStatus.Paid or ProcurementStatus.Rejected))
+                {
+                    <div class="card">
+                        <div class="card-head"><span class="t"><i class="fas fa-forward"></i> Advance the purchase</span></div>
+                        <div class="card-body">
+                            <form asp-action="AdvanceProcurement" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <div class="fg">
+                                    <label class="lbl">Move to</label>
+                                    <select name="status" class="inp" required>
+                                        @foreach (var s in new[] { ProcurementStatus.RfqIssued, ProcurementStatus.Ordered, ProcurementStatus.GoodsReceived, ProcurementStatus.Invoiced, ProcurementStatus.Paid, ProcurementStatus.Cancelled })
+                                        {
+                                            <option value="@s">@System.Text.RegularExpressions.Regex.Replace(s.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">Amount</label>
+                                    <input name="amount" type="number" step="0.01" min="0" class="inp" placeholder="Order / invoice / payment value" />
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">Reference</label>
+                                    <input name="reference" class="inp" placeholder="PO / GRN / invoice number" />
+                                </div>
+                                <button type="submit" class="btn-pm btn-sm" style="width:100%; justify-content:center;">
+                                    <i class="fas fa-forward"></i> Advance
+                                </button>
+                                <p class="hint" style="margin-top:.6rem;">
+                                    Ordering reserves the amount on the budget line; paying converts it to actual spend.
+                                </p>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

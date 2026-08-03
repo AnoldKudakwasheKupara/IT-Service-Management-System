@@ -1,0 +1,106 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectApproval>
+@{
+    ViewData["Title"] = "All Approvals";
+    string Pretty(ApprovalSubject s) => System.Text.RegularExpressions.Regex.Replace(s.ToString(), "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-list-check"></i> All Approvals</h1>
+                        <p class="page-sub">Every approval across the portfolio — the oversight view</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="toolbar" style="margin:0;">
+                    <div class="fg">
+                        <label class="lbl">Status</label>
+                        <select name="status" class="inp" onchange="this.form.submit()">
+                            <option value="">All</option>
+                            @foreach (var s in Enum.GetValues<ApprovalStatus>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Status as ApprovalStatus? == s)">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Kind</label>
+                        <select name="subject" class="inp" onchange="this.form.submit()">
+                            <option value="">All</option>
+                            @foreach (var s in Enum.GetValues<ApprovalSubject>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Subject as ApprovalSubject? == s)">@Pretty(s)</option>
+                            }
+                        </select>
+                    </div>
+                    <a asp-action="All" class="btn-ghost-pm"><i class="fas fa-rotate-left"></i> Clear</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Approvals</span>
+                <span class="meta">@Model.Count record(s)</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty"><i class="fas fa-stamp"></i><h3>No approvals match</h3></div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Kind</th><th>Subject</th><th>Project</th><th class="num">Level</th>
+                                <th>Approver</th><th>Requested by</th><th class="num">Amount</th>
+                                <th>Status</th><th>Requested</th><th>Decided</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in Model)
+                            {
+                                <tr>
+                                    <td><span class="chip">@Pretty(a.Subject)</span></td>
+                                    <td>@a.SubjectTitle</td>
+                                    <td class="meta">
+                                        @if (a.Project != null)
+                                        {
+                                            <a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" class="strong-link">@a.Project.Name</a>
+                                        }
+                                        else { <text>—</text> }
+                                    </td>
+                                    <td class="num meta">@a.Level</td>
+                                    <td class="meta">@(a.Approver == null ? "—" : $"{a.Approver.FirstName} {a.Approver.LastName}")</td>
+                                    <td class="meta">@(a.RequestedBy == null ? "—" : $"{a.RequestedBy.FirstName} {a.RequestedBy.LastName}")</td>
+                                    <td class="num money">@(a.Amount?.ToString("N2") ?? "—")</td>
+                                    <td>
+                                        <span class="badge-pm b-@(a.Status == ApprovalStatus.Approved ? "closed" : a.Status == ApprovalStatus.Rejected ? "rejected" : a.Status == ApprovalStatus.Pending ? "pending" : "cancelled")">
+                                            @a.Status
+                                        </span>
+                                    </td>
+                                    <td class="meta">@a.RequestedAt.ToString("d MMM yy")</td>
+                                    <td class="meta">@(a.DecidedAt?.ToString("d MMM yy") ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

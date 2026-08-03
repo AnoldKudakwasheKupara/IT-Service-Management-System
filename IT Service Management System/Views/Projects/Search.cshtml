@@ -1,0 +1,123 @@
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.Services.Pm
+@model NlSearchResult
+@{
+    ViewData["Title"] = "Portfolio Search";
+    var spend = ViewBag.Spend as Dictionary<int, decimal> ?? new Dictionary<int, decimal>();
+
+    var examples = new[]
+    {
+        "projects delayed by more than two weeks",
+        "active construction projects",
+        "projects over 50000",
+        "projects ending this month",
+        "over budget",
+        "at risk"
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-magnifying-glass"></i> Ask the portfolio a question</h1>
+                        <p class="page-sub">Type a plain-English question. The filters it resolves to are always shown back to you.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="get" style="display:flex; gap:.6rem; flex-wrap:wrap;">
+                    <input type="text" name="q" value="@Model.Query" class="inp" style="flex:1; min-width:240px;"
+                           placeholder="e.g. show projects delayed by more than two weeks" autofocus />
+                    <button type="submit" class="btn-pm"><i class="fas fa-magnifying-glass"></i> Search</button>
+                </form>
+
+                <div style="margin-top:.9rem; display:flex; gap:.4rem; flex-wrap:wrap; align-items:center;">
+                    <span class="meta">Try:</span>
+                    @foreach (var example in examples)
+                    {
+                        <a asp-action="Search" asp-route-q="@example" class="chip" style="text-decoration:none;">@example</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Query))
+        {
+            <div class="insight">
+                <h4><i class="fas fa-wand-magic-sparkles"></i> How your question was read</h4>
+                <p>@Model.Explanation</p>
+                @if (Model.AppliedFilters.Count > 0)
+                {
+                    <div style="margin-top:.5rem; display:flex; gap:.4rem; flex-wrap:wrap;">
+                        @foreach (var f in Model.AppliedFilters)
+                        {
+                            <span class="chip"><i class="fas fa-filter"></i> @f</span>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <span class="t"><i class="fas fa-list"></i> Matching projects</span>
+                    <span class="meta">@Model.Projects.Count result(s)</span>
+                </div>
+                <div class="card-body flush">
+                    @if (Model.Projects.Count == 0)
+                    {
+                        <div class="empty">
+                            <i class="fas fa-magnifying-glass"></i>
+                            <h3>Nothing matched</h3>
+                            <p>Try rephrasing, or browse the full portfolio.</p>
+                            <a asp-action="Portfolio" class="btn-outline-pm">Open the portfolio</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="tbl">
+                            <thead>
+                                <tr>
+                                    <th>Project</th><th>Manager</th><th>Status</th><th>Health</th>
+                                    <th style="min-width:120px;">Progress</th><th class="num">Budget</th><th class="num">Spent</th><th>End</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in Model.Projects)
+                                {
+                                    var spent = spend.GetValueOrDefault(p.Id);
+                                    <tr>
+                                        <td>
+                                            <a asp-action="Details" asp-route-id="@p.Id" class="ref">@p.Reference</a>
+                                            <div><a asp-action="Details" asp-route-id="@p.Id" class="strong-link">@p.Name</a></div>
+                                        </td>
+                                        <td class="meta">@(p.ProjectManager == null ? "—" : $"{p.ProjectManager.FirstName} {p.ProjectManager.LastName}")</td>
+                                        <td><span class="badge-pm b-@p.Status.ToString().ToLower()">@p.Status</span></td>
+                                        <td><span class="health @p.Health"><i class="dot"></i>@p.Health</span></td>
+                                        <td>
+                                            <div class="progress-pm thin"><span style="width:@p.ProgressPercent%"></span></div>
+                                            <span class="meta" style="font-size:.7rem;">@p.ProgressPercent%</span>
+                                        </td>
+                                        <td class="num money">@p.TotalBudget.ToString("N0")</td>
+                                        <td class="num money @(spent > p.TotalBudget && p.TotalBudget > 0 ? "neg" : "")">@spent.ToString("N0")</td>
+                                        <td class="meta @(p.IsOverdue ? "overdue" : "")">@(p.EndDate?.ToString("d MMM yyyy") ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        }
+
+    </div>
+</div>

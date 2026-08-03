@@ -1,0 +1,253 @@
+@using IT_Service_Management_System.Models.Pm
+@model Project
+@{
+    ViewData["Title"] = Model.Name;
+    var milestones = ViewBag.Milestones as List<Milestone> ?? new List<Milestone>();
+    var deliverables = ViewBag.Deliverables as List<Deliverable> ?? new List<Deliverable>();
+    var documents = ViewBag.Documents as List<ProjectDocument> ?? new List<ProjectDocument>();
+    var issues = ViewBag.Issues as List<ProjectIssue> ?? new List<ProjectIssue>();
+    var discussion = ViewBag.Discussion as List<ProjectDiscussion> ?? new List<ProjectDiscussion>();
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start; min-width:0;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div style="min-width:0;">
+                        <h1 class="page-title" style="font-size:1.5rem;"><i class="fas fa-diagram-project"></i> @Model.Name</h1>
+                        <div class="page-sub" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                            <span class="badge-pm b-@Model.Status.ToString().ToLower()">@Model.Status</span>
+                            @if (Model.ProjectManager != null)
+                            {
+                                <span class="chip"><i class="fas fa-user-tie"></i> @Model.ProjectManager.FirstName @Model.ProjectManager.LastName</span>
+                            }
+                            @if (Model.EndDate.HasValue)
+                            {
+                                <span class="chip"><i class="far fa-calendar"></i> Target @Model.EndDate.Value.ToString("d MMM yyyy")</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div style="min-width:150px;">
+                    <div style="display:flex; justify-content:space-between; font-size:.75rem; color:var(--gray-500); margin-bottom:.3rem;">
+                        <span>Progress</span><span class="pct">@Model.ProgressPercent%</span>
+                    </div>
+                    <div class="progress-pm"><span style="width:@Model.ProgressPercent%"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <div class="card">
+                <div class="card-body">
+                    <p style="color:var(--gray-700); line-height:1.65; margin:0;">@Model.Description</p>
+                </div>
+            </div>
+        }
+
+        <div class="grid-2-1">
+            <div>
+                @* ── MILESTONES & SIGN-OFF ───────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-flag-checkered"></i> Milestones</span></div>
+                    <div class="card-body">
+                        @if (milestones.Count == 0)
+                        {
+                            <p class="meta">No milestones published yet.</p>
+                        }
+                        @foreach (var m in milestones)
+                        {
+                            var awaiting = m.RequiresClientApproval && !m.ClientApproved;
+                            <div style="border:1px solid @(awaiting ? "var(--warning)" : "var(--gray-200)"); border-radius:.7rem; padding:.85rem 1rem; margin-bottom:.75rem;">
+                                <div style="display:flex; gap:.75rem; align-items:flex-start; flex-wrap:wrap;">
+                                    <i class="fas fa-diamond" style="font-size:.7rem; margin-top:.35rem;
+                                       color:@(m.Status == MilestoneStatus.Achieved ? "var(--success)" : awaiting ? "var(--warning)" : "var(--pm-purple)");"></i>
+                                    <div style="flex:1; min-width:180px;">
+                                        <strong style="color:var(--gray-800);">@m.Name</strong>
+                                        <div class="meta" style="font-size:.78rem;">
+                                            Due @m.DueDate.ToString("d MMMM yyyy") · @m.Status
+                                            @if (m.ClientApproved) { <span class="badge-pm b-closed">You approved this on @m.ClientApprovedAt?.ToString("d MMM yyyy")</span> }
+                                        </div>
+                                        @if (!string.IsNullOrWhiteSpace(m.Description))
+                                        {
+                                            <div class="meta" style="font-size:.8rem; margin-top:.3rem;">@m.Description</div>
+                                        }
+                                    </div>
+                                </div>
+
+                                @if (awaiting)
+                                {
+                                    <form asp-action="ApproveMilestone" asp-route-id="@Model.Id" method="post"
+                                          style="margin-top:.75rem; display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="milestoneId" value="@m.Id" />
+                                        <input type="text" name="notes" class="inp" style="flex:1; min-width:180px;" placeholder="Comments (optional)" />
+                                        <button type="submit" class="btn-success-pm btn-sm"><i class="fas fa-check"></i> Approve milestone</button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @* ── DELIVERABLES ────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-box-open"></i> Deliverables</span></div>
+                    <div class="card-body flush">
+                        @if (deliverables.Count == 0)
+                        {
+                            <p class="meta" style="padding:1.25rem;">No deliverables listed yet.</p>
+                        }
+                        else
+                        {
+                            <table class="tbl">
+                                <thead><tr><th>Deliverable</th><th>Due</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    @foreach (var d in deliverables)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong style="color:var(--gray-800);">@d.Name</strong>
+                                                @if (!string.IsNullOrWhiteSpace(d.AcceptanceCriteria))
+                                                {
+                                                    <div class="meta" style="font-size:.75rem;">@d.AcceptanceCriteria</div>
+                                                }
+                                            </td>
+                                            <td class="meta">@(d.DueDate?.ToString("d MMM yyyy") ?? "—")</td>
+                                            <td>
+                                                <span class="badge-pm b-@(d.Status == DeliverableStatus.Accepted ? "completed" : d.Status == DeliverableStatus.Rejected ? "rejected" : "open")">
+                                                    @d.Status
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+
+                @* ── DISCUSSION ──────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-comments"></i> Discussion</span></div>
+                    <div class="card-body">
+                        @foreach (var d in discussion)
+                        {
+                            <div class="comment">
+                                <span class="avatar">@(d.Author == null ? "?" : $"{d.Author.FirstName.FirstOrDefault()}{d.Author.LastName.FirstOrDefault()}")</span>
+                                <div class="bd">
+                                    <div class="who">
+                                        @(d.Author == null ? "Project team" : $"{d.Author.FirstName} {d.Author.LastName}")
+                                        <span class="when">@d.CreatedAt.ToString("d MMM yyyy, HH:mm")</span>
+                                    </div>
+                                    <div class="txt">@d.Body</div>
+                                </div>
+                            </div>
+                        }
+                        @if (discussion.Count == 0) { <p class="meta">Nothing posted yet.</p> }
+
+                        <form asp-action="Comment" asp-route-id="@Model.Id" method="post" style="margin-top:1rem;">
+                            @Html.AntiForgeryToken()
+                            <div class="fg">
+                                <textarea name="body" class="inp" rows="3" required placeholder="Ask a question or leave a comment for the project team…"></textarea>
+                            </div>
+                            <button type="submit" class="btn-pm btn-sm"><i class="fas fa-paper-plane"></i> Post</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                @* ── DOCUMENTS ───────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-folder-open"></i> Shared documents</span></div>
+                    <div class="card-body">
+                        @foreach (var d in documents)
+                        {
+                            <div style="display:flex; align-items:center; gap:.5rem; padding:.4rem 0; border-bottom:1px solid var(--gray-100);">
+                                <i class="fas fa-file" style="color:var(--gray-400);"></i>
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-size:.85rem; color:var(--gray-800); overflow:hidden; text-overflow:ellipsis;">@d.Title</div>
+                                    <div class="meta" style="font-size:.72rem;">v@d.CurrentVersion · @((d.UpdatedAt ?? d.CreatedAt).ToString("d MMM yy"))</div>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(d.StoredPath))
+                                {
+                                    <a href="@d.StoredPath" target="_blank" rel="noopener" class="act ok" title="Download"><i class="fas fa-download"></i></a>
+                                }
+                            </div>
+                        }
+                        @if (documents.Count == 0) { <p class="meta" style="font-size:.85rem;">Nothing shared with you yet.</p> }
+
+                        <form asp-action="UploadDocument" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" style="margin-top:1rem;">
+                            @Html.AntiForgeryToken()
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-upload"></i> Send a document to the team</label>
+                                <input name="title" class="inp" placeholder="Title (optional)" />
+                            </div>
+                            <div class="fg"><input type="file" name="file" class="inp" required /></div>
+                            <button type="submit" class="btn-ghost-pm btn-sm" style="width:100%; justify-content:center;">
+                                <i class="fas fa-upload"></i> Upload
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                @* ── ISSUES ──────────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-circle-exclamation"></i> Issues you raised</span></div>
+                    <div class="card-body">
+                        @foreach (var i in issues)
+                        {
+                            <div style="padding:.5rem 0; border-bottom:1px solid var(--gray-100);">
+                                <div style="font-size:.85rem; color:var(--gray-800);">@i.Title</div>
+                                <div class="meta" style="font-size:.72rem;">
+                                    <span class="badge-pm b-@(i.IsOpen ? "open" : "closed")">@i.Status</span>
+                                    @i.Severity · raised @i.CreatedAt.ToString("d MMM yy")
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(i.Resolution))
+                                {
+                                    <div class="meta" style="font-size:.78rem; color:var(--success); margin-top:.2rem;">
+                                        <i class="fas fa-circle-check"></i> @i.Resolution
+                                    </div>
+                                }
+                            </div>
+                        }
+                        @if (issues.Count == 0) { <p class="meta" style="font-size:.85rem;">You have not raised any issues.</p> }
+
+                        <form asp-action="RaiseIssue" asp-route-id="@Model.Id" method="post" style="margin-top:1rem;">
+                            @Html.AntiForgeryToken()
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-flag"></i> Raise an issue</label>
+                                <input name="title" class="inp" required placeholder="What is the problem?" />
+                            </div>
+                            <div class="fg">
+                                <textarea name="description" class="inp" rows="3" required placeholder="Tell us what happened and how it affects you."></textarea>
+                            </div>
+                            <div class="fg">
+                                <select name="severity" class="inp">
+                                    @foreach (var s in Enum.GetValues<IssueSeverity>())
+                                    {
+                                        <option value="@s" selected="@(s == IssueSeverity.Medium)">@s</option>
+                                    }
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-pm btn-sm" style="width:100%; justify-content:center;">
+                                <i class="fas fa-paper-plane"></i> Raise issue
+                            </button>
+                            <p class="hint" style="margin-top:.5rem;">The project team is notified immediately.</p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

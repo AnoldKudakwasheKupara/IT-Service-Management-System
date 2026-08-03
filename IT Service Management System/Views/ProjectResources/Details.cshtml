@@ -1,0 +1,248 @@
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.ViewModels.Pm
+@model Resource
+@{
+    ViewData["Title"] = Model.Name;
+    var canManage = ViewBag.CanManage as bool? ?? false;
+    var assignments = ViewBag.Assignments as List<ResourceAssignment> ?? new List<ResourceAssignment>();
+    var unavailability = ViewBag.Unavailability as List<ResourceUnavailability> ?? new List<ResourceUnavailability>();
+    var workload = ViewBag.Workload as ResourceWorkloadRow;
+    var projects = ViewBag.Projects as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-users-gear"></i> @Model.Name</h1>
+                        <div class="page-sub" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                            <span class="chip">@System.Text.RegularExpressions.Regex.Replace(Model.Type.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</span>
+                            <span class="badge-pm b-@(Model.Status == ResourceStatus.Available ? "closed" : "active")">@Model.Status</span>
+                            @if (Model.Department != null) { <span class="chip"><i class="fas fa-building"></i> @Model.Department.Name</span> }
+                            @if (!Model.IsActive) { <span class="badge-pm b-cancelled">Inactive</span> }
+                        </div>
+                    </div>
+                </div>
+                @if (canManage)
+                {
+                    <div class="head-actions">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-outline-pm"><i class="fas fa-pen"></i> Edit</a>
+                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn-danger-pm"><i class="fas fa-trash"></i> Delete</a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        <div class="stats tight">
+            <div class="stat">
+                <div class="ic brand"><i class="fas fa-gauge-high"></i></div>
+                <div>
+                    <h3>@(workload?.UtilisationPercent ?? 0)%</h3>
+                    <p>Utilisation (4 wks)</p>
+                    <span class="sub">@(workload?.AllocatedHours.ToString("N0") ?? "0") of @(workload?.CapacityHours.ToString("N0") ?? "0") h</span>
+                </div>
+            </div>
+            <div class="stat"><div class="ic blue"><i class="fas fa-diagram-project"></i></div><div><h3>@(workload?.ActiveProjects ?? 0)</h3><p>Active projects</p></div></div>
+            <div class="stat"><div class="ic teal"><i class="fas fa-clock"></i></div><div><h3>@Model.WeeklyCapacityHours.ToString("N0")</h3><p>Hours per week</p></div></div>
+            @if (Model.UserId.HasValue)
+            {
+                <div class="stat">
+                    <div class="ic green"><i class="fas fa-stopwatch"></i></div>
+                    <div><h3>@(((decimal)(ViewBag.HoursThisMonth ?? 0m)).ToString("N1"))</h3><p>Hours this month</p></div>
+                </div>
+                <div class="stat">
+                    <div class="ic purple"><i class="fas fa-file-invoice-dollar"></i></div>
+                    <div><h3>@(((decimal)(ViewBag.BillableThisMonth ?? 0m)).ToString("N1"))</h3><p>Billable this month</p></div>
+                </div>
+            }
+        </div>
+
+        <div class="grid-2-1">
+            <div>
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrWhiteSpace(Model.Description))
+                        {
+                            <p style="color:var(--gray-700); line-height:1.6; margin-bottom:1rem;">@Model.Description</p>
+                        }
+                        <div class="dl">
+                            <div><div class="k">Linked employee</div><div class="v">@(Model.User == null ? "—" : $"{Model.User.FirstName} {Model.User.LastName}")</div></div>
+                            <div><div class="k">Identifier</div><div class="v">@(Model.IdentifierCode ?? "—")</div></div>
+                            <div><div class="k">Location</div><div class="v">@(Model.Location ?? "—")</div></div>
+                            <div><div class="k">Cost rate</div><div class="v money">@Model.HourlyRate.ToString("N2") / h</div></div>
+                            <div><div class="k">Billable rate</div><div class="v money">@Model.BillableRate.ToString("N2") / h</div></div>
+                            <div><div class="k">Added</div><div class="v">@Model.CreatedAt.ToString("d MMM yyyy")</div></div>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Model.Skills))
+                        {
+                            <div style="margin-top:1rem;">
+                                <div class="k" style="font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--gray-400); margin-bottom:.35rem;">Skills</div>
+                                @foreach (var skill in Model.Skills.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <span class="chip">@skill.Trim()</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-calendar-check"></i> Project assignments</span>
+                        <span class="meta">@assignments.Count(a => a.ToDate >= DateTime.Today) current</span>
+                    </div>
+                    <div class="card-body flush">
+                        @if (assignments.Count == 0)
+                        {
+                            <p class="meta" style="padding:1.25rem;">Not booked to any project.</p>
+                        }
+                        else
+                        {
+                            <table class="tbl">
+                                <thead><tr><th>Project</th><th>Task</th><th>From</th><th>To</th><th class="num">Allocation</th><th class="num">Planned h</th>@if (canManage) { <th></th> }</tr></thead>
+                                <tbody>
+                                    @foreach (var a in assignments)
+                                    {
+                                        var current = a.FromDate <= DateTime.Today && a.ToDate >= DateTime.Today;
+                                        <tr style="@(a.ToDate < DateTime.Today ? "opacity:.6;" : "")">
+                                            <td>
+                                                <a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" class="strong-link">@a.Project?.Name</a>
+                                                @if (current) { <span class="badge-pm b-active">Current</span> }
+                                            </td>
+                                            <td class="meta">@(a.Task?.Name ?? "—")</td>
+                                            <td class="meta">@a.FromDate.ToString("d MMM yy")</td>
+                                            <td class="meta">@a.ToDate.ToString("d MMM yy")</td>
+                                            <td class="num">@a.AllocationPercent%</td>
+                                            <td class="num meta">@(a.PlannedHours > 0 ? a.PlannedHours.ToString("N1") : "—")</td>
+                                            @if (canManage)
+                                            {
+                                                <td style="text-align:right;">
+                                                    <form asp-action="Unassign" method="post" class="inline-form"
+                                                          onsubmit="return confirm('Remove this assignment?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@Model.Id" />
+                                                        <input type="hidden" name="assignmentId" value="@a.Id" />
+                                                        <button type="submit" class="act del"><i class="fas fa-xmark"></i></button>
+                                                    </form>
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                @if (canManage)
+                {
+                    <div class="card">
+                        <div class="card-head"><span class="t"><i class="fas fa-plus"></i> Book onto a project</span></div>
+                        <div class="card-body">
+                            <form asp-action="Assign" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="ResourceId" value="@Model.Id" />
+                                <div class="fg">
+                                    <label class="lbl">Project</label>
+                                    <select name="ProjectId" class="inp" required>
+                                        <option value="">— Select —</option>
+                                        @foreach (var p in projects)
+                                        {
+                                            <option value="@p.Id">@p.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">From</label>
+                                    <input name="FromDate" type="date" class="inp" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">To</label>
+                                    <input name="ToDate" type="date" class="inp" value="@DateTime.Today.AddDays(30).ToString("yyyy-MM-dd")" required />
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">Allocation %</label>
+                                    <input name="AllocationPercent" type="number" min="0" max="100" value="100" class="inp" />
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">Planned hours (optional)</label>
+                                    <input name="PlannedHours" type="number" step="0.5" min="0" value="0" class="inp" />
+                                    <span class="hint">Left at zero, hours are inferred from the allocation percentage.</span>
+                                </div>
+                                <button type="submit" class="btn-pm btn-sm" style="width:100%; justify-content:center;">
+                                    <i class="fas fa-calendar-plus"></i> Assign
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                }
+
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-plane-departure"></i> Leave &amp; downtime</span></div>
+                    <div class="card-body">
+                        @foreach (var u in unavailability)
+                        {
+                            var active = u.FromDate <= DateTime.Today && u.ToDate >= DateTime.Today;
+                            <div style="display:flex; align-items:center; gap:.5rem; padding:.4rem 0; border-bottom:1px solid var(--gray-100);">
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-size:.85rem; color:var(--gray-800);">
+                                        @u.Reason
+                                        @if (active) { <span class="badge-pm b-onhold">Now</span> }
+                                    </div>
+                                    <div class="meta" style="font-size:.72rem;">
+                                        @u.FromDate.ToString("d MMM yy") → @u.ToDate.ToString("d MMM yy")
+                                        @if (!string.IsNullOrWhiteSpace(u.Kind)) { <text>· @u.Kind</text> }
+                                    </div>
+                                </div>
+                                @if (canManage)
+                                {
+                                    <form asp-action="RemoveUnavailability" method="post" class="inline-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.Id" />
+                                        <input type="hidden" name="entryId" value="@u.Id" />
+                                        <button type="submit" class="act del"><i class="fas fa-xmark"></i></button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                        @if (unavailability.Count == 0) { <p class="meta" style="font-size:.85rem;">No leave or downtime recorded.</p> }
+
+                        @if (canManage)
+                        {
+                            <form asp-action="AddUnavailability" method="post" style="margin-top:.9rem;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="ResourceId" value="@Model.Id" />
+                                <div class="fg">
+                                    <label class="lbl">Reason</label>
+                                    <input name="Reason" class="inp" required placeholder="e.g. Annual leave, servicing" />
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl">Kind</label>
+                                    <input name="Kind" class="inp" placeholder="Leave / Maintenance / Outage" />
+                                </div>
+                                <div class="fg"><label class="lbl">From</label><input name="FromDate" type="date" class="inp" required /></div>
+                                <div class="fg"><label class="lbl">To</label><input name="ToDate" type="date" class="inp" required /></div>
+                                <button type="submit" class="btn-ghost-pm btn-sm" style="width:100%; justify-content:center;">
+                                    <i class="fas fa-plus"></i> Record
+                                </button>
+                                <p class="hint" style="margin-top:.5rem;">Capacity is reduced for the window automatically.</p>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

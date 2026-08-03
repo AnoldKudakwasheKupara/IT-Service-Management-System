@@ -1,0 +1,388 @@
+@using IT_Service_Management_System.Models.Pm
+@model ProjectTask
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"{Model.Reference} — {Model.Name}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+
+    var subtasks = ViewBag.Subtasks as List<ProjectTask> ?? new List<ProjectTask>();
+    var checklist = ViewBag.Checklist as List<TaskChecklistItem> ?? new List<TaskChecklistItem>();
+    var comments = ViewBag.Comments as List<TaskComment> ?? new List<TaskComment>();
+    var attachments = ViewBag.Attachments as List<TaskAttachment> ?? new List<TaskAttachment>();
+    var predecessors = ViewBag.Predecessors as List<TaskDependency> ?? new List<TaskDependency>();
+    var successors = ViewBag.Successors as List<TaskDependency> ?? new List<TaskDependency>();
+    var timeEntries = ViewBag.TimeEntries as List<TimeEntry> ?? new List<TimeEntry>();
+    var linkable = ViewBag.LinkableTasks as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start; min-width:0;">
+                    <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div style="min-width:0;">
+                        <h1 class="page-title" style="font-size:1.5rem;"><i class="fas fa-list-check"></i> @Model.Name</h1>
+                        <div class="page-sub" style="display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;">
+                            <span class="ref">@Model.Reference</span>
+                            <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId" class="chip" style="text-decoration:none;">
+                                <i class="fas fa-diagram-project"></i> @project?.Name
+                            </a>
+                            @if (Model.IsOnCriticalPath) { <span class="badge-pm b-critical">On the critical path</span> }
+                            @if (Model.FloatDays > 0) { <span class="chip">@Model.FloatDays day(s) float</span> }
+                        </div>
+                    </div>
+                </div>
+                @if (canContribute)
+                {
+                    <div class="head-actions">
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-outline-pm"><i class="fas fa-pen"></i> Edit</a>
+                        <a asp-action="Delete" asp-route-id="@Model.Id" class="btn-danger-pm"><i class="fas fa-trash"></i> Delete</a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        @if (Model.Status == ProjectTaskStatus.Blocked && !string.IsNullOrWhiteSpace(Model.BlockedReason))
+        {
+            <div class="insight bad">
+                <h4><i class="fas fa-ban"></i> Blocked</h4>
+                <p>@Model.BlockedReason</p>
+            </div>
+        }
+
+        @* ── STATUS BAR ──────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-body" style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center;">
+                <span class="badge-pm b-@(Model.Status == ProjectTaskStatus.Completed ? "completed" : Model.Status == ProjectTaskStatus.Blocked ? "delayed" : "open")">@Model.Status</span>
+                <span class="badge-pm b-@Model.Priority.ToString().ToLower()">@Model.Priority</span>
+                <div style="flex:1; min-width:160px;">
+                    <div class="progress-pm @(Model.Status == ProjectTaskStatus.Completed ? "green" : Model.IsOverdue ? "red" : "")">
+                        <span style="width:@Model.PercentComplete%"></span>
+                    </div>
+                    <span class="meta" style="font-size:.72rem;">@Model.PercentComplete% complete</span>
+                </div>
+                @if (canContribute)
+                {
+                    <form asp-action="ChangeStatus" method="post" style="display:inline-flex; gap:.4rem; align-items:center;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <select name="status" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;">
+                            @foreach (var s in Enum.GetValues<ProjectTaskStatus>())
+                            {
+                                <option value="@s" selected="@(Model.Status == s)">@s</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn-ghost-pm btn-sm"><i class="fas fa-arrows-rotate"></i> Update</button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <div class="grid-2-1">
+            <div>
+                @* ── DETAIL ──────────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrWhiteSpace(Model.Description))
+                        {
+                            <p style="color:var(--gray-700); line-height:1.6; margin-bottom:1.25rem; white-space:pre-wrap;">@Model.Description</p>
+                        }
+                        <div class="dl">
+                            <div><div class="k">Assignee</div><div class="v">@(Model.AssignedTo == null ? "Unassigned" : $"{Model.AssignedTo.FirstName} {Model.AssignedTo.LastName}")</div></div>
+                            <div><div class="k">Reviewer</div><div class="v">@(Model.Reviewer == null ? "—" : $"{Model.Reviewer.FirstName} {Model.Reviewer.LastName}")</div></div>
+                            <div><div class="k">Start</div><div class="v">@(Model.StartDate?.ToString("d MMM yyyy") ?? "—")</div></div>
+                            <div><div class="k">Due</div><div class="v @(Model.IsOverdue ? "overdue" : "")">@(Model.DueDate?.ToString("d MMM yyyy") ?? "—")</div></div>
+                            <div><div class="k">Completed</div><div class="v">@(Model.CompletionDate?.ToString("d MMM yyyy") ?? "—")</div></div>
+                            <div>
+                                <div class="k">Effort</div>
+                                <div class="v">
+                                    @Model.ActualHours.ToString("N1") of @Model.EstimatedHours.ToString("N1") h
+                                    @if (Model.HoursVariance > 0)
+                                    {
+                                        <span class="overdue" style="font-size:.75rem;">(+@Model.HoursVariance.ToString("N1"))</span>
+                                    }
+                                </div>
+                            </div>
+                            <div><div class="k">Phase</div><div class="v">@(Model.Phase?.Name ?? "—")</div></div>
+                            <div><div class="k">Work package</div><div class="v">@(Model.WbsItem == null ? "—" : $"{Model.WbsItem.WbsCode} {Model.WbsItem.Name}")</div></div>
+                            <div><div class="k">Milestone</div><div class="v">@(Model.Milestone?.Name ?? "—")</div></div>
+                            <div><div class="k">Billable</div><div class="v">@(Model.IsBillable ? "Yes" : "No")</div></div>
+                            <div><div class="k">Created</div><div class="v">@Model.CreatedAt.ToString("d MMM yyyy") @(Model.CreatedBy == null ? "" : $"by {Model.CreatedBy.FirstName}")</div></div>
+                            @if (Model.ParentTask != null)
+                            {
+                                <div><div class="k">Parent task</div><div class="v"><a asp-action="Details" asp-route-id="@Model.ParentTaskId" class="strong-link">@Model.ParentTask.Name</a></div></div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @* ── CHECKLIST ───────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-square-check"></i> Checklist</span>
+                        <span class="meta">@checklist.Count(c => c.IsDone)/@checklist.Count done</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="checklist">
+                            @foreach (var c in checklist)
+                            {
+                                <div class="ci @(c.IsDone ? "done" : "")">
+                                    @if (canContribute)
+                                    {
+                                        <form asp-action="ToggleChecklistItem" method="post" class="inline-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@Model.Id" />
+                                            <input type="hidden" name="itemId" value="@c.Id" />
+                                            <button type="submit" class="act @(c.IsDone ? "ok" : "view")" style="width:26px; height:26px;">
+                                                <i class="fas @(c.IsDone ? "fa-check-square" : "fa-square")"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    <span style="flex:1;">@c.Text</span>
+                                    @if (canContribute)
+                                    {
+                                        <form asp-action="DeleteChecklistItem" method="post" class="inline-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@Model.Id" />
+                                            <input type="hidden" name="itemId" value="@c.Id" />
+                                            <button type="submit" class="act del" style="width:26px; height:26px;"><i class="fas fa-xmark"></i></button>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                            @if (checklist.Count == 0)
+                            {
+                                <p class="meta">No checklist items. Ticking them off nudges the task's percentage.</p>
+                            }
+                        </div>
+
+                        @if (canContribute)
+                        {
+                            <form asp-action="AddChecklistItem" method="post" style="display:flex; gap:.5rem; margin-top:.75rem;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <input type="text" name="text" class="inp" placeholder="Add a checklist item…" required />
+                                <button type="submit" class="btn-ghost-pm btn-sm"><i class="fas fa-plus"></i> Add</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+
+                @* ── SUBTASKS ────────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-sitemap"></i> Subtasks</span>
+                        @if (canContribute)
+                        {
+                            <a asp-action="Create" asp-route-projectId="@Model.ProjectId" asp-route-parentTaskId="@Model.Id" class="btn-ghost-pm btn-sm">
+                                <i class="fas fa-plus"></i> Add subtask
+                            </a>
+                        }
+                    </div>
+                    <div class="card-body flush">
+                        @if (subtasks.Count == 0)
+                        {
+                            <p class="meta" style="padding:1.25rem;">No subtasks.</p>
+                        }
+                        else
+                        {
+                            <table class="tbl">
+                                <thead><tr><th>Subtask</th><th>Assignee</th><th>Status</th><th>Due</th></tr></thead>
+                                <tbody>
+                                    @foreach (var s in subtasks)
+                                    {
+                                        <tr>
+                                            <td><a asp-action="Details" asp-route-id="@s.Id" class="strong-link">@s.Name</a></td>
+                                            <td class="meta">@(s.AssignedTo == null ? "—" : $"{s.AssignedTo.FirstName} {s.AssignedTo.LastName}")</td>
+                                            <td><span class="badge-pm b-@(s.Status == ProjectTaskStatus.Completed ? "completed" : "open")">@s.Status</span></td>
+                                            <td class="meta @(s.IsOverdue ? "overdue" : "")">@(s.DueDate?.ToString("d MMM") ?? "—")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+
+                @* ── COMMENTS ────────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-comments"></i> Comments</span><span class="meta">@comments.Count</span></div>
+                    <div class="card-body">
+                        @foreach (var c in comments)
+                        {
+                            <div class="comment">
+                                <span class="avatar">@(c.Author == null ? "?" : $"{c.Author.FirstName.FirstOrDefault()}{c.Author.LastName.FirstOrDefault()}")</span>
+                                <div class="bd">
+                                    <div class="who">
+                                        @(c.Author == null ? "Unknown" : $"{c.Author.FirstName} {c.Author.LastName}")
+                                        <span class="when">@c.CreatedAt.ToString("d MMM yyyy, HH:mm")</span>
+                                    </div>
+                                    <div class="txt">@c.Body</div>
+                                </div>
+                            </div>
+                        }
+                        @if (comments.Count == 0)
+                        {
+                            <p class="meta">No comments yet.</p>
+                        }
+
+                        <form asp-action="AddComment" method="post" style="margin-top:1rem;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <div class="fg">
+                                <textarea name="body" class="inp" rows="3" required
+                                          placeholder="Add a comment. Type @@ followed by a colleague's name to notify them."></textarea>
+                            </div>
+                            <button type="submit" class="btn-pm btn-sm"><i class="fas fa-paper-plane"></i> Comment</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            @* ── SIDEBAR ─────────────────────────────────────────────────── *@
+            <div>
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-link"></i> Dependencies</span></div>
+                    <div class="card-body">
+                        <h4 style="font-size:.78rem; color:var(--gray-500); text-transform:uppercase; letter-spacing:.04em; margin-bottom:.4rem;">
+                            Waits for
+                        </h4>
+                        @foreach (var d in predecessors)
+                        {
+                            <div style="display:flex; align-items:center; gap:.4rem; padding:.3rem 0;">
+                                <div style="flex:1; min-width:0;">
+                                    <a asp-action="Details" asp-route-id="@d.PredecessorTaskId" class="strong-link" style="font-size:.82rem;">
+                                        @d.PredecessorTask?.Name
+                                    </a>
+                                    <div class="meta" style="font-size:.7rem;">@d.Type@(d.LagDays != 0 ? $" · {d.LagDays:+0;-0} day lag" : "")</div>
+                                </div>
+                                @if (canContribute)
+                                {
+                                    <form asp-action="RemoveDependency" method="post" class="inline-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.Id" />
+                                        <input type="hidden" name="dependencyId" value="@d.Id" />
+                                        <button type="submit" class="act del"><i class="fas fa-xmark"></i></button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                        @if (predecessors.Count == 0) { <p class="meta" style="font-size:.8rem;">Nothing.</p> }
+
+                        <h4 style="font-size:.78rem; color:var(--gray-500); text-transform:uppercase; letter-spacing:.04em; margin:.9rem 0 .4rem;">
+                            Blocks
+                        </h4>
+                        @foreach (var d in successors)
+                        {
+                            <div style="padding:.3rem 0;">
+                                <a asp-action="Details" asp-route-id="@d.TaskId" class="strong-link" style="font-size:.82rem;">@d.Task?.Name</a>
+                                <div class="meta" style="font-size:.7rem;">@d.Type</div>
+                            </div>
+                        }
+                        @if (successors.Count == 0) { <p class="meta" style="font-size:.8rem;">Nothing.</p> }
+
+                        @if (canContribute && linkable.Any())
+                        {
+                            <form asp-action="AddDependency" method="post" style="margin-top:.9rem; border-top:1px solid var(--gray-200); padding-top:.9rem;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <div class="fg">
+                                    <label class="lbl">This task waits for</label>
+                                    <select name="predecessorTaskId" class="inp" required>
+                                        <option value="">— Select —</option>
+                                        @foreach (var t in linkable)
+                                        {
+                                            <option value="@t.Id">@t.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <select name="type" class="inp">
+                                        @foreach (var t in Enum.GetValues<DependencyType>())
+                                        {
+                                            <option value="@t">@System.Text.RegularExpressions.Regex.Replace(t.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <input type="number" name="lagDays" value="0" class="inp" placeholder="Lag (days)" />
+                                    <span class="hint">Negative overlaps the two tasks. Circular chains are rejected.</span>
+                                </div>
+                                <button type="submit" class="btn-ghost-pm btn-sm" style="width:100%; justify-content:center;">
+                                    <i class="fas fa-plus"></i> Add dependency
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-paperclip"></i> Attachments</span></div>
+                    <div class="card-body">
+                        @foreach (var a in attachments)
+                        {
+                            <div style="display:flex; align-items:center; gap:.5rem; padding:.3rem 0;">
+                                <i class="fas fa-file" style="color:var(--gray-400);"></i>
+                                <a href="@a.StoredPath" target="_blank" rel="noopener" class="strong-link"
+                                   style="flex:1; font-size:.8rem; overflow:hidden; text-overflow:ellipsis;">@a.FileName</a>
+                                @if (canContribute)
+                                {
+                                    <form asp-action="DeleteAttachment" method="post" class="inline-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.Id" />
+                                        <input type="hidden" name="attachmentId" value="@a.Id" />
+                                        <button type="submit" class="act del"><i class="fas fa-xmark"></i></button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                        @if (attachments.Count == 0) { <p class="meta" style="font-size:.8rem;">No files.</p> }
+
+                        @if (canContribute)
+                        {
+                            <form asp-action="UploadAttachment" method="post" enctype="multipart/form-data" style="margin-top:.75rem;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <div class="fg"><input type="file" name="file" class="inp" required /></div>
+                                <button type="submit" class="btn-ghost-pm btn-sm" style="width:100%; justify-content:center;">
+                                    <i class="fas fa-upload"></i> Attach
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-stopwatch"></i> Time booked</span>
+                        <a asp-controller="ProjectTime" asp-action="Index" class="meta">Timesheet</a>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var t in timeEntries)
+                        {
+                            <div style="display:flex; justify-content:space-between; gap:.5rem; padding:.3rem 0; font-size:.8rem;">
+                                <span>
+                                    @(t.User == null ? "—" : t.User.FirstName)
+                                    <span class="meta" style="font-size:.72rem;">@t.WorkDate.ToString("d MMM")</span>
+                                </span>
+                                <span>
+                                    <strong>@t.NetHours.ToString("N2") h</strong>
+                                    <span class="badge-pm b-@(t.Status == TimeEntryStatus.Approved ? "closed" : t.Status == TimeEntryStatus.Rejected ? "rejected" : "pending")">@t.Status</span>
+                                </span>
+                            </div>
+                        }
+                        @if (timeEntries.Count == 0) { <p class="meta" style="font-size:.8rem;">No time booked.</p> }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

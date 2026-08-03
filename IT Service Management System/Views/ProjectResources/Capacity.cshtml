@@ -1,0 +1,141 @@
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.ViewModels.Pm
+@model List<ResourceWorkloadRow>
+@{
+    ViewData["Title"] = "Capacity Planning";
+    var from = (DateTime)(ViewBag.From ?? DateTime.Today);
+    var to = (DateTime)(ViewBag.To ?? DateTime.Today.AddDays(28));
+    var unavailability = ViewBag.Unavailability as List<ResourceUnavailability> ?? new List<ResourceUnavailability>();
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-chart-simple"></i> Capacity Planning</h1>
+                        <p class="page-sub">Who is committed to what, and where the spare capacity is</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="toolbar" style="margin:0;">
+                    <div class="fg"><label class="lbl">From</label><input type="date" name="from" value="@from.ToString("yyyy-MM-dd")" class="inp" /></div>
+                    <div class="fg"><label class="lbl">To</label><input type="date" name="to" value="@to.ToString("yyyy-MM-dd")" class="inp" /></div>
+                    <div class="fg">
+                        <label class="lbl">Type</label>
+                        <select name="type" class="inp">
+                            <option value="">All types</option>
+                            @foreach (var t in Enum.GetValues<ResourceType>())
+                            {
+                                <option value="@t" selected="@(ViewBag.Type as ResourceType? == t)">
+                                    @System.Text.RegularExpressions.Regex.Replace(t.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-pm"><i class="fas fa-magnifying-glass"></i> Apply</button>
+                    <a asp-action="Capacity" class="btn-ghost-pm"><i class="fas fa-rotate-left"></i> Next 4 weeks</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-gauge-high"></i></div><div><h3>@ViewBag.AverageUtilisation%</h3><p>Average utilisation</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-triangle-exclamation"></i></div><div><h3>@ViewBag.Overallocated</h3><p>Over capacity</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-battery-quarter"></i></div><div><h3>@ViewBag.Underused</h3><p>Under 50% used</p></div></div>
+            <div class="stat">
+                <div class="ic blue"><i class="fas fa-clock"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalCapacity ?? 0m)).ToString("N0"))</h3><p>Capacity hours</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic teal"><i class="fas fa-calendar-check"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalAllocated ?? 0m)).ToString("N0"))</h3><p>Allocated hours</p></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-chart-simple"></i> Workload</span>
+                <span class="meta">@from.ToString("d MMM yyyy") – @to.ToString("d MMM yyyy")</span>
+            </div>
+            <div class="card-body">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-users-gear"></i>
+                        <h3>Nothing to plan</h3>
+                        <p>Add resources and book them onto projects to see the workload picture.</p>
+                        <a asp-action="Index" class="btn-outline-pm">Resource pool</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="hbars">
+                        @foreach (var r in Model)
+                        {
+                            <div class="hbar">
+                                <span class="nm">
+                                    <a asp-action="Details" asp-route-id="@r.ResourceId" class="strong-link">@r.Name</a>
+                                </span>
+                                <span class="track">
+                                    <i class="@(r.IsOverallocated ? "over" : r.UtilisationPercent > 85 ? "warn" : "ok")"
+                                       style="width:@Math.Min(100, r.UtilisationPercent)%"></i>
+                                </span>
+                                <span class="vl">
+                                    <strong class="@(r.IsOverallocated ? "overdue" : "")">@r.UtilisationPercent%</strong>
+                                    <span style="color:var(--gray-400);">
+                                        @r.AllocatedHours.ToString("N0")/@r.CapacityHours.ToString("N0") h · @r.ActiveProjects project(s)
+                                    </span>
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-plane-departure"></i> Leave &amp; downtime in this window</span>
+                <span class="meta">Capacity is already reduced for these</span>
+            </div>
+            <div class="card-body flush">
+                @if (unavailability.Count == 0)
+                {
+                    <p class="meta" style="padding:1.25rem;">Nobody is away and nothing is out of service in this period.</p>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Resource</th><th>Reason</th><th>Kind</th><th>From</th><th>To</th><th class="num">Days</th></tr></thead>
+                        <tbody>
+                            @foreach (var u in unavailability)
+                            {
+                                <tr>
+                                    <td><a asp-action="Details" asp-route-id="@u.ResourceId" class="strong-link">@u.Resource?.Name</a></td>
+                                    <td>@u.Reason</td>
+                                    <td class="meta">@(u.Kind ?? "—")</td>
+                                    <td class="meta">@u.FromDate.ToString("d MMM yy")</td>
+                                    <td class="meta">@u.ToDate.ToString("d MMM yy")</td>
+                                    <td class="num">@((u.ToDate - u.FromDate).Days + 1)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

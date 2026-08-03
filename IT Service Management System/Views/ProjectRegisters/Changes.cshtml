@@ -1,0 +1,213 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectChangeRequest>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Change control — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+
+    string Cls(ChangeRequestStatus s) => s switch
+    {
+        ChangeRequestStatus.Approved or ChangeRequestStatus.Implemented => "completed",
+        ChangeRequestStatus.Rejected or ChangeRequestStatus.Cancelled => "rejected",
+        ChangeRequestStatus.Submitted or ChangeRequestStatus.UnderReview => "pending",
+        _ => "draft"
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div style="display:flex; gap:.5rem; margin-bottom:1rem;">
+            <a asp-action="Changes" asp-route-projectId="@project!.Id" class="btn-pm btn-sm"><i class="fas fa-code-branch"></i> Change control</a>
+            <a asp-action="Quality" asp-route-projectId="@project.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-clipboard-check"></i> Quality</a>
+        </div>
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-code-branch"></i></div><div><h3>@Model.Count</h3><p>Change requests</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-hourglass-half"></i></div><div><h3>@ViewBag.PendingCount</h3><p>Awaiting decision</p></div></div>
+            <div class="stat">
+                <div class="ic red"><i class="fas fa-money-bill-trend-up"></i></div>
+                <div>
+                    <h3>@(((decimal)(ViewBag.ApprovedCost ?? 0m)).ToString("N0"))</h3>
+                    <p>Approved cost impact</p>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-calendar-plus"></i></div>
+                <div><h3>@ViewBag.ApprovedDays</h3><p>Approved schedule days</p></div>
+            </div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@Model.Count(c => c.Status == ChangeRequestStatus.Implemented)</h3><p>Implemented</p></div></div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Change requests</span>
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <form method="get" style="display:inline-flex;">
+                        <input type="hidden" name="projectId" value="@project.Id" />
+                        <select name="status" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                            <option value="">All statuses</option>
+                            @foreach (var s in Enum.GetValues<ChangeRequestStatus>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Status as ChangeRequestStatus? == s)">@s</option>
+                            }
+                        </select>
+                    </form>
+                    @if (canContribute)
+                    {
+                        <button type="button" class="btn-pm btn-sm" onclick="pmToggle('cr-form')"><i class="fas fa-plus"></i> Raise change</button>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                @if (canContribute)
+                {
+                    <form asp-action="SaveChange" method="post" id="cr-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ProjectId" value="@project.Id" />
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> Title</label>
+                                <input name="Title" class="inp" required placeholder="e.g. Add a second data-centre site to scope" />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-question"></i> Reason for the change</label>
+                                <textarea name="Reason" class="inp" rows="3" required></textarea>
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-scale-unbalanced"></i> Impact assessment</label>
+                                <textarea name="ImpactAssessment" class="inp" rows="3"
+                                          placeholder="Effect on scope, quality, resourcing and risk."></textarea>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-gauge"></i> Impact level</label>
+                                <select name="ImpactLevel" class="inp">
+                                    @foreach (var l in Enum.GetValues<ChangeImpactLevel>())
+                                    {
+                                        <option value="@l" selected="@(l == ChangeImpactLevel.Moderate)">@l</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-sack-dollar"></i> Cost impact</label>
+                                <input name="CostImpact" type="number" step="0.01" value="0" class="inp" />
+                                <span class="hint">Positive adds to the budget; negative releases funds.</span>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-calendar-plus"></i> Schedule impact (days)</label>
+                                <input name="ScheduleImpactDays" type="number" value="0" class="inp" />
+                                <span class="hint">Positive pushes the end date out.</span>
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-list-check"></i> Implementation plan</label>
+                                <textarea name="ImplementationPlan" class="inp" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Save as draft</button>
+                    </form>
+                }
+
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-code-branch"></i>
+                        <h3>No change requests</h3>
+                        <p>Scope, cost and schedule changes go through here so the baseline stays defensible.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Ref</th><th>Change</th><th>Impact</th><th class="num">Cost</th>
+                                <th class="num">Days</th><th>Requested by</th><th>Status</th><th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model)
+                            {
+                                <tr>
+                                    <td class="ref">@c.Reference</td>
+                                    <td>
+                                        <strong style="color:var(--gray-800);">@c.Title</strong>
+                                        <div class="meta" style="font-size:.78rem; margin-top:.2rem;">@c.Reason</div>
+                                        @if (c.AppliedToBaseline)
+                                        {
+                                            <span class="chip"><i class="fas fa-thumbtack"></i> Applied to baseline</span>
+                                        }
+                                    </td>
+                                    <td><span class="badge-pm b-@(c.ImpactLevel >= ChangeImpactLevel.Major ? "critical" : c.ImpactLevel == ChangeImpactLevel.Moderate ? "high" : "low")">@c.ImpactLevel</span></td>
+                                    <td class="num money @(c.CostImpact > 0 ? "neg" : c.CostImpact < 0 ? "pos" : "")">
+                                        @c.CostImpact.ToString("+#,##0;-#,##0;0")
+                                    </td>
+                                    <td class="num @(c.ScheduleImpactDays > 0 ? "overdue" : "")">@c.ScheduleImpactDays.ToString("+0;-0;0")</td>
+                                    <td class="meta">@(c.RequestedBy == null ? "—" : $"{c.RequestedBy.FirstName} {c.RequestedBy.LastName}")</td>
+                                    <td>
+                                        <span class="badge-pm b-@Cls(c.Status)">@c.Status</span>
+                                        @if (c.DecidedAt.HasValue)
+                                        {
+                                            <div class="meta" style="font-size:.7rem;">@c.DecidedAt.Value.ToString("d MMM yy")</div>
+                                        }
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <div class="act-btns">
+                                            @if (canContribute && c.Status == ChangeRequestStatus.Draft)
+                                            {
+                                                <form asp-action="SubmitChange" method="post" class="inline-form">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="changeId" value="@c.Id" />
+                                                    <button type="submit" class="act edit" title="Submit for approval"><i class="fas fa-paper-plane"></i></button>
+                                                </form>
+                                            }
+                                            @if (canEdit && c.Status == ChangeRequestStatus.Approved && !c.AppliedToBaseline)
+                                            {
+                                                <form asp-action="ImplementChange" method="post" class="inline-form"
+                                                      onsubmit="return confirm('Apply this change to the project baseline? The budget and end date will move.');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="changeId" value="@c.Id" />
+                                                    <button type="submit" class="act ok" title="Apply to the baseline"><i class="fas fa-check-double"></i></button>
+                                                </form>
+                                            }
+                                            @if (canEdit && c.Status != ChangeRequestStatus.Implemented)
+                                            {
+                                                <form asp-action="DeleteChange" method="post" class="inline-form"
+                                                      onsubmit="return confirm('Remove this change request?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="changeId" value="@c.Id" />
+                                                    <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

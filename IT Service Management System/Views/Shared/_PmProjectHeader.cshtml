@@ -1,0 +1,124 @@
+@using IT_Service_Management_System.Models.Pm
+@*
+    Shared header + tab strip for every project sub-page. Expects ViewBag.Project to be set
+    (every project-scoped controller action does this via its LoadContextAsync helper).
+*@
+@{
+    var p = ViewBag.Project as Project;
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+
+    bool On(string c, params string[] actions) =>
+        controller == c && (actions.Length == 0 || actions.Contains(action));
+}
+
+@if (p != null)
+{
+    <div class="page-header">
+        <div class="head-row">
+            <div style="display:flex; gap:.9rem; align-items:flex-start; min-width:0;">
+                <a asp-controller="Projects" asp-action="Portfolio" class="btn-back" title="Back to the portfolio">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div style="min-width:0;">
+                    <h1 class="page-title" style="font-size:1.5rem;">
+                        <i class="fas fa-diagram-project"></i>
+                        <span style="overflow:hidden; text-overflow:ellipsis;">@p.Name</span>
+                    </h1>
+                    <div class="page-sub" style="display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;">
+                        <span class="ref">@p.Reference</span>
+                        <span class="badge-pm b-@p.Status.ToString().ToLower()">@p.Status</span>
+                        <span class="health @p.Health"><i class="dot"></i>@p.Health</span>
+                        @if (p.ProjectManager != null)
+                        {
+                            <span class="chip"><i class="fas fa-user-tie"></i> @p.ProjectManager.FirstName @p.ProjectManager.LastName</span>
+                        }
+                        @if (p.EndDate.HasValue)
+                        {
+                            <span class="chip @(p.IsOverdue ? "" : "")">
+                                <i class="far fa-calendar"></i>
+                                @(p.IsOverdue ? "Overdue since" : "Due") @p.EndDate.Value.ToString("d MMM yyyy")
+                            </span>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:1rem;">
+                <div style="min-width:130px;">
+                    <div style="display:flex; justify-content:space-between; font-size:.72rem; color:var(--gray-500); margin-bottom:.25rem;">
+                        <span>Progress</span><span class="pct">@p.ProgressPercent%</span>
+                    </div>
+                    <div class="progress-pm @(p.Health == ProjectHealth.Red ? "red" : p.Health == ProjectHealth.Amber ? "amber" : "green")">
+                        <span style="width:@(p.ProgressPercent)%"></span>
+                    </div>
+                    <div style="font-size:.68rem; color:var(--gray-400); margin-top:.25rem;">
+                        @p.SchedulePercentElapsed% of schedule elapsed
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <a asp-controller="Projects" asp-action="Details" asp-route-id="@p.Id"
+           class="@(On("Projects", "Details") ? "on" : "")">
+            <i class="fas fa-gauge-high"></i> Overview
+        </a>
+        <a asp-controller="ProjectPlan" asp-action="Index" asp-route-projectId="@p.Id"
+           class="@(On("ProjectPlan", "Index") ? "on" : "")">
+            <i class="fas fa-sitemap"></i> Plan
+        </a>
+        <a asp-controller="ProjectTasks" asp-action="Index" asp-route-projectId="@p.Id"
+           class="@(On("ProjectTasks", "Index", "Details", "Form", "Create", "Edit", "Priorities") ? "on" : "")">
+            <i class="fas fa-list-check"></i> Tasks
+        </a>
+        <a asp-controller="ProjectTasks" asp-action="Board" asp-route-projectId="@p.Id"
+           class="@(On("ProjectTasks", "Board") ? "on" : "")">
+            <i class="fas fa-table-columns"></i> Board
+        </a>
+        <a asp-controller="ProjectTasks" asp-action="Gantt" asp-route-projectId="@p.Id"
+           class="@(On("ProjectTasks", "Gantt") ? "on" : "")">
+            <i class="fas fa-chart-gantt"></i> Gantt
+        </a>
+        <a asp-controller="ProjectPlan" asp-action="Milestones" asp-route-projectId="@p.Id"
+           class="@(On("ProjectPlan", "Milestones", "Deliverables") ? "on" : "")">
+            <i class="fas fa-flag-checkered"></i> Milestones
+        </a>
+        <a asp-controller="ProjectRegisters" asp-action="Risks" asp-route-projectId="@p.Id"
+           class="@(On("ProjectRegisters", "Risks") ? "on" : "")">
+            <i class="fas fa-triangle-exclamation"></i> Risks
+        </a>
+        <a asp-controller="ProjectRegisters" asp-action="Issues" asp-route-projectId="@p.Id"
+           class="@(On("ProjectRegisters", "Issues") ? "on" : "")">
+            <i class="fas fa-circle-exclamation"></i> Issues
+        </a>
+        <a asp-controller="ProjectRegisters" asp-action="Changes" asp-route-projectId="@p.Id"
+           class="@(On("ProjectRegisters", "Changes", "Quality") ? "on" : "")">
+            <i class="fas fa-code-branch"></i> Changes
+        </a>
+        <a asp-controller="ProjectFinance" asp-action="Budget" asp-route-projectId="@p.Id"
+           class="@(On("ProjectFinance") ? "on" : "")">
+            <i class="fas fa-sack-dollar"></i> Finance
+        </a>
+        <a asp-controller="ProjectDocs" asp-action="Index" asp-route-projectId="@p.Id"
+           class="@(On("ProjectDocs", "Index", "Details") ? "on" : "")">
+            <i class="fas fa-folder-open"></i> Documents
+        </a>
+        <a asp-controller="ProjectDocs" asp-action="Meetings" asp-route-projectId="@p.Id"
+           class="@(On("ProjectDocs", "Meetings", "MeetingDetails") ? "on" : "")">
+            <i class="fas fa-users-rectangle"></i> Meetings
+        </a>
+        <a asp-controller="ProjectDocs" asp-action="Discussion" asp-route-projectId="@p.Id"
+           class="@(On("ProjectDocs", "Discussion") ? "on" : "")">
+            <i class="fas fa-comments"></i> Discussion
+        </a>
+        <a asp-controller="Projects" asp-action="Insights" asp-route-id="@p.Id"
+           class="@(On("Projects", "Insights") ? "on" : "")">
+            <i class="fas fa-lightbulb"></i> Insights
+        </a>
+        <a asp-controller="Projects" asp-action="Closure" asp-route-id="@p.Id"
+           class="@(On("Projects", "Closure") ? "on" : "")">
+            <i class="fas fa-flag"></i> Closure
+        </a>
+    </div>
+}

@@ -774,6 +774,18 @@
                     var navGeneralManager = navRole == "GeneralManager";
                     // IMS / ISO working roles (see Helpers/Ims/ImsAccess) — who sees the ISO management nav.
                     var navIms = navFull || navRole is "QualityManager" or "GeneralManager" or "DocumentController" or "DepartmentManager" or "Auditor" or "ExternalAuditor";
+                    // Project Management (see Helpers/Roles.PmAll) — external clients get the portal instead.
+                    var navPm = navFull || navRole is "ProjectManager" or "GeneralManager" or "TeamLead"
+                        or "DepartmentManager" or "Finance" or "Procurement" or "Auditor" or "HR" or "Employee";
+                    var navPmManage = navFull || navRole is "ProjectManager" or "GeneralManager" or "TeamLead" or "DepartmentManager";
+                    var navClient = navRole == "Client";
+
+                    // Controllers that belong to the Project Management module, for nav highlighting.
+                    var pmControllers = new[]
+                    {
+                        "Projects", "ProjectTasks", "ProjectPlan", "ProjectRegisters", "ProjectFinance",
+                        "ProjectDocs", "ProjectApprovals", "ProjectReports", "ProjectResources", "ProjectTime"
+                    };
                 }
 
                 <div class="nav-group">Core</div>
@@ -947,6 +959,55 @@
                         <i class="fas fa-robot"></i> AI Assistant
                     </a>
                     }
+                }
+
+                @if (navPm)
+                {
+                    <div class="nav-group">Project Management</div>
+                    <a class="nav-item @(currentController == "Projects" && currentAction == "Index" ? "active" : "")"
+                       asp-controller="Projects" asp-action="Index">
+                        <i class="fas fa-gauge-high"></i> PM Dashboard
+                    </a>
+                    <a class="nav-item @(pmControllers.Contains(currentController) && currentController == "Projects" && currentAction != "Index" && currentAction != "Search" ? "active" : "")"
+                       asp-controller="Projects" asp-action="Portfolio">
+                        <i class="fas fa-diagram-project"></i> Portfolio
+                    </a>
+                    <a class="nav-item @(currentController == "ProjectTime" ? "active" : "")"
+                       asp-controller="ProjectTime" asp-action="Index">
+                        <i class="fas fa-stopwatch"></i> My Timesheet
+                    </a>
+                    <a class="nav-item @(currentController == "ProjectApprovals" ? "active" : "")"
+                       asp-controller="ProjectApprovals" asp-action="Index">
+                        <i class="fas fa-stamp"></i> Approvals
+                    </a>
+                    @if (navPmManage)
+                    {
+                        <a class="nav-item @(currentController == "ProjectResources" ? "active" : "")"
+                           asp-controller="ProjectResources" asp-action="Index">
+                            <i class="fas fa-users-gear"></i> Resources
+                        </a>
+                        <a class="nav-item @(currentController == "ProjectPlan" && currentAction == "Calendar" ? "active" : "")"
+                           asp-controller="ProjectPlan" asp-action="Calendar">
+                            <i class="fas fa-calendar-days"></i> Project Calendar
+                        </a>
+                    }
+                    <a class="nav-item @(currentController == "ProjectReports" ? "active" : "")"
+                       asp-controller="ProjectReports" asp-action="Index">
+                        <i class="fas fa-chart-line"></i> PM Reports
+                    </a>
+                    <a class="nav-item @(currentController == "Projects" && currentAction == "Search" ? "active" : "")"
+                       asp-controller="Projects" asp-action="Search">
+                        <i class="fas fa-magnifying-glass"></i> Ask the Portfolio
+                    </a>
+                }
+
+                @if (navClient)
+                {
+                    <div class="nav-group">Client Portal</div>
+                    <a class="nav-item @(currentController == "ProjectPortal" ? "active" : "")"
+                       asp-controller="ProjectPortal" asp-action="Index">
+                        <i class="fas fa-handshake"></i> My Projects
+                    </a>
                 }
 
                 @if (navFull)

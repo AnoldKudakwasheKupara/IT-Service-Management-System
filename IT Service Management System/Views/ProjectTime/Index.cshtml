@@ -1,0 +1,242 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<TimeEntry>
+@{
+    ViewData["Title"] = "My Timesheet";
+    var monday = (DateTime)(ViewBag.Monday ?? DateTime.Today);
+    var sunday = (DateTime)(ViewBag.Sunday ?? DateTime.Today);
+    var days = ViewBag.Days as List<DateTime> ?? new List<DateTime>();
+    var myProjects = ViewBag.MyProjects as List<object> ?? new List<object>();
+    var myTasks = ViewBag.MyTasks as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var draftCount = (int)(ViewBag.DraftCount ?? 0);
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-controller="Projects" asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-stopwatch"></i> My Timesheet</h1>
+                        <p class="page-sub">Week of @monday.ToString("d MMMM yyyy") – @sunday.ToString("d MMMM yyyy")</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Index" asp-route-weekOf="@monday.AddDays(-7).ToString("yyyy-MM-dd")" class="btn-ghost-pm"><i class="fas fa-chevron-left"></i> Previous</a>
+                    <a asp-action="Index" class="btn-ghost-pm">This week</a>
+                    <a asp-action="Index" asp-route-weekOf="@monday.AddDays(7).ToString("yyyy-MM-dd")" class="btn-ghost-pm">Next <i class="fas fa-chevron-right"></i></a>
+                    <a asp-action="Report" class="btn-outline-pm"><i class="fas fa-chart-line"></i> Reports</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        <div class="stats tight">
+            <div class="stat">
+                <div class="ic brand"><i class="fas fa-clock"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalHours ?? 0m)).ToString("N2"))</h3><p>Hours this week</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic green"><i class="fas fa-file-invoice-dollar"></i></div>
+                <div><h3>@(((decimal)(ViewBag.BillableHours ?? 0m)).ToString("N2"))</h3><p>Billable</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic amber"><i class="fas fa-moon"></i></div>
+                <div><h3>@(((decimal)(ViewBag.OvertimeHours ?? 0m)).ToString("N2"))</h3><p>Overtime</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic slate"><i class="fas fa-pen"></i></div>
+                <div><h3>@draftCount</h3><p>Draft entries</p></div>
+            </div>
+        </div>
+
+        <div class="grid-2-1">
+            <div>
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-list"></i> Entries</span>
+                        @if (draftCount > 0)
+                        {
+                            <form asp-action="SubmitWeek" method="post" class="inline-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="weekOf" value="@monday.ToString("yyyy-MM-dd")" />
+                                <button type="submit" class="btn-pm btn-sm">
+                                    <i class="fas fa-paper-plane"></i> Submit @draftCount draft entr@(draftCount == 1 ? "y" : "ies")
+                                </button>
+                            </form>
+                        }
+                    </div>
+                    <div class="card-body flush">
+                        @if (Model.Count == 0)
+                        {
+                            <div class="empty">
+                                <i class="fas fa-stopwatch"></i>
+                                <h3>No time logged this week</h3>
+                                <p>Book your hours against the projects you are on.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            @foreach (var day in days)
+                            {
+                                var dayEntries = Model.Where(e => e.WorkDate.Date == day.Date).ToList();
+                                if (dayEntries.Count == 0) { continue; }
+
+                                <div style="padding:.6rem 1.25rem; background:var(--gray-50); border-bottom:1px solid var(--gray-200);
+                                            display:flex; justify-content:space-between; font-size:.8rem; font-weight:600; color:var(--gray-700);">
+                                    <span>@day.ToString("dddd d MMMM")</span>
+                                    <span>@dayEntries.Sum(e => e.NetHours).ToString("N2") h</span>
+                                </div>
+                                <table class="tbl">
+                                    <tbody>
+                                        @foreach (var e in dayEntries)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <a asp-controller="Projects" asp-action="Details" asp-route-id="@e.ProjectId" class="strong-link">@e.Project?.Name</a>
+                                                    @if (e.Task != null) { <div class="meta" style="font-size:.75rem;">@e.Task.Name</div> }
+                                                    @if (!string.IsNullOrWhiteSpace(e.Notes)) { <div class="meta" style="font-size:.75rem;">@e.Notes</div> }
+                                                </td>
+                                                <td class="meta">@e.Type</td>
+                                                <td class="num">
+                                                    <strong>@e.NetHours.ToString("N2") h</strong>
+                                                    @if (e.BreakHours > 0)
+                                                    {
+                                                        <div class="meta" style="font-size:.7rem;">@e.Hours.ToString("N2") − @e.BreakHours.ToString("N2") break</div>
+                                                    }
+                                                </td>
+                                                <td>@if (e.IsBillable) { <span class="badge-pm b-closed">Billable</span> }</td>
+                                                <td>
+                                                    <span class="badge-pm b-@(e.Status == TimeEntryStatus.Approved ? "closed" : e.Status == TimeEntryStatus.Rejected ? "rejected" : e.Status == TimeEntryStatus.Submitted ? "pending" : "draft")">
+                                                        @e.Status
+                                                    </span>
+                                                    @if (e.Status == TimeEntryStatus.Rejected && !string.IsNullOrWhiteSpace(e.RejectionReason))
+                                                    {
+                                                        <div class="meta overdue" style="font-size:.7rem;">@e.RejectionReason</div>
+                                                    }
+                                                </td>
+                                                <td style="text-align:right;">
+                                                    @if (e.Status != TimeEntryStatus.Approved)
+                                                    {
+                                                        <form asp-action="DeleteEntry" method="post" class="inline-form"
+                                                              onsubmit="return confirm('Remove this entry?');">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="id" value="@e.Id" />
+                                                            <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                                        </form>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-plus"></i> Log time</span></div>
+                    <div class="card-body">
+                        @if (myProjects.Count == 0)
+                        {
+                            <p class="meta">
+                                You are not on any active project team yet. Ask a project manager to add you,
+                                and the project will appear here.
+                            </p>
+                        }
+                        else
+                        {
+                            <form asp-action="Log" method="post">
+                                @Html.AntiForgeryToken()
+                                <div class="fg">
+                                    <label class="lbl"><i class="far fa-calendar"></i> Date</label>
+                                    <input name="WorkDate" type="date" class="inp" required
+                                           value="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-diagram-project"></i> Project</label>
+                                    <select name="ProjectId" id="tl-project" class="inp" required>
+                                        <option value="">— Select —</option>
+                                        @foreach (dynamic p in myProjects)
+                                        {
+                                            <option value="@p.Id">@p.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-list-check"></i> Task (optional)</label>
+                                    <select name="TaskId" id="tl-task" class="inp">
+                                        <option value="">— None —</option>
+                                        @foreach (var t in myTasks)
+                                        {
+                                            <option value="@t.Id" data-project="@t.ProjectId">@t.Name</option>
+                                        }
+                                    </select>
+                                    <span class="hint">Booking against a task keeps its actual hours current.</span>
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-clock"></i> Hours worked</label>
+                                    <input name="Hours" type="number" step="0.25" min="0.25" max="24" class="inp" required />
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-mug-hot"></i> Break hours</label>
+                                    <input name="BreakHours" type="number" step="0.25" min="0" max="24" value="0" class="inp" />
+                                    <span class="hint">Excluded from the costed total.</span>
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-shapes"></i> Type</label>
+                                    <select name="Type" class="inp">
+                                        @foreach (var t in Enum.GetValues<TimeEntryType>())
+                                        {
+                                            <option value="@t">@t</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <label class="check"><input type="checkbox" name="IsBillable" value="true" /> Billable to the client</label>
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-note-sticky"></i> Notes</label>
+                                    <textarea name="Notes" class="inp" rows="2"></textarea>
+                                </div>
+                                <button type="submit" class="btn-pm" style="width:100%; justify-content:center;">
+                                    <i class="fas fa-floppy-disk"></i> Log time
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Only show tasks belonging to the selected project.
+        (function () {
+            const project = document.getElementById('tl-project');
+            const task = document.getElementById('tl-task');
+            if (!project || !task) return;
+
+            const options = [...task.options];
+            function filter() {
+                const id = project.value;
+                task.innerHTML = '';
+                options.forEach(o => {
+                    if (!o.dataset.project || o.dataset.project === id) task.appendChild(o.cloneNode(true));
+                });
+            }
+            project.addEventListener('change', filter);
+            filter();
+        })();
+    </script>
+}

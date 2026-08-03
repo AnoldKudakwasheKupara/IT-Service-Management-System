@@ -1,0 +1,127 @@
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.Controllers
+@model List<ProjectReportsController.PortfolioRow>
+@{
+    ViewData["Title"] = "Portfolio Performance";
+    var from = (DateTime)(ViewBag.From ?? DateTime.Today.AddMonths(-12));
+    var to = (DateTime)(ViewBag.To ?? DateTime.Today);
+    var departments = ViewBag.Departments as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm wide">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-table-list"></i> Portfolio Performance</h1>
+                        <p class="page-sub">Schedule and cost variance for every project created between @from.ToString("d MMM yyyy") and @to.ToString("d MMM yyyy")</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="ExportPortfolioExcel" asp-route-from="@from.ToString("yyyy-MM-dd")" asp-route-to="@to.ToString("yyyy-MM-dd")"
+                       asp-route-departmentId="@ViewBag.DepartmentId" class="btn-ghost-pm"><i class="fas fa-file-excel"></i> Excel</a>
+                    <a asp-action="ExportPortfolioCsv" asp-route-from="@from.ToString("yyyy-MM-dd")" asp-route-to="@to.ToString("yyyy-MM-dd")"
+                       asp-route-departmentId="@ViewBag.DepartmentId" class="btn-ghost-pm"><i class="fas fa-file-csv"></i> CSV</a>
+                    <button type="button" onclick="window.print()" class="btn-outline-pm"><i class="fas fa-print"></i> Print</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="toolbar" style="margin:0;">
+                    <div class="fg"><label class="lbl">From</label><input type="date" name="from" value="@from.ToString("yyyy-MM-dd")" class="inp" /></div>
+                    <div class="fg"><label class="lbl">To</label><input type="date" name="to" value="@to.ToString("yyyy-MM-dd")" class="inp" /></div>
+                    <div class="fg">
+                        <label class="lbl">Department</label>
+                        <select name="departmentId" class="inp">
+                            <option value="">All departments</option>
+                            @foreach (var d in departments)
+                            {
+                                <option value="@d.Id" selected="@(ViewBag.DepartmentId as int? == (int)d.Id)">@d.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-pm"><i class="fas fa-magnifying-glass"></i> Run</button>
+                    <a asp-action="Portfolio" class="btn-ghost-pm"><i class="fas fa-rotate-left"></i> Last 12 months</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-layer-group"></i></div><div><h3>@Model.Count</h3><p>Projects</p></div></div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-sack-dollar"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalBudget ?? 0m)).ToString("N0"))</h3><p>Total budget</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic blue"><i class="fas fa-money-bill-wave"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalSpent ?? 0m)).ToString("N0"))</h3><p>Total spend</p></div>
+            </div>
+            <div class="stat"><div class="ic green"><i class="fas fa-clock"></i></div><div><h3>@ViewBag.OnTime</h3><p>On or ahead of plan</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-money-bill-trend-up"></i></div><div><h3>@ViewBag.OverBudget</h3><p>Over budget</p></div></div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Project performance</span>
+                <span class="meta">Schedule variance is progress minus elapsed schedule — negative means behind plan</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty"><i class="fas fa-table-list"></i><h3>No projects in this window</h3></div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Project</th><th>Department</th><th>Manager</th><th>Status</th><th>Health</th>
+                                <th class="num">Progress</th><th class="num">Elapsed</th><th class="num">Sched. var.</th>
+                                <th class="num">Budget</th><th class="num">Spent</th><th class="num">Cost var.</th>
+                                <th class="num">Risks</th><th class="num">Issues</th><th class="num">Hours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model)
+                            {
+                                <tr style="@(r.Health == ProjectHealth.Red ? "background:#fffafa;" : r.Health == ProjectHealth.Amber ? "background:#fffdf7;" : "")">
+                                    <td>
+                                        <a asp-controller="Projects" asp-action="Details" asp-route-id="@r.Id" class="ref">@r.Reference</a>
+                                        <div><a asp-controller="Projects" asp-action="Details" asp-route-id="@r.Id" class="strong-link">@r.Name</a></div>
+                                        <span class="meta" style="font-size:.7rem;">
+                                            @(r.Start?.ToString("d MMM yy") ?? "—") → @(r.End?.ToString("d MMM yy") ?? "—")
+                                        </span>
+                                    </td>
+                                    <td class="meta">@(r.Department ?? "—")</td>
+                                    <td class="meta">@(r.Manager ?? "—")</td>
+                                    <td><span class="badge-pm b-@r.Status.ToString().ToLower()">@r.Status</span></td>
+                                    <td><span class="health @r.Health"><i class="dot"></i>@r.Health</span></td>
+                                    <td class="num">@r.Progress%</td>
+                                    <td class="num meta">@r.ScheduleElapsed%</td>
+                                    <td class="num @(r.ScheduleVariance < 0 ? "overdue" : "")">@r.ScheduleVariance.ToString("+0;-0;0")</td>
+                                    <td class="num money">@r.Budget.ToString("N0")</td>
+                                    <td class="num money @(r.BudgetUsedPercent > 100 ? "neg" : "")">
+                                        @r.Spent.ToString("N0")
+                                        <div class="meta" style="font-size:.7rem;">@r.BudgetUsedPercent%</div>
+                                    </td>
+                                    <td class="num money @(r.CostVariance < 0 ? "neg" : "pos")">@r.CostVariance.ToString("N0")</td>
+                                    <td class="num">@r.OpenRisks</td>
+                                    <td class="num">@r.OpenIssues</td>
+                                    <td class="num meta">@r.Hours.ToString("N0")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

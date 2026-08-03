@@ -1,0 +1,528 @@
+@using IT_Service_Management_System.Models.Pm
+@model Project
+@{
+    ViewData["Title"] = $"{Model.Reference} — {Model.Name}";
+    var team = ViewBag.Team as List<ProjectTeamMember> ?? new List<ProjectTeamMember>();
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var canApprove = ViewBag.CanApprove as bool? ?? false;
+    var canDelete = ViewBag.CanDelete as bool? ?? false;
+
+    var spent = (decimal)(ViewBag.Spent ?? 0m);
+    var committed = (decimal)(ViewBag.Committed ?? 0m);
+    var budgetPct = Model.TotalBudget <= 0 ? 0 : (int)Math.Round(spent / Model.TotalBudget * 100);
+
+    var milestones = ViewBag.Milestones as List<Milestone> ?? new List<Milestone>();
+    var recentTasks = ViewBag.RecentTasks as List<ProjectTask> ?? new List<ProjectTask>();
+    var topRisks = ViewBag.TopRisks as List<ProjectRisk> ?? new List<ProjectRisk>();
+    var openIssues = ViewBag.OpenIssues as List<ProjectIssue> ?? new List<ProjectIssue>();
+    var attachments = ViewBag.Attachments as List<ProjectAttachment> ?? new List<ProjectAttachment>();
+    var activity = ViewBag.Activity as List<ProjectActivityLog> ?? new List<ProjectActivityLog>();
+    var dependencies = ViewBag.Dependencies as List<ProjectLink> ?? new List<ProjectLink>();
+    var linkable = ViewBag.LinkableProjects as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    var taskTotal = (int)(ViewBag.TaskTotal ?? 0);
+    var taskDone = (int)(ViewBag.TaskDone ?? 0);
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        @* ── ACTION BAR ──────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-body" style="display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;">
+                @if (canEdit)
+                {
+                    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn-outline-pm btn-sm"><i class="fas fa-pen"></i> Edit</a>
+                }
+                @if (canEdit && Model.Status == ProjectStatus.Draft)
+                {
+                    <form asp-action="SubmitForApproval" asp-route-id="@Model.Id" method="post" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-paper-plane"></i> Submit for approval</button>
+                    </form>
+                }
+                @if (canEdit || canApprove)
+                {
+                    <form asp-action="ChangeStatus" method="post" class="inline-form"
+                          style="display:inline-flex; gap:.4rem; align-items:center;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <select name="status" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;">
+                            @foreach (var s in Enum.GetValues<ProjectStatus>())
+                            {
+                                <option value="@s" selected="@(Model.Status == s)">@s</option>
+                            }
+                        </select>
+                        <button type="submit" class="btn-ghost-pm btn-sm"><i class="fas fa-arrows-rotate"></i> Set status</button>
+                    </form>
+                }
+                <a asp-controller="ProjectReports" asp-action="StatusReport" asp-route-projectId="@Model.Id" class="btn-ghost-pm btn-sm">
+                    <i class="fas fa-file-lines"></i> Status report
+                </a>
+                <a asp-controller="ProjectReports" asp-action="ExportProjectPdf" asp-route-projectId="@Model.Id" class="btn-ghost-pm btn-sm">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </a>
+                <a asp-action="Activity" asp-route-id="@Model.Id" class="btn-ghost-pm btn-sm">
+                    <i class="fas fa-clock-rotate-left"></i> Audit trail
+                </a>
+                @if (canDelete)
+                {
+                    <a asp-action="Delete" asp-route-id="@Model.Id" class="btn-danger-pm btn-sm" style="margin-left:auto;">
+                        <i class="fas fa-trash"></i> Delete
+                    </a>
+                }
+            </div>
+        </div>
+
+        @* ── KEY FIGURES ─────────────────────────────────────────────────── *@
+        <div class="stats tight">
+            <a asp-controller="ProjectTasks" asp-action="Index" asp-route-projectId="@Model.Id" class="stat">
+                <div class="ic brand"><i class="fas fa-list-check"></i></div>
+                <div><h3>@taskDone/@taskTotal</h3><p>Tasks done</p></div>
+            </a>
+            <div class="stat">
+                <div class="ic red"><i class="fas fa-calendar-xmark"></i></div>
+                <div><h3>@ViewBag.TaskOverdue</h3><p>Overdue tasks</p></div>
+            </div>
+            <a asp-controller="ProjectPlan" asp-action="Milestones" asp-route-projectId="@Model.Id" class="stat">
+                <div class="ic purple"><i class="fas fa-flag-checkered"></i></div>
+                <div><h3>@ViewBag.MilestoneCount</h3><p>Milestones</p></div>
+            </a>
+            <a asp-controller="ProjectRegisters" asp-action="Risks" asp-route-projectId="@Model.Id" class="stat">
+                <div class="ic amber"><i class="fas fa-triangle-exclamation"></i></div>
+                <div><h3>@ViewBag.RiskCount</h3><p>Open risks</p></div>
+            </a>
+            <a asp-controller="ProjectRegisters" asp-action="Issues" asp-route-projectId="@Model.Id" class="stat">
+                <div class="ic red"><i class="fas fa-circle-exclamation"></i></div>
+                <div><h3>@ViewBag.IssueCount</h3><p>Open issues</p></div>
+            </a>
+            <a asp-controller="ProjectTime" asp-action="Report" asp-route-projectId="@Model.Id" class="stat">
+                <div class="ic teal"><i class="fas fa-stopwatch"></i></div>
+                <div><h3>@(((decimal)(ViewBag.HoursLogged ?? 0m)).ToString("N0"))</h3><p>Hours logged</p></div>
+            </a>
+        </div>
+
+        <div class="grid-2-1">
+            <div>
+                @* ── OVERVIEW ────────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Project details</span></div>
+                    <div class="card-body">
+                        @if (!string.IsNullOrWhiteSpace(Model.Description))
+                        {
+                            <p style="color:var(--gray-700); line-height:1.6; margin-bottom:1.25rem;">@Model.Description</p>
+                        }
+                        <div class="dl">
+                            <div><div class="k">Client</div><div class="v">@(Model.Client ?? "—")</div></div>
+                            <div><div class="k">Department</div><div class="v">@(Model.Department?.Name ?? "—")</div></div>
+                            <div><div class="k">Sponsor</div><div class="v">@(Model.Sponsor == null ? "—" : $"{Model.Sponsor.FirstName} {Model.Sponsor.LastName}")</div></div>
+                            <div><div class="k">Project manager</div><div class="v">@(Model.ProjectManager == null ? "—" : $"{Model.ProjectManager.FirstName} {Model.ProjectManager.LastName}")</div></div>
+                            <div><div class="k">Category / type</div><div class="v">@Model.Category · @Model.Type</div></div>
+                            <div><div class="k">Priority</div><div class="v"><span class="badge-pm b-@Model.Priority.ToString().ToLower()">@Model.Priority</span></div></div>
+                            <div><div class="k">Start</div><div class="v">@(Model.StartDate?.ToString("d MMM yyyy") ?? "—")</div></div>
+                            <div>
+                                <div class="k">End</div>
+                                <div class="v @(Model.IsOverdue ? "overdue" : "")">
+                                    @(Model.EndDate?.ToString("d MMM yyyy") ?? "—")
+                                    @if (Model.BaselineEndDate.HasValue && Model.BaselineEndDate != Model.EndDate)
+                                    {
+                                        <span class="meta" style="font-size:.72rem;">(baseline @Model.BaselineEndDate.Value.ToString("d MMM yyyy"))</span>
+                                    }
+                                </div>
+                            </div>
+                            <div><div class="k">Location</div><div class="v">@(Model.Location ?? "—")</div></div>
+                            <div><div class="k">Created</div><div class="v">@Model.CreatedAt.ToString("d MMM yyyy")</div></div>
+                            @if (Model.ApprovedAt.HasValue)
+                            {
+                                <div>
+                                    <div class="k">Approved</div>
+                                    <div class="v">@Model.ApprovedAt.Value.ToString("d MMM yyyy")
+                                        @if (Model.ApprovedBy != null) { <text>by @Model.ApprovedBy.FirstName @Model.ApprovedBy.LastName</text> }
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Tags))
+                            {
+                                <div class="v" style="grid-column:1/-1;">
+                                    <div class="k">Tags</div>
+                                    @foreach (var tag in Model.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                    {
+                                        <span class="chip">@tag.Trim()</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(Model.HealthNote))
+                        {
+                            <div class="insight @(Model.Health == ProjectHealth.Red ? "bad" : Model.Health == ProjectHealth.Amber ? "warn" : "")" style="margin-top:1.25rem;">
+                                <h4><i class="fas fa-heart-pulse"></i> Health note</h4>
+                                <p>@Model.HealthNote</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @* ── FINANCIAL POSITION ──────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-sack-dollar"></i> Financial position</span>
+                        <a asp-controller="ProjectFinance" asp-action="Budget" asp-route-projectId="@Model.Id" class="meta">Open budget</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="dl" style="margin-bottom:1rem;">
+                            <div><div class="k">Approved budget</div><div class="v money">@Model.Currency @Model.Budget.ToString("N2")</div></div>
+                            <div><div class="k">Approved changes</div><div class="v money">@Model.Currency @Model.ApprovedChangeValue.ToString("N2")</div></div>
+                            <div><div class="k">Total budget</div><div class="v money">@Model.Currency @Model.TotalBudget.ToString("N2")</div></div>
+                            <div><div class="k">Actual spend</div><div class="v money @(budgetPct > 100 ? "neg" : "")">@Model.Currency @spent.ToString("N2")</div></div>
+                            <div><div class="k">Committed</div><div class="v money">@Model.Currency @committed.ToString("N2")</div></div>
+                            <div><div class="k">Remaining</div><div class="v money @(Model.TotalBudget - spent < 0 ? "neg" : "pos")">@Model.Currency @((Model.TotalBudget - spent).ToString("N2"))</div></div>
+                        </div>
+                        <div class="progress-pm @(budgetPct > 100 ? "red" : budgetPct > 85 ? "amber" : "green")">
+                            <span style="width:@Math.Min(100, budgetPct)%"></span>
+                        </div>
+                        <div class="meta" style="margin-top:.4rem;">@budgetPct% of the total budget used</div>
+                    </div>
+                </div>
+
+                @* ── RECENT TASKS ────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-list-check"></i> Recent task activity</span>
+                        <a asp-controller="ProjectTasks" asp-action="Index" asp-route-projectId="@Model.Id" class="meta">All tasks</a>
+                    </div>
+                    <div class="card-body flush">
+                        @if (recentTasks.Count == 0)
+                        {
+                            <div class="empty">
+                                <i class="fas fa-list-check"></i>
+                                <h3>No tasks yet</h3>
+                                <p>Break the work down, or apply a template from the plan page.</p>
+                                @if (canContribute)
+                                {
+                                    <a asp-controller="ProjectTasks" asp-action="Create" asp-route-projectId="@Model.Id" class="btn-pm">
+                                        <i class="fas fa-plus"></i> Add a task
+                                    </a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <table class="tbl">
+                                <thead><tr><th>Task</th><th>Assignee</th><th>Status</th><th>Due</th><th style="min-width:90px;">Progress</th></tr></thead>
+                                <tbody>
+                                    @foreach (var t in recentTasks)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <a asp-controller="ProjectTasks" asp-action="Details" asp-route-id="@t.Id" class="strong-link">@t.Name</a>
+                                                @if (t.IsOnCriticalPath) { <span class="badge-pm b-critical" style="margin-left:.4rem;">Critical path</span> }
+                                            </td>
+                                            <td class="meta">@(t.AssignedTo == null ? "Unassigned" : $"{t.AssignedTo.FirstName} {t.AssignedTo.LastName}")</td>
+                                            <td><span class="badge-pm b-@(t.Status == ProjectTaskStatus.Completed ? "completed" : t.Status == ProjectTaskStatus.Blocked ? "delayed" : "open")">@t.Status</span></td>
+                                            <td class="meta @(t.IsOverdue ? "overdue" : "")">@(t.DueDate?.ToString("d MMM") ?? "—")</td>
+                                            <td>
+                                                <div class="progress-pm thin"><span style="width:@t.PercentComplete%"></span></div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+
+                @* ── RISKS & ISSUES ──────────────────────────────────────── *@
+                <div class="grid-2">
+                    <div class="card">
+                        <div class="card-head">
+                            <span class="t"><i class="fas fa-triangle-exclamation"></i> Top risks</span>
+                            <a asp-controller="ProjectRegisters" asp-action="Risks" asp-route-projectId="@Model.Id" class="meta">Register</a>
+                        </div>
+                        <div class="card-body">
+                            @if (topRisks.Count == 0)
+                            {
+                                <p class="meta">No open risks.</p>
+                            }
+                            <div class="feed">
+                                @foreach (var r in topRisks)
+                                {
+                                    <div class="it">
+                                        <span class="dot" style="background:@(r.Score >= 15 ? "#fdecea" : "#fdf3e1"); color:@(r.Score >= 15 ? "#b3261e" : "#9a5b00");">@r.Score</span>
+                                        <div class="bd">
+                                            <div class="ln">@r.Title</div>
+                                            <div class="tm">@r.Band · @r.Status @if (r.Owner != null) { <text>· @r.Owner.FirstName @r.Owner.LastName</text> }</div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-head">
+                            <span class="t"><i class="fas fa-circle-exclamation"></i> Open issues</span>
+                            <a asp-controller="ProjectRegisters" asp-action="Issues" asp-route-projectId="@Model.Id" class="meta">Register</a>
+                        </div>
+                        <div class="card-body">
+                            @if (openIssues.Count == 0)
+                            {
+                                <p class="meta">No open issues.</p>
+                            }
+                            <div class="feed">
+                                @foreach (var i in openIssues)
+                                {
+                                    <div class="it">
+                                        <span class="dot"><i class="fas fa-circle-exclamation"></i></span>
+                                        <div class="bd">
+                                            <div class="ln">@i.Title</div>
+                                            <div class="tm @(i.IsOverdue ? "overdue" : "")">
+                                                @i.Severity · @i.Status
+                                                @if (i.DueDate.HasValue) { <text>· due @i.DueDate.Value.ToString("d MMM")</text> }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* ── SIDEBAR ─────────────────────────────────────────────────── *@
+            <div>
+                @* Team *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-users"></i> Team</span><span class="meta">@team.Count(t => t.IsActive) active</span></div>
+                    <div class="card-body">
+                        @foreach (var m in team.Where(t => t.IsActive))
+                        {
+                            <div style="display:flex; align-items:center; gap:.6rem; padding:.45rem 0; border-bottom:1px solid var(--gray-100);">
+                                <span class="avatar sm">@(m.User == null ? "?" : $"{m.User.FirstName.FirstOrDefault()}{m.User.LastName.FirstOrDefault()}")</span>
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-size:.85rem; font-weight:600; color:var(--gray-800);">
+                                        @(m.User == null ? "—" : $"{m.User.FirstName} {m.User.LastName}")
+                                    </div>
+                                    <div class="meta" style="font-size:.72rem;">@m.Role · @m.AllocationPercent%</div>
+                                </div>
+                                @if (canEdit && m.Role != TeamRole.Manager)
+                                {
+                                    <form asp-action="RemoveTeamMember" method="post" class="inline-form"
+                                          onsubmit="return confirm('Roll @(m.User?.FirstName) off this project?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.Id" />
+                                        <input type="hidden" name="memberId" value="@m.Id" />
+                                        <button type="submit" class="act del" title="Roll off"><i class="fas fa-user-minus"></i></button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                        @if (team.Count(t => t.IsActive) == 0)
+                        {
+                            <p class="meta">Nobody is on this team yet.</p>
+                        }
+
+                        @if (canEdit)
+                        {
+                            <form asp-action="AddTeamMember" method="post" style="margin-top:1rem;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <div class="fg">
+                                    <label class="lbl">Add a team member</label>
+                                    <select name="userId" class="inp" required>
+                                        <option value="">— Select —</option>
+                                        @foreach (var u in users)
+                                        {
+                                            <option value="@u.Id">@u.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <select name="role" class="inp">
+                                        @foreach (var r in Enum.GetValues<TeamRole>())
+                                        {
+                                            <option value="@r" selected="@(r == TeamRole.Member)">@r</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <input type="number" name="allocationPercent" value="100" min="0" max="100" class="inp" placeholder="Allocation %" />
+                                </div>
+                                <button type="submit" class="btn-outline-pm btn-sm" style="width:100%; justify-content:center;">
+                                    <i class="fas fa-user-plus"></i> Add
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+
+                @* Milestones *@
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-flag-checkered"></i> Milestones</span>
+                        <a asp-controller="ProjectPlan" asp-action="Milestones" asp-route-projectId="@Model.Id" class="meta">All</a>
+                    </div>
+                    <div class="card-body">
+                        @if (milestones.Count == 0)
+                        {
+                            <p class="meta">No milestones set.</p>
+                        }
+                        @foreach (var m in milestones)
+                        {
+                            <div style="display:flex; gap:.55rem; align-items:flex-start; padding:.4rem 0;">
+                                <i class="fas fa-diamond" style="font-size:.6rem; margin-top:.35rem; color:@(m.Status == MilestoneStatus.Achieved ? "var(--success)" : m.IsOverdue ? "var(--danger)" : "var(--pm-purple)");"></i>
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-size:.83rem; color:var(--gray-800);">@m.Name</div>
+                                    <div class="meta @(m.IsOverdue ? "overdue" : "")" style="font-size:.72rem;">
+                                        @m.DueDate.ToString("d MMM yyyy") · @m.Status
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @* Dependencies *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-link"></i> Dependencies</span></div>
+                    <div class="card-body">
+                        @if (dependencies.Count == 0)
+                        {
+                            <p class="meta">This project does not wait on any other.</p>
+                        }
+                        @foreach (var d in dependencies)
+                        {
+                            <div style="display:flex; align-items:center; gap:.5rem; padding:.35rem 0;">
+                                <div style="flex:1; min-width:0;">
+                                    <a asp-action="Details" asp-route-id="@d.DependsOnProjectId" class="strong-link" style="font-size:.83rem;">
+                                        @d.DependsOnProject?.Name
+                                    </a>
+                                    <div class="meta" style="font-size:.7rem;">@d.Type @(string.IsNullOrWhiteSpace(d.Note) ? "" : "· " + d.Note)</div>
+                                </div>
+                                @if (canEdit)
+                                {
+                                    <form asp-action="RemoveDependency" method="post" class="inline-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.Id" />
+                                        <input type="hidden" name="linkId" value="@d.Id" />
+                                        <button type="submit" class="act del"><i class="fas fa-xmark"></i></button>
+                                    </form>
+                                }
+                            </div>
+                        }
+
+                        @if (canEdit && linkable.Any())
+                        {
+                            <form asp-action="AddDependency" method="post" style="margin-top:.75rem;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <div class="fg">
+                                    <select name="dependsOnProjectId" class="inp" required>
+                                        <option value="">Depends on…</option>
+                                        @foreach (var p in linkable)
+                                        {
+                                            <option value="@p.Id">@p.Label</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <select name="type" class="inp">
+                                        @foreach (var t in Enum.GetValues<DependencyType>())
+                                        {
+                                            <option value="@t">@t</option>
+                                        }
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn-ghost-pm btn-sm" style="width:100%; justify-content:center;">
+                                    <i class="fas fa-plus"></i> Add dependency
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+
+                @* Attachments *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-paperclip"></i> Attachments</span></div>
+                    <div class="card-body">
+                        @foreach (var a in attachments)
+                        {
+                            <div style="display:flex; align-items:center; gap:.5rem; padding:.35rem 0;">
+                                <i class="fas fa-file" style="color:var(--gray-400);"></i>
+                                <a href="@a.StoredPath" target="_blank" rel="noopener" class="strong-link" style="flex:1; font-size:.8rem; overflow:hidden; text-overflow:ellipsis;">
+                                    @a.FileName
+                                </a>
+                                <span class="meta" style="font-size:.7rem;">@((a.SizeBytes / 1024.0).ToString("N0")) KB</span>
+                                @if (canEdit)
+                                {
+                                    <form asp-action="DeleteAttachment" method="post" class="inline-form">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@Model.Id" />
+                                        <input type="hidden" name="attachmentId" value="@a.Id" />
+                                        <button type="submit" class="act del"><i class="fas fa-xmark"></i></button>
+                                    </form>
+                                }
+                            </div>
+                        }
+                        @if (attachments.Count == 0)
+                        {
+                            <p class="meta">No files attached.</p>
+                        }
+
+                        @if (canContribute)
+                        {
+                            <form asp-action="UploadAttachment" method="post" enctype="multipart/form-data" style="margin-top:.75rem;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <div class="fg">
+                                    <input type="file" name="file" class="inp" required />
+                                    <span class="hint">Documents, images, video and CAD drawings up to 25 MB.</span>
+                                </div>
+                                <button type="submit" class="btn-ghost-pm btn-sm" style="width:100%; justify-content:center;">
+                                    <i class="fas fa-upload"></i> Attach
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+
+                @* Activity *@
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-clock-rotate-left"></i> Activity</span>
+                        <a asp-action="Activity" asp-route-id="@Model.Id" class="meta">Full trail</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="feed">
+                            @foreach (var a in activity)
+                            {
+                                <div class="it">
+                                    <span class="dot">@(a.User == null ? "?" : $"{a.User.FirstName.FirstOrDefault()}{a.User.LastName.FirstOrDefault()}")</span>
+                                    <div class="bd">
+                                        <div class="ln" style="font-size:.8rem;">
+                                            <strong>@(a.User == null ? "System" : a.User.FirstName)</strong>
+                                            @a.Action.ToLower()
+                                            @if (!string.IsNullOrWhiteSpace(a.Summary)) { <text>— @a.Summary</text> }
+                                        </div>
+                                        <div class="tm">@a.At.ToString("d MMM, HH:mm")</div>
+                                    </div>
+                                </div>
+                            }
+                            @if (activity.Count == 0)
+                            {
+                                <p class="meta">Nothing recorded yet.</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

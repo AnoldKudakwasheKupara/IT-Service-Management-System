@@ -1,0 +1,194 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<Deliverable>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Deliverables — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var milestoneOptions = ViewBag.MilestoneOptions as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var phaseOptions = ViewBag.PhaseOptions as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    string Cls(DeliverableStatus s) => s switch
+    {
+        DeliverableStatus.Accepted => "completed",
+        DeliverableStatus.Rejected => "rejected",
+        DeliverableStatus.UnderReview or DeliverableStatus.Submitted => "planning",
+        DeliverableStatus.InProgress => "active",
+        _ => "draft"
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-box-open"></i></div><div><h3>@Model.Count</h3><p>Deliverables</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@Model.Count(d => d.Status == DeliverableStatus.Accepted)</h3><p>Accepted</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-magnifying-glass"></i></div><div><h3>@Model.Count(d => d.Status is DeliverableStatus.Submitted or DeliverableStatus.UnderReview)</h3><p>Awaiting review</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-circle-xmark"></i></div><div><h3>@Model.Count(d => d.Status == DeliverableStatus.Rejected)</h3><p>Rejected</p></div></div>
+            <div class="stat"><div class="ic purple"><i class="fas fa-flag"></i></div><div><h3>@Model.Count(d => d.IsClosureItem)</h3><p>On the closure checklist</p></div></div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-box-open"></i> Deliverables</span>
+                @if (canContribute)
+                {
+                    <button type="button" class="btn-pm btn-sm" onclick="pmToggle('dl-form')"><i class="fas fa-plus"></i> New deliverable</button>
+                }
+            </div>
+            <div class="card-body">
+                @if (canContribute)
+                {
+                    <form asp-action="SaveDeliverable" method="post" id="dl-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ProjectId" value="@project!.Id" />
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> Name</label>
+                                <input name="Name" class="inp" required placeholder="e.g. Signed handover certificate" />
+                            </div>
+                            <div class="fg"><label class="lbl">Due date</label><input name="DueDate" type="date" class="inp" /></div>
+                            <div class="fg">
+                                <label class="lbl">Owner</label>
+                                <select name="OwnerId" class="inp">
+                                    <option value="">— None —</option>
+                                    @foreach (var u in users) { <option value="@u.Id">@u.Name</option> }
+                                </select>
+                            </div>
+                            @if (milestoneOptions.Any())
+                            {
+                                <div class="fg">
+                                    <label class="lbl">Milestone</label>
+                                    <select name="MilestoneId" class="inp">
+                                        <option value="">— None —</option>
+                                        @foreach (var m in milestoneOptions) { <option value="@m.Id">@m.Name</option> }
+                                    </select>
+                                </div>
+                            }
+                            @if (phaseOptions.Any())
+                            {
+                                <div class="fg">
+                                    <label class="lbl">Phase</label>
+                                    <select name="PhaseId" class="inp">
+                                        <option value="">— None —</option>
+                                        @foreach (var p in phaseOptions) { <option value="@p.Id">@p.Name</option> }
+                                    </select>
+                                </div>
+                            }
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-align-left"></i> Description</label>
+                                <textarea name="Description" class="inp" rows="2"></textarea>
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-clipboard-check"></i> Acceptance criteria</label>
+                                <textarea name="AcceptanceCriteria" class="inp" rows="3"
+                                          placeholder="What must be true for this to be accepted?"></textarea>
+                            </div>
+                            <div class="fg full">
+                                <label class="check"><input type="checkbox" name="IsClosureItem" value="true" checked /> Must be signed off before the project can close</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Save deliverable</button>
+                    </form>
+                }
+
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-box-open"></i>
+                        <h3>No deliverables</h3>
+                        <p>Record what the project hands over, and the criteria each item must meet.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Deliverable</th><th>Owner</th><th>Milestone</th><th>Due</th>
+                                <th>Status</th><th>Accepted</th><th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var d in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong style="color:var(--gray-800);">@d.Name</strong>
+                                        @if (d.IsClosureItem) { <span class="chip" title="Blocks project closure until accepted"><i class="fas fa-flag"></i> Closure</span> }
+                                        @if (!string.IsNullOrWhiteSpace(d.AcceptanceCriteria))
+                                        {
+                                            <div class="meta" style="font-size:.75rem; margin-top:.2rem;">
+                                                <i class="fas fa-clipboard-check"></i> @d.AcceptanceCriteria
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="meta">@(d.Owner == null ? "—" : $"{d.Owner.FirstName} {d.Owner.LastName}")</td>
+                                    <td class="meta">@(d.Milestone?.Name ?? "—")</td>
+                                    <td class="meta @(d.Status != DeliverableStatus.Accepted && d.DueDate < DateTime.Today ? "overdue" : "")">
+                                        @(d.DueDate?.ToString("d MMM yyyy") ?? "—")
+                                    </td>
+                                    <td><span class="badge-pm b-@Cls(d.Status)">@d.Status</span></td>
+                                    <td class="meta">
+                                        @(d.AcceptedDate?.ToString("d MMM yyyy") ?? "—")
+                                        @if (d.AcceptedBy != null) { <div style="font-size:.72rem;">@d.AcceptedBy.FirstName @d.AcceptedBy.LastName</div> }
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <div class="act-btns" style="align-items:center;">
+                                            @if (canContribute)
+                                            {
+                                                <form asp-action="SetDeliverableStatus" method="post" style="display:inline-flex; gap:.3rem;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project!.Id" />
+                                                    <input type="hidden" name="deliverableId" value="@d.Id" />
+                                                    <select name="status" class="inp" style="width:auto; padding:.25rem .45rem; font-size:.75rem;">
+                                                        @foreach (var s in Enum.GetValues<DeliverableStatus>())
+                                                        {
+                                                            <option value="@s" selected="@(d.Status == s)">@s</option>
+                                                        }
+                                                    </select>
+                                                    <input type="text" name="notes" class="inp" placeholder="Note" style="width:110px; padding:.25rem .45rem; font-size:.75rem;" />
+                                                    <button type="submit" class="act ok" title="Update"><i class="fas fa-check"></i></button>
+                                                </form>
+                                            }
+                                            @if (canEdit)
+                                            {
+                                                <form asp-action="DeleteDeliverable" method="post" class="inline-form"
+                                                      onsubmit="return confirm('Remove this deliverable?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project!.Id" />
+                                                    <input type="hidden" name="deliverableId" value="@d.Id" />
+                                                    <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

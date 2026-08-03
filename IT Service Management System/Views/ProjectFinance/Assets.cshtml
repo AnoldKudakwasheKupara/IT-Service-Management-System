@@ -1,0 +1,197 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectAsset>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Assets — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var registered = ViewBag.RegisteredAssets as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var outstandingOnly = ViewBag.OutstandingOnly as bool? ?? false;
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div style="display:flex; gap:.5rem; margin-bottom:1rem; flex-wrap:wrap;">
+            <a asp-action="Budget" asp-route-projectId="@project!.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-sack-dollar"></i> Budget</a>
+            <a asp-action="Expenses" asp-route-projectId="@project.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-receipt"></i> Expenses</a>
+            <a asp-action="Procurement" asp-route-projectId="@project.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-cart-shopping"></i> Procurement</a>
+            <a asp-action="Assets" asp-route-projectId="@project.Id" class="btn-pm btn-sm"><i class="fas fa-laptop"></i> Assets</a>
+        </div>
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-laptop"></i></div><div><h3>@Model.Count</h3><p>Assets issued</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-hand-holding"></i></div><div><h3>@ViewBag.Outstanding</h3><p>Not yet returned</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-calendar-xmark"></i></div><div><h3>@ViewBag.Overdue</h3><p>Overdue back</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@Model.Count(a => !a.IsOutstanding)</h3><p>Returned</p></div></div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Assets on this project</span>
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <a asp-action="Assets" asp-route-projectId="@project.Id" asp-route-outstandingOnly="@(!outstandingOnly)"
+                       class="btn-ghost-pm btn-sm">
+                        <i class="fas fa-filter"></i> @(outstandingOnly ? "Show all" : "Outstanding only")
+                    </a>
+                    @if (canContribute)
+                    {
+                        <button type="button" class="btn-pm btn-sm" onclick="pmToggle('asset-form')"><i class="fas fa-plus"></i> Issue asset</button>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                @if (canContribute)
+                {
+                    <form asp-action="SaveAsset" method="post" id="asset-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ProjectId" value="@project.Id" />
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> Asset</label>
+                                <input name="Name" class="inp" required placeholder="e.g. Dell Latitude 5540" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-barcode"></i> Asset tag</label>
+                                <input name="AssetTag" class="inp" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-shapes"></i> Kind</label>
+                                <input name="Kind" class="inp" placeholder="Laptop / Vehicle / Tool / Printer" />
+                            </div>
+                            @if (registered.Any())
+                            {
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-link"></i> Link to the asset register</label>
+                                    <select name="AssetId" class="inp">
+                                        <option value="">— Not registered —</option>
+                                        @foreach (var a in registered) { <option value="@a.Id">@a.Name</option> }
+                                    </select>
+                                </div>
+                            }
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-user"></i> Issued to</label>
+                                <select name="IssuedToId" class="inp">
+                                    <option value="">— Nobody —</option>
+                                    @foreach (var u in users) { <option value="@u.Id">@u.Name</option> }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="far fa-calendar"></i> Issued</label>
+                                <input name="IssuedDate" type="date" class="inp" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="far fa-calendar-check"></i> Due back</label>
+                                <input name="DueBackDate" type="date" class="inp" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-clipboard-check"></i> Condition on issue</label>
+                                <input name="ConditionOnIssue" class="inp" placeholder="e.g. New, Good, Fair" />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-note-sticky"></i> Notes</label>
+                                <input name="Notes" class="inp" />
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Issue asset</button>
+                    </form>
+                }
+
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-laptop"></i>
+                        <h3>No assets issued</h3>
+                        <p>Track the laptops, vehicles, tools and equipment this project has out.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Asset</th><th>Kind</th><th>Issued to</th><th>Issued</th>
+                                <th>Due back</th><th>Returned</th><th>Condition</th><th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in Model)
+                            {
+                                var overdue = a.IsOutstanding && a.DueBackDate < DateTime.Today;
+                                <tr>
+                                    <td>
+                                        <strong style="color:var(--gray-800);">@a.Name</strong>
+                                        @if (!string.IsNullOrWhiteSpace(a.AssetTag)) { <div class="meta" style="font-size:.72rem;">@a.AssetTag</div> }
+                                        @if (!string.IsNullOrWhiteSpace(a.Notes)) { <div class="meta" style="font-size:.75rem;">@a.Notes</div> }
+                                    </td>
+                                    <td class="meta">@(a.Kind ?? "—")</td>
+                                    <td class="meta">@(a.IssuedTo == null ? "—" : $"{a.IssuedTo.FirstName} {a.IssuedTo.LastName}")</td>
+                                    <td class="meta">@(a.IssuedDate?.ToString("d MMM yy") ?? "—")</td>
+                                    <td class="meta @(overdue ? "overdue" : "")">@(a.DueBackDate?.ToString("d MMM yy") ?? "—")</td>
+                                    <td>
+                                        @if (a.ReturnedDate.HasValue)
+                                        {
+                                            <span class="badge-pm b-closed">@a.ReturnedDate.Value.ToString("d MMM yy")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-pm b-@(overdue ? "critical" : "pending")">Outstanding</span>
+                                        }
+                                    </td>
+                                    <td class="meta" style="font-size:.78rem;">
+                                        @(a.ConditionOnIssue ?? "—")
+                                        @if (!string.IsNullOrWhiteSpace(a.ConditionOnReturn)) { <text>→ @a.ConditionOnReturn</text> }
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <div class="act-btns" style="align-items:center;">
+                                            @if (canContribute && a.IsOutstanding)
+                                            {
+                                                <form asp-action="ReturnAsset" method="post" style="display:inline-flex; gap:.3rem;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="assetId" value="@a.Id" />
+                                                    <input type="text" name="condition" class="inp" placeholder="Condition"
+                                                           style="width:100px; padding:.25rem .45rem; font-size:.75rem;" />
+                                                    <button type="submit" class="act ok" title="Mark returned"><i class="fas fa-rotate-left"></i></button>
+                                                </form>
+                                            }
+                                            @if (canEdit)
+                                            {
+                                                <form asp-action="DeleteAsset" method="post" class="inline-form"
+                                                      onsubmit="return confirm('Remove this asset record?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="assetId" value="@a.Id" />
+                                                    <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

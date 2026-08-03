@@ -7962,7 +7962,7 @@ namespace IT_Service_Management_System.Migrations
                         {
                             Id = 1,
                             Category = 0,
-                            CreatedAt = new DateTime(2026, 8, 3, 11, 6, 13, 307, DateTimeKind.Local).AddTicks(1301),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBudget = 0m,
                             DefaultDurationDays = 120,
                             Description = "Requirements → design → build → test → go-live, with the usual quality gates.",
@@ -7975,7 +7975,7 @@ namespace IT_Service_Management_System.Migrations
                         {
                             Id = 2,
                             Category = 2,
-                            CreatedAt = new DateTime(2026, 8, 3, 11, 6, 13, 307, DateTimeKind.Local).AddTicks(1367),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBudget = 0m,
                             DefaultDurationDays = 180,
                             Description = "Design, permits, mobilisation, construction, snagging and handover.",
@@ -7988,7 +7988,7 @@ namespace IT_Service_Management_System.Migrations
                         {
                             Id = 3,
                             Category = 3,
-                            CreatedAt = new DateTime(2026, 8, 3, 11, 6, 13, 307, DateTimeKind.Local).AddTicks(1417),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBudget = 0m,
                             DefaultDurationDays = 60,
                             Description = "Brief, creative, production, launch and post-campaign review.",
@@ -8001,7 +8001,7 @@ namespace IT_Service_Management_System.Migrations
                         {
                             Id = 4,
                             Category = 4,
-                            CreatedAt = new DateTime(2026, 8, 3, 11, 6, 13, 307, DateTimeKind.Local).AddTicks(1484),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBudget = 0m,
                             DefaultDurationDays = 150,
                             Description = "Proposal, literature review, data collection, analysis and reporting.",
@@ -8014,7 +8014,7 @@ namespace IT_Service_Management_System.Migrations
                         {
                             Id = 5,
                             Category = 5,
-                            CreatedAt = new DateTime(2026, 8, 3, 11, 6, 13, 307, DateTimeKind.Local).AddTicks(1489),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBudget = 0m,
                             DefaultDurationDays = 45,
                             Description = "Scheduled maintenance planning, execution, verification and close-out.",
@@ -8027,7 +8027,7 @@ namespace IT_Service_Management_System.Migrations
                         {
                             Id = 6,
                             Category = 6,
-                            CreatedAt = new DateTime(2026, 8, 3, 11, 6, 13, 307, DateTimeKind.Local).AddTicks(1492),
+                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             DefaultBudget = 0m,
                             DefaultDurationDays = 240,
                             Description = "Gap analysis, documentation, training, internal audit and certification.",
@@ -11354,7 +11354,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Pm.ProjectPhase", "Phase")
                         .WithMany()
                         .HasForeignKey("PhaseId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("IT_Service_Management_System.Models.Pm.Project", "Project")
                         .WithMany("BudgetLines")
@@ -11377,7 +11377,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Pm.Milestone", "Milestone")
                         .WithMany()
                         .HasForeignKey("MilestoneId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("IT_Service_Management_System.Models.User", "Owner")
                         .WithMany()
@@ -11387,7 +11387,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Pm.ProjectPhase", "Phase")
                         .WithMany()
                         .HasForeignKey("PhaseId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("IT_Service_Management_System.Models.Pm.Project", "Project")
                         .WithMany("Deliverables")
@@ -11435,7 +11435,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Pm.ProjectPhase", "Phase")
                         .WithMany()
                         .HasForeignKey("PhaseId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("IT_Service_Management_System.Models.Pm.Project", "Project")
                         .WithMany("Milestones")
@@ -11489,7 +11489,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Pm.BudgetLine", "BudgetLine")
                         .WithMany()
                         .HasForeignKey("BudgetLineId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("IT_Service_Management_System.Models.Pm.Project", "Project")
                         .WithMany()
@@ -11777,7 +11777,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Pm.BudgetLine", "BudgetLine")
                         .WithMany()
                         .HasForeignKey("BudgetLineId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("IT_Service_Management_System.Models.Pm.Project", "Project")
                         .WithMany("Expenses")
@@ -11900,7 +11900,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Pm.ProjectTask", "LinkedTask")
                         .WithMany()
                         .HasForeignKey("LinkedTaskId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("IT_Service_Management_System.Models.Pm.ProjectMeeting", "Meeting")
                         .WithMany("Actions")
@@ -11992,7 +11992,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Pm.Milestone", "Milestone")
                         .WithMany()
                         .HasForeignKey("MilestoneId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("IT_Service_Management_System.Models.Pm.ProjectTask", "ParentTask")
                         .WithMany("Subtasks")
@@ -12002,7 +12002,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Pm.ProjectPhase", "Phase")
                         .WithMany("Tasks")
                         .HasForeignKey("PhaseId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("IT_Service_Management_System.Models.Pm.Project", "Project")
                         .WithMany("Tasks")
@@ -12018,7 +12018,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Pm.WbsItem", "WbsItem")
                         .WithMany("Tasks")
                         .HasForeignKey("WbsItemId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("AssignedTo");
 
@@ -12286,7 +12286,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Pm.ProjectPhase", "Phase")
                         .WithMany("WbsItems")
                         .HasForeignKey("PhaseId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("IT_Service_Management_System.Models.Pm.Project", "Project")
                         .WithMany("WbsItems")

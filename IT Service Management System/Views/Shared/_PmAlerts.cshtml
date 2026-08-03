@@ -1,0 +1,17 @@
+@* Success / error banners for the project module. Include once near the top of each PM view. *@
+@if (TempData["Success"] != null)
+{
+    <div class="card" style="border-left:3px solid var(--success); margin-bottom:1rem;">
+        <div class="card-body" style="padding:.8rem 1.25rem; color:var(--success); display:flex; gap:.6rem; align-items:center;">
+            <i class="fas fa-circle-check"></i> <span>@TempData["Success"]</span>
+        </div>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="card" style="border-left:3px solid var(--danger); margin-bottom:1rem;">
+        <div class="card-body" style="padding:.8rem 1.25rem; color:var(--danger); display:flex; gap:.6rem; align-items:center;">
+            <i class="fas fa-circle-exclamation"></i> <span>@TempData["Error"]</span>
+        </div>
+    </div>
+}

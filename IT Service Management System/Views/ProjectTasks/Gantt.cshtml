@@ -1,0 +1,240 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectTask>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Gantt — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+
+    var from = (DateTime)(ViewBag.From ?? DateTime.Today);
+    var to = (DateTime)(ViewBag.To ?? DateTime.Today.AddDays(60));
+    var months = ViewBag.Months as List<(string Label, DateTime Start)> ?? new List<(string, DateTime)>();
+    var milestones = ViewBag.Milestones as List<Milestone> ?? new List<Milestone>();
+    var showBaseline = ViewBag.ShowBaseline as bool? ?? true;
+    var span = Math.Max(1, (to - from).TotalDays);
+
+    double Pos(DateTime d) => Math.Clamp((d - from).TotalDays / span * 100, 0, 100);
+    var todayPos = DateTime.Today >= from && DateTime.Today <= to ? Pos(DateTime.Today) : -1;
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm wide">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div class="card">
+            <div class="card-body" style="display:flex; gap:.6rem; flex-wrap:wrap; align-items:center;">
+                <span class="meta">
+                    <strong>@Model.Count</strong> task(s) ·
+                    <strong>@ViewBag.CriticalCount</strong> on the critical path ·
+                    @from.ToString("MMM yyyy") – @to.ToString("MMM yyyy")
+                </span>
+                <div style="margin-left:auto; display:flex; gap:.5rem; flex-wrap:wrap;">
+                    <a asp-action="Gantt" asp-route-projectId="@project!.Id" asp-route-showBaseline="@(!showBaseline)"
+                       class="btn-ghost-pm btn-sm">
+                        <i class="fas fa-eye@(showBaseline ? "-slash" : "")"></i> @(showBaseline ? "Hide" : "Show") baseline
+                    </a>
+                    @if (canContribute)
+                    {
+                        <form asp-action="RecalculateCriticalPath" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="projectId" value="@project.Id" />
+                            <button type="submit" class="btn-ghost-pm btn-sm"><i class="fas fa-route"></i> Recalculate critical path</button>
+                        </form>
+                    }
+                    @if (canEdit)
+                    {
+                        <form asp-action="SetBaseline" method="post" class="inline-form"
+                              onsubmit="return confirm('Freeze the current plan as the baseline? Existing baseline dates will be replaced.');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="projectId" value="@project.Id" />
+                            <button type="submit" class="btn-outline-pm btn-sm"><i class="fas fa-thumbtack"></i> Set baseline</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (Model.Count == 0 && milestones.Count == 0)
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="empty">
+                        <i class="fas fa-chart-gantt"></i>
+                        <h3>Nothing to plot yet</h3>
+                        <p>Add tasks with start and due dates, and they will appear on the timeline.</p>
+                        @if (canContribute)
+                        {
+                            <a asp-action="Create" asp-route-projectId="@project.Id" class="btn-pm"><i class="fas fa-plus"></i> New task</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="gantt">
+                <div class="gantt-scroll">
+                    <div class="gantt-grid">
+                        @* Month header *@
+                        <div class="gantt-row head">
+                            <div class="gantt-label"><strong>Task</strong></div>
+                            <div class="gantt-months">
+                                @foreach (var m in months)
+                                {
+                                    <div class="gantt-month">@m.Label</div>
+                                }
+                            </div>
+                        </div>
+
+                        @* Milestone band *@
+                        @if (milestones.Count > 0)
+                        {
+                            <div class="gantt-row">
+                                <div class="gantt-label"><i class="fas fa-flag-checkered" style="color:var(--pm-purple);"></i> <strong>Milestones</strong></div>
+                                <div class="gantt-track">
+                                    @if (todayPos >= 0)
+                                    {
+                                        <div class="gantt-today" style="left:@todayPos.ToString("0.##")%"></div>
+                                    }
+                                    @foreach (var m in milestones)
+                                    {
+                                        var left = Pos(m.DueDate);
+                                        var colour = m.Status == MilestoneStatus.Achieved ? "#059669" : m.IsOverdue ? "#dc2626" : "#7c5cff";
+                                        <div class="gantt-milestone" style="left:calc(@left.ToString("0.##")% - 7px); background:@colour;"
+                                             title="@m.Name — @m.DueDate.ToString("d MMM yyyy") (@m.Status)"></div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @* Task rows *@
+                        @foreach (var t in Model)
+                        {
+                            var start = t.StartDate ?? t.DueDate ?? from;
+                            var end = t.DueDate ?? t.StartDate ?? start.AddDays(1);
+                            if (end < start) end = start;
+
+                            var left = Pos(start);
+                            var width = Math.Max(0.6, Pos(end) - left);
+                            var barClass = t.Status == ProjectTaskStatus.Completed ? "done" : t.IsOnCriticalPath ? "critical" : "";
+
+                            <div class="gantt-row">
+                                <div class="gantt-label">
+                                    @if (t.IsOnCriticalPath)
+                                    {
+                                        <i class="fas fa-bolt" style="color:var(--danger); font-size:.7rem;" title="On the critical path"></i>
+                                    }
+                                    <a asp-action="Details" asp-route-id="@t.Id" title="@t.Name">@t.Name</a>
+                                </div>
+                                <div class="gantt-track">
+                                    @if (todayPos >= 0)
+                                    {
+                                        <div class="gantt-today" style="left:@todayPos.ToString("0.##")%"></div>
+                                    }
+
+                                    @if (showBaseline && t.BaselineStartDate.HasValue && t.BaselineDueDate.HasValue)
+                                    {
+                                        var bLeft = Pos(t.BaselineStartDate.Value);
+                                        var bWidth = Math.Max(0.6, Pos(t.BaselineDueDate.Value) - bLeft);
+                                        <div class="gantt-bar baseline" style="left:@bLeft.ToString("0.##")%; width:@bWidth.ToString("0.##")%;"
+                                             title="Baseline: @t.BaselineStartDate.Value.ToString("d MMM") – @t.BaselineDueDate.Value.ToString("d MMM")"></div>
+                                    }
+
+                                    <div class="gantt-bar @barClass" style="left:@left.ToString("0.##")%; width:@width.ToString("0.##")%;"
+                                         data-task-id="@t.Id" data-start="@start.ToString("yyyy-MM-dd")" data-due="@end.ToString("yyyy-MM-dd")"
+                                         title="@t.Name&#10;@start.ToString("d MMM yyyy") – @end.ToString("d MMM yyyy")&#10;@t.PercentComplete% complete&#10;Float: @t.FloatDays day(s)">
+                                        <span class="fill" style="width:@t.PercentComplete%"></span>
+                                        <span class="lbl">@t.PercentComplete%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="gantt-legend">
+                    <span><i class="sw" style="background:linear-gradient(90deg,var(--primary),var(--primary-dark));"></i> Planned</span>
+                    <span><i class="sw" style="background:linear-gradient(90deg,#f87171,#dc2626);"></i> Critical path</span>
+                    <span><i class="sw" style="background:linear-gradient(90deg,#34d399,#059669);"></i> Complete</span>
+                    <span><i class="sw" style="background:var(--gray-300);"></i> Baseline</span>
+                    <span><i class="fas fa-diamond" style="color:var(--pm-purple); font-size:.7rem;"></i> Milestone</span>
+                    <span><i class="sw" style="background:var(--danger); width:2px; height:12px;"></i> Today</span>
+                </div>
+            </div>
+
+            @if (canContribute)
+            {
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-calendar-pen"></i> Reschedule a task</span></div>
+                    <div class="card-body">
+                        <p class="meta" style="margin-bottom:.75rem;">
+                            Pick a task and set new dates. Saving recalculates float and the critical path across the plan.
+                        </p>
+                        <form id="reschedule-form" class="toolbar" style="margin:0;">
+                            <div class="fg">
+                                <label class="lbl">Task</label>
+                                <select id="rs-task" class="inp">
+                                    @foreach (var t in Model)
+                                    {
+                                        <option value="@t.Id"
+                                                data-start="@(t.StartDate?.ToString("yyyy-MM-dd"))"
+                                                data-due="@(t.DueDate?.ToString("yyyy-MM-dd"))">@t.Name</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg"><label class="lbl">Start</label><input type="date" id="rs-start" class="inp" /></div>
+                            <div class="fg"><label class="lbl">Due</label><input type="date" id="rs-due" class="inp" /></div>
+                            <button type="submit" class="btn-pm"><i class="fas fa-floppy-disk"></i> Reschedule</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        }
+
+    </div>
+</div>
+
+@section Scripts {
+    @Html.AntiForgeryToken()
+    <script>
+        (function () {
+            const form = document.getElementById('reschedule-form');
+            if (!form) return;
+
+            const task = document.getElementById('rs-task');
+            const start = document.getElementById('rs-start');
+            const due = document.getElementById('rs-due');
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            // Pre-fill the date inputs from whichever task is selected.
+            function sync() {
+                const opt = task.options[task.selectedIndex];
+                start.value = opt?.dataset.start || '';
+                due.value = opt?.dataset.due || '';
+            }
+            task.addEventListener('change', sync);
+            sync();
+
+            form.addEventListener('submit', async e => {
+                e.preventDefault();
+                if (!start.value || !due.value) {
+                    alert('Set both a start and a due date.');
+                    return;
+                }
+                const body = new URLSearchParams({ taskId: task.value, start: start.value, due: due.value });
+                const res = await fetch('@Url.Action("Reschedule")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token || '' },
+                    body
+                });
+                const data = await res.json();
+                if (data.ok) location.reload();
+                else (window.toastr ? toastr.error(data.message) : alert(data.message));
+            });
+        })();
+    </script>
+}

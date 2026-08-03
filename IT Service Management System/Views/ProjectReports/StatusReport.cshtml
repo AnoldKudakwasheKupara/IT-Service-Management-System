@@ -1,0 +1,182 @@
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.Services.Pm
+@model Project
+@{
+    ViewData["Title"] = $"Status report — {Model.Reference}";
+    var summary = ViewBag.Summary as string ?? "";
+    var schedule = ViewBag.ScheduleForecast as Forecast ?? new Forecast();
+    var budget = ViewBag.BudgetForecast as BudgetForecast ?? new BudgetForecast();
+    var spent = (decimal)(ViewBag.Spent ?? 0m);
+    var milestones = ViewBag.Milestones as List<Milestone> ?? new List<Milestone>();
+    var topRisks = ViewBag.TopRisks as List<ProjectRisk> ?? new List<ProjectRisk>();
+    var openIssues = ViewBag.OpenIssues as List<ProjectIssue> ?? new List<ProjectIssue>();
+    var taskStats = ViewBag.TaskStats as Dictionary<ProjectTaskStatus, int> ?? new Dictionary<ProjectTaskStatus, int>();
+    var totalTasks = taskStats.Values.Sum();
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.Id" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-file-lines"></i> Status Report</h1>
+                        <p class="page-sub">@Model.Reference — @Model.Name · generated @DateTime.Now.ToString("d MMMM yyyy, HH:mm")</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="ExportProjectPdf" asp-route-projectId="@Model.Id" class="btn-pm"><i class="fas fa-file-pdf"></i> Download PDF</a>
+                    <button type="button" onclick="window.print()" class="btn-ghost-pm"><i class="fas fa-print"></i> Print</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-circle-info"></i> Position</span>
+                <span class="health @Model.Health"><i class="dot"></i>@Model.Health</span>
+            </div>
+            <div class="card-body">
+                <div class="dl">
+                    <div><div class="k">Status</div><div class="v"><span class="badge-pm b-@Model.Status.ToString().ToLower()">@Model.Status</span></div></div>
+                    <div><div class="k">Progress</div><div class="v">@Model.ProgressPercent%</div></div>
+                    <div><div class="k">Schedule elapsed</div><div class="v">@Model.SchedulePercentElapsed%</div></div>
+                    <div><div class="k">Project manager</div><div class="v">@(Model.ProjectManager == null ? "—" : $"{Model.ProjectManager.FirstName} {Model.ProjectManager.LastName}")</div></div>
+                    <div><div class="k">Sponsor</div><div class="v">@(Model.Sponsor == null ? "—" : $"{Model.Sponsor.FirstName} {Model.Sponsor.LastName}")</div></div>
+                    <div><div class="k">Department</div><div class="v">@(Model.Department?.Name ?? "—")</div></div>
+                    <div><div class="k">Client</div><div class="v">@(Model.Client ?? "—")</div></div>
+                    <div><div class="k">Start → end</div><div class="v @(Model.IsOverdue ? "overdue" : "")">@(Model.StartDate?.ToString("d MMM yy") ?? "—") → @(Model.EndDate?.ToString("d MMM yy") ?? "—")</div></div>
+                    <div><div class="k">Budget</div><div class="v money">@Model.Currency @Model.TotalBudget.ToString("N2")</div></div>
+                    <div><div class="k">Spend</div><div class="v money">@Model.Currency @spent.ToString("N2")</div></div>
+                    <div><div class="k">Hours booked</div><div class="v">@(((decimal)(ViewBag.Hours ?? 0m)).ToString("N1"))</div></div>
+                    <div><div class="k">Tasks</div><div class="v">@taskStats.GetValueOrDefault(ProjectTaskStatus.Completed) of @totalTasks complete</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-file-lines"></i> Executive summary</span></div>
+            <div class="card-body">
+                <p style="white-space:pre-line; line-height:1.75; color:var(--gray-700); font-size:.95rem;">@summary</p>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-calendar-day"></i> Schedule outlook</span></div>
+                <div class="card-body">
+                    <div style="display:flex; align-items:baseline; gap:.75rem; flex-wrap:wrap; margin-bottom:.6rem;">
+                        <span style="font-size:1.4rem; font-weight:700; color:var(--gray-800);">
+                            @(schedule.PredictedDate?.ToString("d MMM yyyy") ?? "Not predictable")
+                        </span>
+                        <span class="badge-pm b-@(schedule.Confidence == "High" ? "closed" : schedule.Confidence == "Medium" ? "high" : "low")">@schedule.Confidence confidence</span>
+                        @if (schedule.SlipDays > 0) { <span class="badge-pm b-critical">@schedule.SlipDays days late</span> }
+                    </div>
+                    <p class="meta" style="line-height:1.6;">@schedule.Basis</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-chart-line"></i> Financial outlook</span></div>
+                <div class="card-body">
+                    <div style="display:flex; align-items:baseline; gap:.75rem; flex-wrap:wrap; margin-bottom:.6rem;">
+                        <span style="font-size:1.4rem; font-weight:700; color:var(--gray-800);">@Model.Currency @budget.Forecast.ToString("N0")</span>
+                        <span class="badge-pm b-@(budget.OverrunRiskLevel == "High" ? "critical" : budget.OverrunRiskLevel == "Medium" ? "high" : "closed")">
+                            @budget.OverrunRiskLevel overrun risk
+                        </span>
+                    </div>
+                    <p class="meta" style="line-height:1.6;">@budget.Basis</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-flag-checkered"></i> Milestones</span></div>
+            <div class="card-body flush">
+                @if (milestones.Count == 0)
+                {
+                    <p class="meta" style="padding:1.25rem;">No milestones recorded.</p>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Milestone</th><th>Due</th><th>Baseline</th><th class="num">Slippage</th><th>Status</th></tr></thead>
+                        <tbody>
+                            @foreach (var m in milestones)
+                            {
+                                <tr>
+                                    <td>@m.Name</td>
+                                    <td class="meta @(m.IsOverdue ? "overdue" : "")">@m.DueDate.ToString("d MMM yyyy")</td>
+                                    <td class="meta">@(m.BaselineDate?.ToString("d MMM yyyy") ?? "—")</td>
+                                    <td class="num @(m.SlippageDays > 0 ? "overdue" : "")">@(m.SlippageDays > 0 ? $"{m.SlippageDays} d" : "—")</td>
+                                    <td><span class="badge-pm b-@(m.Status == MilestoneStatus.Achieved ? "completed" : m.Status == MilestoneStatus.Missed ? "delayed" : "planning")">@m.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-triangle-exclamation"></i> Top risks</span></div>
+                <div class="card-body flush">
+                    @if (topRisks.Count == 0)
+                    {
+                        <p class="meta" style="padding:1.25rem;">No open risks.</p>
+                    }
+                    else
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Risk</th><th class="num">Score</th><th>Owner</th><th>Mitigation</th></tr></thead>
+                            <tbody>
+                                @foreach (var r in topRisks)
+                                {
+                                    <tr>
+                                        <td>@r.Title</td>
+                                        <td class="num"><span class="badge-pm b-@(r.Score >= 15 ? "critical" : r.Score >= 10 ? "high" : "medium")">@r.Score</span></td>
+                                        <td class="meta">@(r.Owner == null ? "—" : $"{r.Owner.FirstName} {r.Owner.LastName}")</td>
+                                        <td class="meta" style="font-size:.78rem;">@(r.Mitigation ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-circle-exclamation"></i> Open issues</span></div>
+                <div class="card-body flush">
+                    @if (openIssues.Count == 0)
+                    {
+                        <p class="meta" style="padding:1.25rem;">No open issues.</p>
+                    }
+                    else
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Issue</th><th>Severity</th><th>Owner</th><th>Due</th></tr></thead>
+                            <tbody>
+                                @foreach (var i in openIssues)
+                                {
+                                    <tr>
+                                        <td>@i.Title</td>
+                                        <td><span class="badge-pm b-@(i.Severity == IssueSeverity.Critical ? "critical" : i.Severity == IssueSeverity.High ? "high" : "medium")">@i.Severity</span></td>
+                                        <td class="meta">@(i.AssignedTo == null ? "—" : $"{i.AssignedTo.FirstName} {i.AssignedTo.LastName}")</td>
+                                        <td class="meta @(i.IsOverdue ? "overdue" : "")">@(i.DueDate?.ToString("d MMM yy") ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

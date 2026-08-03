@@ -1,0 +1,151 @@
+@{
+    ViewData["Title"] = "Time Reports";
+    var from = (DateTime)(ViewBag.From ?? DateTime.Today);
+    var to = (DateTime)(ViewBag.To ?? DateTime.Today);
+    var byEmployee = ViewBag.ByEmployee as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var byProject = ViewBag.ByProject as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var projects = ViewBag.Projects as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var approvedOnly = ViewBag.ApprovedOnly as bool? ?? true;
+
+    var maxEmployeeHours = byEmployee.Any() ? byEmployee.Max(e => (decimal)e.Hours) : 1m;
+    var maxProjectHours = byProject.Any() ? byProject.Max(p => (decimal)p.Hours) : 1m;
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-chart-line"></i> Time Reports</h1>
+                        <p class="page-sub">Hours and cost by employee and by project</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="ExportCsv" asp-route-from="@from.ToString("yyyy-MM-dd")" asp-route-to="@to.ToString("yyyy-MM-dd")"
+                       asp-route-projectId="@ViewBag.ProjectId" asp-route-approvedOnly="@approvedOnly" class="btn-ghost-pm">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </a>
+                    <a asp-action="Approvals" class="btn-outline-pm"><i class="fas fa-stamp"></i> Approvals</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="toolbar" style="margin:0;">
+                    <div class="fg"><label class="lbl">From</label><input type="date" name="from" value="@from.ToString("yyyy-MM-dd")" class="inp" /></div>
+                    <div class="fg"><label class="lbl">To</label><input type="date" name="to" value="@to.ToString("yyyy-MM-dd")" class="inp" /></div>
+                    <div class="fg">
+                        <label class="lbl">Project</label>
+                        <select name="projectId" class="inp">
+                            <option value="">All projects</option>
+                            @foreach (var p in projects)
+                            {
+                                <option value="@p.Id" selected="@(ViewBag.ProjectId as int? == (int)p.Id)">@p.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="check">
+                            <input type="checkbox" name="approvedOnly" value="true" checked="@approvedOnly" /> Approved time only
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-pm"><i class="fas fa-magnifying-glass"></i> Run</button>
+                    <a asp-action="Report" class="btn-ghost-pm"><i class="fas fa-rotate-left"></i> This month</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="stats tight">
+            <div class="stat">
+                <div class="ic brand"><i class="fas fa-clock"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalHours ?? 0m)).ToString("N1"))</h3><p>Total hours</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic green"><i class="fas fa-file-invoice-dollar"></i></div>
+                <div><h3>@(((decimal)(ViewBag.BillableHours ?? 0m)).ToString("N1"))</h3><p>Billable hours</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic teal"><i class="fas fa-percent"></i></div>
+                <div><h3>@ViewBag.BillablePercent%</h3><p>Billable share</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-coins"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalCost ?? 0m)).ToString("N0"))</h3><p>Labour cost</p></div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-user-clock"></i> Hours by employee</span></div>
+                <div class="card-body flush">
+                    @if (!byEmployee.Any())
+                    {
+                        <div class="empty"><i class="fas fa-user-clock"></i><h3>No time in this period</h3></div>
+                    }
+                    else
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Employee</th><th style="min-width:110px;">Hours</th><th class="num">Billable</th><th class="num">Overtime</th><th class="num">Projects</th><th class="num">Cost</th></tr></thead>
+                            <tbody>
+                                @foreach (var e in byEmployee)
+                                {
+                                    <tr>
+                                        <td><strong style="color:var(--gray-800);">@e.Name</strong></td>
+                                        <td>
+                                            <div class="progress-pm thin"><span style="width:@((int)((decimal)e.Hours / maxEmployeeHours * 100))%"></span></div>
+                                            <span class="meta" style="font-size:.72rem;">@(((decimal)e.Hours).ToString("N1")) h</span>
+                                        </td>
+                                        <td class="num meta">@(((decimal)e.Billable).ToString("N1"))</td>
+                                        <td class="num meta">@(((decimal)e.Overtime).ToString("N1"))</td>
+                                        <td class="num meta">@e.Projects</td>
+                                        <td class="num money">@(((decimal)e.Cost).ToString("N0"))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-diagram-project"></i> Hours by project</span></div>
+                <div class="card-body flush">
+                    @if (!byProject.Any())
+                    {
+                        <div class="empty"><i class="fas fa-diagram-project"></i><h3>No time in this period</h3></div>
+                    }
+                    else
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Project</th><th style="min-width:110px;">Hours</th><th class="num">Billable</th><th class="num">People</th><th class="num">Cost</th></tr></thead>
+                            <tbody>
+                                @foreach (var p in byProject)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a asp-controller="Projects" asp-action="Details" asp-route-id="@p.ProjectId" class="strong-link">@p.Name</a>
+                                        </td>
+                                        <td>
+                                            <div class="progress-pm thin"><span style="width:@((int)((decimal)p.Hours / maxProjectHours * 100))%"></span></div>
+                                            <span class="meta" style="font-size:.72rem;">@(((decimal)p.Hours).ToString("N1")) h</span>
+                                        </td>
+                                        <td class="num meta">@(((decimal)p.Billable).ToString("N1"))</td>
+                                        <td class="num meta">@p.People</td>
+                                        <td class="num money">@(((decimal)p.Cost).ToString("N0"))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

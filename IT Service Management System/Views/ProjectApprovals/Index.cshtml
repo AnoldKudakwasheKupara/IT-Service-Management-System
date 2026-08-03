@@ -1,0 +1,209 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectApproval>
+@{
+    ViewData["Title"] = "Approvals";
+    var decided = ViewBag.Decided as List<ProjectApproval> ?? new List<ProjectApproval>();
+    var raised = ViewBag.Raised as List<ProjectApproval> ?? new List<ProjectApproval>();
+    var colleagues = ViewBag.Colleagues as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    string SubjectIcon(ApprovalSubject s) => s switch
+    {
+        ApprovalSubject.Project => "fa-diagram-project",
+        ApprovalSubject.Budget => "fa-sack-dollar",
+        ApprovalSubject.Expense => "fa-receipt",
+        ApprovalSubject.ChangeRequest => "fa-code-branch",
+        ApprovalSubject.Document => "fa-file",
+        ApprovalSubject.Purchase => "fa-cart-shopping",
+        ApprovalSubject.Milestone => "fa-flag-checkered",
+        ApprovalSubject.Closure => "fa-flag",
+        _ => "fa-stopwatch"
+    };
+    string Pretty(ApprovalSubject s) => System.Text.RegularExpressions.Regex.Replace(s.ToString(), "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-controller="Projects" asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-stamp"></i> Approvals</h1>
+                        <p class="page-sub">Decisions waiting on you, and what you have sent for approval</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Notifications" class="btn-ghost-pm"><i class="fas fa-bell"></i> Notifications</a>
+                    <a asp-action="All" class="btn-outline-pm"><i class="fas fa-list"></i> All approvals</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-inbox"></i></div><div><h3>@Model.Count</h3><p>Waiting on you</p></div></div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-coins"></i></div>
+                <div><h3>@(((decimal)(ViewBag.PendingValue ?? 0m)).ToString("N0"))</h3><p>Value at stake</p></div>
+            </div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-paper-plane"></i></div><div><h3>@raised.Count</h3><p>You are waiting on</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@decided.Count(d => d.Status == ApprovalStatus.Approved)</h3><p>Recently approved</p></div></div>
+        </div>
+
+        @* ── PENDING ─────────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-inbox"></i> Waiting on your decision</span>
+                <form method="get" style="display:inline-flex;">
+                    <select name="subject" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                        <option value="">All kinds</option>
+                        @foreach (var s in Enum.GetValues<ApprovalSubject>())
+                        {
+                            <option value="@s" selected="@(ViewBag.Subject as ApprovalSubject? == s)">@Pretty(s)</option>
+                        }
+                    </select>
+                </form>
+            </div>
+            <div class="card-body">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-circle-check" style="color:var(--success);"></i>
+                        <h3>Nothing to approve</h3>
+                        <p>Your inbox is clear.</p>
+                    </div>
+                }
+                @foreach (var a in Model)
+                {
+                    <div style="border:1px solid var(--gray-200); border-radius:.8rem; padding:1rem 1.15rem; margin-bottom:1rem;">
+                        <div style="display:flex; gap:.9rem; align-items:flex-start; flex-wrap:wrap;">
+                            <span class="avatar"><i class="fas @SubjectIcon(a.Subject)"></i></span>
+                            <div style="flex:1; min-width:200px;">
+                                <div style="font-weight:600; color:var(--gray-800);">
+                                    @Pretty(a.Subject) — @a.SubjectTitle
+                                </div>
+                                <div class="meta" style="font-size:.78rem; margin-top:.2rem;">
+                                    @if (a.Project != null)
+                                    {
+                                        <a asp-controller="Projects" asp-action="Details" asp-route-id="@a.ProjectId" class="strong-link">@a.Project.Name</a>
+                                        <text> · </text>
+                                    }
+                                    Requested by @(a.RequestedBy == null ? "—" : $"{a.RequestedBy.FirstName} {a.RequestedBy.LastName}")
+                                    on @a.RequestedAt.ToString("d MMM yyyy")
+                                    · Level @a.Level
+                                    @if (a.DelegatedToId.HasValue) { <span class="chip">Delegated</span> }
+                                </div>
+                                @if (a.Amount.HasValue)
+                                {
+                                    <div class="money" style="margin-top:.35rem; font-size:1.05rem;">@a.Amount.Value.ToString("N2")</div>
+                                }
+                            </div>
+                        </div>
+
+                        <form asp-action="Decide" method="post" style="margin-top:.85rem; display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@a.Id" />
+                            <input type="text" name="comment" class="inp" style="flex:1; min-width:200px;"
+                                   placeholder="Comment (required when rejecting)" />
+                            <button type="submit" name="approve" value="true" class="btn-success-pm btn-sm">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button type="submit" name="approve" value="false" class="btn-danger-pm btn-sm">
+                                <i class="fas fa-xmark"></i> Reject
+                            </button>
+                        </form>
+
+                        @if (colleagues.Any())
+                        {
+                            <form asp-action="Delegate" method="post" style="margin-top:.5rem; display:flex; gap:.5rem; align-items:center;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@a.Id" />
+                                <select name="delegateToId" class="inp" style="width:auto; padding:.3rem .55rem; font-size:.78rem;">
+                                    @foreach (var c in colleagues) { <option value="@c.Id">@c.Name</option> }
+                                </select>
+                                <button type="submit" class="btn-ghost-pm btn-sm"><i class="fas fa-share"></i> Delegate</button>
+                            </form>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="grid-2">
+            @* ── RAISED BY ME ────────────────────────────────────────────── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-paper-plane"></i> Waiting on someone else</span></div>
+                <div class="card-body flush">
+                    @if (raised.Count == 0)
+                    {
+                        <p class="meta" style="padding:1.25rem;">You have nothing outstanding with an approver.</p>
+                    }
+                    else
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Kind</th><th>Subject</th><th>Approver</th><th>Level</th><th>Raised</th></tr></thead>
+                            <tbody>
+                                @foreach (var a in raised)
+                                {
+                                    <tr>
+                                        <td><span class="chip"><i class="fas @SubjectIcon(a.Subject)"></i> @Pretty(a.Subject)</span></td>
+                                        <td>@a.SubjectTitle</td>
+                                        <td class="meta">@(a.Approver == null ? "—" : $"{a.Approver.FirstName} {a.Approver.LastName}")</td>
+                                        <td class="meta">@a.Level</td>
+                                        <td class="meta">@a.RequestedAt.ToString("d MMM yy")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+
+            @* ── DECIDED ─────────────────────────────────────────────────── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-clock-rotate-left"></i> Your recent decisions</span></div>
+                <div class="card-body flush">
+                    @if (decided.Count == 0)
+                    {
+                        <p class="meta" style="padding:1.25rem;">You have not decided anything yet.</p>
+                    }
+                    else
+                    {
+                        <table class="tbl">
+                            <thead><tr><th>Kind</th><th>Subject</th><th>Decision</th><th>When</th><th>Comment</th></tr></thead>
+                            <tbody>
+                                @foreach (var a in decided)
+                                {
+                                    <tr>
+                                        <td><span class="chip"><i class="fas @SubjectIcon(a.Subject)"></i> @Pretty(a.Subject)</span></td>
+                                        <td>@a.SubjectTitle</td>
+                                        <td>
+                                            <span class="badge-pm b-@(a.Status == ApprovalStatus.Approved ? "closed" : a.Status == ApprovalStatus.Rejected ? "rejected" : "cancelled")">
+                                                @a.Status
+                                            </span>
+                                        </td>
+                                        <td class="meta">@(a.DecidedAt?.ToString("d MMM yy") ?? "—")</td>
+                                        <td class="meta" style="font-size:.78rem;">@(a.Comment ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <p class="hint">
+            <i class="fas fa-circle-info"></i>
+            Approvals run in levels — the project manager first, then finance for anything with money
+            attached, and an executive for project decisions or spend at or above
+            @IT_Service_Management_System.Services.Pm.ProjectApprovalService.ExecutiveThreshold.ToString("N0").
+            A rejection at any level ends the chain and returns the record to its owner.
+        </p>
+
+    </div>
+</div>

@@ -1,0 +1,217 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectTask>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Board — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var lanes = ViewBag.Lanes as Dictionary<KanbanColumn, List<ProjectTask>> ?? new Dictionary<KanbanColumn, List<ProjectTask>>();
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    string LaneLabel(KanbanColumn c) => c switch
+    {
+        KanbanColumn.InProgress => "In progress",
+        _ => c.ToString()
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm wide">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div class="card">
+            <div class="card-body" style="display:flex; gap:.6rem; flex-wrap:wrap; align-items:flex-end;">
+                <form method="get" class="toolbar" style="margin:0; flex:1;">
+                    <input type="hidden" name="projectId" value="@project!.Id" />
+                    <div class="fg">
+                        <label class="lbl">Assignee</label>
+                        <select name="assignedTo" class="inp" onchange="this.form.submit()">
+                            <option value="">Everyone</option>
+                            @foreach (var u in users)
+                            {
+                                <option value="@u.Id" selected="@(ViewBag.AssignedTo as int? == (int)u.Id)">@u.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Priority</label>
+                        <select name="priority" class="inp" onchange="this.form.submit()">
+                            <option value="">All</option>
+                            @foreach (var p in Enum.GetValues<TaskPriority>())
+                            {
+                                <option value="@p" selected="@(ViewBag.Priority as TaskPriority? == p)">@p</option>
+                            }
+                        </select>
+                    </div>
+                    <a asp-action="Board" asp-route-projectId="@project.Id" class="btn-ghost-pm"><i class="fas fa-rotate-left"></i> Clear</a>
+                </form>
+                @if (canContribute)
+                {
+                    <a asp-action="Create" asp-route-projectId="@project.Id" class="btn-pm"><i class="fas fa-plus"></i> New task</a>
+                }
+            </div>
+        </div>
+
+        @if (canContribute)
+        {
+            <p class="meta" style="margin-bottom:.75rem;">
+                <i class="fas fa-hand-pointer"></i>
+                Drag a card to move it. Dropping into <strong>Completed</strong> marks the task done and refreshes project progress.
+            </p>
+        }
+
+        <div class="kanban" id="pm-board" data-can-move="@canContribute.ToString().ToLower()">
+            @foreach (var column in Enum.GetValues<KanbanColumn>())
+            {
+                var cards = lanes.GetValueOrDefault(column, new List<ProjectTask>());
+                <div class="kcol" data-column="@column">
+                    <div class="kcol-head">
+                        <span>@LaneLabel(column)</span>
+                        <span class="n">@cards.Count</span>
+                    </div>
+                    <div class="kcol-body" data-dropzone="@column">
+                        @foreach (var t in cards)
+                        {
+                            <div class="kcard p-@t.Priority" draggable="@canContribute.ToString().ToLower()" data-task-id="@t.Id">
+                                <div class="kchips">
+                                    <span class="badge-pm b-@t.Priority.ToString().ToLower()">@t.Priority</span>
+                                    @if (t.IsOnCriticalPath) { <span class="badge-pm b-critical">Critical path</span> }
+                                    @if (t.Status == ProjectTaskStatus.Blocked) { <span class="badge-pm b-delayed">Blocked</span> }
+                                </div>
+                                <a asp-action="Details" asp-route-id="@t.Id" class="kt">@t.Name</a>
+                                @if (t.PercentComplete > 0)
+                                {
+                                    <div class="progress-pm thin" style="margin-bottom:.4rem;">
+                                        <span style="width:@t.PercentComplete%"></span>
+                                    </div>
+                                }
+                                <div class="kmeta">
+                                    <span>
+                                        @if (t.AssignedTo != null)
+                                        {
+                                            <span class="with-avatar">
+                                                <span class="avatar sm">@t.AssignedTo.FirstName.FirstOrDefault()@t.AssignedTo.LastName.FirstOrDefault()</span>
+                                                @t.AssignedTo.FirstName
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="chip muted">Unassigned</span>
+                                        }
+                                    </span>
+                                    <span class="@(t.IsOverdue ? "overdue" : "")">
+                                        @if (t.DueDate.HasValue)
+                                        {
+                                            <i class="far fa-calendar"></i> @t.DueDate.Value.ToString("d MMM")
+                                        }
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                        @if (cards.Count == 0)
+                        {
+                            <p class="meta" style="text-align:center; padding:1rem 0; font-size:.78rem;">Nothing here</p>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const board = document.getElementById('pm-board');
+            if (!board || board.dataset.canMove !== 'true') return;
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            let dragged = null;
+
+            board.addEventListener('dragstart', e => {
+                const card = e.target.closest('.kcard');
+                if (!card) return;
+                dragged = card;
+                card.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+                // Firefox needs data set for the drag to start at all.
+                e.dataTransfer.setData('text/plain', card.dataset.taskId);
+            });
+
+            board.addEventListener('dragend', e => {
+                e.target.closest('.kcard')?.classList.remove('dragging');
+                board.querySelectorAll('.kcol').forEach(c => c.classList.remove('drop-target'));
+                dragged = null;
+            });
+
+            board.addEventListener('dragover', e => {
+                const zone = e.target.closest('[data-dropzone]');
+                if (!zone || !dragged) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                board.querySelectorAll('.kcol').forEach(c => c.classList.remove('drop-target'));
+                zone.closest('.kcol').classList.add('drop-target');
+
+                // Insert a live preview at the position the pointer is over.
+                const after = cardAfterPointer(zone, e.clientY);
+                if (after == null) zone.appendChild(dragged);
+                else zone.insertBefore(dragged, after);
+            });
+
+            board.addEventListener('drop', async e => {
+                const zone = e.target.closest('[data-dropzone]');
+                if (!zone || !dragged) return;
+                e.preventDefault();
+                board.querySelectorAll('.kcol').forEach(c => c.classList.remove('drop-target'));
+
+                const card = dragged;
+                const column = zone.dataset.dropzone;
+                const position = [...zone.querySelectorAll('.kcard')].indexOf(card);
+
+                try {
+                    const body = new URLSearchParams({ taskId: card.dataset.taskId, column, position });
+                    const res = await fetch('@Url.Action("MoveCard")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'RequestVerificationToken': token || ''
+                        },
+                        body
+                    });
+                    const data = await res.json();
+                    if (!data.ok) {
+                        window.toastr ? toastr.error(data.message) : alert(data.message);
+                        location.reload();
+                        return;
+                    }
+                    refreshCounts();
+                    window.toastr && toastr.success('Moved. Project progress is now ' + data.progress + '%.');
+                } catch {
+                    window.toastr ? toastr.error('Could not save the move.') : alert('Could not save the move.');
+                    location.reload();
+                }
+            });
+
+            // Which card should the dragged one be inserted before, given the pointer's Y position?
+            function cardAfterPointer(zone, y) {
+                const cards = [...zone.querySelectorAll('.kcard:not(.dragging)')];
+                return cards.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = y - box.top - box.height / 2;
+                    return offset < 0 && offset > closest.offset ? { offset, element: child } : closest;
+                }, { offset: Number.NEGATIVE_INFINITY }).element || null;
+            }
+
+            function refreshCounts() {
+                board.querySelectorAll('.kcol').forEach(col => {
+                    col.querySelector('.kcol-head .n').textContent = col.querySelectorAll('.kcard').length;
+                });
+            }
+        })();
+    </script>
+    @Html.AntiForgeryToken()
+}

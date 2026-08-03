@@ -1,0 +1,86 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectActivityLog>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Audit trail — {project?.Reference}";
+    var page = (int)(ViewBag.Page ?? 1);
+    var pageSize = (int)(ViewBag.PageSize ?? 50);
+    var total = (int)(ViewBag.Total ?? 0);
+    var pages = (int)Math.Ceiling(total / (double)pageSize);
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-clock-rotate-left"></i> Audit trail</span>
+                <span class="meta">@total entr(ies) · every change is recorded permanently</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-clock-rotate-left"></i>
+                        <h3>Nothing recorded yet</h3>
+                        <p>Changes to this project will appear here as they happen.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>When</th><th>Who</th><th>Action</th><th>Record</th>
+                                <th>Field</th><th>Before</th><th>After</th><th>IP address</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in Model)
+                            {
+                                <tr>
+                                    <td class="meta" style="white-space:nowrap;">@a.At.ToString("d MMM yyyy HH:mm:ss")</td>
+                                    <td>
+                                        <span class="with-avatar">
+                                            <span class="avatar sm">@(a.User == null ? "SY" : $"{a.User.FirstName.FirstOrDefault()}{a.User.LastName.FirstOrDefault()}")</span>
+                                            <span>@(a.User == null ? "System" : $"{a.User.FirstName} {a.User.LastName}")</span>
+                                        </span>
+                                    </td>
+                                    <td><span class="chip">@a.Action</span></td>
+                                    <td class="meta">
+                                        @System.Text.RegularExpressions.Regex.Replace(a.EntityType, "(?<=[a-z])(?=[A-Z])", " ")
+                                        @if (a.EntityId.HasValue) { <span class="ref">#@a.EntityId</span> }
+                                        @if (!string.IsNullOrWhiteSpace(a.Summary))
+                                        {
+                                            <div style="font-size:.75rem;">@a.Summary</div>
+                                        }
+                                    </td>
+                                    <td class="meta">@(a.Field ?? "—")</td>
+                                    <td class="meta" style="max-width:180px; overflow:hidden; text-overflow:ellipsis;">@(a.OldValue ?? "—")</td>
+                                    <td class="meta" style="max-width:180px; overflow:hidden; text-overflow:ellipsis;">@(a.NewValue ?? "—")</td>
+                                    <td class="meta" style="font-family:ui-monospace, monospace; font-size:.72rem;">@(a.IpAddress ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        @if (pages > 1)
+        {
+            <div style="display:flex; gap:.4rem; justify-content:center; flex-wrap:wrap;">
+                @for (var i = 1; i <= pages && i <= 20; i++)
+                {
+                    <a asp-action="Activity" asp-route-id="@project!.Id" asp-route-page="@i"
+                       class="@(i == page ? "btn-pm" : "btn-ghost-pm") btn-sm">@i</a>
+                }
+            </div>
+        }
+
+    </div>
+</div>

@@ -1,0 +1,208 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<Project>
+@{
+    ViewData["Title"] = "Project Portfolio";
+    var spend = ViewBag.Spend as Dictionary<int, decimal> ?? new Dictionary<int, decimal>();
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var canCreate = ViewBag.CanCreate as bool? ?? false;
+    var curStatus = ViewBag.Status as ProjectStatus?;
+    var curCategory = ViewBag.Category as ProjectCategory?;
+    var curHealth = ViewBag.Health as ProjectHealth?;
+    var mine = ViewBag.Mine as bool? ?? false;
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-table-list"></i> Project Portfolio</h1>
+                    <p class="page-sub">Every project in the organisation, with its schedule and cost position</p>
+                </div>
+                <div class="head-actions">
+                    <a asp-controller="ProjectReports" asp-action="ExportPortfolioExcel" class="btn-ghost-pm">
+                        <i class="fas fa-file-excel"></i> Excel
+                    </a>
+                    <a asp-controller="ProjectReports" asp-action="ExportPortfolioCsv" class="btn-ghost-pm">
+                        <i class="fas fa-file-csv"></i> CSV
+                    </a>
+                    <a asp-action="Index" class="btn-outline-pm"><i class="fas fa-gauge-high"></i> Dashboard</a>
+                    @if (canCreate)
+                    {
+                        <a asp-action="Create" class="btn-pm"><i class="fas fa-plus-circle"></i> New project</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (TempData["Success"] != null)
+        {
+            <div class="card" style="border-left:3px solid var(--success);">
+                <div class="card-body" style="padding:.85rem 1.25rem; color:var(--success);">
+                    <i class="fas fa-circle-check"></i> @TempData["Success"]
+                </div>
+            </div>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <div class="card" style="border-left:3px solid var(--danger);">
+                <div class="card-body" style="padding:.85rem 1.25rem; color:var(--danger);">
+                    <i class="fas fa-circle-exclamation"></i> @TempData["Error"]
+                </div>
+            </div>
+        }
+
+        @* ── FILTERS ─────────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-filter"></i> Filter</span></div>
+            <div class="card-body">
+                <form method="get" class="toolbar">
+                    <div class="fg">
+                        <label class="lbl">Status</label>
+                        <select name="status" class="inp">
+                            <option value="">All</option>
+                            @foreach (var s in Enum.GetValues<ProjectStatus>())
+                            {
+                                <option value="@s" selected="@(curStatus == s)">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Category</label>
+                        <select name="category" class="inp">
+                            <option value="">All</option>
+                            @foreach (var c in Enum.GetValues<ProjectCategory>())
+                            {
+                                <option value="@c" selected="@(curCategory == c)">@c</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Health</label>
+                        <select name="health" class="inp">
+                            <option value="">All</option>
+                            @foreach (var h in Enum.GetValues<ProjectHealth>())
+                            {
+                                <option value="@h" selected="@(curHealth == h)">@h</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Manager</label>
+                        <select name="managerId" class="inp">
+                            <option value="">Anyone</option>
+                            @foreach (var u in users)
+                            {
+                                <option value="@u.Id" selected="@(ViewBag.ManagerId as int? == (int)u.Id)">@u.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg" style="flex:2; min-width:200px;">
+                        <label class="lbl">Search</label>
+                        <input type="text" name="q" value="@ViewBag.Q" class="inp" placeholder="Name, code, client…" />
+                    </div>
+                    <div class="fg">
+                        <label class="check">
+                            <input type="checkbox" name="mine" value="true" checked="@mine" /> Only mine
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-pm"><i class="fas fa-magnifying-glass"></i> Search</button>
+                    <a asp-action="Portfolio" class="btn-ghost-pm"><i class="fas fa-rotate-left"></i> Clear</a>
+                </form>
+            </div>
+        </div>
+
+        @* ── REGISTER ────────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Projects</span>
+                <span class="meta">@Model.Count project(s)</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-diagram-project"></i>
+                        <h3>No projects match</h3>
+                        <p>Adjust the filters, or create the first project.</p>
+                        @if (canCreate)
+                        {
+                            <a asp-action="Create" class="btn-pm"><i class="fas fa-plus-circle"></i> New project</a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Client / Department</th>
+                                <th>Manager</th>
+                                <th>Status</th>
+                                <th>Health</th>
+                                <th>Priority</th>
+                                <th style="min-width:130px;">Progress</th>
+                                <th class="num">Budget</th>
+                                <th class="num">Spent</th>
+                                <th>Dates</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model)
+                            {
+                                var spent = spend.GetValueOrDefault(p.Id);
+                                var usedPct = p.TotalBudget <= 0 ? 0 : (int)Math.Round(spent / p.TotalBudget * 100);
+                                var variance = p.ProgressPercent - p.SchedulePercentElapsed;
+                                <tr>
+                                    <td>
+                                        <a asp-action="Details" asp-route-id="@p.Id" class="ref">@p.Reference</a>
+                                        <div><a asp-action="Details" asp-route-id="@p.Id" class="strong-link">@p.Name</a></div>
+                                        <span class="meta" style="font-size:.7rem;">@p.Category · @p.Type</span>
+                                    </td>
+                                    <td class="meta">
+                                        @(p.Client ?? "—")
+                                        @if (p.Department != null) { <div style="font-size:.72rem;">@p.Department.Name</div> }
+                                    </td>
+                                    <td class="meta">
+                                        @(p.ProjectManager == null ? "—" : $"{p.ProjectManager.FirstName} {p.ProjectManager.LastName}")
+                                    </td>
+                                    <td><span class="badge-pm b-@p.Status.ToString().ToLower()">@p.Status</span></td>
+                                    <td><span class="health @p.Health"><i class="dot"></i>@p.Health</span></td>
+                                    <td><span class="badge-pm b-@p.Priority.ToString().ToLower()">@p.Priority</span></td>
+                                    <td>
+                                        <div class="progress-pm thin @(variance < -10 ? "red" : variance < 0 ? "amber" : "green")">
+                                            <span style="width:@p.ProgressPercent%"></span>
+                                        </div>
+                                        <span class="meta" style="font-size:.7rem;">@p.ProgressPercent% of @p.SchedulePercentElapsed%</span>
+                                    </td>
+                                    <td class="num money">@p.Currency @p.TotalBudget.ToString("N0")</td>
+                                    <td class="num money @(usedPct > 100 ? "neg" : "")">
+                                        @spent.ToString("N0")
+                                        <div class="meta" style="font-size:.7rem;">@usedPct%</div>
+                                    </td>
+                                    <td class="meta" style="font-size:.75rem; white-space:nowrap;">
+                                        @(p.StartDate?.ToString("d MMM yy") ?? "—")
+                                        <div class="@(p.IsOverdue ? "overdue" : "")">→ @(p.EndDate?.ToString("d MMM yy") ?? "—")</div>
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <div class="act-btns">
+                                            <a asp-action="Details" asp-route-id="@p.Id" class="act view" title="Open"><i class="fas fa-eye"></i></a>
+                                            <a asp-controller="ProjectTasks" asp-action="Board" asp-route-projectId="@p.Id" class="act edit" title="Board"><i class="fas fa-table-columns"></i></a>
+                                            <a asp-controller="ProjectReports" asp-action="StatusReport" asp-route-projectId="@p.Id" class="act ok" title="Status report"><i class="fas fa-file-lines"></i></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

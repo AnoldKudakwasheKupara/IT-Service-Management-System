@@ -1,0 +1,275 @@
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.Services.Pm
+@model ProjectMeeting
+@{
+    ViewData["Title"] = Model.Title;
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+    var isOrganiser = ViewBag.IsOrganiser as bool? ?? false;
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var extracted = ViewBag.Extracted as MinutesSummary;
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start; min-width:0;">
+                    <a asp-action="Meetings" asp-route-projectId="@Model.ProjectId" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div style="min-width:0;">
+                        <h1 class="page-title" style="font-size:1.4rem;"><i class="fas fa-users-rectangle"></i> @Model.Title</h1>
+                        <div class="page-sub" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                            <span class="chip"><i class="far fa-clock"></i> @Model.ScheduledAt.ToString("ddd d MMM yyyy, HH:mm")</span>
+                            @if (!string.IsNullOrWhiteSpace(Model.Location)) { <span class="chip"><i class="fas fa-location-dot"></i> @Model.Location</span> }
+                            <span class="badge-pm b-@(Model.Status == ProjectMeetingStatus.Completed ? "completed" : "planning")">@Model.Status</span>
+                            <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId" class="chip" style="text-decoration:none;">
+                                <i class="fas fa-diagram-project"></i> @Model.Project?.Name
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    @if (!string.IsNullOrWhiteSpace(Model.MeetingLink))
+                    {
+                        <a href="@Model.MeetingLink" target="_blank" rel="noopener" class="btn-pm"><i class="fas fa-video"></i> Join</a>
+                    }
+                    @if (canEdit || isOrganiser)
+                    {
+                        <form asp-action="DeleteMeeting" asp-route-id="@Model.Id" method="post" class="inline-form"
+                              onsubmit="return confirm('Remove this meeting and its minutes?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-danger-pm"><i class="fas fa-trash"></i> Delete</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        <div class="grid-2-1">
+            <div>
+                @if (!string.IsNullOrWhiteSpace(Model.Agenda))
+                {
+                    <div class="card">
+                        <div class="card-head"><span class="t"><i class="fas fa-list-ol"></i> Agenda</span></div>
+                        <div class="card-body">
+                            <div style="white-space:pre-wrap; color:var(--gray-700); line-height:1.7;">@Model.Agenda</div>
+                        </div>
+                    </div>
+                }
+
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-file-pen"></i> Minutes &amp; decisions</span></div>
+                    <div class="card-body">
+                        @if (canContribute)
+                        {
+                            <form asp-action="SaveMinutes" asp-route-id="@Model.Id" method="post">
+                                @Html.AntiForgeryToken()
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-file-lines"></i> Minutes</label>
+                                    <textarea name="minutes" class="inp" rows="10"
+                                              placeholder="What was discussed. Write commitments plainly — “Jane Moyo will circulate the report by Friday” — and they will be picked up as action items.">@Model.Minutes</textarea>
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-gavel"></i> Decisions</label>
+                                    <textarea name="decisions" class="inp" rows="3">@Model.Decisions</textarea>
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-chart-simple"></i> Status</label>
+                                    <select name="status" class="inp" style="width:auto;">
+                                        @foreach (var s in Enum.GetValues<ProjectMeetingStatus>())
+                                        {
+                                            <option value="@s" selected="@(Model.Status == s)">@s</option>
+                                        }
+                                    </select>
+                                    <span class="hint">Marking the meeting Completed notifies every invitee that the minutes are published.</span>
+                                </div>
+                                <button type="submit" class="btn-pm"><i class="fas fa-floppy-disk"></i> Save minutes</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <div style="white-space:pre-wrap; color:var(--gray-700); line-height:1.7;">
+                                @(string.IsNullOrWhiteSpace(Model.Minutes) ? "No minutes recorded yet." : Model.Minutes)
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(Model.Decisions))
+                            {
+                                <h4 style="margin-top:1.25rem; font-size:.9rem; color:var(--gray-700);">Decisions</h4>
+                                <div style="white-space:pre-wrap; color:var(--gray-700); line-height:1.7;">@Model.Decisions</div>
+                            }
+                        }
+                    </div>
+                </div>
+
+                @if (extracted != null && (extracted.ActionItems.Count > 0 || extracted.Decisions.Count > 0))
+                {
+                    <div class="card">
+                        <div class="card-head">
+                            <span class="t"><i class="fas fa-wand-magic-sparkles"></i> Extracted from the minutes</span>
+                            <span class="meta">Suggestions — nothing is saved until you add it</span>
+                        </div>
+                        <div class="card-body">
+                            @if (!string.IsNullOrWhiteSpace(extracted.Summary))
+                            {
+                                <div class="insight">
+                                    <h4><i class="fas fa-file-lines"></i> Summary</h4>
+                                    <p style="white-space:pre-line;">@extracted.Summary</p>
+                                </div>
+                            }
+                            @if (extracted.ActionItems.Count > 0)
+                            {
+                                <h4 style="font-size:.85rem; color:var(--gray-700); margin:.75rem 0 .5rem;">
+                                    Candidate action items (@extracted.ActionItems.Count)
+                                </h4>
+                                @foreach (var a in extracted.ActionItems)
+                                {
+                                    <div class="ci" style="display:flex; gap:.6rem; align-items:flex-start; padding:.5rem .7rem; border:1px solid var(--gray-200); border-radius:.55rem; margin-bottom:.4rem;">
+                                        <i class="fas fa-arrow-right meta" style="margin-top:.25rem;"></i>
+                                        <div style="flex:1; min-width:0;">
+                                            <div style="font-size:.85rem; color:var(--gray-800);">@a.Description</div>
+                                            <div class="meta" style="font-size:.72rem;">
+                                                @if (!string.IsNullOrWhiteSpace(a.SuggestedOwner)) { <text>Owner: @a.SuggestedOwner</text> }
+                                                @if (!string.IsNullOrWhiteSpace(a.SuggestedDue)) { <text> · Due: @a.SuggestedDue</text> }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                <p class="hint">
+                                    Sentences carrying a commitment verb were pulled out, with any name at the start read as the
+                                    owner. Copy the ones that matter into the action list on the right.
+                                </p>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-list-check"></i> Action items</span>
+                        <span class="meta">@Model.Actions.Count(a => !a.IsDone) open of @Model.Actions.Count</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="checklist">
+                            @foreach (var a in Model.Actions.OrderBy(x => x.IsDone).ThenBy(x => x.DueDate ?? DateTime.MaxValue))
+                            {
+                                <div class="ci @(a.IsDone ? "done" : "")">
+                                    @if (canContribute)
+                                    {
+                                        <form asp-action="ToggleAction" asp-route-id="@Model.Id" method="post" class="inline-form">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="actionId" value="@a.Id" />
+                                            <button type="submit" class="act @(a.IsDone ? "ok" : "view")" style="width:26px; height:26px;">
+                                                <i class="fas @(a.IsDone ? "fa-check-square" : "fa-square")"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    <div style="flex:1; min-width:0;">
+                                        <div>@a.Description</div>
+                                        <div class="meta" style="font-size:.72rem;">
+                                            @(a.Owner == null ? "Unassigned" : $"{a.Owner.FirstName} {a.Owner.LastName}")
+                                            @if (a.DueDate.HasValue)
+                                            {
+                                                <span class="@(!a.IsDone && a.DueDate < DateTime.Today ? "overdue" : "")"> · due @a.DueDate.Value.ToString("d MMM yyyy")</span>
+                                            }
+                                            @if (a.LinkedTaskId.HasValue)
+                                            {
+                                                <a asp-controller="ProjectTasks" asp-action="Details" asp-route-id="@a.LinkedTaskId" class="chip" style="text-decoration:none;">
+                                                    <i class="fas fa-list-check"></i> Task
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            @if (Model.Actions.Count == 0) { <p class="meta">No action items yet.</p> }
+                        </div>
+
+                        @if (canContribute)
+                        {
+                            <form asp-action="AddAction" asp-route-id="@Model.Id" method="post" style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--gray-200);">
+                                @Html.AntiForgeryToken()
+                                <div class="form-grid three">
+                                    <div class="fg full">
+                                        <label class="lbl"><i class="fas fa-plus"></i> Action</label>
+                                        <input name="Description" class="inp" required placeholder="What needs doing, and by whom" />
+                                    </div>
+                                    <div class="fg">
+                                        <label class="lbl">Owner</label>
+                                        <select name="OwnerId" class="inp">
+                                            <option value="">— Unassigned —</option>
+                                            @foreach (var u in users) { <option value="@u.Id">@u.Name</option> }
+                                        </select>
+                                    </div>
+                                    <div class="fg">
+                                        <label class="lbl">Due</label>
+                                        <input name="DueDate" type="date" class="inp" />
+                                    </div>
+                                    <div class="fg">
+                                        <label class="check">
+                                            <input type="checkbox" name="createTask" value="true" /> Also add to the task board
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-outline-pm btn-sm"><i class="fas fa-plus"></i> Add action</button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-users"></i> Attendance</span>
+                        <span class="meta">@Model.Attendees.Count(a => a.State == AttendanceState.Attended)/@Model.Attendees.Count</span>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var a in Model.Attendees)
+                        {
+                            <div style="display:flex; align-items:center; gap:.55rem; padding:.45rem 0; border-bottom:1px solid var(--gray-100);">
+                                <span class="avatar sm">@(a.User == null ? "?" : $"{a.User.FirstName.FirstOrDefault()}{a.User.LastName.FirstOrDefault()}")</span>
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-size:.84rem; color:var(--gray-800);">
+                                        @(a.User == null ? "—" : $"{a.User.FirstName} {a.User.LastName}")
+                                    </div>
+                                    <div class="meta" style="font-size:.72rem;">@a.State</div>
+                                </div>
+                                @if (canContribute)
+                                {
+                                    <form asp-action="SetAttendance" asp-route-id="@Model.Id" method="post" style="display:inline-flex; gap:.25rem;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="attendeeId" value="@a.Id" />
+                                        <select name="state" class="inp" style="width:auto; padding:.2rem .4rem; font-size:.72rem;"
+                                                onchange="this.form.submit()">
+                                            @foreach (var s in Enum.GetValues<AttendanceState>())
+                                            {
+                                                <option value="@s" selected="@(a.State == s)">@s</option>
+                                            }
+                                        </select>
+                                    </form>
+                                }
+                            </div>
+                        }
+                        @if (Model.Attendees.Count == 0) { <p class="meta">Nobody invited.</p> }
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
+                    <div class="card-body">
+                        <div class="dl">
+                            <div><div class="k">Organiser</div><div class="v">@(Model.Organiser == null ? "—" : $"{Model.Organiser.FirstName} {Model.Organiser.LastName}")</div></div>
+                            <div><div class="k">Duration</div><div class="v">@Model.DurationMinutes minutes</div></div>
+                            <div><div class="k">Created</div><div class="v">@Model.CreatedAt.ToString("d MMM yyyy")</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

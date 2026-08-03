@@ -1,0 +1,132 @@
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.Controllers
+@{
+    var project = ViewBag.Project as Project;
+    var anchor = (DateTime)(ViewBag.Anchor ?? DateTime.Today);
+    ViewData["Title"] = $"Calendar — {anchor:MMMM yyyy}";
+
+    var events = ViewBag.Events as Dictionary<DateTime, List<ProjectPlanController.CalendarEvent>>
+                 ?? new Dictionary<DateTime, List<ProjectPlanController.CalendarEvent>>();
+    var projects = ViewBag.Projects as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var projectId = ViewBag.ProjectId as int?;
+
+    // Weeks start on Monday.
+    var firstOfMonth = new DateTime(anchor.Year, anchor.Month, 1);
+    var gridStart = firstOfMonth.AddDays(-(((int)firstOfMonth.DayOfWeek + 6) % 7));
+    var daysInGrid = 42;
+
+    var colours = new Dictionary<string, (string Bg, string Fg, string Icon)>
+    {
+        ["task"] = ("#eef2f8", "#3d5a80", "fa-list-check"),
+        ["milestone"] = ("#f3f0ff", "#5b21b6", "fa-flag-checkered"),
+        ["meeting"] = ("#ecfeff", "#0e7490", "fa-users-rectangle"),
+        ["leave"] = ("#fdf3e1", "#9a5b00", "fa-plane-departure"),
+        ["late"] = ("#fdecea", "#b3261e", "fa-triangle-exclamation"),
+        ["done"] = ("#e9f6ee", "#1e6b45", "fa-circle-check")
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm wide">
+    <div class="page-container">
+
+        @if (project != null)
+        {
+            <partial name="_PmProjectHeader" />
+        }
+        else
+        {
+            <div class="page-header">
+                <div class="head-row">
+                    <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                        <a asp-controller="Projects" asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                        <div>
+                            <h1 class="page-title"><i class="fas fa-calendar-days"></i> Project Calendar</h1>
+                            <p class="page-sub">Deadlines, milestones, meetings and leave across the portfolio</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-body" style="display:flex; gap:.6rem; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <a asp-action="Calendar" asp-route-projectId="@projectId" asp-route-year="@anchor.AddMonths(-1).Year" asp-route-month="@anchor.AddMonths(-1).Month"
+                       class="btn-ghost-pm btn-sm"><i class="fas fa-chevron-left"></i></a>
+                    <strong style="font-size:1.1rem; color:var(--gray-800); min-width:170px; text-align:center;">@anchor.ToString("MMMM yyyy")</strong>
+                    <a asp-action="Calendar" asp-route-projectId="@projectId" asp-route-year="@anchor.AddMonths(1).Year" asp-route-month="@anchor.AddMonths(1).Month"
+                       class="btn-ghost-pm btn-sm"><i class="fas fa-chevron-right"></i></a>
+                    <a asp-action="Calendar" asp-route-projectId="@projectId" class="btn-ghost-pm btn-sm">Today</a>
+                </div>
+
+                <form method="get" style="display:inline-flex; gap:.4rem; align-items:center;">
+                    <input type="hidden" name="year" value="@anchor.Year" />
+                    <input type="hidden" name="month" value="@anchor.Month" />
+                    <select name="projectId" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                        <option value="">Whole portfolio</option>
+                        @foreach (var p in projects)
+                        {
+                            <option value="@p.Id" selected="@(projectId == (int)p.Id)">@p.Name</option>
+                        }
+                    </select>
+                </form>
+
+                <div style="display:flex; gap:.75rem; flex-wrap:wrap; font-size:.75rem; color:var(--gray-500);">
+                    @foreach (var kv in colours)
+                    {
+                        <span style="display:inline-flex; align-items:center; gap:.3rem;">
+                            <i class="fas @kv.Value.Icon" style="color:@kv.Value.Fg;"></i> @kv.Key
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body flush">
+                <div style="display:grid; grid-template-columns:repeat(7, 1fr); border-top:1px solid var(--gray-200);">
+                    @foreach (var day in new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" })
+                    {
+                        <div style="padding:.6rem; text-align:center; font-size:.72rem; font-weight:700; color:var(--gray-500);
+                                    text-transform:uppercase; letter-spacing:.04em; background:var(--gray-50); border-bottom:1px solid var(--gray-200);">
+                            @day
+                        </div>
+                    }
+
+                    @for (var i = 0; i < daysInGrid; i++)
+                    {
+                        var date = gridStart.AddDays(i);
+                        var inMonth = date.Month == anchor.Month;
+                        var isToday = date.Date == DateTime.Today;
+                        var dayEvents = events.GetValueOrDefault(date.Date, new List<ProjectPlanController.CalendarEvent>());
+
+                        <div style="min-height:110px; padding:.45rem; border-right:1px solid var(--gray-100); border-bottom:1px solid var(--gray-100);
+                                    background:@(isToday ? "var(--primary-surface)" : inMonth ? "white" : "var(--gray-50)"); overflow:hidden;">
+                            <div style="font-size:.78rem; font-weight:@(isToday ? "700" : "500");
+                                        color:@(isToday ? "var(--primary-dark)" : inMonth ? "var(--gray-700)" : "var(--gray-400)"); margin-bottom:.3rem;">
+                                @date.Day
+                            </div>
+                            @foreach (var e in dayEvents.Take(4))
+                            {
+                                var style = colours.GetValueOrDefault(e.Css, colours["task"]);
+                                <a href="@e.Url" title="@e.Kind: @e.Title@(e.Project == null ? "" : " · " + e.Project)"
+                                   style="display:block; background:@style.Bg; color:@style.Fg; border-radius:.35rem; padding:.15rem .35rem;
+                                          font-size:.68rem; margin-bottom:.2rem; text-decoration:none; white-space:nowrap;
+                                          overflow:hidden; text-overflow:ellipsis;">
+                                    <i class="fas @style.Icon"></i> @e.Title
+                                </a>
+                            }
+                            @if (dayEvents.Count > 4)
+                            {
+                                <span class="meta" style="font-size:.65rem;">+@(dayEvents.Count - 4) more</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

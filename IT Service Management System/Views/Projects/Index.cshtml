@@ -1,0 +1,493 @@
+@using IT_Service_Management_System.Models.Pm
+@model IT_Service_Management_System.ViewModels.Pm.PmDashboardVm
+@{
+    ViewData["Title"] = "Project Dashboard";
+    var canCreate = ViewBag.CanCreate as bool? ?? false;
+
+    // Status pie is drawn with a conic gradient, so the slices are computed here.
+    var statusColours = new Dictionary<string, string>
+    {
+        ["Draft"] = "#cbd5e1", ["Planning"] = "#818cf8", ["Approved"] = "#22d3ee",
+        ["Active"] = "#34d399", ["OnHold"] = "#fbbf24", ["Delayed"] = "#f87171",
+        ["Completed"] = "#059669", ["Cancelled"] = "#94a3b8", ["Archived"] = "#64748b"
+    };
+    var statusTotal = Model.StatusBreakdown.Values.Sum();
+    var slices = new List<string>();
+    double cursor = 0;
+    foreach (var kv in Model.StatusBreakdown.OrderByDescending(x => x.Value))
+    {
+        var share = statusTotal == 0 ? 0 : kv.Value * 100.0 / statusTotal;
+        var colour = statusColours.GetValueOrDefault(kv.Key, "#94a3b8");
+        slices.Add($"{colour} {cursor:0.##}% {cursor + share:0.##}%");
+        cursor += share;
+    }
+    var pieGradient = slices.Count > 0 ? string.Join(", ", slices) : "#e2e8f0 0% 100%";
+
+    var maxMonthly = Model.TasksCompletedByMonth.Count == 0 ? 1 : Math.Max(1, Model.TasksCompletedByMonth.Max(m => m.Value));
+    var maxBudget = Model.BudgetComparison.Count == 0 ? 1m : Math.Max(1m, Model.BudgetComparison.Max(b => b.Budget));
+    var maxDept = Model.DepartmentBreakdown.Count == 0 ? 1 : Math.Max(1, Model.DepartmentBreakdown.Values.Max());
+
+    var timelineFrom = Model.Timeline.Count > 0 ? Model.Timeline.Min(t => t.Start) : DateTime.Today;
+    var timelineTo = Model.Timeline.Count > 0 ? Model.Timeline.Max(t => t.End) : DateTime.Today.AddDays(90);
+    var timelineSpan = Math.Max(1, (timelineTo - timelineFrom).TotalDays);
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-diagram-project"></i> Project Management</h1>
+                    <p class="page-sub">Portfolio health, delivery progress and financial position across every project</p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Search" class="btn-ghost-pm"><i class="fas fa-magnifying-glass"></i> Ask a question</a>
+                    <a asp-controller="ProjectReports" asp-action="Index" class="btn-outline-pm"><i class="fas fa-chart-line"></i> Reports</a>
+                    <a asp-action="Portfolio" class="btn-outline-pm"><i class="fas fa-table-list"></i> Portfolio</a>
+                    @if (canCreate)
+                    {
+                        <a asp-action="Create" class="btn-pm"><i class="fas fa-plus-circle"></i> New project</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── HEADLINE FIGURES ─────────────────────────────────────────────── *@
+        <div class="stats">
+            <a asp-action="Portfolio" class="stat">
+                <div class="ic brand"><i class="fas fa-layer-group"></i></div>
+                <div><h3>@Model.TotalProjects</h3><p>Total projects</p></div>
+            </a>
+            <a asp-action="Portfolio" asp-route-status="@ProjectStatus.Active" class="stat">
+                <div class="ic green"><i class="fas fa-play"></i></div>
+                <div><h3>@Model.ActiveProjects</h3><p>Active</p></div>
+            </a>
+            <a asp-action="Portfolio" asp-route-status="@ProjectStatus.Completed" class="stat">
+                <div class="ic teal"><i class="fas fa-circle-check"></i></div>
+                <div><h3>@Model.CompletedProjects</h3><p>Completed</p></div>
+            </a>
+            <a asp-action="Portfolio" asp-route-status="@ProjectStatus.Delayed" class="stat">
+                <div class="ic red"><i class="fas fa-clock-rotate-left"></i></div>
+                <div><h3>@Model.DelayedProjects</h3><p>Delayed</p></div>
+            </a>
+            <div class="stat">
+                <div class="ic amber"><i class="fas fa-hourglass-half"></i></div>
+                <div>
+                    <h3>@Model.UpcomingDeadlines.Count</h3>
+                    <p>Deadlines in 45 days</p>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-sack-dollar"></i></div>
+                <div>
+                    <h3>@Model.BudgetUtilisationPercent%</h3>
+                    <p>Budget utilisation</p>
+                    <span class="sub">@Model.TotalSpent.ToString("N0") of @Model.TotalBudget.ToString("N0")</span>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="ic blue"><i class="fas fa-users-gear"></i></div>
+                <div>
+                    <h3>@Model.ResourceUtilisationPercent%</h3>
+                    <p>Resource utilisation</p>
+                    <span class="sub">@Model.AllocatedResources of @Model.TotalResources allocated</span>
+                </div>
+            </div>
+            <a asp-controller="ProjectReports" asp-action="RiskAndIssues" class="stat">
+                <div class="ic red"><i class="fas fa-triangle-exclamation"></i></div>
+                <div>
+                    <h3>@Model.RisksNeedingAttention</h3>
+                    <p>Risks needing attention</p>
+                    <span class="sub">@Model.OpenIssues open issue(s)</span>
+                </div>
+            </a>
+        </div>
+
+        @* ── SECOND ROW: WORK & GOVERNANCE ────────────────────────────────── *@
+        <div class="stats tight">
+            <div class="stat">
+                <div class="ic slate"><i class="fas fa-list-check"></i></div>
+                <div><h3>@Model.OpenTasks</h3><p>Open tasks</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic red"><i class="fas fa-calendar-xmark"></i></div>
+                <div><h3>@Model.OverdueTasks</h3><p>Overdue tasks</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic green"><i class="fas fa-check-double"></i></div>
+                <div><h3>@Model.TasksCompletedThisMonth</h3><p>Done this month</p></div>
+            </div>
+            <a asp-controller="ProjectApprovals" asp-action="Index" class="stat">
+                <div class="ic amber"><i class="fas fa-stamp"></i></div>
+                <div><h3>@Model.PendingApprovals</h3><p>Pending approvals</p></div>
+            </a>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-flag-checkered"></i></div>
+                <div><h3>@Model.OverdueMilestones</h3><p>Overdue milestones</p></div>
+            </div>
+            <a asp-controller="ProjectTime" asp-action="Report" class="stat">
+                <div class="ic teal"><i class="fas fa-stopwatch"></i></div>
+                <div><h3>@Model.HoursLoggedThisMonth.ToString("N0")</h3><p>Hours this month</p></div>
+            </a>
+        </div>
+
+        @* ── CHARTS ROW 1 ─────────────────────────────────────────────────── *@
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-chart-pie"></i> Projects by status</span></div>
+                <div class="card-body">
+                    @if (statusTotal == 0)
+                    {
+                        <div class="empty"><i class="fas fa-chart-pie"></i><h3>No projects yet</h3></div>
+                    }
+                    else
+                    {
+                        <div class="donut-wrap">
+                            <div class="donut" style="background: conic-gradient(@pieGradient);">
+                                <div class="mid"><b>@statusTotal</b><small>projects</small></div>
+                            </div>
+                            <div class="legend" style="flex:1;">
+                                @foreach (var kv in Model.StatusBreakdown.OrderByDescending(x => x.Value))
+                                {
+                                    <div class="li">
+                                        <span class="sw" style="background:@statusColours.GetValueOrDefault(kv.Key, "#94a3b8")"></span>
+                                        @kv.Key <b>@kv.Value</b>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <span class="t"><i class="fas fa-scale-balanced"></i> Budget vs spend</span>
+                    <span class="meta">Largest active projects</span>
+                </div>
+                <div class="card-body">
+                    @if (Model.BudgetComparison.Count == 0)
+                    {
+                        <div class="empty"><i class="fas fa-sack-dollar"></i><h3>No budgets set</h3></div>
+                    }
+                    else
+                    {
+                        <div class="hbars">
+                            @foreach (var b in Model.BudgetComparison)
+                            {
+                                var pct = (int)Math.Min(100, b.Budget <= 0 ? 0 : b.Spent / b.Budget * 100);
+                                <div class="hbar">
+                                    <span class="nm" title="@b.Name">@b.Name</span>
+                                    <span class="track">
+                                        <i class="@(b.IsOverBudget ? "over" : pct > 85 ? "warn" : "ok")" style="width:@pct%"></i>
+                                    </span>
+                                    <span class="vl">@b.Spent.ToString("N0") / @b.Budget.ToString("N0")</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── CHARTS ROW 2 ─────────────────────────────────────────────────── *@
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-chart-column"></i> Tasks completed by month</span></div>
+                <div class="card-body">
+                    <div class="bars">
+                        @foreach (var m in Model.TasksCompletedByMonth)
+                        {
+                            <div class="b" title="@m.Label: @m.Value completed">
+                                <span class="val">@(m.Value > 0 ? m.Value.ToString() : "")</span>
+                                <span class="fill" style="height:@(Math.Max(2, m.Value * 100 / maxMonthly))%"></span>
+                                <span class="cap">@m.Label</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-building"></i> Projects by department</span></div>
+                <div class="card-body">
+                    @if (Model.DepartmentBreakdown.Count == 0)
+                    {
+                        <div class="empty"><i class="fas fa-building"></i><h3>Nothing to show</h3></div>
+                    }
+                    else
+                    {
+                        <div class="hbars">
+                            @foreach (var kv in Model.DepartmentBreakdown)
+                            {
+                                <div class="hbar">
+                                    <span class="nm" title="@kv.Key">@kv.Key</span>
+                                    <span class="track"><i style="width:@(kv.Value * 100 / maxDept)%"></i></span>
+                                    <span class="vl">@kv.Value</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── RESOURCE WORKLOAD ────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-users-gear"></i> Resource workload — next 4 weeks</span>
+                <a asp-controller="ProjectResources" asp-action="Capacity" class="btn-ghost-pm btn-sm">
+                    <i class="fas fa-sliders"></i> Capacity planning
+                </a>
+            </div>
+            <div class="card-body">
+                @if (Model.ResourceWorkload.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-users-gear"></i>
+                        <h3>No resources allocated</h3>
+                        <p>Add people and equipment to the resource pool, then book them onto projects.</p>
+                        <a asp-controller="ProjectResources" asp-action="Index" class="btn-outline-pm">Open the resource pool</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="hbars">
+                        @foreach (var r in Model.ResourceWorkload.Take(10))
+                        {
+                            <div class="hbar">
+                                <span class="nm" title="@r.Name">@r.Name</span>
+                                <span class="track">
+                                    <i class="@(r.IsOverallocated ? "over" : r.UtilisationPercent > 85 ? "warn" : "ok")"
+                                       style="width:@Math.Min(100, r.UtilisationPercent)%"></i>
+                                </span>
+                                <span class="vl">
+                                    @r.UtilisationPercent%
+                                    <span style="color:var(--gray-400);">· @r.AllocatedHours.ToString("N0")/@r.CapacityHours.ToString("N0") h</span>
+                                </span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ── PORTFOLIO TIMELINE ───────────────────────────────────────────── *@
+        @if (Model.Timeline.Count > 0)
+        {
+            <div class="card">
+                <div class="card-head">
+                    <span class="t"><i class="fas fa-chart-gantt"></i> Portfolio timeline</span>
+                    <span class="meta">@timelineFrom.ToString("MMM yyyy") – @timelineTo.ToString("MMM yyyy")</span>
+                </div>
+                <div class="card-body flush">
+                    <div class="gantt-scroll">
+                        <div class="gantt-grid">
+                            @foreach (var t in Model.Timeline)
+                            {
+                                var left = (t.Start - timelineFrom).TotalDays / timelineSpan * 100;
+                                var width = Math.Max(1.5, (t.End - t.Start).TotalDays / timelineSpan * 100);
+                                var cls = t.Health == ProjectHealth.Red ? "critical"
+                                        : t.Status == ProjectStatus.Completed ? "done" : "";
+                                <div class="gantt-row">
+                                    <div class="gantt-label">
+                                        <span class="health @t.Health" style="padding:.1rem .4rem;"><i class="dot"></i></span>
+                                        <a asp-action="Details" asp-route-id="@t.ProjectId" title="@t.Name">@t.Name</a>
+                                    </div>
+                                    <div class="gantt-track">
+                                        <div class="gantt-bar @cls" style="left:@left.ToString("0.##")%; width:@width.ToString("0.##")%;"
+                                             title="@t.Start.ToString("d MMM yyyy") – @t.End.ToString("d MMM yyyy") · @t.ProgressPercent% complete">
+                                            <span class="fill" style="width:@t.ProgressPercent%"></span>
+                                            <span class="lbl">@t.ProgressPercent%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @* ── HEALTH BOARD ─────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-heart-pulse"></i> Project health</span>
+                <span class="meta">
+                    <span class="health Green"><i class="dot"></i>@Model.HealthyProjects</span>
+                    <span class="health Amber"><i class="dot"></i>@Model.AtRiskProjects</span>
+                    <span class="health Red"><i class="dot"></i>@Model.UnhealthyProjects</span>
+                </span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.HealthBoard.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-diagram-project"></i>
+                        <h3>No open projects</h3>
+                        <p>Create a project to start tracking delivery.</p>
+                        @if (canCreate)
+                        {
+                            <a asp-action="Create" class="btn-pm"><i class="fas fa-plus-circle"></i> New project</a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Manager</th>
+                                <th>Status</th>
+                                <th>Health</th>
+                                <th style="min-width:150px;">Progress vs schedule</th>
+                                <th class="num">Budget used</th>
+                                <th class="num">Risks</th>
+                                <th class="num">Issues</th>
+                                <th>Due</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Model.HealthBoard)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-action="Details" asp-route-id="@row.ProjectId" class="ref">@row.Reference</a>
+                                        <div><a asp-action="Details" asp-route-id="@row.ProjectId" class="strong-link">@row.Name</a></div>
+                                    </td>
+                                    <td class="meta">@(row.Manager ?? "—")</td>
+                                    <td><span class="badge-pm b-@row.Status.ToString().ToLower()">@row.Status</span></td>
+                                    <td><span class="health @row.Health"><i class="dot"></i>@row.Health</span></td>
+                                    <td>
+                                        <div class="progress-pm thin @(row.ScheduleVariancePercent < -10 ? "red" : row.ScheduleVariancePercent < 0 ? "amber" : "green")">
+                                            <span style="width:@row.ProgressPercent%"></span>
+                                        </div>
+                                        <span class="meta" style="font-size:.7rem;">
+                                            @row.ProgressPercent% done · @row.SchedulePercentElapsed% elapsed
+                                            @if (row.ScheduleVariancePercent < 0)
+                                            {
+                                                <span class="overdue">(@row.ScheduleVariancePercent pts behind)</span>
+                                            }
+                                        </span>
+                                    </td>
+                                    <td class="num">
+                                        <span class="@(row.BudgetUsedPercent > 100 ? "overdue" : "")">@row.BudgetUsedPercent%</span>
+                                    </td>
+                                    <td class="num">@row.OpenRisks</td>
+                                    <td class="num">@row.OpenIssues</td>
+                                    <td class="meta @(row.EndDate < DateTime.Today ? "overdue" : "")">
+                                        @(row.EndDate?.ToString("d MMM yyyy") ?? "—")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        @* ── PANELS ───────────────────────────────────────────────────────── *@
+        <div class="grid-3">
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-hourglass-half"></i> Upcoming deadlines</span></div>
+                <div class="card-body">
+                    @if (Model.UpcomingDeadlines.Count == 0 && Model.UpcomingMilestones.Count == 0)
+                    {
+                        <p class="meta">Nothing due in the next 45 days.</p>
+                    }
+                    <div class="feed">
+                        @foreach (var p in Model.UpcomingDeadlines)
+                        {
+                            <div class="it">
+                                <span class="dot"><i class="fas fa-diagram-project"></i></span>
+                                <div class="bd">
+                                    <div class="ln"><a asp-action="Details" asp-route-id="@p.Id" class="strong-link">@p.Name</a></div>
+                                    <div class="tm">Project ends @p.EndDate?.ToString("d MMM yyyy") · @p.DaysRemaining day(s)</div>
+                                </div>
+                            </div>
+                        }
+                        @foreach (var m in Model.UpcomingMilestones)
+                        {
+                            <div class="it">
+                                <span class="dot"><i class="fas fa-flag-checkered"></i></span>
+                                <div class="bd">
+                                    <div class="ln">
+                                        <a asp-controller="ProjectPlan" asp-action="Milestones" asp-route-projectId="@m.ProjectId" class="strong-link">@m.Name</a>
+                                    </div>
+                                    <div class="tm @(m.IsOverdue ? "overdue" : "")">
+                                        @m.Project?.Name · @m.DueDate.ToString("d MMM yyyy")
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head">
+                    <span class="t"><i class="fas fa-triangle-exclamation"></i> Top risks</span>
+                    <a asp-controller="ProjectReports" asp-action="RiskAndIssues" class="meta">View all</a>
+                </div>
+                <div class="card-body">
+                    @if (Model.TopRisks.Count == 0)
+                    {
+                        <p class="meta">No open risks across the portfolio.</p>
+                    }
+                    <div class="feed">
+                        @foreach (var r in Model.TopRisks)
+                        {
+                            <div class="it">
+                                <span class="dot" style="background:@(r.Score >= 15 ? "#fdecea" : r.Score >= 10 ? "#fdf3e1" : "#f1f5f9"); color:@(r.Score >= 15 ? "#b3261e" : r.Score >= 10 ? "#9a5b00" : "#64748b");">
+                                    @r.Score
+                                </span>
+                                <div class="bd">
+                                    <div class="ln">
+                                        <a asp-controller="ProjectRegisters" asp-action="Risks" asp-route-projectId="@r.ProjectId" class="strong-link">@r.Title</a>
+                                    </div>
+                                    <div class="tm">
+                                        @r.Project?.Name · @r.Band
+                                        @if (r.Owner != null) { <text>· @r.Owner.FirstName @r.Owner.LastName</text> }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-clock-rotate-left"></i> Recent activity</span></div>
+                <div class="card-body">
+                    @if (Model.RecentActivity.Count == 0)
+                    {
+                        <p class="meta">No recorded activity yet.</p>
+                    }
+                    <div class="feed">
+                        @foreach (var a in Model.RecentActivity)
+                        {
+                            <div class="it">
+                                <span class="dot">
+                                    @(a.User == null ? "?" : $"{a.User.FirstName.FirstOrDefault()}{a.User.LastName.FirstOrDefault()}")
+                                </span>
+                                <div class="bd">
+                                    <div class="ln">
+                                        <strong>@(a.User == null ? "System" : $"{a.User.FirstName} {a.User.LastName}")</strong>
+                                        @a.Action.ToLower() @a.EntityType.Replace("Project", "").ToLower()
+                                        @if (!string.IsNullOrWhiteSpace(a.Summary)) { <text>— @a.Summary</text> }
+                                    </div>
+                                    <div class="tm">@(a.Project?.Name ?? "Portfolio") · @a.At.ToString("d MMM, HH:mm")</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

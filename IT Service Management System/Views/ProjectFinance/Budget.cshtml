@@ -1,0 +1,273 @@
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.Services.Pm
+@model Project
+@{
+    ViewData["Title"] = $"Budget — {Model.Reference}";
+    var lines = ViewBag.Lines as List<BudgetLine> ?? new List<BudgetLine>();
+    var expensesByLine = ViewBag.ExpensesByLine as Dictionary<int, decimal> ?? new Dictionary<int, decimal>();
+    var phases = ViewBag.Phases as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var forecast = ViewBag.Forecast as BudgetForecast ?? new BudgetForecast();
+    var canManage = ViewBag.CanManageMoney as bool? ?? false;
+
+    var totalPlanned = (decimal)(ViewBag.TotalPlanned ?? 0m);
+    var totalActual = (decimal)(ViewBag.TotalActual ?? 0m);
+    var totalCommitted = (decimal)(ViewBag.TotalCommitted ?? 0m);
+    var unallocated = (decimal)(ViewBag.Unallocated ?? 0m);
+    var usedPct = Model.TotalBudget <= 0 ? 0 : (int)Math.Round(totalActual / Model.TotalBudget * 100);
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div style="display:flex; gap:.5rem; margin-bottom:1rem; flex-wrap:wrap;">
+            <a asp-action="Budget" asp-route-projectId="@Model.Id" class="btn-pm btn-sm"><i class="fas fa-sack-dollar"></i> Budget</a>
+            <a asp-action="Expenses" asp-route-projectId="@Model.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-receipt"></i> Expenses</a>
+            <a asp-action="Procurement" asp-route-projectId="@Model.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-cart-shopping"></i> Procurement</a>
+            <a asp-action="Assets" asp-route-projectId="@Model.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-laptop"></i> Assets</a>
+        </div>
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-sack-dollar"></i></div><div><h3>@Model.TotalBudget.ToString("N0")</h3><p>Total budget</p><span class="sub">@Model.Currency</span></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-money-bill-wave"></i></div><div><h3>@totalActual.ToString("N0")</h3><p>Actual spend</p><span class="sub">@usedPct% used</span></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-file-signature"></i></div><div><h3>@totalCommitted.ToString("N0")</h3><p>Committed</p></div></div>
+            <div class="stat">
+                <div class="ic @(Model.TotalBudget - totalActual < 0 ? "red" : "green")"><i class="fas fa-piggy-bank"></i></div>
+                <div><h3>@((Model.TotalBudget - totalActual).ToString("N0"))</h3><p>Remaining</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-chart-line"></i></div>
+                <div>
+                    <h3>@forecast.Forecast.ToString("N0")</h3>
+                    <p>Forecast outturn</p>
+                    <span class="sub">@forecast.OverrunRiskLevel overrun risk</span>
+                </div>
+            </div>
+            <div class="stat"><div class="ic teal"><i class="fas fa-user-clock"></i></div><div><h3>@(((decimal)(ViewBag.LabourCost ?? 0m)).ToString("N0"))</h3><p>Labour cost</p></div></div>
+        </div>
+
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-scale-balanced"></i> Budget vs actual</span></div>
+                <div class="card-body">
+                    <div class="hbars">
+                        <div class="hbar">
+                            <span class="nm">Actual spend</span>
+                            <span class="track"><i class="@(usedPct > 100 ? "over" : usedPct > 85 ? "warn" : "ok")" style="width:@Math.Min(100, usedPct)%"></i></span>
+                            <span class="vl">@totalActual.ToString("N0") / @Model.TotalBudget.ToString("N0")</span>
+                        </div>
+                        @{
+                            var committedPct = Model.TotalBudget <= 0 ? 0 : (int)Math.Min(100, (totalActual + totalCommitted) / Model.TotalBudget * 100);
+                        }
+                        <div class="hbar">
+                            <span class="nm">Spend + committed</span>
+                            <span class="track"><i class="@(committedPct > 100 ? "over" : "warn")" style="width:@committedPct%"></i></span>
+                            <span class="vl">@((totalActual + totalCommitted).ToString("N0"))</span>
+                        </div>
+                        @{
+                            var forecastPct = Model.TotalBudget <= 0 ? 0 : (int)Math.Min(100, forecast.Forecast / Model.TotalBudget * 100);
+                        }
+                        <div class="hbar">
+                            <span class="nm">Forecast outturn</span>
+                            <span class="track"><i class="@(forecast.Forecast > Model.TotalBudget ? "over" : "ok")" style="width:@forecastPct%"></i></span>
+                            <span class="vl">@forecast.Forecast.ToString("N0")</span>
+                        </div>
+                    </div>
+                    <div class="insight @(forecast.OverrunRiskLevel == "High" ? "bad" : forecast.OverrunRiskLevel == "Medium" ? "warn" : "")" style="margin-top:1.25rem;">
+                        <h4><i class="fas fa-chart-line"></i> Forecast basis</h4>
+                        <p>@forecast.Basis</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-chart-pie"></i> Planned spend by category</span></div>
+                <div class="card-body">
+                    @if (lines.Count == 0)
+                    {
+                        <div class="empty"><i class="fas fa-chart-pie"></i><h3>No budget lines yet</h3></div>
+                    }
+                    else
+                    {
+                        var byCategory = lines.GroupBy(l => l.Category)
+                            .Select(g => new { Category = g.Key, Planned = g.Sum(x => x.PlannedAmount), Actual = g.Sum(x => x.ActualAmount) })
+                            .OrderByDescending(x => x.Planned).ToList();
+                        var maxCat = byCategory.Count == 0 ? 1m : Math.Max(1m, byCategory.Max(c => c.Planned));
+
+                        <div class="hbars">
+                            @foreach (var c in byCategory)
+                            {
+                                <div class="hbar">
+                                    <span class="nm">@System.Text.RegularExpressions.Regex.Replace(c.Category.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</span>
+                                    <span class="track">
+                                        <i class="@(c.Actual > c.Planned ? "over" : "ok")" style="width:@((int)(c.Planned / maxCat * 100))%"></i>
+                                    </span>
+                                    <span class="vl">@c.Actual.ToString("N0") / @c.Planned.ToString("N0")</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (unallocated != 0)
+                    {
+                        <p class="hint" style="margin-top:1rem;">
+                            <i class="fas fa-circle-info"></i>
+                            @(unallocated > 0
+                                ? $"{unallocated:N2} of the approved budget is not yet broken into lines."
+                                : $"Budget lines exceed the approved budget by {-unallocated:N2}.")
+                        </p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Budget lines</span>
+                @if (canManage)
+                {
+                    <button type="button" class="btn-pm btn-sm" onclick="pmToggle('bl-form')"><i class="fas fa-plus"></i> Add line</button>
+                }
+            </div>
+            <div class="card-body">
+                @if (canManage)
+                {
+                    <form asp-action="SaveBudgetLine" method="post" id="bl-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ProjectId" value="@Model.Id" />
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> Line name</label>
+                                <input name="Name" class="inp" required placeholder="e.g. Contractor labour — phase 2" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-shapes"></i> Category</label>
+                                <select name="Category" class="inp">
+                                    @foreach (var c in Enum.GetValues<CostCategory>())
+                                    {
+                                        <option value="@c">@System.Text.RegularExpressions.Regex.Replace(c.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</option>
+                                    }
+                                </select>
+                            </div>
+                            @if (phases.Any())
+                            {
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-layer-group"></i> Phase</label>
+                                    <select name="PhaseId" class="inp">
+                                        <option value="">— None —</option>
+                                        @foreach (var p in phases) { <option value="@p.Id">@p.Name</option> }
+                                    </select>
+                                </div>
+                            }
+                            <div class="fg"><label class="lbl">Planned</label><input name="PlannedAmount" type="number" step="0.01" min="0" value="0" class="inp" /></div>
+                            <div class="fg"><label class="lbl">Actual</label><input name="ActualAmount" type="number" step="0.01" min="0" value="0" class="inp" /></div>
+                            <div class="fg"><label class="lbl">Forecast</label><input name="ForecastAmount" type="number" step="0.01" min="0" value="0" class="inp" /></div>
+                            <div class="fg"><label class="lbl">Committed</label><input name="CommittedAmount" type="number" step="0.01" min="0" value="0" class="inp" /></div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-note-sticky"></i> Notes</label>
+                                <input name="Notes" class="inp" />
+                            </div>
+                        </div>
+                        <p class="hint" style="margin-bottom:.6rem;">
+                            Approved expenses linked to a line, and paid purchase orders, are added to its actual amount automatically.
+                        </p>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Save line</button>
+                    </form>
+                }
+
+                @if (lines.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-sack-dollar"></i>
+                        <h3>No budget breakdown</h3>
+                        <p>Break the approved budget into lines so spend can be tracked per category.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Line</th><th>Category</th><th>Phase</th>
+                                <th class="num">Planned</th><th class="num">Actual</th><th class="num">Committed</th>
+                                <th class="num">Forecast</th><th class="num">Variance</th><th style="min-width:100px;">Used</th>
+                                @if (canManage) { <th></th> }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var l in lines)
+                            {
+                                var linkedExpenses = expensesByLine.GetValueOrDefault(l.Id);
+                                <tr>
+                                    <td>
+                                        <strong style="color:var(--gray-800);">@l.Name</strong>
+                                        @if (linkedExpenses > 0)
+                                        {
+                                            <div class="meta" style="font-size:.72rem;">includes @linkedExpenses.ToString("N2") in approved claims</div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(l.Notes))
+                                        {
+                                            <div class="meta" style="font-size:.75rem;">@l.Notes</div>
+                                        }
+                                    </td>
+                                    <td class="meta">@System.Text.RegularExpressions.Regex.Replace(l.Category.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</td>
+                                    <td class="meta">@(l.Phase?.Name ?? "—")</td>
+                                    <td class="num money">@l.PlannedAmount.ToString("N2")</td>
+                                    <td class="num money">@l.ActualAmount.ToString("N2")</td>
+                                    <td class="num money">@l.CommittedAmount.ToString("N2")</td>
+                                    <td class="num money">@l.ForecastAmount.ToString("N2")</td>
+                                    <td class="num money @(l.Variance < 0 ? "neg" : "pos")">@l.Variance.ToString("N2")</td>
+                                    <td>
+                                        <div class="progress-pm thin @(l.UtilisationPercent > 100 ? "red" : l.UtilisationPercent > 85 ? "amber" : "green")">
+                                            <span style="width:@Math.Min(100, l.UtilisationPercent)%"></span>
+                                        </div>
+                                        <span class="meta" style="font-size:.7rem;">@l.UtilisationPercent%</span>
+                                    </td>
+                                    @if (canManage)
+                                    {
+                                        <td style="text-align:right;">
+                                            <form asp-action="DeleteBudgetLine" method="post" class="inline-form"
+                                                  onsubmit="return confirm('Remove this budget line? Linked expenses become unattributed.');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="projectId" value="@Model.Id" />
+                                                <input type="hidden" name="lineId" value="@l.Id" />
+                                                <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:var(--gray-50); font-weight:700;">
+                                <td colspan="3">Total</td>
+                                <td class="num money">@totalPlanned.ToString("N2")</td>
+                                <td class="num money">@lines.Sum(l => l.ActualAmount).ToString("N2")</td>
+                                <td class="num money">@lines.Sum(l => l.CommittedAmount).ToString("N2")</td>
+                                <td class="num money">@(((decimal)(ViewBag.TotalForecast ?? 0m)).ToString("N2"))</td>
+                                <td class="num money">@((totalPlanned - lines.Sum(l => l.ActualAmount)).ToString("N2"))</td>
+                                <td colspan="@(canManage ? 2 : 1)"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

@@ -1,0 +1,190 @@
+@using IT_Service_Management_System.Models.Pm
+@model ProjectDocument
+@{
+    ViewData["Title"] = Model.Title;
+    var versions = ViewBag.Versions as List<ProjectDocumentVersion> ?? new List<ProjectDocumentVersion>();
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start; min-width:0;">
+                    <a asp-action="Index" asp-route-projectId="@Model.ProjectId" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div style="min-width:0;">
+                        <h1 class="page-title" style="font-size:1.4rem;"><i class="fas fa-file"></i> @Model.Title</h1>
+                        <div class="page-sub" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:center;">
+                            <span class="chip">v@Model.CurrentVersion</span>
+                            <span class="badge-pm b-@(Model.Status == ProjectDocumentStatus.Approved ? "completed" : Model.Status == ProjectDocumentStatus.Rejected ? "rejected" : "draft")">@Model.Status</span>
+                            <a asp-controller="Projects" asp-action="Details" asp-route-id="@Model.ProjectId" class="chip" style="text-decoration:none;">
+                                <i class="fas fa-diagram-project"></i> @Model.Project?.Name
+                            </a>
+                            @if (Model.VisibleToClient) { <span class="chip"><i class="fas fa-eye"></i> Client-visible</span> }
+                        </div>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    @if (!string.IsNullOrWhiteSpace(Model.StoredPath))
+                    {
+                        <a href="@Model.StoredPath" target="_blank" rel="noopener" class="btn-pm"><i class="fas fa-download"></i> Download</a>
+                    }
+                    @if (canEdit)
+                    {
+                        <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="inline-form"
+                              onsubmit="return confirm('Delete this document? It is soft-deleted and recoverable by an administrator.');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-danger-pm"><i class="fas fa-trash"></i> Delete</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        @if (Model.IsCheckedOut)
+        {
+            <div class="insight warn">
+                <h4><i class="fas fa-lock"></i> Checked out</h4>
+                <p>
+                    @(Model.CheckedOutBy == null ? "Someone" : $"{Model.CheckedOutBy.FirstName} {Model.CheckedOutBy.LastName}")
+                    took this document out on @Model.CheckedOutAt?.ToString("d MMM yyyy 'at' HH:mm").
+                    Nobody else can upload a new version until it is checked back in.
+                </p>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Details</span></div>
+            <div class="card-body">
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <p style="color:var(--gray-700); line-height:1.6; margin-bottom:1.25rem;">@Model.Description</p>
+                }
+                <div class="dl">
+                    <div><div class="k">Type</div><div class="v">@System.Text.RegularExpressions.Regex.Replace(Model.Type.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</div></div>
+                    <div><div class="k">Category</div><div class="v">@(Model.Category ?? "—")</div></div>
+                    <div><div class="k">File</div><div class="v">@(Model.FileName ?? "—")</div></div>
+                    <div><div class="k">Size</div><div class="v">@((Model.SizeBytes / 1024.0).ToString("N0")) KB</div></div>
+                    <div><div class="k">Uploaded by</div><div class="v">@(Model.UploadedBy == null ? "—" : $"{Model.UploadedBy.FirstName} {Model.UploadedBy.LastName}")</div></div>
+                    <div><div class="k">Created</div><div class="v">@Model.CreatedAt.ToString("d MMM yyyy")</div></div>
+                    <div><div class="k">Last updated</div><div class="v">@((Model.UpdatedAt ?? Model.CreatedAt).ToString("d MMM yyyy"))</div></div>
+                    <div>
+                        <div class="k">Approved</div>
+                        <div class="v">
+                            @if (Model.ApprovedAt.HasValue)
+                            {
+                                <text>@Model.ApprovedAt.Value.ToString("d MMM yyyy")</text>
+                                @if (Model.ApprovedBy != null) { <text> by @Model.ApprovedBy.FirstName @Model.ApprovedBy.LastName</text> }
+                            }
+                            else { <text>Not approved</text> }
+                        </div>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Tags))
+                {
+                    <div style="margin-top:1rem;">
+                        @foreach (var tag in Model.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            <span class="chip">@tag.Trim()</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (canContribute)
+        {
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-code-branch"></i> Version control</span></div>
+                <div class="card-body">
+                    @if (!Model.IsCheckedOut)
+                    {
+                        <form asp-action="CheckOut" asp-route-id="@Model.Id" method="post" style="margin-bottom:1rem;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-outline-pm btn-sm"><i class="fas fa-lock-open"></i> Check out for editing</button>
+                            <span class="hint" style="margin-left:.6rem;">Stops anyone else uploading over your changes.</span>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-action="CheckIn" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data">
+                            @Html.AntiForgeryToken()
+                            <div class="form-grid">
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-file-arrow-up"></i> New version (optional)</label>
+                                    <input type="file" name="file" class="inp" />
+                                    <span class="hint">Leave empty to release the check-out without a new file.</span>
+                                </div>
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-note-sticky"></i> What changed</label>
+                                    <input name="changeNote" class="inp" placeholder="e.g. Updated section 4 pricing" />
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-pm btn-sm"><i class="fas fa-lock"></i> Check in</button>
+                        </form>
+                    }
+
+                    @if (Model.Status is ProjectDocumentStatus.Draft or ProjectDocumentStatus.Rejected)
+                    {
+                        <form asp-action="SubmitForApproval" asp-route-id="@Model.Id" method="post" style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--gray-200);">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-pm btn-sm"><i class="fas fa-paper-plane"></i> Submit for approval</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-clock-rotate-left"></i> Version history</span>
+                <span class="meta">@(versions.Count + 1) version(s)</span>
+            </div>
+            <div class="card-body flush">
+                <table class="tbl">
+                    <thead><tr><th>Version</th><th>File</th><th class="num">Size</th><th>Uploaded by</th><th>When</th><th>Change note</th><th></th></tr></thead>
+                    <tbody>
+                        <tr style="background:#e9f6ee;">
+                            <td><strong>v@Model.CurrentVersion</strong> <span class="badge-pm b-closed">Current</span></td>
+                            <td class="meta">@Model.FileName</td>
+                            <td class="num meta">@((Model.SizeBytes / 1024.0).ToString("N0")) KB</td>
+                            <td class="meta">@(Model.UploadedBy == null ? "—" : $"{Model.UploadedBy.FirstName} {Model.UploadedBy.LastName}")</td>
+                            <td class="meta">@((Model.UpdatedAt ?? Model.CreatedAt).ToString("d MMM yy HH:mm"))</td>
+                            <td class="meta">—</td>
+                            <td style="text-align:right;">
+                                @if (!string.IsNullOrWhiteSpace(Model.StoredPath))
+                                {
+                                    <a href="@Model.StoredPath" target="_blank" rel="noopener" class="act ok"><i class="fas fa-download"></i></a>
+                                }
+                            </td>
+                        </tr>
+                        @foreach (var v in versions)
+                        {
+                            <tr>
+                                <td>v@v.VersionNumber</td>
+                                <td class="meta">@v.FileName</td>
+                                <td class="num meta">@((v.SizeBytes / 1024.0).ToString("N0")) KB</td>
+                                <td class="meta">@(v.UploadedBy == null ? "—" : $"{v.UploadedBy.FirstName} {v.UploadedBy.LastName}")</td>
+                                <td class="meta">@v.UploadedAt.ToString("d MMM yy HH:mm")</td>
+                                <td class="meta" style="font-size:.78rem;">@(v.ChangeNote ?? "—")</td>
+                                <td style="text-align:right;">
+                                    @if (!string.IsNullOrWhiteSpace(v.StoredPath))
+                                    {
+                                        <a href="@v.StoredPath" target="_blank" rel="noopener" class="act view"><i class="fas fa-download"></i></a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>

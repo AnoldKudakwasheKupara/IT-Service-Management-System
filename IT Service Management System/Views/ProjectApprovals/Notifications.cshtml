@@ -1,0 +1,115 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<PmNotification>
+@{
+    ViewData["Title"] = "Project Notifications";
+    var unreadOnly = ViewBag.UnreadOnly as bool? ?? false;
+    var unread = (int)(ViewBag.UnreadCount ?? 0);
+
+    string Icon(PmNotificationType t) => t switch
+    {
+        PmNotificationType.TaskAssigned => "fa-list-check",
+        PmNotificationType.DeadlineApproaching or PmNotificationType.TaskOverdue => "fa-clock",
+        PmNotificationType.BudgetExceeded => "fa-sack-dollar",
+        PmNotificationType.RiskRaised => "fa-triangle-exclamation",
+        PmNotificationType.IssueRaised => "fa-circle-exclamation",
+        PmNotificationType.ApprovalPending or PmNotificationType.ApprovalDecided => "fa-stamp",
+        PmNotificationType.MilestoneAchieved => "fa-flag-checkered",
+        PmNotificationType.Mention => "fa-at",
+        PmNotificationType.Comment => "fa-comment",
+        _ => "fa-bell"
+    };
+    string Colour(PmNotificationType t) => t switch
+    {
+        PmNotificationType.BudgetExceeded or PmNotificationType.RiskRaised
+            or PmNotificationType.IssueRaised or PmNotificationType.TaskOverdue => "#b3261e",
+        PmNotificationType.MilestoneAchieved => "#1e6b45",
+        PmNotificationType.ApprovalPending => "#9a5b00",
+        _ => "var(--primary-dark)"
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-bell"></i> Project Notifications</h1>
+                        <p class="page-sub">@unread unread of the last @Model.Count</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Notifications" asp-route-unreadOnly="@(!unreadOnly)" class="btn-ghost-pm">
+                        <i class="fas fa-filter"></i> @(unreadOnly ? "Show all" : "Unread only")
+                    </a>
+                    @if (unread > 0)
+                    {
+                        <form asp-action="MarkAllRead" method="post" class="inline-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-outline-pm"><i class="fas fa-check-double"></i> Mark all read</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        <div class="card">
+            <div class="card-body">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-bell-slash"></i>
+                        <h3>Nothing here</h3>
+                        <p>You are notified about task assignments, approvals, risks, budget breaches and mentions.</p>
+                    </div>
+                }
+                <div class="feed">
+                    @foreach (var n in Model)
+                    {
+                        <div class="it" style="@(n.IsRead ? "opacity:.65;" : "")">
+                            <span class="dot" style="color:@Colour(n.Type);"><i class="fas @Icon(n.Type)"></i></span>
+                            <div class="bd">
+                                <div class="ln">
+                                    <strong>@n.Title</strong>
+                                    @if (!n.IsRead) { <span class="badge-pm b-pending" style="margin-left:.35rem;">New</span> }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(n.Message))
+                                {
+                                    <div class="meta" style="font-size:.82rem; margin-top:.15rem;">@n.Message</div>
+                                }
+                                <div class="tm">
+                                    @n.CreatedAt.ToString("d MMM yyyy, HH:mm")
+                                    @if (n.Project != null) { <text> · @n.Project.Name</text> }
+                                </div>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(n.Url))
+                            {
+                                <form asp-action="MarkRead" method="post" class="inline-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@n.Id" />
+                                    <input type="hidden" name="url" value="@n.Url" />
+                                    <button type="submit" class="act view" title="Open"><i class="fas fa-arrow-right"></i></button>
+                                </form>
+                            }
+                            else if (!n.IsRead)
+                            {
+                                <form asp-action="MarkRead" method="post" class="inline-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@n.Id" />
+                                    <button type="submit" class="act ok" title="Mark read"><i class="fas fa-check"></i></button>
+                                </form>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,166 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectTemplate>
+@{
+    ViewData["Title"] = "Project Templates";
+    var itemCounts = ViewBag.ItemCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var usageCounts = ViewBag.UsageCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var canManage = ViewBag.CanManage as bool? ?? false;
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-clone"></i> Project Templates</h1>
+                        <p class="page-sub">Reusable blueprints — phases, tasks and milestones, dated from the project start</p>
+                    </div>
+                </div>
+                @if (canManage)
+                {
+                    <div class="head-actions">
+                        <button type="button" class="btn-pm" onclick="pmToggle('tpl-form')"><i class="fas fa-plus-circle"></i> New template</button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        @if (canManage)
+        {
+            <div class="card" id="tpl-form" style="display:none;">
+                <div class="card-head"><span class="t"><i class="fas fa-plus"></i> New template</span></div>
+                <div class="card-body">
+                    <form asp-action="SaveTemplate" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> Name</label>
+                                <input name="Name" class="inp" required />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-align-left"></i> Description</label>
+                                <textarea name="Description" class="inp" rows="2"></textarea>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Category</label>
+                                <select name="Category" class="inp">
+                                    @foreach (var c in Enum.GetValues<ProjectCategory>())
+                                    {
+                                        <option value="@c">@System.Text.RegularExpressions.Regex.Replace(c.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Type</label>
+                                <select name="Type" class="inp">
+                                    @foreach (var t in Enum.GetValues<ProjectType>()) { <option value="@t">@t</option> }
+                                </select>
+                            </div>
+                            <div class="fg"><label class="lbl">Default duration (days)</label><input name="DefaultDurationDays" type="number" min="1" value="90" class="inp" /></div>
+                            <div class="fg"><label class="lbl">Default budget</label><input name="DefaultBudget" type="number" step="0.01" min="0" value="0" class="inp" /></div>
+                            <div class="fg"><label class="check"><input type="checkbox" name="IsActive" value="true" checked /> Active</label></div>
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Create template</button>
+                    </form>
+
+                    <hr style="margin:1.5rem 0; border:none; border-top:1px solid var(--gray-200);" />
+
+                    <h4 style="font-size:.9rem; color:var(--gray-700); margin-bottom:.6rem;">
+                        <i class="fas fa-camera"></i> Or capture a live project's plan as a template
+                    </h4>
+                    <form asp-action="TemplateFromProject" method="post" style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:flex-end;">
+                        @Html.AntiForgeryToken()
+                        <div class="fg" style="flex:1; min-width:200px; margin-bottom:0;">
+                            <label class="lbl">Project id</label>
+                            <input name="projectId" type="number" class="inp" required placeholder="Numeric project id" />
+                            <span class="hint">Copies its phases, tasks and milestones as day offsets from the project start.</span>
+                        </div>
+                        <div class="fg" style="flex:1; min-width:200px; margin-bottom:0;">
+                            <label class="lbl">New template name</label>
+                            <input name="name" class="inp" required />
+                        </div>
+                        <button type="submit" class="btn-outline-pm btn-sm"><i class="fas fa-camera"></i> Capture</button>
+                    </form>
+                </div>
+            </div>
+        }
+
+        <div class="grid-2">
+            @foreach (var t in Model)
+            {
+                <div class="card" style="@(t.IsActive ? "" : "opacity:.6;")">
+                    <div class="card-head">
+                        <span class="t">
+                            <i class="fas fa-clone"></i>
+                            <a asp-action="TemplateDetails" asp-route-id="@t.Id" class="strong-link">@t.Name</a>
+                        </span>
+                        <div style="display:flex; gap:.4rem; align-items:center;">
+                            @if (t.IsSystem) { <span class="chip">Built-in</span> }
+                            @if (!t.IsActive) { <span class="badge-pm b-cancelled">Inactive</span> }
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <p class="meta" style="margin-bottom:1rem; line-height:1.55;">@t.Description</p>
+                        <div class="dl">
+                            <div><div class="k">Category</div><div class="v">@System.Text.RegularExpressions.Regex.Replace(t.Category.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</div></div>
+                            <div><div class="k">Type</div><div class="v">@t.Type</div></div>
+                            <div><div class="k">Duration</div><div class="v">@t.DefaultDurationDays days</div></div>
+                            <div><div class="k">Items</div><div class="v">@itemCounts.GetValueOrDefault(t.Id)</div></div>
+                            <div><div class="k">Used on</div><div class="v">@usageCounts.GetValueOrDefault(t.Id) project(s)</div></div>
+                        </div>
+                        <div style="display:flex; gap:.5rem; margin-top:1rem;">
+                            <a asp-action="TemplateDetails" asp-route-id="@t.Id" class="btn-outline-pm btn-sm">
+                                <i class="fas fa-list"></i> View items
+                            </a>
+                            <a asp-controller="Projects" asp-action="Create" class="btn-ghost-pm btn-sm">
+                                <i class="fas fa-plus"></i> Start a project
+                            </a>
+                            @if (canManage && !t.IsSystem)
+                            {
+                                <form asp-action="DeleteTemplate" method="post" class="inline-form"
+                                      onsubmit="return confirm('Remove this template?');" style="margin-left:auto;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@t.Id" />
+                                    <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (Model.Count == 0)
+        {
+            <div class="card">
+                <div class="card-body">
+                    <div class="empty">
+                        <i class="fas fa-clone"></i>
+                        <h3>No templates</h3>
+                        <p>Templates pre-populate a new project's plan the moment it is created.</p>
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

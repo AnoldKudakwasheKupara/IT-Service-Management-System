@@ -1,0 +1,247 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectExpense>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Expenses — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var canApproveSpend = ViewBag.CanApproveSpend as bool? ?? false;
+    var budgetLines = ViewBag.BudgetLines as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var tasks = ViewBag.Tasks as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    string Cls(ExpenseStatus s) => s switch
+    {
+        ExpenseStatus.Approved or ExpenseStatus.Reimbursed => "completed",
+        ExpenseStatus.Rejected => "rejected",
+        ExpenseStatus.Submitted => "pending",
+        _ => "draft"
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div style="display:flex; gap:.5rem; margin-bottom:1rem; flex-wrap:wrap;">
+            <a asp-action="Budget" asp-route-projectId="@project!.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-sack-dollar"></i> Budget</a>
+            <a asp-action="Expenses" asp-route-projectId="@project.Id" class="btn-pm btn-sm"><i class="fas fa-receipt"></i> Expenses</a>
+            <a asp-action="Procurement" asp-route-projectId="@project.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-cart-shopping"></i> Procurement</a>
+            <a asp-action="Assets" asp-route-projectId="@project.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-laptop"></i> Assets</a>
+        </div>
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-receipt"></i></div><div><h3>@Model.Count</h3><p>Claims</p></div></div>
+            <div class="stat">
+                <div class="ic green"><i class="fas fa-circle-check"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalApproved ?? 0m)).ToString("N0"))</h3><p>Approved</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic amber"><i class="fas fa-hourglass-half"></i></div>
+                <div><h3>@(((decimal)(ViewBag.TotalPending ?? 0m)).ToString("N0"))</h3><p>Awaiting approval</p><span class="sub">@ViewBag.PendingCount claim(s)</span></div>
+            </div>
+            <div class="stat"><div class="ic teal"><i class="fas fa-hand-holding-dollar"></i></div><div><h3>@Model.Count(e => e.Status == ExpenseStatus.Reimbursed)</h3><p>Reimbursed</p></div></div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Expense claims</span>
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <form method="get" style="display:inline-flex; gap:.4rem;">
+                        <input type="hidden" name="projectId" value="@project.Id" />
+                        <select name="status" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                            <option value="">All statuses</option>
+                            @foreach (var s in Enum.GetValues<ExpenseStatus>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Status as ExpenseStatus? == s)">@s</option>
+                            }
+                        </select>
+                        <select name="category" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                            <option value="">All categories</option>
+                            @foreach (var c in Enum.GetValues<CostCategory>())
+                            {
+                                <option value="@c" selected="@(ViewBag.Category as CostCategory? == c)">
+                                    @System.Text.RegularExpressions.Regex.Replace(c.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                                </option>
+                            }
+                        </select>
+                    </form>
+                    @if (canContribute)
+                    {
+                        <button type="button" class="btn-pm btn-sm" onclick="pmToggle('exp-form')"><i class="fas fa-plus"></i> New claim</button>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                @if (canContribute)
+                {
+                    <form asp-action="SaveExpense" method="post" enctype="multipart/form-data" id="exp-form"
+                          style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ProjectId" value="@project.Id" />
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> Description</label>
+                                <input name="Description" class="inp" required placeholder="e.g. Return flight to the Bulawayo site" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-shapes"></i> Category</label>
+                                <select name="Category" class="inp">
+                                    @foreach (var c in Enum.GetValues<CostCategory>())
+                                    {
+                                        <option value="@c">@System.Text.RegularExpressions.Regex.Replace(c.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-coins"></i> Amount (@project.Currency)</label>
+                                <input name="Amount" type="number" step="0.01" min="0.01" class="inp" required />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="far fa-calendar"></i> Date</label>
+                                <input name="ExpenseDate" type="date" class="inp" required
+                                       value="@DateTime.Today.ToString("yyyy-MM-dd")" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-store"></i> Supplier</label>
+                                <input name="Supplier" class="inp" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-hashtag"></i> Receipt reference</label>
+                                <input name="ReceiptReference" class="inp" />
+                            </div>
+                            @if (budgetLines.Any())
+                            {
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-sack-dollar"></i> Budget line</label>
+                                    <select name="BudgetLineId" class="inp">
+                                        <option value="">— Unattributed —</option>
+                                        @foreach (var l in budgetLines) { <option value="@l.Id">@l.Name</option> }
+                                    </select>
+                                </div>
+                            }
+                            @if (tasks.Any())
+                            {
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-list-check"></i> Task</label>
+                                    <select name="TaskId" class="inp">
+                                        <option value="">— None —</option>
+                                        @foreach (var t in tasks) { <option value="@t.Id">@t.Name</option> }
+                                    </select>
+                                </div>
+                            }
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-image"></i> Receipt</label>
+                                <input type="file" name="receipt" class="inp" />
+                                <span class="hint">Photo or PDF, up to 25 MB. Scanned for malware before it is stored.</span>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Save as draft</button>
+                    </form>
+                }
+
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-receipt"></i>
+                        <h3>No expense claims</h3>
+                        <p>Travel, accommodation, fuel, meals and equipment costs are claimed here.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Ref</th><th>Expense</th><th>Category</th><th>Date</th>
+                                <th class="num">Amount</th><th>Submitted by</th><th>Status</th><th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var e in Model)
+                            {
+                                <tr>
+                                    <td class="ref">@e.Reference</td>
+                                    <td>
+                                        <strong style="color:var(--gray-800);">@e.Description</strong>
+                                        @if (!string.IsNullOrWhiteSpace(e.Supplier)) { <div class="meta" style="font-size:.75rem;">@e.Supplier</div> }
+                                        @if (e.BudgetLine != null) { <span class="chip">@e.BudgetLine.Name</span> }
+                                        @if (!string.IsNullOrWhiteSpace(e.ReceiptPath))
+                                        {
+                                            <a href="@e.ReceiptPath" target="_blank" rel="noopener" class="chip" style="text-decoration:none;">
+                                                <i class="fas fa-paperclip"></i> Receipt
+                                            </a>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(e.DecisionNote))
+                                        {
+                                            <div class="meta" style="font-size:.75rem;"><i class="fas fa-comment"></i> @e.DecisionNote</div>
+                                        }
+                                    </td>
+                                    <td class="meta">@System.Text.RegularExpressions.Regex.Replace(e.Category.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</td>
+                                    <td class="meta">@e.ExpenseDate.ToString("d MMM yy")</td>
+                                    <td class="num money">@e.Currency @e.Amount.ToString("N2")</td>
+                                    <td class="meta">@(e.SubmittedBy == null ? "—" : $"{e.SubmittedBy.FirstName} {e.SubmittedBy.LastName}")</td>
+                                    <td><span class="badge-pm b-@Cls(e.Status)">@e.Status</span></td>
+                                    <td style="text-align:right;">
+                                        <div class="act-btns">
+                                            @if (canContribute && e.Status == ExpenseStatus.Draft)
+                                            {
+                                                <form asp-action="SubmitExpense" method="post" class="inline-form">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="expenseId" value="@e.Id" />
+                                                    <button type="submit" class="act edit" title="Submit for approval"><i class="fas fa-paper-plane"></i></button>
+                                                </form>
+                                            }
+                                            @if (canApproveSpend && e.Status == ExpenseStatus.Approved)
+                                            {
+                                                <form asp-action="MarkReimbursed" method="post" class="inline-form">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="expenseId" value="@e.Id" />
+                                                    <button type="submit" class="act ok" title="Mark reimbursed"><i class="fas fa-hand-holding-dollar"></i></button>
+                                                </form>
+                                            }
+                                            @if (e.Status is ExpenseStatus.Draft or ExpenseStatus.Rejected or ExpenseStatus.Submitted)
+                                            {
+                                                <form asp-action="DeleteExpense" method="post" class="inline-form"
+                                                      onsubmit="return confirm('Remove this expense claim?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="expenseId" value="@e.Id" />
+                                                    <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <p class="hint">
+            <i class="fas fa-circle-info"></i>
+            Submitting a claim opens an approval chain — the project manager first, then finance, and an
+            executive for anything at or above @IT_Service_Management_System.Services.Pm.ProjectApprovalService.ExecutiveThreshold.ToString("N0").
+            Decisions are made in the <a asp-controller="ProjectApprovals" asp-action="Index">approvals inbox</a>.
+        </p>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

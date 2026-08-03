@@ -1,0 +1,294 @@
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.Services.Pm
+@model List<ProjectRisk>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Risk register — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var matrix = ViewBag.Matrix as int[,] ?? new int[5, 5];
+    var predictions = ViewBag.Predictions as List<RiskPrediction> ?? new List<RiskPrediction>();
+
+    string CellClass(int score) => score switch { >= 15 => "s-crit", >= 10 => "s-high", >= 5 => "s-med", _ => "s-low" };
+    string BandClass(string band) => band switch { "Critical" => "critical", "High" => "high", "Medium" => "medium", _ => "low" };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-triangle-exclamation"></i></div><div><h3>@ViewBag.OpenCount</h3><p>Open risks</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-fire"></i></div><div><h3>@ViewBag.CriticalCount</h3><p>Score 15+</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@Model.Count(r => r.Status == PmRiskStatus.Closed)</h3><p>Closed</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-bolt"></i></div><div><h3>@Model.Count(r => r.Status == PmRiskStatus.Realised)</h3><p>Materialised</p></div></div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-piggy-bank"></i></div>
+                <div><h3>@(((decimal)(ViewBag.Contingency ?? 0m)).ToString("N0"))</h3><p>Contingency held</p></div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            @* ── HEAT MAP ────────────────────────────────────────────────── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-table-cells"></i> Risk matrix</span><span class="meta">Open risks only</span></div>
+                <div class="card-body">
+                    <div class="matrix">
+                        <div class="axis"></div>
+                        @for (var p = 1; p <= 5; p++)
+                        {
+                            <div class="axis">P@p</div>
+                        }
+                        @for (var impact = 5; impact >= 1; impact--)
+                        {
+                            <div class="axis">I@impact</div>
+                            @for (var prob = 1; prob <= 5; prob++)
+                            {
+                                var count = matrix[impact - 1, prob - 1];
+                                var score = impact * prob;
+                                <div class="cell @CellClass(score) @(count == 0 ? "empty" : "")"
+                                     title="Probability @prob × impact @impact = @score · @count risk(s)">@count</div>
+                            }
+                        }
+                    </div>
+                    <p class="hint" style="margin-top:.75rem;">
+                        Rows are impact (5 at the top), columns are probability. The number in each cell is
+                        how many open risks sit there.
+                    </p>
+                </div>
+            </div>
+
+            @* ── PREDICTIONS ─────────────────────────────────────────────── *@
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-wand-magic-sparkles"></i> Risks this project is likely to face</span></div>
+                <div class="card-body">
+                    @if (predictions.Count == 0)
+                    {
+                        <p class="meta">Nothing flagged — schedule, budget, resourcing and blocked work all look healthy.</p>
+                    }
+                    @foreach (var p in predictions)
+                    {
+                        <div class="insight @(p.Likelihood == "High" ? "bad" : "warn")">
+                            <h4>@p.Title <span class="badge-pm b-@(p.Likelihood == "High" ? "critical" : "high")">@p.Likelihood</span></h4>
+                            <p>@p.Evidence</p>
+                            <div class="why"><i class="fas fa-lightbulb"></i> @p.SuggestedMitigation</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── REGISTER ────────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Risk register</span>
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <form method="get" style="display:inline-flex; gap:.4rem;">
+                        <input type="hidden" name="projectId" value="@project!.Id" />
+                        <select name="status" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                            <option value="">All statuses</option>
+                            @foreach (var s in Enum.GetValues<PmRiskStatus>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Status as PmRiskStatus? == s)">@s</option>
+                            }
+                        </select>
+                        <select name="band" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                            <option value="">All bands</option>
+                            @foreach (var b in new[] { "Critical", "High", "Medium", "Low" })
+                            {
+                                <option value="@b" selected="@((ViewBag.Band as string) == b)">@b</option>
+                            }
+                        </select>
+                    </form>
+                    @if (canContribute)
+                    {
+                        <button type="button" class="btn-pm btn-sm" onclick="pmToggle('risk-form')"><i class="fas fa-plus"></i> New risk</button>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                @if (canContribute)
+                {
+                    <form asp-action="SaveRisk" method="post" id="risk-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ProjectId" value="@project.Id" />
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> Risk</label>
+                                <input name="Title" class="inp" required placeholder="e.g. Key supplier misses the delivery window" />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-align-left"></i> Description</label>
+                                <textarea name="Description" class="inp" rows="2"></textarea>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-dice"></i> Probability (1–5)</label>
+                                <select name="Probability" class="inp">
+                                    @for (var i = 1; i <= 5; i++)
+                                    {
+                                        <option value="@i" selected="@(i == 3)">@i</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-explosion"></i> Impact (1–5)</label>
+                                <select name="Impact" class="inp">
+                                    @for (var i = 1; i <= 5; i++)
+                                    {
+                                        <option value="@i" selected="@(i == 3)">@i</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-user"></i> Owner</label>
+                                <select name="OwnerId" class="inp">
+                                    <option value="">— None —</option>
+                                    @foreach (var u in users) { <option value="@u.Id">@u.Name</option> }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-tag"></i> Category</label>
+                                <input name="Category" class="inp" placeholder="e.g. Supplier, Technical, Financial" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-shield"></i> Response strategy</label>
+                                <select name="Response" class="inp">
+                                    @foreach (var r in Enum.GetValues<RiskResponse>())
+                                    {
+                                        <option value="@r" selected="@(r == RiskResponse.Mitigate)">@r</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-piggy-bank"></i> Contingency held</label>
+                                <input name="ContingencyAmount" type="number" step="0.01" min="0" value="0" class="inp" />
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-shield-halved"></i> Mitigation</label>
+                                <textarea name="Mitigation" class="inp" rows="2" placeholder="What reduces the probability or impact?"></textarea>
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-clipboard-list"></i> Response plan</label>
+                                <textarea name="ResponsePlan" class="inp" rows="2"></textarea>
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-life-ring"></i> Contingency plan</label>
+                                <textarea name="ContingencyPlan" class="inp" rows="2" placeholder="What we do if it happens anyway."></textarea>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="far fa-calendar"></i> Next review</label>
+                                <input name="ReviewDate" type="date" class="inp" />
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Save risk</button>
+                    </form>
+                }
+
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-shield-halved"></i>
+                        <h3>No risks recorded</h3>
+                        <p>A register that stays empty is usually a register nobody is using.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Ref</th><th>Risk</th><th class="num">P × I</th><th>Band</th>
+                                <th>Owner</th><th>Response</th><th>Status</th><th>Review</th><th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model)
+                            {
+                                <tr>
+                                    <td class="ref">@r.Reference</td>
+                                    <td>
+                                        <strong style="color:var(--gray-800);">@r.Title</strong>
+                                        @if (!string.IsNullOrWhiteSpace(r.Category)) { <span class="chip">@r.Category</span> }
+                                        @if (!string.IsNullOrWhiteSpace(r.Mitigation))
+                                        {
+                                            <div class="meta" style="font-size:.75rem; margin-top:.2rem;">
+                                                <i class="fas fa-shield-halved"></i> @r.Mitigation
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="num">
+                                        <span class="badge-pm b-@BandClass(r.Band)">@r.Probability × @r.Impact = @r.Score</span>
+                                    </td>
+                                    <td><span class="badge-pm b-@BandClass(r.Band)">@r.Band</span></td>
+                                    <td class="meta">@(r.Owner == null ? "—" : $"{r.Owner.FirstName} {r.Owner.LastName}")</td>
+                                    <td class="meta">@r.Response</td>
+                                    <td><span class="badge-pm b-@(r.Status == PmRiskStatus.Closed ? "closed" : r.Status == PmRiskStatus.Realised ? "rejected" : "open")">@r.Status</span></td>
+                                    <td class="meta @(r.ReviewDate < DateTime.Today && r.Status != PmRiskStatus.Closed ? "overdue" : "")">
+                                        @(r.ReviewDate?.ToString("d MMM yy") ?? "—")
+                                    </td>
+                                    <td style="text-align:right;">
+                                        <div class="act-btns" style="align-items:center;">
+                                            @if (canContribute)
+                                            {
+                                                <form asp-action="SetRiskStatus" method="post" style="display:inline-flex; gap:.3rem;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="riskId" value="@r.Id" />
+                                                    <select name="status" class="inp" style="width:auto; padding:.25rem .45rem; font-size:.75rem;">
+                                                        @foreach (var s in Enum.GetValues<PmRiskStatus>())
+                                                        {
+                                                            <option value="@s" selected="@(r.Status == s)">@s</option>
+                                                        }
+                                                    </select>
+                                                    <button type="submit" class="act ok" title="Update"><i class="fas fa-check"></i></button>
+                                                </form>
+                                                @if (r.Status != PmRiskStatus.Realised && r.Status != PmRiskStatus.Closed)
+                                                {
+                                                    <form asp-action="EscalateRiskToIssue" method="post" class="inline-form"
+                                                          onsubmit="return confirm('This risk has materialised — raise it as an issue?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="projectId" value="@project.Id" />
+                                                        <input type="hidden" name="riskId" value="@r.Id" />
+                                                        <button type="submit" class="act edit" title="Escalate to an issue"><i class="fas fa-bolt"></i></button>
+                                                    </form>
+                                                }
+                                            }
+                                            @if (canEdit)
+                                            {
+                                                <form asp-action="DeleteRisk" method="post" class="inline-form"
+                                                      onsubmit="return confirm('Remove this risk from the register?');">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                                    <input type="hidden" name="riskId" value="@r.Id" />
+                                                    <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                                </form>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

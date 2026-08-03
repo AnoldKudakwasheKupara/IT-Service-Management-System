@@ -1,0 +1,143 @@
+@using IT_Service_Management_System.Models.Pm
+@model Resource
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "New Resource" : $"Edit {Model.Name}";
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var departments = ViewBag.Departments as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a href="@(isNew ? Url.Action("Index") : Url.Action("Details", new { id = Model.Id }))" class="btn-back">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-users-gear"></i> @(isNew ? "Add resource" : "Edit resource")</h1>
+                        <p class="page-sub">Anything a project consumes capacity from — a person, a vehicle, a licence, a room</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        <form asp-action="@(isNew ? "Create" : "Edit")" method="post">
+            @Html.AntiForgeryToken()
+            @if (!isNew) { <input type="hidden" asp-for="Id" /> }
+            <div asp-validation-summary="ModelOnly" class="field-error" style="margin-bottom:1rem;"></div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-circle-info"></i> Identity</span></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg full">
+                            <label class="lbl" asp-for="Name"><i class="fas fa-heading"></i> Name <span class="req">*</span></label>
+                            <input asp-for="Name" class="inp" required />
+                            <span asp-validation-for="Name" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Type"><i class="fas fa-shapes"></i> Type</label>
+                            <select asp-for="Type" class="inp">
+                                @foreach (var t in Enum.GetValues<ResourceType>())
+                                {
+                                    <option value="@t" selected="@(Model.Type == t)">
+                                        @System.Text.RegularExpressions.Regex.Replace(t.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Status"><i class="fas fa-chart-simple"></i> Status</label>
+                            <select asp-for="Status" class="inp">
+                                @foreach (var s in Enum.GetValues<ResourceStatus>())
+                                {
+                                    <option value="@s" selected="@(Model.Status == s)">
+                                        @System.Text.RegularExpressions.Regex.Replace(s.ToString(), "(?<=[a-z])(?=[A-Z])", " ")
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="UserId"><i class="fas fa-user"></i> Linked employee</label>
+                            <select asp-for="UserId" class="inp">
+                                <option value="">— Not a person —</option>
+                                @foreach (var u in users)
+                                {
+                                    <option value="@u.Id" selected="@(Model.UserId == (int)u.Id)">@u.Name</option>
+                                }
+                            </select>
+                            <span class="hint">Set this for person resources so timesheets and cost tie back to the account.</span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="DepartmentId"><i class="fas fa-building"></i> Department</label>
+                            <select asp-for="DepartmentId" class="inp">
+                                <option value="">— None —</option>
+                                @foreach (var d in departments)
+                                {
+                                    <option value="@d.Id" selected="@(Model.DepartmentId == (int)d.Id)">@d.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="IdentifierCode"><i class="fas fa-barcode"></i> Asset tag / registration / licence key</label>
+                            <input asp-for="IdentifierCode" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="Location"><i class="fas fa-location-dot"></i> Location</label>
+                            <input asp-for="Location" class="inp" />
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl" asp-for="Skills"><i class="fas fa-star"></i> Skills / capabilities</label>
+                            <input asp-for="Skills" class="inp" placeholder="comma, separated, skills" />
+                            <span class="hint">Used to rank allocation suggestions when work needs a particular skill.</span>
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl" asp-for="Description"><i class="fas fa-align-left"></i> Description</label>
+                            <textarea asp-for="Description" class="inp" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-gauge"></i> Capacity &amp; rates</span></div>
+                <div class="card-body">
+                    <div class="form-grid three">
+                        <div class="fg">
+                            <label class="lbl" asp-for="WeeklyCapacityHours"><i class="fas fa-clock"></i> Weekly capacity (hours)</label>
+                            <input asp-for="WeeklyCapacityHours" type="number" step="0.5" min="0" class="inp" />
+                            <span class="hint">The denominator for utilisation.</span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="HourlyRate"><i class="fas fa-coins"></i> Cost rate / hour</label>
+                            <input asp-for="HourlyRate" type="number" step="0.01" min="0" class="inp" />
+                            <span class="hint">Snapshotted onto time entries when they are logged.</span>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl" asp-for="BillableRate"><i class="fas fa-file-invoice-dollar"></i> Billable rate / hour</label>
+                            <input asp-for="BillableRate" type="number" step="0.01" min="0" class="inp" />
+                        </div>
+                    </div>
+                    <label class="check"><input asp-for="IsActive" type="checkbox" /> Active — available for planning</label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-pm"><i class="fas fa-floppy-disk"></i> @(isNew ? "Add resource" : "Save changes")</button>
+                <a href="@(isNew ? Url.Action("Index") : Url.Action("Details", new { id = Model.Id }))" class="btn-ghost-pm">Cancel</a>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

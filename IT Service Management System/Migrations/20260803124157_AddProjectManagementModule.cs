@@ -906,8 +906,7 @@ namespace IT_Service_Management_System.Migrations
                         name: "FK_BudgetLines_ProjectPhases_PhaseId",
                         column: x => x.PhaseId,
                         principalTable: "ProjectPhases",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_BudgetLines_Projects_ProjectId",
                         column: x => x.ProjectId,
@@ -943,8 +942,7 @@ namespace IT_Service_Management_System.Migrations
                         name: "FK_Milestones_ProjectPhases_PhaseId",
                         column: x => x.PhaseId,
                         principalTable: "ProjectPhases",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Milestones_Projects_ProjectId",
                         column: x => x.ProjectId,
@@ -986,8 +984,7 @@ namespace IT_Service_Management_System.Migrations
                         name: "FK_WbsItems_ProjectPhases_PhaseId",
                         column: x => x.PhaseId,
                         principalTable: "ProjectPhases",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_WbsItems_Projects_ProjectId",
                         column: x => x.ProjectId,
@@ -1099,8 +1096,7 @@ namespace IT_Service_Management_System.Migrations
                         name: "FK_ProcurementRequests_BudgetLines_BudgetLineId",
                         column: x => x.BudgetLineId,
                         principalTable: "BudgetLines",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ProcurementRequests_Projects_ProjectId",
                         column: x => x.ProjectId,
@@ -1149,14 +1145,12 @@ namespace IT_Service_Management_System.Migrations
                         name: "FK_Deliverables_Milestones_MilestoneId",
                         column: x => x.MilestoneId,
                         principalTable: "Milestones",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Deliverables_ProjectPhases_PhaseId",
                         column: x => x.PhaseId,
                         principalTable: "ProjectPhases",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Deliverables_Projects_ProjectId",
                         column: x => x.ProjectId,
@@ -1221,14 +1215,12 @@ namespace IT_Service_Management_System.Migrations
                         name: "FK_ProjectTasks_Milestones_MilestoneId",
                         column: x => x.MilestoneId,
                         principalTable: "Milestones",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ProjectTasks_ProjectPhases_PhaseId",
                         column: x => x.PhaseId,
                         principalTable: "ProjectPhases",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ProjectTasks_ProjectTasks_ParentTaskId",
                         column: x => x.ParentTaskId,
@@ -1263,8 +1255,7 @@ namespace IT_Service_Management_System.Migrations
                         name: "FK_ProjectTasks_WbsItems_WbsItemId",
                         column: x => x.WbsItemId,
                         principalTable: "WbsItems",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -1327,8 +1318,7 @@ namespace IT_Service_Management_System.Migrations
                         name: "FK_ProjectExpenses_BudgetLines_BudgetLineId",
                         column: x => x.BudgetLineId,
                         principalTable: "BudgetLines",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ProjectExpenses_ProjectTasks_TaskId",
                         column: x => x.TaskId,
@@ -1381,8 +1371,7 @@ namespace IT_Service_Management_System.Migrations
                         name: "FK_ProjectMeetingActions_ProjectTasks_LinkedTaskId",
                         column: x => x.LinkedTaskId,
                         principalTable: "ProjectTasks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_ProjectMeetingActions_Users_OwnerId",
                         column: x => x.OwnerId,
@@ -1648,12 +1637,12 @@ namespace IT_Service_Management_System.Migrations
                 columns: new[] { "Id", "Category", "CreatedAt", "CreatedById", "DefaultBudget", "DefaultDurationDays", "Description", "IsActive", "IsSystem", "Name", "Type" },
                 values: new object[,]
                 {
-                    { 1, 0, new DateTime(2026, 8, 3, 11, 6, 13, 307, DateTimeKind.Local).AddTicks(1301), null, 0m, 120, "Requirements → design → build → test → go-live, with the usual quality gates.", true, true, "Software Delivery", 0 },
-                    { 2, 2, new DateTime(2026, 8, 3, 11, 6, 13, 307, DateTimeKind.Local).AddTicks(1367), null, 0m, 180, "Design, permits, mobilisation, construction, snagging and handover.", true, true, "Construction / Site Works", 2 },
-                    { 3, 3, new DateTime(2026, 8, 3, 11, 6, 13, 307, DateTimeKind.Local).AddTicks(1417), null, 0m, 60, "Brief, creative, production, launch and post-campaign review.", true, true, "Marketing Campaign", 0 },
-                    { 4, 4, new DateTime(2026, 8, 3, 11, 6, 13, 307, DateTimeKind.Local).AddTicks(1484), null, 0m, 150, "Proposal, literature review, data collection, analysis and reporting.", true, true, "Research Study", 4 },
-                    { 5, 5, new DateTime(2026, 8, 3, 11, 6, 13, 307, DateTimeKind.Local).AddTicks(1489), null, 0m, 45, "Scheduled maintenance planning, execution, verification and close-out.", true, true, "Maintenance Programme", 5 },
-                    { 6, 6, new DateTime(2026, 8, 3, 11, 6, 13, 307, DateTimeKind.Local).AddTicks(1492), null, 0m, 240, "Gap analysis, documentation, training, internal audit and certification.", true, true, "ISO Implementation", 6 }
+                    { 1, 0, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, 0m, 120, "Requirements → design → build → test → go-live, with the usual quality gates.", true, true, "Software Delivery", 0 },
+                    { 2, 2, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, 0m, 180, "Design, permits, mobilisation, construction, snagging and handover.", true, true, "Construction / Site Works", 2 },
+                    { 3, 3, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, 0m, 60, "Brief, creative, production, launch and post-campaign review.", true, true, "Marketing Campaign", 0 },
+                    { 4, 4, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, 0m, 150, "Proposal, literature review, data collection, analysis and reporting.", true, true, "Research Study", 4 },
+                    { 5, 5, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, 0m, 45, "Scheduled maintenance planning, execution, verification and close-out.", true, true, "Maintenance Programme", 5 },
+                    { 6, 6, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), null, 0m, 240, "Gap analysis, documentation, training, internal audit and certification.", true, true, "ISO Implementation", 6 }
                 });
 
             migrationBuilder.InsertData(

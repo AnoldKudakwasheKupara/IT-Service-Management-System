@@ -1,0 +1,208 @@
+@using IT_Service_Management_System.Models.Pm
+@{
+    ViewData["Title"] = "Project KPIs";
+    var custom = ViewBag.Custom as List<ProjectKpi> ?? new List<ProjectKpi>();
+    var projects = ViewBag.Projects as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var canManage = ViewBag.CanManage as bool? ?? false;
+    var variance = (int)(ViewBag.BudgetVariancePercent ?? 0);
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-bullseye"></i> Project KPIs</h1>
+                        <p class="page-sub">The headline six are computed live from the record; anything else is tracked by hand</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_PmAlerts" />
+
+        @* ── COMPUTED KPIs ───────────────────────────────────────────────── *@
+        <div class="stats">
+            <div class="stat">
+                <div class="ic green"><i class="fas fa-circle-check"></i></div>
+                <div><h3>@ViewBag.ProjectsCompleted</h3><p>Projects completed</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic red"><i class="fas fa-clock-rotate-left"></i></div>
+                <div><h3>@ViewBag.ProjectsDelayed</h3><p>Projects delayed</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic blue"><i class="fas fa-hourglass-end"></i></div>
+                <div><h3>@ViewBag.AverageCompletionDays</h3><p>Average completion (days)</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic @(variance < 0 ? "red" : "green")"><i class="fas fa-scale-balanced"></i></div>
+                <div>
+                    <h3>@variance%</h3>
+                    <p>Budget variance</p>
+                    <span class="sub">@(variance < 0 ? "average overspend" : "average underspend")</span>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-users-gear"></i></div>
+                <div><h3>@ViewBag.ResourceUtilisation%</h3><p>Resource utilisation</p><span class="sub">last 4 weeks</span></div>
+            </div>
+            <div class="stat">
+                <div class="ic teal"><i class="fas fa-file-invoice-dollar"></i></div>
+                <div><h3>@ViewBag.BillableUtilisation%</h3><p>Billable share of hours</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic brand"><i class="fas fa-calendar-check"></i></div>
+                <div><h3>@ViewBag.OnTimeDeliveryPercent%</h3><p>Delivered on baseline</p></div>
+            </div>
+        </div>
+
+        <div class="insight">
+            <h4><i class="fas fa-circle-info"></i> How these are calculated</h4>
+            <p>
+                Completion time is the average number of calendar days between a project's actual start
+                and actual finish. Budget variance averages (budget − spend) ÷ budget across every project
+                that has a budget. On-baseline delivery counts completed projects whose actual finish did
+                not slip past the baseline captured at approval. Billable share is approved billable hours
+                over all approved hours.
+            </p>
+        </div>
+
+        @* ── CUSTOM KPIs ─────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Tracked KPIs</span>
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <form method="get" style="display:inline-flex;">
+                        <select name="projectId" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                            <option value="">Portfolio-wide and all projects</option>
+                            @foreach (var p in projects)
+                            {
+                                <option value="@p.Id" selected="@(ViewBag.ProjectId as int? == (int)p.Id)">@p.Name</option>
+                            }
+                        </select>
+                    </form>
+                    @if (canManage)
+                    {
+                        <button type="button" class="btn-pm btn-sm" onclick="pmToggle('kpi-form')"><i class="fas fa-plus"></i> Add KPI</button>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                @if (canManage)
+                {
+                    <form asp-action="SaveKpi" method="post" id="kpi-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> KPI name</label>
+                                <input name="Name" class="inp" required placeholder="e.g. Customer satisfaction score" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-diagram-project"></i> Project</label>
+                                <select name="ProjectId" class="inp">
+                                    <option value="">Portfolio-wide</option>
+                                    @foreach (var p in projects) { <option value="@p.Id">@p.Name</option> }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-user"></i> Owner</label>
+                                <select name="OwnerId" class="inp">
+                                    <option value="">— None —</option>
+                                    @foreach (var u in users) { <option value="@u.Id">@u.Name</option> }
+                                </select>
+                            </div>
+                            <div class="fg"><label class="lbl">Unit</label><input name="Unit" class="inp" placeholder="%, days, score…" /></div>
+                            <div class="fg"><label class="lbl">Target</label><input name="TargetValue" type="number" step="0.01" value="0" class="inp" /></div>
+                            <div class="fg"><label class="lbl">Actual</label><input name="ActualValue" type="number" step="0.01" value="0" class="inp" /></div>
+                            <div class="fg"><label class="lbl">Period start</label><input name="PeriodStart" type="date" class="inp" value="@DateTime.Today.ToString("yyyy-MM-dd")" /></div>
+                            <div class="fg"><label class="lbl">Period end</label><input name="PeriodEnd" type="date" class="inp" value="@DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd")" /></div>
+                            <div class="fg">
+                                <label class="check"><input type="checkbox" name="HigherIsBetter" value="true" checked /> Higher is better</label>
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl">Description</label>
+                                <input name="Description" class="inp" />
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Save KPI</button>
+                    </form>
+                }
+
+                @if (custom.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-bullseye"></i>
+                        <h3>No tracked KPIs</h3>
+                        <p>Add measures the computed set does not cover — customer satisfaction, safety, quality.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr><th>KPI</th><th>Project</th><th>Period</th><th class="num">Target</th><th class="num">Actual</th><th style="min-width:120px;">Achievement</th><th>Owner</th>@if (canManage) { <th></th> }</tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var k in custom)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong style="color:var(--gray-800);">@k.Name</strong>
+                                        @if (!string.IsNullOrWhiteSpace(k.Description))
+                                        {
+                                            <div class="meta" style="font-size:.75rem;">@k.Description</div>
+                                        }
+                                    </td>
+                                    <td class="meta">@(k.Project?.Name ?? "Portfolio")</td>
+                                    <td class="meta" style="font-size:.75rem;">@k.PeriodStart.ToString("d MMM yy") → @k.PeriodEnd.ToString("d MMM yy")</td>
+                                    <td class="num">@k.TargetValue.ToString("N2") @k.Unit</td>
+                                    <td class="num">@k.ActualValue.ToString("N2") @k.Unit</td>
+                                    <td>
+                                        <div class="progress-pm thin @(k.OnTarget ? "green" : "amber")">
+                                            <span style="width:@Math.Min(100, k.AchievementPercent)%"></span>
+                                        </div>
+                                        <span class="meta" style="font-size:.72rem;">
+                                            @k.AchievementPercent% @(k.OnTarget ? "· on target" : "· below target")
+                                        </span>
+                                    </td>
+                                    <td class="meta">@(k.Owner == null ? "—" : $"{k.Owner.FirstName} {k.Owner.LastName}")</td>
+                                    @if (canManage)
+                                    {
+                                        <td style="text-align:right;">
+                                            <form asp-action="DeleteKpi" method="post" class="inline-form"
+                                                  onsubmit="return confirm('Remove this KPI?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@k.Id" />
+                                                <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

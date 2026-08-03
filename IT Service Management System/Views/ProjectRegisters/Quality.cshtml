@@ -1,0 +1,224 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<QualityCheck>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Quality — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var canEdit = ViewBag.CanEdit as bool? ?? false;
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var deliverables = ViewBag.Deliverables as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var tasks = ViewBag.Tasks as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+
+    string Cls(QualityResult r) => r switch
+    {
+        QualityResult.Pass => "completed",
+        QualityResult.Fail => "rejected",
+        QualityResult.PassWithObservations => "onhold",
+        _ => "pending"
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div style="display:flex; gap:.5rem; margin-bottom:1rem;">
+            <a asp-action="Changes" asp-route-projectId="@project!.Id" class="btn-ghost-pm btn-sm"><i class="fas fa-code-branch"></i> Change control</a>
+            <a asp-action="Quality" asp-route-projectId="@project.Id" class="btn-pm btn-sm"><i class="fas fa-clipboard-check"></i> Quality</a>
+        </div>
+
+        <div class="stats tight">
+            <div class="stat"><div class="ic brand"><i class="fas fa-clipboard-check"></i></div><div><h3>@Model.Count</h3><p>Checks</p></div></div>
+            <div class="stat"><div class="ic green"><i class="fas fa-circle-check"></i></div><div><h3>@ViewBag.PassCount</h3><p>Passed</p></div></div>
+            <div class="stat"><div class="ic red"><i class="fas fa-circle-xmark"></i></div><div><h3>@ViewBag.FailCount</h3><p>Failed</p></div></div>
+            <div class="stat"><div class="ic amber"><i class="fas fa-hourglass-half"></i></div><div><h3>@ViewBag.PendingCount</h3><p>Pending</p></div></div>
+            <div class="stat">
+                <div class="ic teal"><i class="fas fa-percent"></i></div>
+                <div>
+                    <h3>@(Model.Count(c => c.Result != QualityResult.Pending) == 0 ? 0 : (int)Math.Round(Model.Count(c => c.Result == QualityResult.Pass) * 100.0 / Model.Count(c => c.Result != QualityResult.Pending)))%</h3>
+                    <p>First-time pass rate</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Quality checks</span>
+                <div style="display:flex; gap:.5rem; align-items:center;">
+                    <form method="get" style="display:inline-flex;">
+                        <input type="hidden" name="projectId" value="@project.Id" />
+                        <select name="result" class="inp" style="width:auto; padding:.35rem .6rem; font-size:.8rem;" onchange="this.form.submit()">
+                            <option value="">All results</option>
+                            @foreach (var r in Enum.GetValues<QualityResult>())
+                            {
+                                <option value="@r" selected="@(ViewBag.Result as QualityResult? == r)">@r</option>
+                            }
+                        </select>
+                    </form>
+                    @if (canContribute)
+                    {
+                        <button type="button" class="btn-pm btn-sm" onclick="pmToggle('qc-form')"><i class="fas fa-plus"></i> New check</button>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                @if (canContribute)
+                {
+                    <form asp-action="SaveQualityCheck" method="post" id="qc-form" style="display:none; margin-bottom:1.25rem; padding-bottom:1.25rem; border-bottom:1px solid var(--gray-200);">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="ProjectId" value="@project.Id" />
+                        <input type="hidden" name="Id" value="0" />
+                        <div class="form-grid three">
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-heading"></i> Title</label>
+                                <input name="Title" class="inp" required placeholder="e.g. Cable installation inspection — floor 3" />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-shapes"></i> Type</label>
+                                <select name="Type" class="inp">
+                                    @foreach (var t in Enum.GetValues<QualityCheckType>())
+                                    {
+                                        <option value="@t">@System.Text.RegularExpressions.Regex.Replace(t.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-user-check"></i> Inspector</label>
+                                <select name="InspectorId" class="inp">
+                                    <option value="">— None —</option>
+                                    @foreach (var u in users) { <option value="@u.Id">@u.Name</option> }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="far fa-calendar"></i> Scheduled</label>
+                                <input name="ScheduledDate" type="date" class="inp" />
+                            </div>
+                            @if (deliverables.Any())
+                            {
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-box-open"></i> Deliverable</label>
+                                    <select name="DeliverableId" class="inp">
+                                        <option value="">— None —</option>
+                                        @foreach (var d in deliverables) { <option value="@d.Id">@d.Name</option> }
+                                    </select>
+                                </div>
+                            }
+                            @if (tasks.Any())
+                            {
+                                <div class="fg">
+                                    <label class="lbl"><i class="fas fa-list-check"></i> Task</label>
+                                    <select name="TaskId" class="inp">
+                                        <option value="">— None —</option>
+                                        @foreach (var t in tasks) { <option value="@t.Id">@t.Name</option> }
+                                    </select>
+                                </div>
+                            }
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-clipboard-list"></i> Acceptance criteria</label>
+                                <textarea name="AcceptanceCriteria" class="inp" rows="3"
+                                          placeholder="What must be true for this check to pass?"></textarea>
+                            </div>
+                            <div class="fg">
+                                <label class="lbl"><i class="fas fa-gavel"></i> Result</label>
+                                <select name="Result" class="inp">
+                                    @foreach (var r in Enum.GetValues<QualityResult>())
+                                    {
+                                        <option value="@r">@System.Text.RegularExpressions.Regex.Replace(r.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-magnifying-glass"></i> Findings</label>
+                                <textarea name="Findings" class="inp" rows="2"></textarea>
+                                <span class="hint">A failed check with findings automatically raises a high-severity issue.</span>
+                            </div>
+                            <div class="fg full">
+                                <label class="lbl"><i class="fas fa-screwdriver-wrench"></i> Corrective action</label>
+                                <textarea name="CorrectiveAction" class="inp" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-pm btn-sm"><i class="fas fa-floppy-disk"></i> Save check</button>
+                    </form>
+                }
+
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-clipboard-check"></i>
+                        <h3>No quality checks</h3>
+                        <p>Record inspections, tests, reviews and acceptance checks against deliverables and tasks.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Check</th><th>Type</th><th>Against</th><th>Inspector</th>
+                                <th>Scheduled</th><th>Performed</th><th>Result</th>@if (canEdit) { <th></th> }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var q in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong style="color:var(--gray-800);">@q.Title</strong>
+                                        @if (!string.IsNullOrWhiteSpace(q.AcceptanceCriteria))
+                                        {
+                                            <div class="meta" style="font-size:.75rem;"><i class="fas fa-clipboard-list"></i> @q.AcceptanceCriteria</div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(q.Findings))
+                                        {
+                                            <div class="meta" style="font-size:.75rem; color:@(q.Result == QualityResult.Fail ? "var(--danger)" : "var(--gray-500)");">
+                                                <i class="fas fa-magnifying-glass"></i> @q.Findings
+                                            </div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(q.CorrectiveAction))
+                                        {
+                                            <div class="meta" style="font-size:.75rem;"><i class="fas fa-screwdriver-wrench"></i> @q.CorrectiveAction</div>
+                                        }
+                                    </td>
+                                    <td class="meta">@System.Text.RegularExpressions.Regex.Replace(q.Type.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</td>
+                                    <td class="meta">@(q.Deliverable?.Name ?? q.Task?.Name ?? "—")</td>
+                                    <td class="meta">@(q.Inspector == null ? "—" : $"{q.Inspector.FirstName} {q.Inspector.LastName}")</td>
+                                    <td class="meta">@(q.ScheduledDate?.ToString("d MMM yy") ?? "—")</td>
+                                    <td class="meta">@(q.PerformedDate?.ToString("d MMM yy") ?? "—")</td>
+                                    <td><span class="badge-pm b-@Cls(q.Result)">@System.Text.RegularExpressions.Regex.Replace(q.Result.ToString(), "(?<=[a-z])(?=[A-Z])", " ")</span></td>
+                                    @if (canEdit)
+                                    {
+                                        <td style="text-align:right;">
+                                            <form asp-action="DeleteQualityCheck" method="post" class="inline-form"
+                                                  onsubmit="return confirm('Remove this quality check?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="projectId" value="@project.Id" />
+                                                <input type="hidden" name="checkId" value="@q.Id" />
+                                                <button type="submit" class="act del"><i class="fas fa-trash"></i></button>
+                                            </form>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function pmToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+            if (el.style.display === 'block') el.querySelector('input, select, textarea')?.focus();
+        }
+    </script>
+}

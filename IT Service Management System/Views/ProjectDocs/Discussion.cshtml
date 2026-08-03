@@ -1,0 +1,167 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectDiscussion>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Discussion — {project?.Reference}";
+    var announcements = ViewBag.Announcements as List<ProjectDiscussion> ?? new List<ProjectDiscussion>();
+    var threads = ViewBag.Threads as List<ProjectDiscussion> ?? new List<ProjectDiscussion>();
+    var replies = ViewBag.Replies as Dictionary<int, List<ProjectDiscussion>> ?? new Dictionary<int, List<ProjectDiscussion>>();
+    var canAnnounce = ViewBag.CanAnnounce as bool? ?? false;
+    var uid = Context.Session.GetInt32("UserId") ?? 0;
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm narrow">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        @* ── NEW POST ─────────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-pen-to-square"></i> Post to the project</span></div>
+            <div class="card-body">
+                <form asp-action="Post" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="projectId" value="@project!.Id" />
+                    <div class="fg">
+                        <label class="lbl"><i class="fas fa-heading"></i> Subject (optional)</label>
+                        <input name="Subject" class="inp" />
+                    </div>
+                    <div class="fg">
+                        <textarea name="Body" class="inp" rows="4" required
+                                  placeholder="Share an update. Type @@ followed by a colleague's name to notify them."></textarea>
+                    </div>
+                    <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:center;">
+                        @if (canAnnounce)
+                        {
+                            <label class="check">
+                                <input type="checkbox" name="IsAnnouncement" value="true" />
+                                Announcement — pin it and notify the whole team
+                            </label>
+                        }
+                        <label class="check">
+                            <input type="checkbox" name="VisibleToClient" value="true" />
+                            Visible to the client
+                        </label>
+                        <button type="submit" class="btn-pm btn-sm" style="margin-left:auto;">
+                            <i class="fas fa-paper-plane"></i> Post
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @* ── ANNOUNCEMENTS ────────────────────────────────────────────────── *@
+        @if (announcements.Count > 0)
+        {
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-bullhorn"></i> Announcements</span></div>
+                <div class="card-body">
+                    @foreach (var a in announcements)
+                    {
+                        <div class="insight" style="border-left-color:var(--primary); background:#fffafa;">
+                            <h4>
+                                @(string.IsNullOrWhiteSpace(a.Subject) ? "Announcement" : a.Subject)
+                                @if (a.VisibleToClient) { <span class="chip"><i class="fas fa-eye"></i> Client</span> }
+                            </h4>
+                            <p style="white-space:pre-wrap;">@a.Body</p>
+                            <div class="why" style="font-style:normal;">
+                                @(a.Author == null ? "Unknown" : $"{a.Author.FirstName} {a.Author.LastName}") ·
+                                @a.CreatedAt.ToString("d MMM yyyy, HH:mm")
+                                @if (a.AuthorId == uid || canAnnounce)
+                                {
+                                    <form asp-action="DeletePost" method="post" class="inline-form"
+                                          onsubmit="return confirm('Remove this announcement?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="projectId" value="@project.Id" />
+                                        <input type="hidden" name="postId" value="@a.Id" />
+                                        <button type="submit" class="act del" style="width:24px; height:24px; font-size:.7rem;"><i class="fas fa-xmark"></i></button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        @* ── THREADS ──────────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-comments"></i> Discussion</span>
+                <span class="meta">@threads.Count thread(s)</span>
+            </div>
+            <div class="card-body">
+                @if (threads.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-comments"></i>
+                        <h3>Nothing posted yet</h3>
+                        <p>Use this feed for project-wide updates and questions that do not belong on a single task.</p>
+                    </div>
+                }
+
+                @foreach (var t in threads)
+                {
+                    var threadReplies = replies.GetValueOrDefault(t.Id, new List<ProjectDiscussion>());
+                    <div style="border:1px solid var(--gray-200); border-radius:.8rem; padding:1rem 1.15rem; margin-bottom:1rem;">
+                        <div class="comment" style="border-bottom:none; padding-top:0;">
+                            <span class="avatar">@(t.Author == null ? "?" : $"{t.Author.FirstName.FirstOrDefault()}{t.Author.LastName.FirstOrDefault()}")</span>
+                            <div class="bd">
+                                <div class="who">
+                                    @(t.Author == null ? "Unknown" : $"{t.Author.FirstName} {t.Author.LastName}")
+                                    <span class="when">@t.CreatedAt.ToString("d MMM yyyy, HH:mm")</span>
+                                    @if (t.VisibleToClient) { <span class="chip"><i class="fas fa-eye"></i> Client</span> }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(t.Subject))
+                                {
+                                    <div style="font-weight:600; color:var(--gray-800); margin-top:.2rem;">@t.Subject</div>
+                                }
+                                <div class="txt">@t.Body</div>
+                            </div>
+                            @if (t.AuthorId == uid || canAnnounce)
+                            {
+                                <form asp-action="DeletePost" method="post" class="inline-form">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="projectId" value="@project.Id" />
+                                    <input type="hidden" name="postId" value="@t.Id" />
+                                    <button type="submit" class="act del"><i class="fas fa-xmark"></i></button>
+                                </form>
+                            }
+                        </div>
+
+                        @if (threadReplies.Count > 0)
+                        {
+                            <div style="margin-left:2.5rem; border-left:2px solid var(--gray-100); padding-left:1rem;">
+                                @foreach (var r in threadReplies)
+                                {
+                                    <div class="comment">
+                                        <span class="avatar sm">@(r.Author == null ? "?" : $"{r.Author.FirstName.FirstOrDefault()}{r.Author.LastName.FirstOrDefault()}")</span>
+                                        <div class="bd">
+                                            <div class="who">
+                                                @(r.Author == null ? "Unknown" : $"{r.Author.FirstName} {r.Author.LastName}")
+                                                <span class="when">@r.CreatedAt.ToString("d MMM, HH:mm")</span>
+                                            </div>
+                                            <div class="txt">@r.Body</div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <form asp-action="Post" method="post" style="margin-top:.6rem; margin-left:2.5rem; display:flex; gap:.5rem;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="projectId" value="@project.Id" />
+                            <input type="hidden" name="ParentId" value="@t.Id" />
+                            <input type="text" name="Body" class="inp" placeholder="Reply…" required />
+                            <button type="submit" class="btn-ghost-pm btn-sm"><i class="fas fa-reply"></i></button>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

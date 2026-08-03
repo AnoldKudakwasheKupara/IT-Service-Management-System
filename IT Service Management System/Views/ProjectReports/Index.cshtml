@@ -1,0 +1,80 @@
+@{
+    ViewData["Title"] = "Project Reports";
+
+    var reports = new[]
+    {
+        ("Portfolio performance", "Status, health, schedule and cost variance for every project.", "fa-table-list", "Portfolio", "brand"),
+        ("Risk &amp; issue exposure", "The portfolio heat map, top risks and every overdue issue.", "fa-triangle-exclamation", "RiskAndIssues", "red"),
+        ("KPIs", "Completion rate, delays, budget variance, utilisation and profitability.", "fa-bullseye", "Kpis", "purple"),
+        ("Project templates", "Reusable blueprints for software, construction, marketing, research, maintenance and ISO work.", "fa-clone", "Templates", "teal")
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-controller="Projects" asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-chart-line"></i> Project Reports</h1>
+                        <p class="page-sub">Portfolio reporting, KPIs and export to PDF, Excel and CSV</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="ExportPortfolioExcel" class="btn-ghost-pm"><i class="fas fa-file-excel"></i> Portfolio (Excel)</a>
+                    <a asp-action="ExportPortfolioCsv" class="btn-ghost-pm"><i class="fas fa-file-csv"></i> Portfolio (CSV)</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            @foreach (var (title, description, icon, action, colour) in reports)
+            {
+                <a asp-action="@action" class="card" style="text-decoration:none; display:block;">
+                    <div class="card-body" style="display:flex; gap:1rem; align-items:flex-start;">
+                        <div class="ic @colour" style="width:46px; height:46px; border-radius:.85rem; display:flex; align-items:center; justify-content:center; color:white; flex-shrink:0;
+                                    background:@(colour switch {
+                                        "brand" => "linear-gradient(135deg, var(--primary), var(--primary-dark))",
+                                        "red" => "linear-gradient(135deg, #f87171, #dc2626)",
+                                        "purple" => "linear-gradient(135deg, #a78bfa, #7c3aed)",
+                                        _ => "linear-gradient(135deg, #2dd4bf, #0d9488)" });">
+                            <i class="fas @icon"></i>
+                        </div>
+                        <div>
+                            <h3 style="font-size:1rem; font-weight:700; color:var(--gray-800); margin:0 0 .3rem;">@Html.Raw(title)</h3>
+                            <p class="meta" style="margin:0; font-size:.85rem; line-height:1.5;">@description</p>
+                        </div>
+                        <i class="fas fa-arrow-right" style="margin-left:auto; color:var(--gray-300); align-self:center;"></i>
+                    </div>
+                </a>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><span class="t"><i class="fas fa-file-export"></i> Other reports</span></div>
+            <div class="card-body">
+                <div class="grid-3">
+                    <a asp-controller="ProjectTime" asp-action="Report" class="btn-ghost-pm" style="justify-content:center;">
+                        <i class="fas fa-stopwatch"></i> Time &amp; cost
+                    </a>
+                    <a asp-controller="ProjectResources" asp-action="Capacity" class="btn-ghost-pm" style="justify-content:center;">
+                        <i class="fas fa-users-gear"></i> Resource utilisation
+                    </a>
+                    <a asp-controller="ProjectPlan" asp-action="Calendar" class="btn-ghost-pm" style="justify-content:center;">
+                        <i class="fas fa-calendar-days"></i> Portfolio calendar
+                    </a>
+                </div>
+                <p class="hint" style="margin-top:1rem;">
+                    <i class="fas fa-circle-info"></i>
+                    A single project's status report — with its executive summary, milestones and top risks —
+                    is on the project itself, and exports to PDF from there.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>

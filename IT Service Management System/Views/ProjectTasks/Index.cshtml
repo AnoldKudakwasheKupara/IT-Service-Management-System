@@ -1,0 +1,210 @@
+@using IT_Service_Management_System.Models.Pm
+@model List<ProjectTask>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"Tasks — {project?.Reference}";
+    var canContribute = ViewBag.CanContribute as bool? ?? false;
+    var users = ViewBag.Users as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var phases = ViewBag.Phases as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var curStatus = ViewBag.Status as ProjectTaskStatus?;
+    var curPriority = ViewBag.Priority as TaskPriority?;
+    var mine = ViewBag.Mine as bool? ?? false;
+
+    string StatusClass(ProjectTaskStatus s) => s switch
+    {
+        ProjectTaskStatus.Completed => "completed",
+        ProjectTaskStatus.Blocked => "delayed",
+        ProjectTaskStatus.Cancelled => "cancelled",
+        ProjectTaskStatus.UnderReview => "planning",
+        ProjectTaskStatus.InProgress => "active",
+        ProjectTaskStatus.Waiting => "onhold",
+        _ => "draft"
+    };
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+        <partial name="_PmAlerts" />
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-filter"></i> Filter</span>
+                <div style="display:flex; gap:.5rem;">
+                    <a asp-action="Priorities" asp-route-projectId="@project!.Id" class="btn-ghost-pm btn-sm">
+                        <i class="fas fa-ranking-star"></i> What to do next
+                    </a>
+                    @if (canContribute)
+                    {
+                        <a asp-action="Create" asp-route-projectId="@project.Id" class="btn-pm btn-sm">
+                            <i class="fas fa-plus"></i> New task
+                        </a>
+                    }
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="get" class="toolbar">
+                    <input type="hidden" name="projectId" value="@project.Id" />
+                    <div class="fg">
+                        <label class="lbl">Status</label>
+                        <select name="status" class="inp">
+                            <option value="">All</option>
+                            @foreach (var s in Enum.GetValues<ProjectTaskStatus>())
+                            {
+                                <option value="@s" selected="@(curStatus == s)">@s</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Priority</label>
+                        <select name="priority" class="inp">
+                            <option value="">All</option>
+                            @foreach (var p in Enum.GetValues<TaskPriority>())
+                            {
+                                <option value="@p" selected="@(curPriority == p)">@p</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Assignee</label>
+                        <select name="assignedTo" class="inp">
+                            <option value="">Anyone</option>
+                            @foreach (var u in users)
+                            {
+                                <option value="@u.Id" selected="@(ViewBag.AssignedTo as int? == (int)u.Id)">@u.Name</option>
+                            }
+                        </select>
+                    </div>
+                    @if (phases.Any())
+                    {
+                        <div class="fg">
+                            <label class="lbl">Phase</label>
+                            <select name="phaseId" class="inp">
+                                <option value="">All</option>
+                                @foreach (var p in phases)
+                                {
+                                    <option value="@p.Id" selected="@(ViewBag.PhaseId as int? == (int)p.Id)">@p.Name</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    <div class="fg" style="flex:2; min-width:180px;">
+                        <label class="lbl">Search</label>
+                        <input type="text" name="q" value="@ViewBag.Q" class="inp" placeholder="Task name or description…" />
+                    </div>
+                    <div class="fg">
+                        <label class="check"><input type="checkbox" name="mine" value="true" checked="@mine" /> Only mine</label>
+                    </div>
+                    <button type="submit" class="btn-pm"><i class="fas fa-magnifying-glass"></i> Search</button>
+                    <a asp-action="Index" asp-route-projectId="@project.Id" class="btn-ghost-pm"><i class="fas fa-rotate-left"></i> Clear</a>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list-check"></i> Tasks</span>
+                <span class="meta">
+                    @Model.Count task(s) ·
+                    @Model.Count(t => t.Status == ProjectTaskStatus.Completed) complete ·
+                    @Model.Count(t => t.IsOverdue) overdue
+                </span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-list-check"></i>
+                        <h3>No tasks match</h3>
+                        <p>Adjust the filters, or add the first task.</p>
+                        @if (canContribute)
+                        {
+                            <a asp-action="Create" asp-route-projectId="@project.Id" class="btn-pm"><i class="fas fa-plus"></i> New task</a>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Task</th><th>Assignee</th><th>Status</th><th>Priority</th>
+                                <th style="min-width:110px;">Progress</th><th class="num">Est / Act</th><th>Due</th>
+                                <th style="text-align:right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var t in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (t.ParentTask != null)
+                                        {
+                                            <span class="meta" style="font-size:.7rem;"><i class="fas fa-turn-up fa-rotate-90"></i> @t.ParentTask.Name</span>
+                                        }
+                                        <div>
+                                            <a asp-action="Details" asp-route-id="@t.Id" class="strong-link">@t.Name</a>
+                                            @if (t.IsOnCriticalPath) { <span class="badge-pm b-critical" style="margin-left:.35rem;">Critical path</span> }
+                                            @if (t.Status == ProjectTaskStatus.Blocked) { <span class="badge-pm b-delayed" style="margin-left:.35rem;">Blocked</span> }
+                                        </div>
+                                        <span class="ref">@t.Reference</span>
+                                        @if (t.Phase != null) { <span class="chip" style="margin-left:.35rem;">@t.Phase.Name</span> }
+                                    </td>
+                                    <td class="meta">
+                                        @if (t.AssignedTo != null)
+                                        {
+                                            <span class="with-avatar">
+                                                <span class="avatar sm">@t.AssignedTo.FirstName.FirstOrDefault()@t.AssignedTo.LastName.FirstOrDefault()</span>
+                                                <span>@t.AssignedTo.FirstName @t.AssignedTo.LastName</span>
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="chip muted">Unassigned</span>
+                                        }
+                                    </td>
+                                    <td><span class="badge-pm b-@StatusClass(t.Status)">@t.Status</span></td>
+                                    <td><span class="badge-pm b-@t.Priority.ToString().ToLower()">@t.Priority</span></td>
+                                    <td>
+                                        <div class="progress-pm thin @(t.Status == ProjectTaskStatus.Completed ? "green" : t.IsOverdue ? "red" : "")">
+                                            <span style="width:@t.PercentComplete%"></span>
+                                        </div>
+                                        <span class="meta" style="font-size:.7rem;">@t.PercentComplete%</span>
+                                    </td>
+                                    <td class="num meta">
+                                        @t.EstimatedHours.ToString("N1") / <span class="@(t.HoursVariance > 0 ? "overdue" : "")">@t.ActualHours.ToString("N1")</span>
+                                    </td>
+                                    <td class="meta @(t.IsOverdue ? "overdue" : "")">@(t.DueDate?.ToString("d MMM yy") ?? "—")</td>
+                                    <td style="text-align:right;">
+                                        <div class="act-btns">
+                                            <a asp-action="Details" asp-route-id="@t.Id" class="act view" title="Open"><i class="fas fa-eye"></i></a>
+                                            @if (canContribute)
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@t.Id" class="act edit" title="Edit"><i class="fas fa-pen"></i></a>
+                                                @if (t.Status != ProjectTaskStatus.Completed)
+                                                {
+                                                    <form asp-action="ChangeStatus" method="post" class="inline-form">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="id" value="@t.Id" />
+                                                        <input type="hidden" name="status" value="@ProjectTaskStatus.Completed" />
+                                                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                                                        <button type="submit" class="act ok" title="Mark complete"><i class="fas fa-check"></i></button>
+                                                    </form>
+                                                }
+                                                <a asp-action="Delete" asp-route-id="@t.Id" class="act del" title="Delete"><i class="fas fa-trash"></i></a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

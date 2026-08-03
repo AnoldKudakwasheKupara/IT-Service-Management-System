@@ -1,0 +1,69 @@
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.Services.Pm
+@model List<TaskPrioritySuggestion>
+@{
+    var project = ViewBag.Project as Project;
+    ViewData["Title"] = $"What to do next — {project?.Reference}";
+}
+
+<partial name="_PmStyles" />
+
+<div class="pm">
+    <div class="page-container">
+
+        <partial name="_PmProjectHeader" />
+
+        <div class="insight">
+            <h4><i class="fas fa-ranking-star"></i> How the ranking works</h4>
+            <p>
+                Each open task is scored on four signals: how close (or past) its due date is, its
+                priority, whether it sits on the critical path, and how many other tasks are waiting
+                behind it. Unassigned and blocked tasks are pushed up, because they stall quietly.
+                The reason column shows exactly which signals fired.
+            </p>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list-ol"></i> Ranked tasks</span>
+                <span class="meta">@Model.Count open task(s)</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-circle-check" style="color:var(--success);"></i>
+                        <h3>Nothing outstanding</h3>
+                        <p>Every task on this project is complete or cancelled.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th class="num">#</th><th class="num">Score</th><th>Task</th><th>Assignee</th><th>Due</th><th>Why it ranks here</th><th></th></tr></thead>
+                        <tbody>
+                            @{ var rank = 1; }
+                            @foreach (var t in Model)
+                            {
+                                <tr>
+                                    <td class="num meta">@(rank++)</td>
+                                    <td class="num">
+                                        <span class="badge-pm b-@(t.Score >= 60 ? "critical" : t.Score >= 35 ? "high" : t.Score >= 15 ? "medium" : "low")">@t.Score</span>
+                                    </td>
+                                    <td><a asp-action="Details" asp-route-id="@t.TaskId" class="strong-link">@t.Name</a></td>
+                                    <td class="meta">@(t.Assignee ?? "Unassigned")</td>
+                                    <td class="meta @(t.DueDate < DateTime.Today ? "overdue" : "")">@(t.DueDate?.ToString("d MMM yyyy") ?? "—")</td>
+                                    <td class="meta" style="font-size:.8rem;">@t.Reason</td>
+                                    <td style="text-align:right;">
+                                        <a asp-action="Details" asp-route-id="@t.TaskId" class="act view"><i class="fas fa-arrow-right"></i></a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
