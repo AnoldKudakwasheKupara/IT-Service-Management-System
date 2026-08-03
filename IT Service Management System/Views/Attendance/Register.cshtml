@@ -1,0 +1,330 @@
+@using IT_Service_Management_System.Models.Hr
+@model List<AttendanceRecord>
+@{
+    var date = (DateTime)(ViewBag.Date ?? DateTime.Today);
+    ViewData["Title"] = $"Attendance — {date:d MMM yyyy}";
+    var departments = ViewBag.Departments as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var isHoliday = ViewBag.IsHoliday as bool? ?? false;
+    var unrecorded = (int)(ViewBag.Unrecorded ?? 0);
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+    string StatusClass(AttendanceStatus s) => s switch
+    {
+        AttendanceStatus.Present => "b-active",
+        AttendanceStatus.Late or AttendanceStatus.PartialDay => "b-probation",
+        AttendanceStatus.Absent or AttendanceStatus.Unexplained => "b-danger",
+        AttendanceStatus.OnLeave => "b-leave",
+        _ => "b-neutral"
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr wide">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-clipboard-user"></i> Daily Register</h1>
+                        <p class="page-sub">
+                            @date.ToString("dddd d MMMM yyyy")
+                            @if (isHoliday)
+                            {
+                                <span class="badge-hr b-warn">
+                                    <i class="fas fa-star"></i> @ViewBag.HolidayName
+                                </span>
+                            }
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Register" asp-route-date="@date.AddDays(-1).ToString("yyyy-MM-dd")" class="btn-ghost-hr btn-sm">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                    <a asp-action="Register" class="btn-ghost-hr btn-sm">Today</a>
+                    <a asp-action="Register" asp-route-date="@date.AddDays(1).ToString("yyyy-MM-dd")" class="btn-ghost-hr btn-sm">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                    <a asp-action="OvertimeQueue" class="btn-outline-hr"><i class="fas fa-inbox"></i> Overtime queue</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (unrecorded > 0)
+        {
+            <div class="notice warn">
+                <h4><i class="fas fa-triangle-exclamation"></i> @unrecorded employee(s) have no record for this day</h4>
+                <p>
+                    Nobody clocked and nothing was written. Reconciling creates a row for each of
+                    them saying why — on leave, rest day, public holiday, or unexplained — because an
+                    absence has to be something recorded rather than something missing.
+                </p>
+                <form asp-action="Reconcile" method="post" style="margin-top:.7rem;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="date" value="@date.ToString("yyyy-MM-dd")" />
+                    <button type="submit" class="btn-hr btn-sm">
+                        <i class="fas fa-wand-magic-sparkles"></i> Reconcile @date.ToString("d MMM")
+                    </button>
+                </form>
+            </div>
+        }
+
+        <div class="stats">
+            <div class="stat">
+                <div class="ic brand"><i class="fas fa-users"></i></div>
+                <div><h3>@ViewBag.Headcount</h3><p>Headcount</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic green"><i class="fas fa-circle-check"></i></div>
+                <div><h3>@Model.Count(r => r.Status is AttendanceStatus.Present or AttendanceStatus.Late)</h3><p>Present</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic amber"><i class="fas fa-clock"></i></div>
+                <div><h3>@Model.Count(r => r.LateMinutes > 0)</h3><p>Late</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic red"><i class="fas fa-user-slash"></i></div>
+                <div><h3>@Model.Count(r => r.Status is AttendanceStatus.Absent or AttendanceStatus.Unexplained)</h3><p>Absent</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic teal"><i class="fas fa-umbrella-beach"></i></div>
+                <div><h3>@Model.Count(r => r.Status == AttendanceStatus.OnLeave)</h3><p>On leave</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-hourglass-half"></i></div>
+                <div>
+                    <h3>@Model.Count(r => r.NeedsAttention)</h3>
+                    <p>Need attention</p>
+                    <span class="sub">incomplete or unapproved</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="toolbar">
+                    <div class="fg">
+                        <label class="lbl">Date</label>
+                        <input type="date" name="date" class="inp" value="@date.ToString("yyyy-MM-dd")" />
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Department</label>
+                        <select name="departmentId" class="inp">
+                            <option value="">All</option>
+                            @foreach (var d in departments)
+                            {
+                                <option value="@d.Id" selected="@(ViewBag.DepartmentId as int? == (int)d.Id)">@d.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="fg">
+                        <label class="lbl">Status</label>
+                        <select name="status" class="inp">
+                            <option value="">All</option>
+                            @foreach (var s in Enum.GetValues<AttendanceStatus>())
+                            {
+                                <option value="@s" selected="@(ViewBag.Status as AttendanceStatus? == s)">@Spaced(s.ToString())</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-hr"><i class="fas fa-magnifying-glass"></i> Show</button>
+                    <a asp-action="Register" class="btn-ghost-hr"><i class="fas fa-rotate-left"></i> Clear</a>
+                </form>
+            </div>
+        </div>
+
+        <form asp-action="ApproveDays" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="date" value="@date.ToString("yyyy-MM-dd")" />
+
+            <div class="card">
+                <div class="card-head">
+                    <span class="t"><i class="fas fa-list"></i> Register</span>
+                    <div style="display:flex; gap:.5rem; align-items:center;">
+                        <span class="meta">@Model.Count record(s)</span>
+                        <button type="submit" class="btn-success-hr btn-sm">
+                            <i class="fas fa-check"></i> Approve selected
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body flush">
+                    @if (Model.Count == 0)
+                    {
+                        <div class="empty">
+                            <i class="fas fa-clipboard-user"></i>
+                            <h3>No records for this day</h3>
+                            <p>Reconcile the day to create one per employee.</p>
+                            <form asp-action="Reconcile" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="date" value="@date.ToString("yyyy-MM-dd")" />
+                                <button type="submit" class="btn-hr"><i class="fas fa-wand-magic-sparkles"></i> Reconcile</button>
+                            </form>
+                        </div>
+                    }
+                    else
+                    {
+                        <table class="tbl">
+                            <thead>
+                                <tr>
+                                    <th style="width:34px;"><input type="checkbox" id="check-all" title="Select all" /></th>
+                                    <th>Employee</th><th>Department</th><th>Shift</th>
+                                    <th>In</th><th>Out</th><th class="num">Hours</th><th class="num">Overtime</th>
+                                    <th>Status</th><th style="text-align:right;">Correct</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in Model)
+                                {
+                                    <tr style="@(r.NeedsAttention ? "background:#fffdf7;" : "")">
+                                        <td>
+                                            @if (!r.IsApproved)
+                                            {
+                                                <input type="checkbox" name="recordIds" value="@r.Id" class="day-check" />
+                                            }
+                                            else
+                                            {
+                                                <i class="fas fa-lock meta" title="Approved"></i>
+                                            }
+                                        </td>
+                                        <td>
+                                            <a asp-action="Timesheet" asp-route-employeeId="@r.EmployeeId" class="strong-link">
+                                                @r.Employee?.DisplayName
+                                            </a>
+                                            <div class="meta" style="font-size:.7rem;">@r.Employee?.EmployeeNumber</div>
+                                        </td>
+                                        <td class="meta">@(r.Employee?.Department?.Name ?? "—")</td>
+                                        <td class="meta" style="font-size:.75rem;">
+                                            @(r.Shift?.Name ?? "—")
+                                            @if (r.DayType != DayType.WorkingDay)
+                                            {
+                                                <div><span class="chip">@Spaced(r.DayType.ToString())</span></div>
+                                            }
+                                        </td>
+                                        <td class="meta">
+                                            @(r.ClockIn?.ToString("HH:mm") ?? "—")
+                                            @if (r.LateMinutes > 0)
+                                            {
+                                                <div class="overdue" style="font-size:.7rem;">+@r.LateMinutes</div>
+                                            }
+                                        </td>
+                                        <td class="meta">
+                                            @if (r.IsIncomplete)
+                                            {
+                                                <span class="badge-hr b-danger">missing</span>
+                                            }
+                                            else
+                                            {
+                                                <text>@(r.ClockOut?.ToString("HH:mm") ?? "—")</text>
+                                            }
+                                        </td>
+                                        <td class="num">@(r.HoursWorked > 0 ? r.HoursWorked.ToString("0.##") : "—")</td>
+                                        <td class="num">
+                                            @if (r.TotalOvertimeHours > 0)
+                                            {
+                                                <span class="badge-hr @(r.IsApproved ? "b-active" : "b-probation")"
+                                                      title="@(r.OvertimeHours > 0 ? $"{r.OvertimeHours:0.##} normal " : "")@(r.RestDayHours > 0 ? $"{r.RestDayHours:0.##} rest day " : "")@(r.PublicHolidayHours > 0 ? $"{r.PublicHolidayHours:0.##} holiday" : "")">
+                                                    @r.TotalOvertimeHours.ToString("0.##")
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <text>—</text>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge-hr @StatusClass(r.Status)">@Spaced(r.Status.ToString())</span>
+                                            @if (r.LeaveRequest != null)
+                                            {
+                                                <div class="meta" style="font-size:.7rem;">@r.LeaveRequest.LeaveType?.Name</div>
+                                            }
+                                            @if (r.IsManualEntry)
+                                            {
+                                                <div><span class="chip" title="Keyed by a supervisor">keyed</span></div>
+                                            }
+                                        </td>
+                                        <td style="text-align:right;">
+                                            <button type="button" class="act edit" onclick="hrToggle('fix-@r.Id')" title="Correct">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr id="fix-@r.Id" style="display:none; background:var(--gray-50);">
+                                        <td colspan="10" style="padding:1rem 1.25rem;">
+                                            @* Nested inside the approve form would be invalid HTML, so this posts on its own. *@
+                                            <div style="display:flex; gap:.5rem; flex-wrap:wrap; align-items:flex-end;">
+                                                <div class="fg" style="margin:0;">
+                                                    <label class="lbl">Clock in</label>
+                                                    <input type="datetime-local" form="correct-@r.Id" name="clockIn" class="inp"
+                                                           value="@(r.ClockIn?.ToString("yyyy-MM-ddTHH:mm"))" style="width:auto;" />
+                                                </div>
+                                                <div class="fg" style="margin:0;">
+                                                    <label class="lbl">Clock out</label>
+                                                    <input type="datetime-local" form="correct-@r.Id" name="clockOut" class="inp"
+                                                           value="@(r.ClockOut?.ToString("yyyy-MM-ddTHH:mm"))" style="width:auto;" />
+                                                </div>
+                                                <div class="fg" style="margin:0;">
+                                                    <label class="lbl">Break (min)</label>
+                                                    <input type="number" form="correct-@r.Id" name="breakMinutes" class="inp"
+                                                           value="@r.BreakMinutes" style="width:90px;" />
+                                                </div>
+                                                <div class="fg" style="margin:0;">
+                                                    <label class="lbl">Status</label>
+                                                    <select form="correct-@r.Id" name="status" class="inp" style="width:auto;">
+                                                        @foreach (var s in Enum.GetValues<AttendanceStatus>())
+                                                        {
+                                                            <option value="@s" selected="@(r.Status == s)">@Spaced(s.ToString())</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="fg" style="margin:0; flex:1; min-width:180px;">
+                                                    <label class="lbl">Note</label>
+                                                    <input type="text" form="correct-@r.Id" name="notes" class="inp" value="@r.Notes" />
+                                                </div>
+                                                <button type="submit" form="correct-@r.Id" class="btn-hr btn-sm">
+                                                    <i class="fas fa-floppy-disk"></i> Save
+                                                </button>
+                                            </div>
+                                            <p class="hint" style="margin-top:.5rem;">
+                                                A correction is flagged as keyed and re-opens the day for approval,
+                                                since it may change the overtime payroll pays for.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+            </div>
+        </form>
+
+        @* Correction forms live outside the approve form — nesting forms is invalid HTML. *@
+        @foreach (var r in Model)
+        {
+            <form asp-action="Correct" method="post" id="correct-@r.Id" style="display:none;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@r.Id" />
+            </form>
+        }
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function hrToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
+        }
+
+        document.getElementById('check-all')?.addEventListener('change', function () {
+            document.querySelectorAll('.day-check').forEach(c => c.checked = this.checked);
+        });
+    </script>
+}

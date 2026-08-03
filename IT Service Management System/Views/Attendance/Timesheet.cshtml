@@ -1,0 +1,198 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Services.Hr
+@model List<AttendanceRecord>
+@{
+    var employee = ViewBag.Employee as Employee;
+    var from = (DateTime)(ViewBag.From ?? DateTime.Today);
+    var to = (DateTime)(ViewBag.To ?? DateTime.Today);
+    ViewData["Title"] = $"Timesheet — {employee?.DisplayName}";
+    var summary = ViewBag.Summary as AttendanceService.AttendanceSummary;
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+    string StatusClass(AttendanceStatus s) => s switch
+    {
+        AttendanceStatus.Present => "b-active",
+        AttendanceStatus.Late or AttendanceStatus.PartialDay => "b-probation",
+        AttendanceStatus.Absent or AttendanceStatus.Unexplained => "b-danger",
+        AttendanceStatus.OnLeave => "b-leave",
+        _ => "b-neutral"
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-table-list"></i> Timesheet</h1>
+                        <p class="page-sub">
+                            @employee?.DisplayName · @employee?.EmployeeNumber ·
+                            @from.ToString("d MMM") – @to.ToString("d MMM yyyy")
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <button type="button" class="btn-ghost-hr" onclick="window.print()">
+                        <i class="fas fa-print"></i> Print
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="toolbar">
+                    <input type="hidden" name="employeeId" value="@employee?.Id" />
+                    <div class="fg"><label class="lbl">From</label><input type="date" name="from" class="inp" value="@from.ToString("yyyy-MM-dd")" /></div>
+                    <div class="fg"><label class="lbl">To</label><input type="date" name="to" class="inp" value="@to.ToString("yyyy-MM-dd")" /></div>
+                    <button type="submit" class="btn-hr"><i class="fas fa-magnifying-glass"></i> Show</button>
+                </form>
+            </div>
+        </div>
+
+        @if (summary != null)
+        {
+            <div class="stats">
+                <div class="stat">
+                    <div class="ic brand"><i class="fas fa-calendar-check"></i></div>
+                    <div><h3>@summary.DaysWorked</h3><p>Days worked</p></div>
+                </div>
+                <div class="stat">
+                    <div class="ic blue"><i class="fas fa-hourglass"></i></div>
+                    <div>
+                        <h3>@summary.HoursWorked.ToString("N1")</h3>
+                        <p>Hours worked</p>
+                        <span class="sub">@summary.AttendancePercent% of scheduled</span>
+                    </div>
+                </div>
+                <div class="stat">
+                    <div class="ic purple"><i class="fas fa-plus"></i></div>
+                    <div>
+                        <h3>@summary.OvertimeHours.ToString("N1")</h3>
+                        <p>Normal overtime</p>
+                    </div>
+                </div>
+                <div class="stat">
+                    <div class="ic amber"><i class="fas fa-calendar-week"></i></div>
+                    <div><h3>@summary.RestDayHours.ToString("N1")</h3><p>Rest-day hours</p></div>
+                </div>
+                <div class="stat">
+                    <div class="ic red"><i class="fas fa-star"></i></div>
+                    <div><h3>@summary.PublicHolidayHours.ToString("N1")</h3><p>Holiday hours</p></div>
+                </div>
+                <div class="stat">
+                    <div class="ic slate"><i class="fas fa-triangle-exclamation"></i></div>
+                    <div>
+                        <h3>@(summary.IncompleteDays + summary.UnapprovedOvertime)</h3>
+                        <p>Need attention</p>
+                    </div>
+                </div>
+            </div>
+
+            @if (summary.UnapprovedOvertime > 0)
+            {
+                <div class="notice warn">
+                    <h4><i class="fas fa-hourglass-half"></i> @summary.UnapprovedOvertime day(s) of overtime are unapproved</h4>
+                    <p>
+                        Payroll only values approved overtime, so these hours will not be paid until
+                        somebody signs them off on the daily register.
+                    </p>
+                </div>
+            }
+        }
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Days</span>
+                <span class="meta">@Model.Count record(s)</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-table-list"></i>
+                        <h3>Nothing in this period</h3>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Date</th><th>Shift</th><th>In</th><th>Out</th>
+                                <th class="num">Hours</th><th class="num">Scheduled</th>
+                                <th class="num">Normal OT</th><th class="num">Rest day</th><th class="num">Holiday</th>
+                                <th>Status</th><th>Approved</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model)
+                            {
+                                <tr style="@(r.NeedsAttention ? "background:#fffdf7;" : "")">
+                                    <td>
+                                        <strong style="color:var(--gray-800);">@r.Date.ToString("ddd d MMM")</strong>
+                                        @if (r.DayType != DayType.WorkingDay)
+                                        {
+                                            <div><span class="chip">@Spaced(r.DayType.ToString())</span></div>
+                                        }
+                                    </td>
+                                    <td class="meta" style="font-size:.75rem;">@(r.Shift?.Name ?? "—")</td>
+                                    <td class="meta">
+                                        @(r.ClockIn?.ToString("HH:mm") ?? "—")
+                                        @if (r.LateMinutes > 0)
+                                        {
+                                            <div class="overdue" style="font-size:.7rem;">+@r.LateMinutes</div>
+                                        }
+                                    </td>
+                                    <td class="meta">@(r.ClockOut?.ToString("HH:mm") ?? (r.IsIncomplete ? "missing" : "—"))</td>
+                                    <td class="num">@(r.HoursWorked > 0 ? r.HoursWorked.ToString("0.##") : "—")</td>
+                                    <td class="num meta">@(r.ScheduledHours > 0 ? r.ScheduledHours.ToString("0.##") : "—")</td>
+                                    <td class="num">@(r.OvertimeHours > 0 ? r.OvertimeHours.ToString("0.##") : "—")</td>
+                                    <td class="num">@(r.RestDayHours > 0 ? r.RestDayHours.ToString("0.##") : "—")</td>
+                                    <td class="num">@(r.PublicHolidayHours > 0 ? r.PublicHolidayHours.ToString("0.##") : "—")</td>
+                                    <td>
+                                        <span class="badge-hr @StatusClass(r.Status)">@Spaced(r.Status.ToString())</span>
+                                        @if (r.LeaveRequest != null)
+                                        {
+                                            <div class="meta" style="font-size:.7rem;">@r.LeaveRequest.LeaveType?.Name</div>
+                                        }
+                                    </td>
+                                    <td class="meta" style="font-size:.72rem;">
+                                        @if (r.IsApproved)
+                                        {
+                                            <i class="fas fa-circle-check" style="color:var(--success);"></i>
+                                            @(r.ApprovedBy?.FirstName ?? "")
+                                        }
+                                        else if (r.TotalOvertimeHours > 0)
+                                        {
+                                            <span class="badge-hr b-probation">pending</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:var(--gray-50); font-weight:700;">
+                                <td colspan="4">Totals</td>
+                                <td class="num">@Model.Sum(r => r.HoursWorked).ToString("0.##")</td>
+                                <td class="num">@Model.Sum(r => r.ScheduledHours).ToString("0.##")</td>
+                                <td class="num">@Model.Sum(r => r.OvertimeHours).ToString("0.##")</td>
+                                <td class="num">@Model.Sum(r => r.RestDayHours).ToString("0.##")</td>
+                                <td class="num">@Model.Sum(r => r.PublicHolidayHours).ToString("0.##")</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>

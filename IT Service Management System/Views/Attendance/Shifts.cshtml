@@ -1,0 +1,274 @@
+@using IT_Service_Management_System.Models.Hr
+@model List<Shift>
+@{
+    ViewData["Title"] = "Shifts";
+    var assignments = ViewBag.Assignments as List<ShiftAssignment> ?? new List<ShiftAssignment>();
+    var employees = ViewBag.Employees as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+    var standardWeek = (decimal)(ViewBag.StandardWeek ?? 44m);
+    var dayNames = new[] { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Register" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-business-time"></i> Shifts</h1>
+                        <p class="page-sub">Working patterns, and who is on which</p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <button type="button" class="btn-hr" onclick="hrToggle('shift-form')">
+                        <i class="fas fa-plus-circle"></i> New shift
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="notice">
+            <h4><i class="fas fa-scale-balanced"></i> Hours come from your NEC agreement</h4>
+            <p>
+                The Labour Act does not fix a universal working week — hours are set by the National
+                Employment Council agreement for your sector. The configured standard is currently
+                <strong>@standardWeek.ToString("0.##") hours a week</strong>, which is what the
+                overtime valuation divides by. Set each shift to match the agreement that actually
+                binds this employer.
+            </p>
+        </div>
+
+        <div class="card" id="shift-form" style="display:none;">
+            <div class="card-head"><span class="t"><i class="fas fa-plus"></i> New shift</span></div>
+            <div class="card-body">
+                <form asp-action="SaveShift" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="0" />
+                    <div class="form-grid three">
+                        <div class="fg full">
+                            <label class="lbl">Name</label>
+                            <input name="Name" class="inp" required placeholder="e.g. Day shift, Night shift" />
+                        </div>
+                        <div class="fg"><label class="lbl">Starts at</label><input name="StartTime" type="time" class="inp" value="08:00" required /></div>
+                        <div class="fg"><label class="lbl">Ends at</label><input name="EndTime" type="time" class="inp" value="17:00" required /></div>
+                        <div class="fg"><label class="lbl">Break (minutes)</label><input name="BreakMinutes" type="number" class="inp" value="60" /></div>
+                        <div class="fg"><label class="lbl">Late after (minutes)</label><input name="LateGraceMinutes" type="number" class="inp" value="10" /></div>
+                        <div class="fg"><label class="lbl">Overtime after (minutes)</label><input name="OvertimeThresholdMinutes" type="number" class="inp" value="30" /></div>
+                        <div class="fg"><label class="lbl">Colour</label><input name="Colour" type="color" class="inp" value="#3b6ea5" /></div>
+                        <div class="fg full">
+                            <label class="lbl">Working days</label>
+                            <div style="display:flex; gap:.9rem; flex-wrap:wrap;">
+                                @for (var d = 0; d < 7; d++)
+                                {
+                                    <label class="check">
+                                        <input type="checkbox" name="workingDays" value="@d" checked="@(d >= 1 && d <= 5)" /> @dayNames[d]
+                                    </label>
+                                }
+                            </div>
+                        </div>
+                        <div class="fg full" style="display:flex; gap:1.25rem; flex-wrap:wrap;">
+                            <label class="check"><input type="checkbox" name="SpansMidnight" value="true" /> Crosses midnight</label>
+                            <label class="check"><input type="checkbox" name="IsActive" value="true" checked /> Active</label>
+                        </div>
+                        <div class="fg full">
+                            <label class="lbl">Description</label>
+                            <input name="Description" class="inp" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-hr btn-sm"><i class="fas fa-floppy-disk"></i> Save shift</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Shift patterns</span>
+                <span class="meta">@Model.Count</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-business-time"></i>
+                        <h3>No shifts defined</h3>
+                        <p>
+                            Without a shift, attendance falls back to a Monday-to-Friday assumption and
+                            cannot tell late from on time.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Shift</th><th>Hours</th><th class="num">Per day</th><th>Days</th>
+                                <th class="num">Break</th><th class="num">Grace</th><th>Status</th><th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in Model)
+                            {
+                                <tr style="@(s.IsActive ? "" : "opacity:.55;")">
+                                    <td>
+                                        <span style="display:inline-flex; align-items:center; gap:.5rem;">
+                                            <i class="fas fa-circle" style="font-size:.6rem; color:@(s.Colour ?? "#94a3b8");"></i>
+                                            <strong style="color:var(--gray-800);">@s.Name</strong>
+                                        </span>
+                                        @if (!string.IsNullOrWhiteSpace(s.Description))
+                                        {
+                                            <div class="meta" style="font-size:.75rem;">@s.Description</div>
+                                        }
+                                    </td>
+                                    <td class="meta">
+                                        @s.StartTime.ToString(@"hh\:mm") – @s.EndTime.ToString(@"hh\:mm")
+                                        @if (s.SpansMidnight) { <span class="chip">overnight</span> }
+                                    </td>
+                                    <td class="num"><strong>@s.ScheduledHours.ToString("0.##")</strong></td>
+                                    <td class="meta" style="font-size:.75rem;">@s.WorkingDaysLabel</td>
+                                    <td class="num meta">@s.BreakMinutes min</td>
+                                    <td class="num meta">@s.LateGraceMinutes min</td>
+                                    <td><span class="badge-hr @(s.IsActive ? "b-active" : "b-left")">@(s.IsActive ? "Active" : "Inactive")</span></td>
+                                    <td style="text-align:right;">
+                                        <button type="button" class="act edit" onclick="hrToggle('edit-@s.Id')"><i class="fas fa-pen"></i></button>
+                                    </td>
+                                </tr>
+                                <tr id="edit-@s.Id" style="display:none; background:var(--gray-50);">
+                                    <td colspan="8" style="padding:1rem 1.25rem;">
+                                        <form asp-action="SaveShift" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="Id" value="@s.Id" />
+                                            <div class="form-grid three">
+                                                <div class="fg"><label class="lbl">Name</label><input name="Name" class="inp" value="@s.Name" required /></div>
+                                                <div class="fg"><label class="lbl">Starts</label><input name="StartTime" type="time" class="inp" value="@s.StartTime.ToString(@"hh\:mm")" required /></div>
+                                                <div class="fg"><label class="lbl">Ends</label><input name="EndTime" type="time" class="inp" value="@s.EndTime.ToString(@"hh\:mm")" required /></div>
+                                                <div class="fg"><label class="lbl">Break (min)</label><input name="BreakMinutes" type="number" class="inp" value="@s.BreakMinutes" /></div>
+                                                <div class="fg"><label class="lbl">Late after (min)</label><input name="LateGraceMinutes" type="number" class="inp" value="@s.LateGraceMinutes" /></div>
+                                                <div class="fg"><label class="lbl">Overtime after (min)</label><input name="OvertimeThresholdMinutes" type="number" class="inp" value="@s.OvertimeThresholdMinutes" /></div>
+                                                <div class="fg full">
+                                                    <label class="lbl">Working days</label>
+                                                    <div style="display:flex; gap:.9rem; flex-wrap:wrap;">
+                                                        @for (var d = 0; d < 7; d++)
+                                                        {
+                                                            <label class="check">
+                                                                <input type="checkbox" name="workingDays" value="@d" checked="@s.WorksOn((DayOfWeek)d)" /> @dayNames[d]
+                                                            </label>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <div class="fg"><label class="lbl">Colour</label><input name="Colour" type="color" class="inp" value="@(s.Colour ?? "#3b6ea5")" /></div>
+                                                <div class="fg full" style="display:flex; gap:1.25rem;">
+                                                    <label class="check"><input type="checkbox" name="SpansMidnight" value="true" checked="@s.SpansMidnight" /> Crosses midnight</label>
+                                                    <label class="check"><input type="checkbox" name="IsActive" value="true" checked="@s.IsActive" /> Active</label>
+                                                </div>
+                                                <div class="fg full"><label class="lbl">Description</label><input name="Description" class="inp" value="@s.Description" /></div>
+                                            </div>
+                                            <button type="submit" class="btn-hr btn-sm"><i class="fas fa-floppy-disk"></i> Save</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        @* ── ASSIGNMENTS ─────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-user-clock"></i> Who works which shift</span>
+                <span class="meta">@assignments.Count current assignment(s)</span>
+            </div>
+            <div class="card-body">
+                @if (Model.Any(s => s.IsActive))
+                {
+                    <form asp-action="AssignShift" method="post" class="toolbar" style="margin-bottom:1.25rem;">
+                        @Html.AntiForgeryToken()
+                        <div class="fg">
+                            <label class="lbl">Employee</label>
+                            <select name="employeeId" class="inp" required>
+                                <option value="">— Select —</option>
+                                @foreach (var e in employees)
+                                {
+                                    <option value="@e.Id">@e.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl">Shift</label>
+                            <select name="shiftId" class="inp" required>
+                                @foreach (var s in Model.Where(x => x.IsActive))
+                                {
+                                    <option value="@s.Id">@s.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="lbl">From</label>
+                            <input type="date" name="fromDate" class="inp" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="fg" style="flex:1; min-width:150px;">
+                            <label class="lbl">Note</label>
+                            <input type="text" name="note" class="inp" />
+                        </div>
+                        <button type="submit" class="btn-hr"><i class="fas fa-user-clock"></i> Assign</button>
+                    </form>
+                }
+
+                @if (assignments.Count == 0)
+                {
+                    <p class="meta">
+                        Nobody is assigned to a shift. Attendance will fall back to a Monday-to-Friday
+                        assumption for everyone.
+                    </p>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Employee</th><th>Shift</th><th>From</th><th>To</th><th>Note</th></tr></thead>
+                        <tbody>
+                            @foreach (var a in assignments)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-action="Timesheet" asp-route-employeeId="@a.EmployeeId" class="strong-link">
+                                            @a.Employee?.DisplayName
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-circle" style="font-size:.55rem; color:@(a.Shift?.Colour ?? "#94a3b8");"></i>
+                                        @a.Shift?.Name
+                                        <span class="meta" style="font-size:.72rem;">
+                                            @a.Shift?.StartTime.ToString(@"hh\:mm")–@a.Shift?.EndTime.ToString(@"hh\:mm")
+                                        </span>
+                                    </td>
+                                    <td class="meta">@a.FromDate.ToString("d MMM yyyy")</td>
+                                    <td class="meta">@(a.ToDate?.ToString("d MMM yyyy") ?? "ongoing")</td>
+                                    <td class="meta" style="font-size:.75rem;">@(a.Note ?? "—")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function hrToggle(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const isRow = el.tagName === 'TR';
+            el.style.display = el.style.display === 'none' ? (isRow ? 'table-row' : 'block') : 'none';
+        }
+    </script>
+}

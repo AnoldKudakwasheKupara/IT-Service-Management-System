@@ -216,6 +216,12 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<Payslip> Payslips { get; set; }
         public DbSet<PayslipLine> PayslipLines { get; set; }
 
+        // ── HR: attendance ─────────────────────────────────────────────────────────
+        public DbSet<Shift> Shifts { get; set; }
+        public DbSet<ShiftAssignment> ShiftAssignments { get; set; }
+        public DbSet<AttendanceRecord> AttendanceRecords { get; set; }
+        public DbSet<OvertimeRequest> OvertimeRequests { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -984,6 +990,51 @@ namespace IT_Service_Management_System.DbContexts
                     .OnDelete(DeleteBehavior.Cascade);
                 // Restrict, not cascade: deleting an employee must never erase what they were paid.
                 e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Attendance ────────────────────────────────────────────────────────
+            b.Entity<Shift>().HasIndex(x => new { x.IsActive, x.Name });
+
+            b.Entity<ShiftAssignment>(e =>
+            {
+                e.HasIndex(x => new { x.EmployeeId, x.FromDate });
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.Shift).WithMany(s => s.Assignments).HasForeignKey(x => x.ShiftId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<AttendanceRecord>(e =>
+            {
+                // One record per employee per day — the unique index is what stops a double
+                // clock-in creating two rows and paying the overtime twice.
+                e.HasIndex(x => new { x.EmployeeId, x.Date }).IsUnique();
+                e.HasIndex(x => new { x.Date, x.Status });
+                e.HasIndex(x => x.IsApproved);
+
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.Shift).WithMany().HasForeignKey(x => x.ShiftId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                // The attendance row outlives the leave request that explained it.
+                e.HasOne(x => x.LeaveRequest).WithMany().HasForeignKey(x => x.LeaveRequestId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(x => x.ApprovedBy).WithMany().HasForeignKey(x => x.ApprovedById)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.RecordedBy).WithMany().HasForeignKey(x => x.RecordedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<OvertimeRequest>(e =>
+            {
+                e.HasIndex(x => new { x.EmployeeId, x.Date });
+                e.HasIndex(x => x.Status);
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.ApprovedBy).WithMany().HasForeignKey(x => x.ApprovedById)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.RequestedBy).WithMany().HasForeignKey(x => x.RequestedById)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 

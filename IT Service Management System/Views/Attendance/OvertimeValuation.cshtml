@@ -1,0 +1,174 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Services.Hr
+@model List<AttendanceService.OvertimeValuation>
+@{
+    var from = (DateTime)(ViewBag.From ?? DateTime.Today);
+    var to = (DateTime)(ViewBag.To ?? DateTime.Today);
+    ViewData["Title"] = "Overtime Valuation";
+    var employees = ViewBag.Employees as Dictionary<int, Employee> ?? new Dictionary<int, Employee>();
+    var multipliers = ViewBag.Multipliers as Dictionary<string, decimal> ?? new Dictionary<string, decimal>();
+    var unapproved = (decimal)(ViewBag.UnapprovedHours ?? 0m);
+
+    decimal M(string key, decimal fallback) => multipliers.GetValueOrDefault(key, fallback);
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr wide">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="OvertimeQueue" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-calculator"></i> Overtime Valuation</h1>
+                        <p class="page-sub">
+                            What approved overtime is worth for @from.ToString("d MMM") – @to.ToString("d MMM yyyy")
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <button type="button" class="btn-ghost-hr" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="toolbar">
+                    <div class="fg"><label class="lbl">From</label><input type="date" name="from" class="inp" value="@from.ToString("yyyy-MM-dd")" /></div>
+                    <div class="fg"><label class="lbl">To</label><input type="date" name="to" class="inp" value="@to.ToString("yyyy-MM-dd")" /></div>
+                    <button type="submit" class="btn-hr"><i class="fas fa-magnifying-glass"></i> Value</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="notice">
+            <h4><i class="fas fa-circle-info"></i> How these figures are built</h4>
+            <p>
+                The hourly rate comes from basic salary divided by the monthly hours implied by a
+                @M(StatutoryKeys.StandardHoursPerWeek, 44m).ToString("0.##")-hour week. Each band is then
+                multiplied: normal overtime at
+                <strong>@M(StatutoryKeys.OvertimeMultiplier, 1.5m).ToString("0.##")×</strong>, rest days at
+                <strong>@M(StatutoryKeys.RestDayMultiplier, 2m).ToString("0.##")×</strong>, and public holidays at
+                <strong>@M(StatutoryKeys.PublicHolidayMultiplier, 2m).ToString("0.##")×</strong>.
+                All four are configurable, because they come from the NEC agreement for the sector
+                rather than from the Labour Act.
+            </p>
+        </div>
+
+        @if (unapproved > 0)
+        {
+            <div class="notice warn">
+                <h4><i class="fas fa-triangle-exclamation"></i> @unapproved.ToString("N1") hour(s) are excluded</h4>
+                <p>
+                    Only approved days are valued. Those hours will not appear here — or be paid —
+                    until they are signed off on the daily register.
+                </p>
+            </div>
+        }
+
+        <div class="stats">
+            <div class="stat">
+                <div class="ic brand"><i class="fas fa-users"></i></div>
+                <div><h3>@Model.Count</h3><p>Employees</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic blue"><i class="fas fa-clock"></i></div>
+                <div><h3>@Model.Sum(v => v.TotalHours).ToString("N1")</h3><p>Hours</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic purple"><i class="fas fa-plus"></i></div>
+                <div><h3>@Model.Sum(v => v.OvertimeHours).ToString("N1")</h3><p>Normal overtime</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic amber"><i class="fas fa-calendar-week"></i></div>
+                <div><h3>@Model.Sum(v => v.RestDayHours).ToString("N1")</h3><p>Rest day</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic red"><i class="fas fa-star"></i></div>
+                <div><h3>@Model.Sum(v => v.HolidayHours).ToString("N1")</h3><p>Public holiday</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic green"><i class="fas fa-sack-dollar"></i></div>
+                <div><h3>@Model.Sum(v => v.TotalAmount).ToString("N0")</h3><p>Total cost</p></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> By employee</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-calculator"></i>
+                        <h3>No approved overtime in this period</h3>
+                        <p>
+                            Either none was worked, or it is still waiting for approval on the daily
+                            register. Anyone without a salary structure is also excluded, since there
+                            is no rate to value their hours at.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Employee</th><th class="num">Hourly rate</th>
+                                <th class="num">Normal h</th><th class="num">Normal</th>
+                                <th class="num">Rest day h</th><th class="num">Rest day</th>
+                                <th class="num">Holiday h</th><th class="num">Holiday</th>
+                                <th class="num">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var v in Model.OrderByDescending(x => x.TotalAmount))
+                            {
+                                employees.TryGetValue(v.EmployeeId, out var employee);
+                                <tr>
+                                    <td>
+                                        <a asp-action="Timesheet" asp-route-employeeId="@v.EmployeeId"
+                                           asp-route-from="@from.ToString("yyyy-MM-dd")" asp-route-to="@to.ToString("yyyy-MM-dd")"
+                                           class="strong-link">@(employee?.DisplayName ?? $"#{v.EmployeeId}")</a>
+                                        <div class="meta" style="font-size:.7rem;">@employee?.EmployeeNumber</div>
+                                    </td>
+                                    <td class="num meta">@v.Currency @v.HourlyRate.ToString("N2")</td>
+                                    <td class="num">@(v.OvertimeHours > 0 ? v.OvertimeHours.ToString("0.##") : "—")</td>
+                                    <td class="num meta">@(v.OvertimeAmount > 0 ? v.OvertimeAmount.ToString("N2") : "—")</td>
+                                    <td class="num">@(v.RestDayHours > 0 ? v.RestDayHours.ToString("0.##") : "—")</td>
+                                    <td class="num meta">@(v.RestDayAmount > 0 ? v.RestDayAmount.ToString("N2") : "—")</td>
+                                    <td class="num">@(v.HolidayHours > 0 ? v.HolidayHours.ToString("0.##") : "—")</td>
+                                    <td class="num meta">@(v.HolidayAmount > 0 ? v.HolidayAmount.ToString("N2") : "—")</td>
+                                    <td class="num"><strong>@v.Currency @v.TotalAmount.ToString("N2")</strong></td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:var(--gray-50); font-weight:700;">
+                                <td colspan="2">Totals</td>
+                                <td class="num">@Model.Sum(v => v.OvertimeHours).ToString("0.##")</td>
+                                <td class="num">@Model.Sum(v => v.OvertimeAmount).ToString("N2")</td>
+                                <td class="num">@Model.Sum(v => v.RestDayHours).ToString("0.##")</td>
+                                <td class="num">@Model.Sum(v => v.RestDayAmount).ToString("N2")</td>
+                                <td class="num">@Model.Sum(v => v.HolidayHours).ToString("0.##")</td>
+                                <td class="num">@Model.Sum(v => v.HolidayAmount).ToString("N2")</td>
+                                <td class="num">@Model.Sum(v => v.TotalAmount).ToString("N2")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <p class="meta" style="text-align:center; font-size:.78rem;">
+            Add these as an overtime pay component on the employee's payroll record for the period.
+            They are not carried across automatically, so that a payroll administrator sees and
+            agrees the figure before it is paid.
+        </p>
+
+    </div>
+</div>

@@ -1,0 +1,329 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Services.Hr
+@{
+    ViewData["Title"] = "My Attendance";
+    var me = ViewBag.Employee as Employee;
+    var anchor = (DateTime)(ViewBag.Anchor ?? DateTime.Today);
+    var shift = ViewBag.Shift as Shift;
+    var summary = ViewBag.Summary as AttendanceService.AttendanceSummary;
+    var records = ViewBag.Records as List<AttendanceRecord> ?? new List<AttendanceRecord>();
+    var today = ViewBag.Today as AttendanceRecord;
+    var overtime = ViewBag.MyOvertime as List<OvertimeRequest> ?? new List<OvertimeRequest>();
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+    string StatusClass(AttendanceStatus s) => s switch
+    {
+        AttendanceStatus.Present => "b-active",
+        AttendanceStatus.Late or AttendanceStatus.PartialDay => "b-probation",
+        AttendanceStatus.Absent or AttendanceStatus.Unexplained => "b-danger",
+        AttendanceStatus.OnLeave => "b-leave",
+        _ => "b-neutral"
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-clock"></i> My Attendance</h1>
+                    <p class="page-sub">
+                        @me?.DisplayName
+                        @if (shift != null)
+                        {
+                            <text>
+                                · @shift.Name, @shift.StartTime.ToString(@"hh\:mm")–@shift.EndTime.ToString(@"hh\:mm")
+                                (@shift.ScheduledHours.ToString("0.##") h/day, @shift.WorkingDaysLabel)
+                            </text>
+                        }
+                        else
+                        {
+                            <text> · no shift assigned</text>
+                        }
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Timesheet" asp-route-employeeId="@me?.Id" class="btn-ghost-hr">
+                        <i class="fas fa-table-list"></i> Timesheet
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @* ── CLOCK ───────────────────────────────────────────────────────── *@
+        <div class="card">
+            <div class="card-body" style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+                <div>
+                    <div class="k" style="font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; color:var(--gray-400);">
+                        @DateTime.Today.ToString("dddd d MMMM yyyy")
+                    </div>
+                    <div style="font-size:1.4rem; font-weight:700; color:var(--gray-800); margin-top:.2rem;">
+                        @if (today?.ClockIn == null)
+                        {
+                            <text>Not clocked in</text>
+                        }
+                        else if (today.ClockOut == null)
+                        {
+                            <text>In since @today.ClockIn.Value.ToString("HH:mm")</text>
+                        }
+                        else
+                        {
+                            <text>@today.ClockIn.Value.ToString("HH:mm") – @today.ClockOut.Value.ToString("HH:mm")</text>
+                        }
+                    </div>
+                    @if (today != null)
+                    {
+                        <div class="meta" style="margin-top:.3rem;">
+                            @if (today.HoursWorked > 0)
+                            {
+                                <text>@today.HoursWorked.ToString("0.##") hour(s) worked. </text>
+                            }
+                            @if (today.LateMinutes > 0)
+                            {
+                                <span class="overdue">@today.LateMinutes minute(s) late. </span>
+                            }
+                            @if (today.DayType != DayType.WorkingDay)
+                            {
+                                <span class="badge-hr b-warn">@Spaced(today.DayType.ToString())</span>
+                            }
+                            @if (today.TotalOvertimeHours > 0)
+                            {
+                                <span class="badge-hr @(today.IsApproved ? "b-active" : "b-probation")">
+                                    @today.TotalOvertimeHours.ToString("0.##") h overtime
+                                    @(today.IsApproved ? "approved" : "awaiting approval")
+                                </span>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div style="display:flex; gap:.6rem;">
+                    @if (today?.ClockIn == null)
+                    {
+                        <form asp-action="ClockIn" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-hr" style="font-size:1rem; padding:.8rem 1.6rem;">
+                                <i class="fas fa-right-to-bracket"></i> Clock in
+                            </button>
+                        </form>
+                    }
+                    else if (today.ClockOut == null)
+                    {
+                        <form asp-action="ClockOut" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn-success-hr" style="font-size:1rem; padding:.8rem 1.6rem;">
+                                <i class="fas fa-right-from-bracket"></i> Clock out
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <span class="badge-hr b-active" style="padding:.6rem 1.2rem;">
+                            <i class="fas fa-circle-check"></i> Day complete
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── MONTH SUMMARY ───────────────────────────────────────────────── *@
+        @if (summary != null)
+        {
+            <div class="stats">
+                <div class="stat">
+                    <div class="ic brand"><i class="fas fa-calendar-check"></i></div>
+                    <div><h3>@summary.DaysWorked</h3><p>Days worked</p></div>
+                </div>
+                <div class="stat">
+                    <div class="ic blue"><i class="fas fa-hourglass"></i></div>
+                    <div>
+                        <h3>@summary.HoursWorked.ToString("N1")</h3>
+                        <p>Hours</p>
+                        <span class="sub">of @summary.ScheduledHours.ToString("N1") scheduled</span>
+                    </div>
+                </div>
+                <div class="stat">
+                    <div class="ic purple"><i class="fas fa-plus"></i></div>
+                    <div>
+                        <h3>@summary.TotalOvertimeHours.ToString("N1")</h3>
+                        <p>Overtime</p>
+                        @if (summary.UnapprovedOvertime > 0)
+                        {
+                            <span class="sub">@summary.UnapprovedOvertime day(s) unapproved</span>
+                        }
+                    </div>
+                </div>
+                <div class="stat">
+                    <div class="ic amber"><i class="fas fa-clock"></i></div>
+                    <div>
+                        <h3>@summary.TimesLate</h3>
+                        <p>Times late</p>
+                        @if (summary.TotalLateMinutes > 0)
+                        {
+                            <span class="sub">@summary.TotalLateMinutes minute(s) in total</span>
+                        }
+                    </div>
+                </div>
+                <div class="stat">
+                    <div class="ic red"><i class="fas fa-user-slash"></i></div>
+                    <div><h3>@summary.DaysAbsent</h3><p>Absences</p></div>
+                </div>
+                <div class="stat">
+                    <div class="ic teal"><i class="fas fa-umbrella-beach"></i></div>
+                    <div><h3>@summary.DaysOnLeave</h3><p>On leave</p></div>
+                </div>
+            </div>
+        }
+
+        <div class="grid-2-1">
+            <div>
+                @* ── MONTH RECORD ────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head">
+                        <span class="t"><i class="fas fa-calendar-days"></i> @anchor.ToString("MMMM yyyy")</span>
+                        <span style="display:flex; gap:.4rem;">
+                            <a asp-action="Index" asp-route-month="@anchor.AddMonths(-1).ToString("yyyy-MM-dd")" class="btn-ghost-hr btn-sm">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                            <a asp-action="Index" class="btn-ghost-hr btn-sm">This month</a>
+                            <a asp-action="Index" asp-route-month="@anchor.AddMonths(1).ToString("yyyy-MM-dd")" class="btn-ghost-hr btn-sm">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </span>
+                    </div>
+                    <div class="card-body flush">
+                        @if (records.Count == 0)
+                        {
+                            <div class="empty">
+                                <i class="fas fa-clock"></i>
+                                <h3>Nothing recorded</h3>
+                                <p>Clock in to start building this month's record.</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <table class="tbl">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th><th>In</th><th>Out</th><th class="num">Hours</th>
+                                        <th class="num">Overtime</th><th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var r in records)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong style="color:var(--gray-800);">@r.Date.ToString("ddd d MMM")</strong>
+                                                @if (r.DayType != DayType.WorkingDay)
+                                                {
+                                                    <div><span class="chip">@Spaced(r.DayType.ToString())</span></div>
+                                                }
+                                            </td>
+                                            <td class="meta">
+                                                @(r.ClockIn?.ToString("HH:mm") ?? "—")
+                                                @if (r.LateMinutes > 0)
+                                                {
+                                                    <div class="overdue" style="font-size:.7rem;">+@r.LateMinutes min</div>
+                                                }
+                                            </td>
+                                            <td class="meta">@(r.ClockOut?.ToString("HH:mm") ?? (r.IsIncomplete ? "missing" : "—"))</td>
+                                            <td class="num">@(r.HoursWorked > 0 ? r.HoursWorked.ToString("0.##") : "—")</td>
+                                            <td class="num">
+                                                @if (r.TotalOvertimeHours > 0)
+                                                {
+                                                    <span class="badge-hr @(r.IsApproved ? "b-active" : "b-probation")">
+                                                        @r.TotalOvertimeHours.ToString("0.##")
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <text>—</text>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge-hr @StatusClass(r.Status)">@Spaced(r.Status.ToString())</span>
+                                                @if (r.LeaveRequest != null)
+                                                {
+                                                    <div class="meta" style="font-size:.7rem;">@r.LeaveRequest.LeaveType?.Name</div>
+                                                }
+                                                @if (r.IsManualEntry)
+                                                {
+                                                    <div><span class="chip" title="Entered by a supervisor rather than clocked">keyed</span></div>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                @* ── OVERTIME REQUEST ────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-plus"></i> Request overtime</span></div>
+                    <div class="card-body">
+                        <p class="meta" style="margin-bottom:.9rem; font-size:.8rem; line-height:1.6;">
+                            Ask before you work it. Overtime is paid at a premium and, once worked,
+                            is very hard to refuse — so the decision belongs beforehand.
+                        </p>
+                        <form asp-action="RequestOvertime" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="fg">
+                                <label class="lbl">Date</label>
+                                <input type="date" name="date" class="inp" value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Hours</label>
+                                <input type="number" name="hours" step="0.5" min="0.5" max="16" class="inp" required />
+                            </div>
+                            <div class="fg">
+                                <label class="lbl">Reason</label>
+                                <textarea name="reason" class="inp" rows="3" required
+                                          placeholder="What needs doing, and why it cannot wait."></textarea>
+                            </div>
+                            <button type="submit" class="btn-hr" style="width:100%; justify-content:center;">
+                                <i class="fas fa-paper-plane"></i> Request
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><span class="t"><i class="fas fa-list"></i> My overtime</span></div>
+                    <div class="card-body">
+                        @if (overtime.Count == 0)
+                        {
+                            <p class="meta">Nothing requested this month.</p>
+                        }
+                        @foreach (var o in overtime)
+                        {
+                            <div style="display:flex; justify-content:space-between; gap:.5rem; padding:.45rem 0; border-bottom:1px solid var(--gray-100);">
+                                <div style="min-width:0;">
+                                    <div style="font-size:.84rem; color:var(--gray-800);">
+                                        @o.Date.ToString("d MMM") · @o.HoursRequested.ToString("0.##") h
+                                    </div>
+                                    <div class="meta" style="font-size:.72rem;">@Spaced(o.DayType.ToString())</div>
+                                </div>
+                                <span class="badge-hr @(o.Status switch {
+                                    OvertimeStatus.Approved => "b-active",
+                                    OvertimeStatus.Rejected => "b-danger",
+                                    OvertimeStatus.Paid => "b-leave",
+                                    _ => "b-probation" })">@o.Status</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

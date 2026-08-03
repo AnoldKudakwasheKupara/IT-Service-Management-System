@@ -847,6 +847,10 @@
                    asp-controller="Payroll" asp-action="MyPayslips">
                     <i class="fas fa-receipt"></i> My Payslips
                 </a>
+                <a class="nav-item @(currentController == "Attendance" && (currentAction == "Index" || currentAction == "Timesheet") ? "active" : "")"
+                   asp-controller="Attendance" asp-action="Index">
+                    <i class="fas fa-clock"></i> My Attendance
+                </a>
                 <a class="nav-item @(currentController == "Mfa" ? "active" : "")"
                    asp-controller="Mfa" asp-action="Index">
                     <i class="fas fa-shield-halved"></i> Two-Factor Auth
@@ -1148,6 +1152,21 @@
                        asp-controller="Payroll" asp-action="Index">
                         <i class="fas fa-money-check-dollar"></i>
                         Payroll
+                    </a>
+                    <a class="nav-item @(currentController == "Attendance" && currentAction == "Register" ? "active" : "")"
+                       asp-controller="Attendance" asp-action="Register">
+                        <i class="fas fa-clipboard-user"></i>
+                        Daily Register
+                    </a>
+                    <a class="nav-item @(currentController == "Attendance" && (currentAction == "OvertimeQueue" || currentAction == "OvertimeValuation") ? "active" : "")"
+                       asp-controller="Attendance" asp-action="OvertimeQueue">
+                        <i class="fas fa-stopwatch"></i>
+                        Overtime
+                    </a>
+                    <a class="nav-item @(currentController == "Attendance" && currentAction == "Shifts" ? "active" : "")"
+                       asp-controller="Attendance" asp-action="Shifts">
+                        <i class="fas fa-business-time"></i>
+                        Shifts
                     </a>
                     <a class="nav-item @(currentController == "ExitClearance" && currentAction != "Mine" ? "active" : "")"
                        asp-controller="ExitClearance" asp-action="Index">

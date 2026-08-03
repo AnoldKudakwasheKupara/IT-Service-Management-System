@@ -1,0 +1,172 @@
+@using IT_Service_Management_System.Models.Hr
+@model List<OvertimeRequest>
+@{
+    ViewData["Title"] = "Overtime Approvals";
+    var decided = ViewBag.Decided as List<OvertimeRequest> ?? new List<OvertimeRequest>();
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+
+    string RateNote(DayType d) => d switch
+    {
+        DayType.PublicHoliday => "public holiday rate",
+        DayType.RestDay => "rest-day rate",
+        _ => "overtime rate"
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div style="display:flex; gap:.9rem; align-items:flex-start;">
+                    <a asp-action="Register" class="btn-back"><i class="fas fa-arrow-left"></i></a>
+                    <div>
+                        <h1 class="page-title"><i class="fas fa-inbox"></i> Overtime Approvals</h1>
+                        <p class="page-sub">
+                            Rates are set by the National Employment Council agreement for the sector,
+                            not by the Labour Act — the multiplier applied is whatever is configured
+                            under statutory rates.
+                        </p>
+                    </div>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="OvertimeValuation" class="btn-outline-hr">
+                        <i class="fas fa-calculator"></i> What it costs
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="stats">
+            <div class="stat">
+                <div class="ic amber"><i class="fas fa-hourglass-half"></i></div>
+                <div><h3>@Model.Count</h3><p>Awaiting decision</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic blue"><i class="fas fa-clock"></i></div>
+                <div><h3>@Model.Sum(o => o.HoursRequested).ToString("N1")</h3><p>Hours requested</p></div>
+            </div>
+            <div class="stat">
+                <div class="ic red"><i class="fas fa-star"></i></div>
+                <div>
+                    <h3>@Model.Count(o => o.DayType != DayType.WorkingDay)</h3>
+                    <p>At premium rates</p>
+                    <span class="sub">rest day or holiday</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <span class="t"><i class="fas fa-list"></i> Pending</span>
+            </div>
+            <div class="card-body flush">
+                @if (Model.Count == 0)
+                {
+                    <div class="empty">
+                        <i class="fas fa-circle-check" style="color:var(--success);"></i>
+                        <h3>Nothing waiting</h3>
+                        <p>Every overtime request has been decided.</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead>
+                            <tr>
+                                <th>Ref</th><th>Employee</th><th>Date</th><th class="num">Hours</th>
+                                <th>Rate band</th><th>Reason</th><th style="text-align:right;">Decide</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var o in Model)
+                            {
+                                <tr>
+                                    <td class="ref">@o.Reference</td>
+                                    <td>
+                                        <span class="with-avatar">
+                                            <span class="avatar sm">@o.Employee?.FirstName.FirstOrDefault()@o.Employee?.LastName.FirstOrDefault()</span>
+                                            <span>
+                                                @o.Employee?.DisplayName
+                                                <div class="meta" style="font-size:.7rem;">@o.Employee?.Department?.Name</div>
+                                            </span>
+                                        </span>
+                                    </td>
+                                    <td class="meta">@o.Date.ToString("ddd d MMM")</td>
+                                    <td class="num"><strong>@o.HoursRequested.ToString("0.##")</strong></td>
+                                    <td>
+                                        <span class="badge-hr @(o.DayType == DayType.WorkingDay ? "b-neutral" : "b-warn")">
+                                            @RateNote(o.DayType)
+                                        </span>
+                                    </td>
+                                    <td class="meta" style="font-size:.78rem; max-width:260px;">@o.Reason</td>
+                                    <td style="text-align:right;">
+                                        <form asp-action="DecideOvertime" method="post" style="display:inline-flex; gap:.3rem; align-items:center;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@o.Id" />
+                                            <input type="number" name="hoursApproved" step="0.5" min="0"
+                                                   value="@o.HoursRequested" class="inp"
+                                                   style="width:70px; padding:.25rem .4rem; font-size:.75rem;"
+                                                   title="Approve fewer hours if you wish" />
+                                            <input type="text" name="note" class="inp" placeholder="Note"
+                                                   style="width:120px; padding:.25rem .4rem; font-size:.75rem;" />
+                                            <button type="submit" name="approve" value="true" class="act ok" title="Approve">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button type="submit" name="approve" value="false" class="act del" title="Reject — needs a note">
+                                                <i class="fas fa-xmark"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        @if (decided.Count > 0)
+        {
+            <div class="card">
+                <div class="card-head"><span class="t"><i class="fas fa-clock-rotate-left"></i> Recently decided</span></div>
+                <div class="card-body flush">
+                    <table class="tbl">
+                        <thead><tr><th>Ref</th><th>Employee</th><th>Date</th><th class="num">Requested</th><th class="num">Approved</th><th>Status</th><th>By</th></tr></thead>
+                        <tbody>
+                            @foreach (var o in decided)
+                            {
+                                <tr>
+                                    <td class="ref">@o.Reference</td>
+                                    <td class="meta">@o.Employee?.DisplayName</td>
+                                    <td class="meta">@o.Date.ToString("d MMM yy")</td>
+                                    <td class="num meta">@o.HoursRequested.ToString("0.##")</td>
+                                    <td class="num">@(o.HoursApproved > 0 ? o.HoursApproved.ToString("0.##") : "—")</td>
+                                    <td>
+                                        <span class="badge-hr @(o.Status switch {
+                                            OvertimeStatus.Approved => "b-active",
+                                            OvertimeStatus.Rejected => "b-danger",
+                                            OvertimeStatus.Paid => "b-leave",
+                                            _ => "b-neutral" })">@o.Status</span>
+                                    </td>
+                                    <td class="meta" style="font-size:.75rem;">
+                                        @o.ApprovedBy?.DisplayName
+                                        @if (!string.IsNullOrWhiteSpace(o.DecisionNote))
+                                        {
+                                            <div>@o.DecisionNote</div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
