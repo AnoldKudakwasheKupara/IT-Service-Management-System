@@ -1102,6 +1102,11 @@
                             <i class="fas fa-chart-pie"></i> HR Report
                         </a>
                     }
+                    <a class="nav-item @(currentController == "Reports" && currentAction == "Workforce" ? "active" : "")"
+                       asp-controller="Reports" asp-action="Workforce">
+                        <i class="fas fa-chart-line"></i>
+                        Workforce Analytics
+                    </a>
                     <a class="nav-item @(currentController == "Employees" && currentAction != "OrgChart" ? "active" : "")"
                        asp-controller="Employees" asp-action="Index">
                         <i class="fas fa-address-book"></i>

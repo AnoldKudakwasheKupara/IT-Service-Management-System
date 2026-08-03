@@ -236,6 +236,7 @@ builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.PmFileServic
 // HR — builds the employee register from existing accounts and matches historical interview
 // and talent rows back to it. Idempotent; safe to run on every start.
 builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.EmployeeBackfillService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.HrAnalyticsService>();
 
 // Defensive, idempotent demo-data top-up seeder (gated by Demo:Seed, default ON).
 builder.Services.AddScoped<IT_Service_Management_System.Services.DemoDataSeeder>();

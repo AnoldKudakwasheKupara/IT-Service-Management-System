@@ -13,11 +13,30 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly TimeProvider _clock;
+        private readonly IT_Service_Management_System.Services.Hr.HrAnalyticsService _hrAnalytics;
 
-        public ReportsController(ApplicationDbContext context, TimeProvider clock)
+        public ReportsController(ApplicationDbContext context, TimeProvider clock,
+            IT_Service_Management_System.Services.Hr.HrAnalyticsService hrAnalytics)
         {
             _context = context;
             _clock = clock;
+            _hrAnalytics = hrAnalytics;
+        }
+
+        /// <summary>
+        /// Workforce analytics — headcount, turnover, tenure, and the aggregate of what the exit
+        /// and stay interviews have been collecting all along.
+        /// </summary>
+        [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin", "HR")]
+        public async Task<IActionResult> Workforce(DateTime? from, DateTime? to)
+        {
+            // Twelve months to date is the window most HR reporting is quoted over.
+            var today = _clock.GetLocalNow().Date;
+            var start = from ?? today.AddMonths(-12);
+            var end = to ?? today;
+            if (end < start) end = start;
+
+            return View(await _hrAnalytics.BuildAsync(start, end));
         }
 
         // 🧑‍💼 HR ANALYTICS — accessible to HR as well as full-access roles.
