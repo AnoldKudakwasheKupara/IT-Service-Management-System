@@ -189,7 +189,12 @@ namespace IT_Service_Management_System.Controllers
 
             if (interview != null)
             {
-                _context.ExitInterviews.Remove(interview);
+                // Soft delete. An exit interview records why somebody left and what they said
+                // about their manager and their pay — it is evidence, and destroying it removes
+                // the organisation's ability to answer for a decision later. The global query
+                // filter hides it everywhere; an administrator can still recover it.
+                interview.IsDeleted = true;
+                interview.ModifiedDate = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
 

@@ -18,8 +18,9 @@ namespace IT_Service_Management_System.Controllers
         // GET: TalentIdentification
         public async Task<IActionResult> Index()
         {
+            // The IsDeleted predicate now lives in a global query filter, so it is applied here
+            // whether or not this query remembers to ask for it.
             var records = await _context.TalentIdentifications
-                .Where(x => !x.IsDeleted)
                 .OrderByDescending(x => x.CreatedDate)
                 .ToListAsync();
 

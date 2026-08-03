@@ -141,7 +141,11 @@ namespace IT_Service_Management_System.Controllers
 
             if (interview != null)
             {
-                _context.EngagementStayInterviews.Remove(interview);
+                // Soft delete — the IsDeleted column already existed but was never used, so these
+                // records were being destroyed outright. A stay interview is the organisation's
+                // record of what an employee said while they were still there; it is worth keeping.
+                interview.IsDeleted = true;
+                interview.ModifiedDate = DateTime.Now;
 
                 await _context.SaveChangesAsync();
             }

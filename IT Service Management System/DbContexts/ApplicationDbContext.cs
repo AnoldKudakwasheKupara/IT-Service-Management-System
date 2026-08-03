@@ -866,9 +866,13 @@ namespace IT_Service_Management_System.DbContexts
             // Each process module points at the employee. The dependents carry a matching query
             // filter so EF does not warn about the required-end mismatch, and so an assessment of
             // a deleted employee disappears with them.
+            // All three carry an IsDeleted flag. A global filter enforces it centrally, so a query
+            // that forgets the predicate cannot leak a deleted record — which is exactly what was
+            // happening before.
             b.Entity<TalentIdentification>(e =>
             {
                 e.HasIndex(x => x.EmployeeId);
+                e.HasQueryFilter(x => !x.IsDeleted);
                 e.HasOne(x => x.Employee).WithMany(x => x.TalentAssessments)
                     .HasForeignKey(x => x.EmployeeId)
                     .OnDelete(DeleteBehavior.SetNull);
@@ -877,6 +881,7 @@ namespace IT_Service_Management_System.DbContexts
             b.Entity<ExitInterview>(e =>
             {
                 e.HasIndex(x => x.EmployeeId);
+                e.HasQueryFilter(x => !x.IsDeleted);
                 e.HasOne(x => x.Employee).WithMany(x => x.ExitInterviews)
                     .HasForeignKey(x => x.EmployeeId)
                     .OnDelete(DeleteBehavior.SetNull);
@@ -885,10 +890,18 @@ namespace IT_Service_Management_System.DbContexts
             b.Entity<EngagementStayInterview>(e =>
             {
                 e.HasIndex(x => x.EmployeeId);
+                e.HasQueryFilter(x => !x.IsDeleted);
                 e.HasOne(x => x.Employee).WithMany(x => x.StayInterviews)
                     .HasForeignKey(x => x.EmployeeId)
                     .OnDelete(DeleteBehavior.SetNull);
             });
+
+            // The talent assessment's children must share the parent's filter, or EF warns that a
+            // required relationship can be broken by filtering.
+            b.Entity<TalentDirectReportAssessment>()
+                .HasQueryFilter(x => !x.TalentIdentification!.IsDeleted);
+            b.Entity<TalentDevelopmentAction>()
+                .HasQueryFilter(x => !x.TalentIdentification!.IsDeleted);
         }
 
         /// <summary>
