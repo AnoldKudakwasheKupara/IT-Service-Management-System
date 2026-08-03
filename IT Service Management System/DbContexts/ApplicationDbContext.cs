@@ -198,6 +198,11 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<Employee> Employees { get; set; }
         public DbSet<TalentKpiYear> TalentKpiYears { get; set; }
 
+        // ── HR statutory reference data (Zimbabwe) ─────────────────────────────────
+        public DbSet<StatutoryParameter> StatutoryParameters { get; set; }
+        public DbSet<PayeTaxBand> PayeTaxBands { get; set; }
+        public DbSet<PublicHoliday> PublicHolidays { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -877,6 +882,20 @@ namespace IT_Service_Management_System.DbContexts
             // All three carry an IsDeleted flag. A global filter enforces it centrally, so a query
             // that forgets the predicate cannot leak a deleted record — which is exactly what was
             // happening before.
+            // ── Statutory reference data ──────────────────────────────────────────
+            b.Entity<StatutoryParameter>(e =>
+            {
+                // Lookups are always "this key, effective at this date", so that is the index.
+                e.HasIndex(x => new { x.Key, x.EffectiveFrom });
+                e.HasOne(x => x.UpdatedBy).WithMany().HasForeignKey(x => x.UpdatedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<PayeTaxBand>()
+                .HasIndex(x => new { x.Currency, x.Period, x.EffectiveFrom, x.FromAmount });
+
+            b.Entity<PublicHoliday>().HasIndex(x => x.Date);
+
             b.Entity<TalentKpiYear>(e =>
             {
                 // One row per assessment per year; the unique index is what stops a duplicate year.

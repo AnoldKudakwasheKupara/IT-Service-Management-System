@@ -237,6 +237,8 @@ builder.Services.AddScoped<IT_Service_Management_System.Services.Pm.PmFileServic
 // and talent rows back to it. Idempotent; safe to run on every start.
 builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.EmployeeBackfillService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.HrAnalyticsService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.StatutoryService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.StatutorySeeder>();
 
 // Defensive, idempotent demo-data top-up seeder (gated by Demo:Seed, default ON).
 builder.Services.AddScoped<IT_Service_Management_System.Services.DemoDataSeeder>();
@@ -351,6 +353,11 @@ try
     // here must not stop the application from starting.
     try { await scope.ServiceProvider.GetRequiredService<IT_Service_Management_System.Services.Hr.EmployeeBackfillService>().RunAsync(); }
     catch (Exception ex) { Log.Warning(ex, "Employee register backfill failed"); }
+
+    // Zimbabwe statutory parameters and public holidays. Additive only — a value corrected by the
+    // payroll administrator is never overwritten by a later restart.
+    try { await scope.ServiceProvider.GetRequiredService<IT_Service_Management_System.Services.Hr.StatutorySeeder>().SeedAsync(); }
+    catch (Exception ex) { Log.Warning(ex, "Zimbabwe statutory seed failed"); }
 
     // Demo-data top-up seeding (idempotent; never crashes startup). Default ON; disable via Demo:Seed=false.
     if (app.Configuration.GetValue("Demo:Seed", true))
