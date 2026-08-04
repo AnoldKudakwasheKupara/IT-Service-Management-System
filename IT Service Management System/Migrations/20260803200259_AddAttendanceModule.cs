@@ -116,11 +116,13 @@ namespace IT_Service_Management_System.Migrations
                         principalTable: "Employees",
                         principalColumn: "Id");
                     table.ForeignKey(
+                        // No action, not cascade: attendance is already reachable from Employees
+                        // through LeaveRequests, and SQL Server will not create a second cascade
+                        // path into the same table.
                         name: "FK_AttendanceRecords_Employees_EmployeeId",
                         column: x => x.EmployeeId,
                         principalTable: "Employees",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_AttendanceRecords_LeaveRequests_LeaveRequestId",
                         column: x => x.LeaveRequestId,

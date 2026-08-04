@@ -170,11 +170,13 @@ namespace IT_Service_Management_System.Migrations
                 {
                     table.PrimaryKey("PK_LeaveLedgerEntries", x => x.Id);
                     table.ForeignKey(
+                        // No action, not cascade: the ledger is already reachable from Employees
+                        // through LeaveRequests, and SQL Server will not create a second cascade
+                        // path into the same table.
                         name: "FK_LeaveLedgerEntries_Employees_EmployeeId",
                         column: x => x.EmployeeId,
                         principalTable: "Employees",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_LeaveLedgerEntries_LeaveRequests_LeaveRequestId",
                         column: x => x.LeaveRequestId,

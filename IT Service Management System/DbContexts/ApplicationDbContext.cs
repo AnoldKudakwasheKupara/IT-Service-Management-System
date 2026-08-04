@@ -1044,8 +1044,12 @@ namespace IT_Service_Management_System.DbContexts
                 e.HasIndex(x => new { x.Date, x.Status });
                 e.HasIndex(x => x.IsApproved);
 
+                // Restrict for the same reason as the leave ledger: attendance is already reachable
+                // from Employee through LeaveRequest, and SQL Server rejects a second cascade path
+                // into the same table. It is the right answer anyway — hours worked are what pay was
+                // calculated from, and they should not disappear with the employee row.
                 e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(x => x.Shift).WithMany().HasForeignKey(x => x.ShiftId)
                     .OnDelete(DeleteBehavior.SetNull);
                 // The attendance row outlives the leave request that explained it.
@@ -1303,8 +1307,18 @@ namespace IT_Service_Management_System.DbContexts
             b.Entity<LeaveLedgerEntry>(e =>
             {
                 e.HasIndex(x => new { x.EmployeeId, x.LeaveTypeId, x.CycleYear });
+
+                // Restrict, not cascade. Two reasons, and the second is the binding one:
+                //
+                // The ledger is the audit trail behind a balance, and a balance that someone was
+                // paid out on is a financial record — it should outlive tidying up of the employee
+                // register, the same way a disciplinary file does.
+                //
+                // And SQL Server will not accept two cascade paths into the same table. The ledger
+                // is already reachable from Employee through LeaveRequest, so a second direct
+                // cascade makes the constraint uncreatable.
                 e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(x => x.LeaveType).WithMany().HasForeignKey(x => x.LeaveTypeId)
                     .OnDelete(DeleteBehavior.Restrict);
                 // The ledger outlives the request it describes — deleting a request must not erase

@@ -13020,7 +13020,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Hr.Employee", "Employee")
                         .WithMany()
                         .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("IT_Service_Management_System.Models.Hr.LeaveRequest", "LeaveRequest")
@@ -13318,7 +13318,7 @@ namespace IT_Service_Management_System.Migrations
                     b.HasOne("IT_Service_Management_System.Models.Hr.Employee", "Employee")
                         .WithMany()
                         .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("IT_Service_Management_System.Models.Hr.LeaveRequest", "LeaveRequest")
