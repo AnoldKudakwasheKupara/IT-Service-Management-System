@@ -851,6 +851,10 @@
                    asp-controller="Attendance" asp-action="Index">
                     <i class="fas fa-clock"></i> My Attendance
                 </a>
+                <a class="nav-item @(currentController == "Onboarding" && currentAction == "Mine" ? "active" : "")"
+                   asp-controller="Onboarding" asp-action="Mine">
+                    <i class="fas fa-door-open"></i> My Onboarding
+                </a>
                 <a class="nav-item @(currentController == "Disciplinary" && currentAction == "MyRecord" ? "active" : "")"
                    asp-controller="Disciplinary" asp-action="MyRecord">
                     <i class="fas fa-user-shield"></i> My Disciplinary Record
@@ -1171,6 +1175,11 @@
                        asp-controller="Attendance" asp-action="Shifts">
                         <i class="fas fa-business-time"></i>
                         Shifts
+                    </a>
+                    <a class="nav-item @(currentController == "Onboarding" && currentAction != "Mine" ? "active" : "")"
+                       asp-controller="Onboarding" asp-action="Index">
+                        <i class="fas fa-door-open"></i>
+                        Onboarding
                     </a>
                     <a class="nav-item @(currentController == "Recruitment" ? "active" : "")"
                        asp-controller="Recruitment" asp-action="Index">

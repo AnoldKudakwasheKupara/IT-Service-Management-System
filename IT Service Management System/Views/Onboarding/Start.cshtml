@@ -1,0 +1,80 @@
+@using IT_Service_Management_System.Models.Hr
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Start an Onboarding Programme";
+    var employee = ViewBag.Employee as Employee;
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-play"></i> Start an Onboarding Programme</h1>
+                    <p class="page-sub">
+                        The steps are copied from the template as they stand today. Editing the template
+                        later will not rewrite what this person was actually asked to do.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <form asp-action="Start" method="post">
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label class="req">Employee</label>
+                            <select name="employeeId" class="inp" required
+                                    asp-items="@(ViewBag.EmployeeList as SelectList)">
+                                <option value="">— select —</option>
+                            </select>
+                        </div>
+
+                        <div class="fg">
+                            <label>Template</label>
+                            <select name="templateId" class="inp" asp-items="@(ViewBag.TemplateList as SelectList)">
+                                <option value="">— match the employment type —</option>
+                            </select>
+                            <span class="hint">
+                                Left blank, the template matching their employment type is used, then
+                                the default. A contractor's induction is not a permanent employee's.
+                            </span>
+                        </div>
+
+                        <div class="fg">
+                            <label>Start date</label>
+                            <input type="date" name="startDate" class="inp"
+                                   value="@(employee?.HireDate?.ToString("yyyy-MM-dd") ?? DateTime.Today.ToString("yyyy-MM-dd"))" />
+                            <span class="hint">
+                                Due dates are counted from here. Steps due before day one come out
+                                dated in the past if the start date has already passed.
+                            </span>
+                        </div>
+
+                        <div class="fg">
+                            <label>Buddy</label>
+                            <select name="buddyId" class="inp" asp-items="@(ViewBag.BuddyList as SelectList)">
+                                <option value="">— none —</option>
+                            </select>
+                            <span class="hint">Who looks after them day to day for the first few weeks.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-hr"><i class="fas fa-play"></i> Start</button>
+                <a asp-action="Index" class="btn-ghost-hr">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

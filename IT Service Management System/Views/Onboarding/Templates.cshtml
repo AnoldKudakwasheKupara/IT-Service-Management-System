@@ -1,0 +1,92 @@
+@using IT_Service_Management_System.Models.Hr
+@{
+    ViewData["Title"] = "Onboarding Templates";
+    var templates = ViewBag.Templates as List<OnboardingTemplate> ?? new List<OnboardingTemplate>();
+    var useCounts = ViewBag.UseCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+
+    string Spaced(string s) => System.Text.RegularExpressions.Regex.Replace(s, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-list-check"></i> Onboarding Templates</h1>
+                    <p class="page-sub">
+                        What every new joiner gets. The statutory steps are marked and cannot be
+                        removed — they apply whatever the employment type.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Onboarding</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="card flush">
+            <table class="tbl">
+                <thead>
+                    <tr><th>Template</th><th>Applies to</th><th>Steps</th><th>Statutory</th><th>Used</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in templates)
+                    {
+                        <tr class="@(t.IsActive ? "" : "muted")">
+                            <td>
+                                <div class="strong-link">
+                                    @t.Name
+                                    @if (t.IsDefault) { <span class="chip">default</span> }
+                                </div>
+                                @if (t.Description != null) { <div class="sub">@t.Description</div> }
+                            </td>
+                            <td>@(t.AppliesTo.HasValue ? Spaced(t.AppliesTo.Value.ToString()) : "Everyone")</td>
+                            <td class="num sm">@t.Tasks.Count</td>
+                            <td class="num sm red">@t.Tasks.Count(x => x.IsStatutory)</td>
+                            <td class="num sm">@useCounts.GetValueOrDefault(t.Id)</td>
+                            <td class="act">
+                                <a asp-action="Template" asp-route-id="@t.Id" class="view"><i class="fas fa-folder-open"></i></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <div class="card-head"><h2 class="section-title">New template</h2></div>
+            <div class="card-body">
+                <form asp-action="CreateTemplate" method="post">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label class="req">Name</label>
+                            <input name="name" class="inp" required placeholder="e.g. Contractor induction" />
+                        </div>
+                        <div class="fg">
+                            <label>Applies to</label>
+                            <select name="appliesTo" class="inp">
+                                <option value="">Everyone</option>
+                                @foreach (EmploymentType e in Enum.GetValues<EmploymentType>())
+                                {
+                                    <option value="@e">@Spaced(e.ToString())</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg full">
+                            <label>Description</label>
+                            <input name="description" class="inp" />
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-hr"><i class="fas fa-plus"></i> Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -236,6 +236,12 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<CandidateInterview> CandidateInterviews { get; set; }
         public DbSet<JobOffer> JobOffers { get; set; }
 
+        // ── HR: onboarding ─────────────────────────────────────────────────────────
+        public DbSet<OnboardingTemplate> OnboardingTemplates { get; set; }
+        public DbSet<OnboardingTaskTemplate> OnboardingTaskTemplates { get; set; }
+        public DbSet<OnboardingProgramme> OnboardingProgrammes { get; set; }
+        public DbSet<OnboardingTask> OnboardingTasks { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -1153,6 +1159,42 @@ namespace IT_Service_Management_System.DbContexts
                 e.HasOne(x => x.CreatedEmployee).WithMany().HasForeignKey(x => x.CreatedEmployeeId)
                     .OnDelete(DeleteBehavior.SetNull);
                 e.HasOne(x => x.IssuedBy).WithMany().HasForeignKey(x => x.IssuedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Onboarding ────────────────────────────────────────────────────────
+            b.Entity<OnboardingTemplate>(e =>
+            {
+                e.HasIndex(x => new { x.IsActive, x.AppliesTo });
+            });
+
+            b.Entity<OnboardingTaskTemplate>(e =>
+            {
+                e.HasIndex(x => new { x.TemplateId, x.DisplayOrder });
+                e.HasOne(x => x.Template).WithMany(t => t.Tasks).HasForeignKey(x => x.TemplateId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<OnboardingProgramme>(e =>
+            {
+                e.HasIndex(x => new { x.EmployeeId, x.Status });
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.Buddy).WithMany().HasForeignKey(x => x.BuddyId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                // SetNull, not cascade: retiring a template must not delete the programmes that were
+                // built from it. What a joiner was actually asked to do is the record.
+                e.HasOne(x => x.Template).WithMany().HasForeignKey(x => x.TemplateId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            b.Entity<OnboardingTask>(e =>
+            {
+                e.HasIndex(x => new { x.ProgrammeId, x.DisplayOrder });
+                e.HasIndex(x => new { x.IsComplete, x.DueDate });
+                e.HasOne(x => x.Programme).WithMany(p => p.Tasks).HasForeignKey(x => x.ProgrammeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.CompletedBy).WithMany().HasForeignKey(x => x.CompletedById)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 

@@ -244,6 +244,7 @@ builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.PayrollServi
 builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.AttendanceService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.DisciplinaryService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.RecruitmentService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.OnboardingService>();
 
 // Defensive, idempotent demo-data top-up seeder (gated by Demo:Seed, default ON).
 builder.Services.AddScoped<IT_Service_Management_System.Services.DemoDataSeeder>();
@@ -363,6 +364,11 @@ try
     // payroll administrator is never overwritten by a later restart.
     try { await scope.ServiceProvider.GetRequiredService<IT_Service_Management_System.Services.Hr.StatutorySeeder>().SeedAsync(); }
     catch (Exception ex) { Log.Warning(ex, "Zimbabwe statutory seed failed"); }
+
+    // The default onboarding programme, including the steps required by law. Seeded only where no
+    // template exists at all, so an edited one is never overwritten.
+    try { await scope.ServiceProvider.GetRequiredService<IT_Service_Management_System.Services.Hr.OnboardingService>().SeedDefaultTemplateAsync(); }
+    catch (Exception ex) { Log.Warning(ex, "Onboarding template seed failed"); }
 
     // Demo-data top-up seeding (idempotent; never crashes startup). Default ON; disable via Demo:Seed=false.
     if (app.Configuration.GetValue("Demo:Seed", true))

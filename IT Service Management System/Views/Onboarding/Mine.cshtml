@@ -1,0 +1,97 @@
+@using IT_Service_Management_System.Models.Hr
+@{
+    ViewData["Title"] = "My Onboarding";
+    var me = ViewBag.Employee as Employee;
+    var p = ViewBag.Programme as OnboardingProgramme;
+    var tasks = (p?.Tasks ?? new List<OnboardingTask>()).OrderBy(t => t.DisplayOrder).ToList();
+
+    string Spaced(string s) => System.Text.RegularExpressions.Regex.Replace(s, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-door-open"></i> My Onboarding</h1>
+                    <p class="page-sub">
+                        @me?.DisplayName
+                        @if (p != null)
+                        {
+                            <text>
+                                · started @p.StartDate.ToString("d MMM yyyy")
+                                @if (p.Buddy != null) { <text> · your buddy is @p.Buddy.DisplayName</text> }
+                            </text>
+                        }
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (p == null)
+        {
+            <div class="empty">
+                <i class="fas fa-door-open"></i>
+                <p>You do not have an onboarding programme. If you have just joined, HR can start one.</p>
+            </div>
+        }
+        else
+        {
+            <div class="card">
+                <div class="card-body" style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+                    <div>
+                        <div class="strong-link">@p.Done of @p.Total steps done</div>
+                        <div class="sub">
+                            @(p.Status == OnboardingStatus.Complete
+                                ? "All done. Welcome aboard."
+                                : "Steps marked for you are yours to close; the rest are HR's or your manager's.")
+                        </div>
+                    </div>
+                    <div class="num @(p.PercentComplete == 100 ? "green" : "amber")">@p.PercentComplete%</div>
+                </div>
+            </div>
+
+            <div class="card flush">
+                <div class="card-head"><h2 class="section-title">Your steps</h2></div>
+                <table class="tbl">
+                    <thead><tr><th>Step</th><th>Owner</th><th>Due</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var t in tasks)
+                        {
+                            <tr class="@(t.IsComplete ? "muted" : "")">
+                                <td>
+                                    <div class="strong-link">
+                                        @if (t.IsComplete) { <i class="fas fa-circle-check green"></i> }
+                                        @t.Title
+                                    </div>
+                                    @if (t.Detail != null) { <div class="sub">@t.Detail</div> }
+                                </td>
+                                <td class="sub">
+                                    @(t.Owner == OnboardingOwner.Employee ? "You" : Spaced(t.Owner.ToString()))
+                                </td>
+                                <td class="@(t.IsOverdue ? "overdue" : "")">@t.DueDate.ToString("d MMM")</td>
+                                <td>
+                                    @if (!t.IsComplete && t.Owner == OnboardingOwner.Employee)
+                                    {
+                                        <form asp-action="Complete" method="post" class="inline-form">
+                                            <input type="hidden" name="id" value="@t.Id" />
+                                            <input name="evidence" class="inp" placeholder="Note (optional)" />
+                                            <button type="submit" class="btn-success-hr btn-sm">
+                                                <i class="fas fa-check"></i> Done
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
