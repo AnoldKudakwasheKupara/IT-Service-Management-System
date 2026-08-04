@@ -1,0 +1,171 @@
+@using IT_Service_Management_System.Models.Hr
+@{
+    ViewData["Title"] = "Performance";
+    var me = ViewBag.Employee as Employee;
+    var mine = ViewBag.Mine as List<Appraisal> ?? new List<Appraisal>();
+    var toReview = ViewBag.ToReview as List<Appraisal> ?? new List<Appraisal>();
+    var pips = ViewBag.MyPips as List<PerformanceImprovementPlan> ?? new List<PerformanceImprovementPlan>();
+    var isHr = ViewBag.IsHr as bool? ?? false;
+
+    string Spaced(string s) => System.Text.RegularExpressions.Regex.Replace(s, "(?<=[a-z])(?=[A-Z])", " ");
+
+    string RatingLabel(PerformanceRating r) => r switch
+    {
+        PerformanceRating.Unsatisfactory => "Did not meet the standard",
+        PerformanceRating.Developing => "Partially met the standard",
+        PerformanceRating.Effective => "Met the standard",
+        PerformanceRating.Strong => "Exceeded the standard",
+        _ => "Consistently well above the standard"
+    };
+
+    string RatingClass(PerformanceRating r) => r switch
+    {
+        PerformanceRating.Unsatisfactory => "b-danger",
+        PerformanceRating.Developing => "b-probation",
+        PerformanceRating.Effective => "b-active",
+        _ => "b-leave"
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-chart-line"></i> Performance</h1>
+                    <p class="page-sub">@me?.DisplayName — your appraisals, the reviews you owe, and any improvement plans.</p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Plans" class="btn-ghost-hr"><i class="fas fa-arrows-up-to-line"></i> Improvement plans</a>
+                    @if (isHr)
+                    {
+                        <a asp-action="Cycles" class="btn-hr"><i class="fas fa-calendar-days"></i> Cycles</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (toReview.Count > 0)
+        {
+            <div class="card flush">
+                <div class="card-head"><h2 class="section-title">Reviews you owe</h2></div>
+                <table class="tbl">
+                    <thead><tr><th>Employee</th><th>Cycle</th><th>Objectives</th><th>Due</th><th>Stage</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var a in toReview)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="strong-link">@a.Employee?.DisplayName</div>
+                                    <div class="sub">@a.Employee?.JobTitle</div>
+                                </td>
+                                <td>@a.Cycle?.Name</td>
+                                <td class="num sm">
+                                    @a.Objectives.Count
+                                    @if (a.ObjectiveScore.HasValue) { <div class="sub">@a.ObjectiveScore%</div> }
+                                </td>
+                                <td class="@(a.Cycle?.ManagerReviewDue < DateTime.Today ? "overdue" : "")">
+                                    @(a.Cycle?.ManagerReviewDue?.ToString("d MMM yyyy") ?? "—")
+                                </td>
+                                <td><span class="badge-hr b-neutral">@Spaced(a.Status.ToString())</span></td>
+                                <td class="act">
+                                    <a asp-action="Details" asp-route-id="@a.Id" class="view"><i class="fas fa-folder-open"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div class="card flush">
+            <div class="card-head"><h2 class="section-title">My appraisals</h2></div>
+            @if (mine.Count == 0)
+            {
+                <div class="empty"><i class="fas fa-chart-line"></i><p>You have not been enrolled in a cycle.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead><tr><th>Cycle</th><th>Period</th><th>Reviewer</th><th>Objectives</th><th>Rating</th><th>Stage</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var a in mine)
+                        {
+                            <tr>
+                                <td class="strong-link">@a.Cycle?.Name</td>
+                                <td class="sub">
+                                    @a.Cycle?.PeriodStart.ToString("MMM yyyy") – @a.Cycle?.PeriodEnd.ToString("MMM yyyy")
+                                </td>
+                                <td>@(a.Reviewer?.DisplayName ?? "not set")</td>
+                                <td class="num sm">
+                                    @a.Objectives.Count
+                                    @if (a.ObjectiveScore.HasValue) { <div class="sub">@a.ObjectiveScore%</div> }
+                                </td>
+                                <td>
+                                    @if (a.EffectiveRating.HasValue)
+                                    {
+                                        <span class="badge-hr @RatingClass(a.EffectiveRating.Value)">
+                                            @RatingLabel(a.EffectiveRating.Value)
+                                        </span>
+                                        @if (a.EmployeeDisagrees)
+                                        {
+                                            <div class="sub red">you recorded a disagreement</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="muted">—</span>
+                                    }
+                                </td>
+                                <td><span class="badge-hr b-neutral">@Spaced(a.Status.ToString())</span></td>
+                                <td class="act">
+                                    <a asp-action="Details" asp-route-id="@a.Id" class="view"><i class="fas fa-folder-open"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        @if (pips.Count > 0)
+        {
+            <div class="card flush">
+                <div class="card-head"><h2 class="section-title">My improvement plans</h2></div>
+                <table class="tbl">
+                    <thead><tr><th>Ref</th><th>Concern</th><th>Period</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var p in pips)
+                        {
+                            <tr>
+                                <td class="ref">@p.Reference</td>
+                                <td>
+                                    <div>@p.Concern</div>
+                                    <div class="sub">Standard required: @p.RequiredStandard</div>
+                                </td>
+                                <td class="sub">
+                                    @p.StartDate.ToString("d MMM") – @p.ReviewDate.ToString("d MMM yyyy")
+                                    <div>@p.DaysAllowed days</div>
+                                </td>
+                                <td>
+                                    <span class="badge-hr @(p.Status == PipStatus.Met ? "b-active"
+                                                            : p.Status == PipStatus.NotMet ? "b-danger" : "b-probation")">
+                                        @Spaced(p.Status.ToString())
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="card-body">
+                    <a asp-action="Plans" class="strong-link">Open the plans page to comment on one</a>
+                </div>
+            </div>
+        }
+    </div>
+</div>

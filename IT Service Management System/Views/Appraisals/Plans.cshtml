@@ -1,0 +1,188 @@
+@using IT_Service_Management_System.Models.Hr
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Performance Improvement Plans";
+    var plans = ViewBag.Plans as List<PerformanceImprovementPlan> ?? new List<PerformanceImprovementPlan>();
+    var status = ViewBag.Status as PipStatus?;
+
+    string Spaced(string s) => System.Text.RegularExpressions.Regex.Replace(s, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-arrows-up-to-line"></i> Improvement Plans</h1>
+                    <p class="page-sub">
+                        Section 12B of the Labour Act treats a dismissal for poor performance as unfair
+                        unless the employee was told the standard required, given a reasonable
+                        opportunity to meet it, and still did not. A plan is how an employer shows all three.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Performance</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <form method="get" class="toolbar">
+            <select name="status" class="inp">
+                <option value="">Any status</option>
+                @foreach (PipStatus s in Enum.GetValues<PipStatus>())
+                {
+                    <option value="@s" selected="@(status == s)">@Spaced(s.ToString())</option>
+                }
+            </select>
+            <button type="submit" class="btn-outline-hr"><i class="fas fa-filter"></i> Filter</button>
+            <a asp-action="Plans" class="btn-ghost-hr">Clear</a>
+        </form>
+
+        <div class="card flush">
+            @if (plans.Count == 0)
+            {
+                <div class="empty"><i class="fas fa-arrows-up-to-line"></i><p>No plans on record.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead>
+                        <tr><th>Ref</th><th>Employee</th><th>Shortfall and standard</th><th>Period</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in plans)
+                        {
+                            <tr>
+                                <td class="ref">@p.Reference</td>
+                                <td>
+                                    <div class="strong-link">@p.Employee?.DisplayName</div>
+                                    <div class="sub">manager: @(p.Manager?.DisplayName ?? "—")</div>
+                                </td>
+                                <td>
+                                    <div>@p.Concern</div>
+                                    <div class="sub"><strong>Standard:</strong> @p.RequiredStandard</div>
+                                    @if (p.SupportOffered != null)
+                                    {
+                                        <div class="sub"><strong>Support:</strong> @p.SupportOffered</div>
+                                    }
+                                    @if (p.Outcome != null)
+                                    {
+                                        <div class="sub"><strong>Outcome:</strong> @p.Outcome</div>
+                                    }
+                                    @if (p.EmployeeComments != null)
+                                    {
+                                        <div class="sub"><strong>Employee:</strong> @p.EmployeeComments</div>
+                                    }
+                                </td>
+                                <td class="@(p.IsOverdue ? "overdue" : "")">
+                                    @p.StartDate.ToString("d MMM") – @p.ReviewDate.ToString("d MMM yyyy")
+                                    <div class="sub @(p.IsShortNotice ? "red" : "")">
+                                        @p.DaysAllowed days@(p.IsShortNotice ? " — short" : "")
+                                    </div>
+                                    @if (p.IsOverdue) { <div class="sub">review overdue</div> }
+                                </td>
+                                <td>
+                                    <span class="badge-hr @(p.Status == PipStatus.Met ? "b-active"
+                                                            : p.Status == PipStatus.NotMet ? "b-danger"
+                                                            : p.Status == PipStatus.Withdrawn ? "b-left" : "b-probation")">
+                                        @Spaced(p.Status.ToString())
+                                    </span>
+                                </td>
+                            </tr>
+
+                            @if (p.Status == PipStatus.Open)
+                            {
+                                <tr>
+                                    <td colspan="5" style="background:var(--gray-50);">
+                                        <form asp-action="ClosePlan" method="post">
+                                            <input type="hidden" name="id" value="@p.Id" />
+                                            <div class="form-grid">
+                                                <div class="fg">
+                                                    <label>Outcome</label>
+                                                    <select name="outcome" class="inp">
+                                                        <option value="@PipStatus.Met">Standard met</option>
+                                                        <option value="@PipStatus.Extended">Extend the period</option>
+                                                        <option value="@PipStatus.NotMet">Standard not met</option>
+                                                        <option value="@PipStatus.Withdrawn">Withdraw the plan</option>
+                                                    </select>
+                                                </div>
+                                                <div class="fg">
+                                                    <label>New review date (if extending)</label>
+                                                    <input type="date" name="newReviewDate" class="inp" />
+                                                </div>
+                                                <div class="fg full">
+                                                    <label class="req">What was achieved against the standard</label>
+                                                    <textarea name="reasons" class="inp" rows="3" required
+                                                              placeholder="Facts, measured against the standard as it was stated."></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="form-actions">
+                                                <button type="submit" class="btn-outline-hr">
+                                                    <i class="fas fa-flag-checkered"></i> Record the review
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><h2 class="section-title">Open a plan</h2></div>
+            <div class="card-body">
+                <form asp-action="CreatePlan" method="post">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label class="req">Employee</label>
+                            <select name="employeeId" class="inp" required
+                                    asp-items="@(ViewBag.EmployeeList as SelectList)">
+                                <option value="">— select —</option>
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="req">Starts</label>
+                            <input type="date" name="startDate" class="inp" required
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="fg">
+                            <label class="req">Reviewed on</label>
+                            <input type="date" name="reviewDate" class="inp" required
+                                   value="@DateTime.Today.AddDays(60).ToString("yyyy-MM-dd")" />
+                            <span class="hint">
+                                Far enough out to be a real opportunity. A plan with no meaningful period
+                                is not an opportunity, it is a formality.
+                            </span>
+                        </div>
+                        <div class="fg full">
+                            <label class="req">The shortfall</label>
+                            <textarea name="concern" class="inp" rows="3" required
+                                      placeholder="What is falling short, with examples and dates."></textarea>
+                        </div>
+                        <div class="fg full">
+                            <label class="req">The standard required</label>
+                            <textarea name="requiredStandard" class="inp" rows="3" required
+                                      placeholder="Stated so plainly that whether it was met is a question of fact, not opinion."></textarea>
+                        </div>
+                        <div class="fg full">
+                            <label>Support the employer will give</label>
+                            <textarea name="supportOffered" class="inp" rows="3"
+                                      placeholder="Training, supervision, equipment, time. An opportunity to improve with no support behind it is thin."></textarea>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-hr"><i class="fas fa-plus"></i> Open the plan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

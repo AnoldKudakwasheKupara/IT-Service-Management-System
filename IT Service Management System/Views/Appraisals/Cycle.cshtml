@@ -1,0 +1,185 @@
+@using IT_Service_Management_System.Models.Hr
+@{
+    var c = ViewBag.Cycle as AppraisalCycle;
+    ViewData["Title"] = c?.Name ?? "Cycle";
+    var appraisals = ViewBag.Appraisals as List<Appraisal> ?? new List<Appraisal>();
+    var notEnrolled = ViewBag.NotEnrolled as List<Employee> ?? new List<Employee>();
+    var distribution = ViewBag.Distribution as Dictionary<PerformanceRating, int>
+                       ?? new Dictionary<PerformanceRating, int>();
+
+    string Spaced(string s) => System.Text.RegularExpressions.Regex.Replace(s, "(?<=[a-z])(?=[A-Z])", " ");
+
+    string RatingLabel(PerformanceRating r) => r switch
+    {
+        PerformanceRating.Unsatisfactory => "Did not meet",
+        PerformanceRating.Developing => "Partially met",
+        PerformanceRating.Effective => "Met",
+        PerformanceRating.Strong => "Exceeded",
+        _ => "Well above"
+    };
+
+    var rated = distribution.Values.Sum();
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-calendar-days"></i> @c!.Name</h1>
+                    <p class="page-sub">
+                        @c.PeriodStart.ToString("d MMM yyyy") – @c.PeriodEnd.ToString("d MMM yyyy")
+                        · @appraisals.Count enrolled
+                        · @appraisals.Count(a => a.Status == AppraisalStatus.Closed) complete
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <span class="badge-hr b-neutral">@Spaced(c.Status.ToString())</span>
+                    <a asp-action="Cycles" class="btn-back"><i class="fas fa-arrow-left"></i> Cycles</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (rated > 0)
+        {
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">Rating distribution</h2></div>
+                <div class="card-body">
+                    <div class="stats">
+                        @foreach (PerformanceRating r in Enum.GetValues<PerformanceRating>())
+                        {
+                            var n = distribution.GetValueOrDefault(r);
+                            <div class="stat">
+                                <div class="num @(r == PerformanceRating.Unsatisfactory ? "red"
+                                                  : r == PerformanceRating.Effective ? "green" : "")">@n</div>
+                                <div class="lbl">@RatingLabel(r)</div>
+                                <div class="sub">@(rated == 0 ? 0 : Math.Round(n * 100.0 / rated))%</div>
+                            </div>
+                        }
+                    </div>
+                    <p class="hint">
+                        A distribution where almost everyone exceeds the standard tells you about the
+                        process, not the people. This is here for moderation to look at, not to force
+                        anyone into a quota.
+                    </p>
+                </div>
+            </div>
+        }
+
+        <div class="card flush">
+            <div class="card-head"><h2 class="section-title">Enrolled</h2></div>
+            @if (appraisals.Count == 0)
+            {
+                <div class="empty"><i class="fas fa-users"></i><p>Nobody enrolled yet.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead>
+                        <tr><th>Employee</th><th>Reviewer</th><th>Objectives</th><th>Score</th><th>Rating</th><th>Stage</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in appraisals)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="strong-link">@a.Employee?.DisplayName</div>
+                                    <div class="sub">@a.Employee?.JobTitle</div>
+                                </td>
+                                <td class="@(a.ReviewerId == null ? "red" : "")">
+                                    @(a.Reviewer?.DisplayName ?? "none set")
+                                </td>
+                                <td class="num sm">
+                                    @a.Objectives.Count
+                                    @if (a.Objectives.Any(o => !o.AgreedUpFront))
+                                    {
+                                        <div class="sub red">@a.Objectives.Count(o => !o.AgreedUpFront) late</div>
+                                    }
+                                </td>
+                                <td class="num sm">@(a.ObjectiveScore.HasValue ? $"{a.ObjectiveScore:0.#}%" : "—")</td>
+                                <td>
+                                    @if (a.EffectiveRating.HasValue)
+                                    {
+                                        <div>@RatingLabel(a.EffectiveRating.Value)</div>
+                                        @if (a.ModeratedRating.HasValue && a.ModeratedRating != a.OverallRating)
+                                        {
+                                            <div class="sub">moderated from @RatingLabel(a.OverallRating!.Value)</div>
+                                        }
+                                        @if (a.EmployeeDisagrees) { <div class="sub red">employee disagrees</div> }
+                                    }
+                                    else
+                                    {
+                                        <span class="muted">—</span>
+                                    }
+                                </td>
+                                <td><span class="badge-hr b-neutral">@Spaced(a.Status.ToString())</span></td>
+                                <td class="act">
+                                    <a asp-action="Details" asp-route-id="@a.Id" class="view"><i class="fas fa-folder-open"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <div class="grid-2">
+            @if (notEnrolled.Count > 0)
+            {
+                <div class="card">
+                    <div class="card-head"><h2 class="section-title">Not enrolled (@notEnrolled.Count)</h2></div>
+                    <div class="card-body">
+                        <form asp-action="Enrol" method="post">
+                            <input type="hidden" name="cycleId" value="@c.Id" />
+                            <div style="max-height:18rem; overflow-y:auto; border:1px solid var(--gray-200); border-radius:.5rem; padding:.6rem;">
+                                @foreach (var e in notEnrolled)
+                                {
+                                    <label class="check">
+                                        <input type="checkbox" name="employeeIds" value="@e.Id" />
+                                        @e.DisplayName <span class="sub">· @e.JobTitle</span>
+                                    </label>
+                                }
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-hr"><i class="fas fa-user-plus"></i> Enrol selected</button>
+                                <button type="submit" name="everyone" value="true" class="btn-outline-hr">
+                                    <i class="fas fa-users"></i> Enrol everyone
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            }
+
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">Move the cycle on</h2></div>
+                <div class="card-body">
+                    <form asp-action="SetCycleStatus" method="post">
+                        <input type="hidden" name="id" value="@c.Id" />
+                        <div class="fg">
+                            <label>Status</label>
+                            <select name="status" class="inp">
+                                @foreach (AppraisalCycleStatus s in Enum.GetValues<AppraisalCycleStatus>())
+                                {
+                                    <option value="@s" selected="@(c.Status == s)">@Spaced(s.ToString())</option>
+                                }
+                            </select>
+                            <span class="hint">
+                                A cycle cannot be closed while appraisals are unfinished — closing it
+                                would leave them permanently half-written.
+                            </span>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-outline-hr"><i class="fas fa-arrow-right"></i> Update</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

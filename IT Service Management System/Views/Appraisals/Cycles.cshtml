@@ -1,0 +1,118 @@
+@using IT_Service_Management_System.Models.Hr
+@{
+    ViewData["Title"] = "Appraisal Cycles";
+    var cycles = ViewBag.Cycles as List<AppraisalCycle> ?? new List<AppraisalCycle>();
+
+    string Spaced(string s) => System.Text.RegularExpressions.Regex.Replace(s, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-calendar-days"></i> Appraisal Cycles</h1>
+                    <p class="page-sub">
+                        A rating only means something against a stated period and a stated standard, so
+                        cycles are opened and closed deliberately rather than running continuously.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Performance</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="card flush">
+            @if (cycles.Count == 0)
+            {
+                <div class="empty"><i class="fas fa-calendar-days"></i><p>No cycles yet.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead>
+                        <tr><th>Cycle</th><th>Period</th><th>Enrolled</th><th>Complete</th><th>Status</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in cycles)
+                        {
+                            var done = c.Appraisals.Count(x => x.Status == AppraisalStatus.Closed);
+                            <tr>
+                                <td>
+                                    <div class="strong-link">@c.Name</div>
+                                    @if (c.IsProbationReview) { <div class="sub">probation review</div> }
+                                </td>
+                                <td class="sub">
+                                    @c.PeriodStart.ToString("d MMM yyyy") – @c.PeriodEnd.ToString("d MMM yyyy")
+                                    @if (c.ManagerReviewDue.HasValue)
+                                    {
+                                        <div class="@(c.ManagerReviewDue < DateTime.Today && c.Status != AppraisalCycleStatus.Closed ? "overdue" : "")">
+                                            reviews due @c.ManagerReviewDue?.ToString("d MMM yyyy")
+                                        </div>
+                                    }
+                                </td>
+                                <td class="num sm">@c.Appraisals.Count</td>
+                                <td class="num sm">@done</td>
+                                <td><span class="badge-hr b-neutral">@Spaced(c.Status.ToString())</span></td>
+                                <td class="act">
+                                    <a asp-action="Cycle" asp-route-id="@c.Id" class="view"><i class="fas fa-folder-open"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><h2 class="section-title">New cycle</h2></div>
+            <div class="card-body">
+                <form asp-action="CreateCycle" method="post">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label class="req">Name</label>
+                            <input name="name" class="inp" required placeholder="e.g. 2026 annual review" />
+                        </div>
+                        <div class="fg">
+                            <label class="check">
+                                <input type="checkbox" name="isProbationReview" value="true" />
+                                Probation review cycle
+                            </label>
+                            <span class="hint">
+                                The standard, the evidence and the decision belong on the record, not in
+                                a conversation nobody wrote down.
+                            </span>
+                        </div>
+                        <div class="fg">
+                            <label class="req">Period from</label>
+                            <input type="date" name="periodStart" class="inp" required
+                                   value="@(new DateTime(DateTime.Today.Year, 1, 1).ToString("yyyy-MM-dd"))" />
+                        </div>
+                        <div class="fg">
+                            <label class="req">Period to</label>
+                            <input type="date" name="periodEnd" class="inp" required
+                                   value="@(new DateTime(DateTime.Today.Year, 12, 31).ToString("yyyy-MM-dd"))" />
+                        </div>
+                        <div class="fg">
+                            <label>Self-assessment due</label>
+                            <input type="date" name="selfAssessmentDue" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label>Manager review due</label>
+                            <input type="date" name="managerReviewDue" class="inp" />
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-hr"><i class="fas fa-plus"></i> Create</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

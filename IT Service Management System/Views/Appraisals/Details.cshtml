@@ -1,0 +1,461 @@
+@using IT_Service_Management_System.Models.Hr
+@{
+    var a = ViewBag.Appraisal as Appraisal;
+    ViewData["Title"] = $"Appraisal — {a?.Employee?.DisplayName}";
+    var isHr = ViewBag.IsHr as bool? ?? false;
+    var isSubject = ViewBag.IsSubject as bool? ?? false;
+    var isReviewer = ViewBag.IsReviewer as bool? ?? false;
+    var pips = ViewBag.Pips as List<PerformanceImprovementPlan> ?? new List<PerformanceImprovementPlan>();
+    var objectives = (a?.Objectives ?? new List<AppraisalObjective>()).OrderBy(o => o.DisplayOrder).ToList();
+
+    string Spaced(string s) => System.Text.RegularExpressions.Regex.Replace(s, "(?<=[a-z])(?=[A-Z])", " ");
+
+    string RatingLabel(PerformanceRating r) => r switch
+    {
+        PerformanceRating.Unsatisfactory => "Did not meet the standard",
+        PerformanceRating.Developing => "Partially met the standard",
+        PerformanceRating.Effective => "Met the standard",
+        PerformanceRating.Strong => "Exceeded the standard",
+        _ => "Consistently well above the standard"
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-chart-line"></i> @a!.Employee?.DisplayName</h1>
+                    <p class="page-sub">
+                        @a.Reference · @a.Cycle?.Name
+                        · @a.Cycle?.PeriodStart.ToString("d MMM yyyy") – @a.Cycle?.PeriodEnd.ToString("d MMM yyyy")
+                        · reviewer: @(a.Reviewer?.DisplayName ?? "not set")
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <span class="badge-hr b-neutral">@Spaced(a.Status.ToString())</span>
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Performance</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (objectives.Any(o => !o.AgreedUpFront))
+        {
+            <div class="notice warn">
+                <i class="fas fa-triangle-exclamation"></i>
+                <div>
+                    @objectives.Count(o => !o.AgreedUpFront) objective(s) were set after the cycle began.
+                    An objective an employee did not know about cannot fairly be used to mark them down.
+                </div>
+            </div>
+        }
+
+        <div class="grid-2-1">
+            <div>
+                @* ── OBJECTIVES ───────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head">
+                        <h2 class="section-title">Objectives</h2>
+                        @if (a.ObjectiveScore.HasValue)
+                        {
+                            <span class="num sm @(a.ObjectiveScore >= 90 ? "green" : a.ObjectiveScore >= 60 ? "amber" : "red")">
+                                @a.ObjectiveScore%
+                            </span>
+                        }
+                    </div>
+                    <div class="card-body">
+                        @if (objectives.Count == 0)
+                        {
+                            <p class="muted" style="margin:0;">
+                                None set. A rating with no objectives behind it is an opinion with a
+                                number on it.
+                            </p>
+                        }
+                        else if (isReviewer || isHr)
+                        {
+                            <form asp-action="ScoreObjectives" method="post">
+                                <input type="hidden" name="appraisalId" value="@a.Id" />
+                                <table class="tbl">
+                                    <thead>
+                                        <tr><th>Objective</th><th>Weight</th><th>Achieved</th><th>Evidence</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var o in objectives)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="strong-link">@o.Title</div>
+                                                    @if (o.SuccessMeasure != null) { <div class="sub">@o.SuccessMeasure</div> }
+                                                    @if (o.TargetDate.HasValue) { <div class="sub">by @o.TargetDate?.ToString("d MMM yyyy")</div> }
+                                                    @if (!o.AgreedUpFront) { <div class="sub red">set after the cycle began</div> }
+                                                    <input type="hidden" name="objectiveIds" value="@o.Id" />
+                                                </td>
+                                                <td class="num sm">@o.Weight.ToString("0.#")%</td>
+                                                <td>
+                                                    <input type="number" name="achievements" class="inp" min="0" max="150"
+                                                           step="1" style="width:6rem;" value="@o.AchievementPercent" />
+                                                </td>
+                                                <td>
+                                                    <input name="evidence" class="inp" value="@o.Evidence"
+                                                           placeholder="What shows this was or was not achieved" />
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td class="strong-link">Total weight</td>
+                                            <td class="num sm @(objectives.Sum(o => o.Weight) == 100 ? "" : "amber")">
+                                                @objectives.Sum(o => o.Weight).ToString("0.#")%
+                                            </td>
+                                            <td colspan="2" class="sub">
+                                                @(objectives.Sum(o => o.Weight) == 100
+                                                    ? ""
+                                                    : "Weights do not total 100%. The score is still computed on the weights as they stand.")
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-hr"><i class="fas fa-save"></i> Save scores</button>
+                                </div>
+                            </form>
+                        }
+                        else
+                        {
+                            <table class="tbl">
+                                <thead><tr><th>Objective</th><th>Weight</th><th>Achieved</th></tr></thead>
+                                <tbody>
+                                    @foreach (var o in objectives)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="strong-link">@o.Title</div>
+                                                @if (o.SuccessMeasure != null) { <div class="sub">@o.SuccessMeasure</div> }
+                                                @if (o.Evidence != null) { <div class="sub">@o.Evidence</div> }
+                                            </td>
+                                            <td class="num sm">@o.Weight.ToString("0.#")%</td>
+                                            <td class="num sm">
+                                                @(o.AchievementPercent.HasValue ? $"{o.AchievementPercent:0.#}%" : "—")
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        }
+
+                        @if ((isReviewer || isHr) && a.Status != AppraisalStatus.Closed)
+                        {
+                            <div style="border-top:1px solid var(--gray-100); padding-top:.9rem; margin-top:.9rem;">
+                                <form asp-action="AddObjective" method="post">
+                                    <input type="hidden" name="appraisalId" value="@a.Id" />
+                                    <div class="form-grid">
+                                        <div class="fg">
+                                            <label class="req">Objective</label>
+                                            <input name="title" class="inp" required />
+                                        </div>
+                                        <div class="fg">
+                                            <label>Weight (%)</label>
+                                            <input type="number" name="weight" class="inp" value="20" min="0" max="100" />
+                                        </div>
+                                        <div class="fg">
+                                            <label>Target date</label>
+                                            <input type="date" name="targetDate" class="inp" />
+                                        </div>
+                                        <div class="fg full">
+                                            <label>What success looks like</label>
+                                            <input name="successMeasure" class="inp"
+                                                   placeholder="Stated so plainly that whether it was met is a question of fact." />
+                                        </div>
+                                    </div>
+                                    <div class="form-actions">
+                                        <button type="submit" class="btn-outline-hr"><i class="fas fa-plus"></i> Add</button>
+                                    </div>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @* ── SELF-ASSESSMENT ──────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head">
+                        <h2 class="section-title">The employee's own account</h2>
+                        @if (a.SelfAssessedAt.HasValue)
+                        {
+                            <span class="sub">@a.SelfAssessedAt?.ToString("d MMM yyyy")</span>
+                        }
+                    </div>
+                    <div class="card-body">
+                        @if (isSubject && a.Status != AppraisalStatus.Closed)
+                        {
+                            <form asp-action="SelfAssess" method="post">
+                                <input type="hidden" name="id" value="@a.Id" />
+                                <div class="form-grid">
+                                    <div class="fg full">
+                                        <label>What went well</label>
+                                        <textarea name="achievements" class="inp" rows="5">@a.SelfAchievements</textarea>
+                                    </div>
+                                    <div class="fg full">
+                                        <label>What was difficult</label>
+                                        <textarea name="challenges" class="inp" rows="4">@a.SelfChallenges</textarea>
+                                    </div>
+                                    <div class="fg full">
+                                        <label>Support or development you need</label>
+                                        <textarea name="developmentNeeds" class="inp" rows="3">@a.SelfDevelopmentNeeds</textarea>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-hr"><i class="fas fa-save"></i> Save my assessment</button>
+                                </div>
+                            </form>
+                        }
+                        else if (a.SelfAssessedAt == null)
+                        {
+                            <p class="muted" style="margin:0;">
+                                Not yet written. A review with no self-assessment reads as one-sided if it
+                                is ever relied on.
+                            </p>
+                        }
+                        else
+                        {
+                            @if (!string.IsNullOrWhiteSpace(a.SelfAchievements))
+                            {
+                                <h3 class="section-title sm">What went well</h3>
+                                <p style="white-space:pre-wrap;">@a.SelfAchievements</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(a.SelfChallenges))
+                            {
+                                <h3 class="section-title sm">What was difficult</h3>
+                                <p style="white-space:pre-wrap;">@a.SelfChallenges</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(a.SelfDevelopmentNeeds))
+                            {
+                                <h3 class="section-title sm">Support needed</h3>
+                                <p style="white-space:pre-wrap;">@a.SelfDevelopmentNeeds</p>
+                            }
+                        }
+                    </div>
+                </div>
+
+                @* ── REVIEW ───────────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><h2 class="section-title">Reviewer's assessment</h2></div>
+                    <div class="card-body">
+                        @if ((isReviewer || isHr) && a.Status != AppraisalStatus.Closed)
+                        {
+                            <form asp-action="Review" method="post">
+                                <input type="hidden" name="id" value="@a.Id" />
+                                <div class="form-grid">
+                                    <div class="fg full">
+                                        <label>Assessment</label>
+                                        <textarea name="comments" class="inp" rows="6">@a.ReviewerComments</textarea>
+                                    </div>
+                                    <div class="fg">
+                                        <label class="req">Overall rating</label>
+                                        <select name="rating" class="inp" required>
+                                            @foreach (PerformanceRating r in Enum.GetValues<PerformanceRating>())
+                                            {
+                                                <option value="@r" selected="@(a.OverallRating == r)">@RatingLabel(r)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="fg">
+                                        <label>Objective score for reference</label>
+                                        <input class="inp" readonly
+                                               value="@(a.ObjectiveScore.HasValue ? $"{a.ObjectiveScore:0.#}%" : "not scored")" />
+                                        <span class="hint">
+                                            The rating is a judgement, not a calculation — but it should be
+                                            explicable against this.
+                                        </span>
+                                    </div>
+                                    <div class="fg full">
+                                        <label class="req">Reasons for the rating</label>
+                                        <textarea name="ratingReasons" class="inp" rows="4" required>@a.RatingReasons</textarea>
+                                    </div>
+                                    <div class="fg full">
+                                        <label>Development plan</label>
+                                        <textarea name="developmentPlan" class="inp" rows="4">@a.DevelopmentPlan</textarea>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-hr"><i class="fas fa-check"></i> Record the review</button>
+                                </div>
+                            </form>
+                        }
+                        else if (a.ReviewedAt == null)
+                        {
+                            <p class="muted" style="margin:0;">Not yet reviewed.</p>
+                        }
+                        else
+                        {
+                            <dl class="dl">
+                                <div>
+                                    <dt class="k">Rating</dt>
+                                    <dd class="v">@(a.OverallRating.HasValue ? RatingLabel(a.OverallRating.Value) : "—")</dd>
+                                </div>
+                                @if (a.ModeratedRating.HasValue)
+                                {
+                                    <div>
+                                        <dt class="k">Moderated to</dt>
+                                        <dd class="v">@RatingLabel(a.ModeratedRating.Value)</dd>
+                                    </div>
+                                }
+                                <div><dt class="k">Reviewed</dt><dd class="v">@a.ReviewedAt?.ToString("d MMM yyyy")</dd></div>
+                            </dl>
+
+                            @if (!string.IsNullOrWhiteSpace(a.ReviewerComments))
+                            {
+                                <p style="white-space:pre-wrap;">@a.ReviewerComments</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(a.RatingReasons))
+                            {
+                                <h3 class="section-title sm">Reasons for the rating</h3>
+                                <p style="white-space:pre-wrap;">@a.RatingReasons</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(a.ModerationReasons))
+                            {
+                                <h3 class="section-title sm">Reasons for moderation</h3>
+                                <p style="white-space:pre-wrap;">@a.ModerationReasons</p>
+                                <p class="sub">@a.ModeratedBy?.FullName · @a.ModeratedAt?.ToString("d MMM yyyy")</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(a.DevelopmentPlan))
+                            {
+                                <h3 class="section-title sm">Development plan</h3>
+                                <p style="white-space:pre-wrap;">@a.DevelopmentPlan</p>
+                            }
+                        }
+                    </div>
+                </div>
+
+                @* ── ACKNOWLEDGEMENT ──────────────────────────────────────── *@
+                @if (a.EmployeeAcknowledged)
+                {
+                    <div class="card">
+                        <div class="card-head"><h2 class="section-title">The employee's response</h2></div>
+                        <div class="card-body">
+                            <p class="sub">
+                                Seen on @a.AcknowledgedAt?.ToString("d MMM yyyy").
+                                @(a.EmployeeDisagrees ? "The employee recorded a disagreement with the rating." : "")
+                            </p>
+                            @if (!string.IsNullOrWhiteSpace(a.EmployeeComments))
+                            {
+                                <p style="white-space:pre-wrap;">@a.EmployeeComments</p>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (isSubject && a.OverallRating.HasValue)
+                {
+                    <div class="card">
+                        <div class="card-head"><h2 class="section-title">Acknowledge this review</h2></div>
+                        <div class="card-body">
+                            <p class="hint" style="margin-top:0;">
+                                Acknowledging means you have seen it. It does not mean you agree — and if
+                                you do not, say so here and it stays on the record.
+                            </p>
+                            <form asp-action="Acknowledge" method="post">
+                                <input type="hidden" name="id" value="@a.Id" />
+                                <div class="fg">
+                                    <label>Your comments</label>
+                                    <textarea name="comments" class="inp" rows="4"></textarea>
+                                </div>
+                                <div class="fg">
+                                    <label class="check">
+                                        <input type="checkbox" name="disagrees" value="true" />
+                                        I disagree with this rating
+                                    </label>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-hr"><i class="fas fa-signature"></i> Acknowledge</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @* ── SIDEBAR ───────────────────────────────────────────────────── *@
+            <div>
+                @if (isHr && a.OverallRating.HasValue && a.Status != AppraisalStatus.Closed)
+                {
+                    <div class="card">
+                        <div class="card-head"><h2 class="section-title">Moderate</h2></div>
+                        <div class="card-body">
+                            <p class="hint" style="margin-top:0;">
+                                Two managers rating the same performance differently is normal. Where a
+                                rating is changed, the original stays on the record beside it.
+                            </p>
+                            <form asp-action="Moderate" method="post">
+                                <input type="hidden" name="id" value="@a.Id" />
+                                <div class="fg">
+                                    <label>Moderated rating</label>
+                                    <select name="moderatedRating" class="inp">
+                                        <option value="">— leave as rated —</option>
+                                        @foreach (PerformanceRating r in Enum.GetValues<PerformanceRating>())
+                                        {
+                                            <option value="@r" selected="@(a.ModeratedRating == r)">@RatingLabel(r)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="fg">
+                                    <label>Reasons</label>
+                                    <textarea name="reasons" class="inp" rows="3">@a.ModerationReasons</textarea>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-outline-hr">
+                                        <i class="fas fa-scale-balanced"></i> Record moderation
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                }
+
+                <div class="card">
+                    <div class="card-head"><h2 class="section-title">Improvement plans</h2></div>
+                    <div class="card-body">
+                        @if (pips.Count == 0)
+                        {
+                            <p class="muted" style="margin:0;">None on record.</p>
+                        }
+                        else
+                        {
+                            <ul style="list-style:none; padding:0; margin:0;">
+                                @foreach (var p in pips)
+                                {
+                                    <li style="padding:.5rem 0; border-top:1px solid var(--gray-100);">
+                                        <div class="strong-link">@p.Reference — @Spaced(p.Status.ToString())</div>
+                                        <div class="sub">
+                                            @p.StartDate.ToString("d MMM yyyy") – @p.ReviewDate.ToString("d MMM yyyy")
+                                            (@p.DaysAllowed days)
+                                        </div>
+                                        <div class="sub">@p.Concern</div>
+                                    </li>
+                                }
+                            </ul>
+                        }
+
+                        @if ((isReviewer || isHr) && a.OverallRating == PerformanceRating.Unsatisfactory)
+                        {
+                            <div class="notice warn" style="margin-top:.8rem;">
+                                <i class="fas fa-scale-balanced"></i>
+                                <div>
+                                    Rated as not meeting the standard. Section 12B of the Labour Act
+                                    requires the employee to have been told the standard and given a real
+                                    opportunity to reach it before that rating can support anything further.
+                                    <a asp-action="Plans" class="strong-link">Open an improvement plan</a>.
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

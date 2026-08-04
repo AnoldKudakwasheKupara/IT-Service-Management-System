@@ -242,6 +242,12 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<OnboardingProgramme> OnboardingProgrammes { get; set; }
         public DbSet<OnboardingTask> OnboardingTasks { get; set; }
 
+        // ── HR: performance ────────────────────────────────────────────────────────
+        public DbSet<AppraisalCycle> AppraisalCycles { get; set; }
+        public DbSet<Appraisal> Appraisals { get; set; }
+        public DbSet<AppraisalObjective> AppraisalObjectives { get; set; }
+        public DbSet<PerformanceImprovementPlan> PerformanceImprovementPlans { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -1196,6 +1202,53 @@ namespace IT_Service_Management_System.DbContexts
                     .OnDelete(DeleteBehavior.Cascade);
                 e.HasOne(x => x.CompletedBy).WithMany().HasForeignKey(x => x.CompletedById)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Performance ───────────────────────────────────────────────────────
+            b.Entity<AppraisalCycle>(e =>
+            {
+                e.HasIndex(x => x.Status);
+            });
+
+            b.Entity<Appraisal>(e =>
+            {
+                // One appraisal per person per cycle. Two ratings for the same period is not a
+                // richer record, it is an unanswerable question about which one counts.
+                e.HasIndex(x => new { x.CycleId, x.EmployeeId }).IsUnique();
+                e.HasIndex(x => x.Status);
+
+                e.HasOne(x => x.Cycle).WithMany(c => c.Appraisals).HasForeignKey(x => x.CycleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(x => x.Reviewer).WithMany().HasForeignKey(x => x.ReviewerId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.ModeratedBy).WithMany().HasForeignKey(x => x.ModeratedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<AppraisalObjective>(e =>
+            {
+                e.HasIndex(x => new { x.AppraisalId, x.DisplayOrder });
+                e.Property(x => x.Weight).HasPrecision(5, 2);
+                e.Property(x => x.AchievementPercent).HasPrecision(5, 2);
+                e.HasOne(x => x.Appraisal).WithMany(a => a.Objectives).HasForeignKey(x => x.AppraisalId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<PerformanceImprovementPlan>(e =>
+            {
+                e.HasIndex(x => new { x.EmployeeId, x.Status });
+                e.HasIndex(x => x.ReviewDate);
+
+                // Restrict: a performance plan is the evidence that an employee was told the standard
+                // and given time to meet it. It must outlive tidying up of the employee record.
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(x => x.Manager).WithMany().HasForeignKey(x => x.ManagerId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.Appraisal).WithMany().HasForeignKey(x => x.AppraisalId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             b.Entity<OvertimeRequest>(e =>
