@@ -390,6 +390,16 @@ namespace IT_Service_Management_System.Services.Hr
                     StatutoryValueKind.Percentage, "Income Tax Act [Chapter 23:06]",
                     "Charged on the PAYE payable, not on gross pay."),
 
+                // Seeded at zero deliberately. A medical aid credit reduces the tax payable, so a
+                // guessed rate under-deducts PAYE silently. Nothing is applied until the rate in
+                // force is entered, and the benefits module says loudly that it is not configured.
+                P(StatutoryKeys.MedicalAidCreditRate, "Medical aid contribution tax credit", 0m,
+                    StatutoryValueKind.Percentage, "Income Tax Act [Chapter 23:06]",
+                    "The proportion of a medical aid contribution allowed as a credit against tax "
+                    + "payable — a credit against the tax, not a deduction from income. Seeded at "
+                    + "zero: enter the rate in force before relying on it, because a guessed rate "
+                    + "under-deducts PAYE without anyone noticing."),
+
                 P(StatutoryKeys.ZimdefRate, "ZIMDEF manpower development levy", 1m,
                     StatutoryValueKind.Percentage, "Manpower Planning and Development Act [Chapter 28:02]",
                     "Employer levy on the gross wage bill."),

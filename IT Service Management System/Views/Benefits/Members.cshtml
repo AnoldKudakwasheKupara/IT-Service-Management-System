@@ -1,0 +1,168 @@
+@using IT_Service_Management_System.Models.Hr
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Benefit Members";
+    var enrolments = ViewBag.Enrolments as List<BenefitEnrolment> ?? new List<BenefitEnrolment>();
+    var isHr = ViewBag.IsHr as bool? ?? false;
+    var planId = ViewBag.PlanId as int?;
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-users"></i> Benefit Members</h1>
+                    <p class="page-sub">
+                        Enrolments are ended, not deleted. Somebody's cover in March is a fact about
+                        March, and a claim made then is judged against what they had then.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Plans" class="btn-back"><i class="fas fa-arrow-left"></i> Plans</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <form method="get" class="toolbar">
+            <select name="planId" class="inp" asp-items="@(ViewBag.PlanList as SelectList)">
+                <option value="">All plans</option>
+            </select>
+            <button type="submit" class="btn-outline-hr"><i class="fas fa-filter"></i> Filter</button>
+            <a asp-action="Members" class="btn-ghost-hr">Clear</a>
+        </form>
+
+        <div class="card flush">
+            @if (enrolments.Count == 0)
+            {
+                <div class="empty"><i class="fas fa-users"></i><p>Nobody enrolled.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead>
+                        <tr><th>Employee</th><th>Plan</th><th>Membership</th><th>Cover</th><th>Own terms</th><th>Dependants</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var e in enrolments)
+                        {
+                            <tr class="@(e.IsActive ? "" : "muted")">
+                                <td>
+                                    <div class="strong-link">@e.Employee?.DisplayName</div>
+                                    <div class="sub">@e.Employee?.EmployeeNumber</div>
+                                </td>
+                                <td>@e.Plan?.Name</td>
+                                <td class="sub">@(e.MembershipNumber ?? "—")</td>
+                                <td class="sub">
+                                    @e.StartDate.ToString("d MMM yyyy") –
+                                    @(e.EndDate?.ToString("d MMM yyyy") ?? "current")
+                                    @if (e.EndReason != null) { <div>@e.EndReason</div> }
+                                </td>
+                                <td class="sub">
+                                    @if (e.EmployeeAmountOverride.HasValue || e.EmployerAmountOverride.HasValue)
+                                    {
+                                        <div>
+                                            employee @(e.EmployeeAmountOverride?.ToString("N2") ?? "plan"),
+                                            employer @(e.EmployerAmountOverride?.ToString("N2") ?? "plan")
+                                        </div>
+                                        <div class="muted">does not follow plan changes</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="muted">follows the plan</span>
+                                    }
+                                </td>
+                                <td class="num sm">@e.Dependants.Count(d => d.IsActive)</td>
+                                <td class="act">
+                                    <a asp-action="Dependants" asp-route-id="@e.Id" class="view" title="Dependants">
+                                        <i class="fas fa-people-roof"></i>
+                                    </a>
+                                </td>
+                            </tr>
+
+                            @if (isHr && e.IsActive)
+                            {
+                                <tr>
+                                    <td colspan="7" style="background:var(--gray-50);">
+                                        <div class="act-btns">
+                                            <form asp-action="SetOverride" method="post" class="inline-form">
+                                                <input type="hidden" name="id" value="@e.Id" />
+                                                <input type="number" step="0.01" name="employeeAmount" class="inp"
+                                                       style="width:9rem;" placeholder="Employee" value="@e.EmployeeAmountOverride" />
+                                                <input type="number" step="0.01" name="employerAmount" class="inp"
+                                                       style="width:9rem;" placeholder="Employer" value="@e.EmployerAmountOverride" />
+                                                <input name="notes" class="inp" placeholder="Why their terms differ" value="@e.Notes" />
+                                                <button type="submit" class="btn-outline-hr btn-sm">
+                                                    <i class="fas fa-sliders"></i> Set own terms
+                                                </button>
+                                            </form>
+
+                                            <form asp-action="EndEnrolment" method="post" class="inline-form">
+                                                <input type="hidden" name="id" value="@e.Id" />
+                                                <input type="date" name="endDate" class="inp"
+                                                       value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                                                <input name="reason" class="inp" placeholder="Why cover ended" required />
+                                                <button type="submit" class="btn-danger-hr btn-sm">
+                                                    <i class="fas fa-ban"></i> End cover
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        @if (isHr)
+        {
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">Enrol someone</h2></div>
+                <div class="card-body">
+                    <p class="hint" style="margin-top:0;">
+                        The qualifying period and the employment type a plan is open to are enforced
+                        rather than warned about — enrolling someone who does not qualify creates an
+                        expectation that has to be taken away again.
+                    </p>
+                    <form asp-action="Enrol" method="post">
+                        <div class="form-grid">
+                            <div class="fg">
+                                <label class="req">Employee</label>
+                                <select name="employeeId" class="inp" required
+                                        asp-items="@(ViewBag.EmployeeList as SelectList)">
+                                    <option value="">— select —</option>
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="req">Plan</label>
+                                <select name="planId" class="inp" required
+                                        asp-items="@(ViewBag.PlanList as SelectList)">
+                                    <option value="">— select —</option>
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label class="req">Cover from</label>
+                                <input type="date" name="startDate" class="inp" required
+                                       value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            </div>
+                            <div class="fg">
+                                <label>Membership number</label>
+                                <input name="membershipNumber" class="inp" />
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-hr"><i class="fas fa-user-plus"></i> Enrol</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+</div>

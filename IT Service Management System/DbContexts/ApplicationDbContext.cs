@@ -248,6 +248,11 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<AppraisalObjective> AppraisalObjectives { get; set; }
         public DbSet<PerformanceImprovementPlan> PerformanceImprovementPlans { get; set; }
 
+        // ── HR: benefits ───────────────────────────────────────────────────────────
+        public DbSet<BenefitPlan> BenefitPlans { get; set; }
+        public DbSet<BenefitEnrolment> BenefitEnrolments { get; set; }
+        public DbSet<BenefitDependant> BenefitDependants { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -1249,6 +1254,31 @@ namespace IT_Service_Management_System.DbContexts
                     .OnDelete(DeleteBehavior.NoAction);
                 e.HasOne(x => x.Appraisal).WithMany().HasForeignKey(x => x.AppraisalId)
                     .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            // ── Benefits ──────────────────────────────────────────────────────────
+            b.Entity<BenefitPlan>(e =>
+            {
+                e.HasIndex(x => new { x.IsActive, x.Category });
+                e.HasIndex(x => x.EffectiveFrom);
+            });
+
+            b.Entity<BenefitEnrolment>(e =>
+            {
+                e.HasIndex(x => new { x.EmployeeId, x.PlanId, x.StartDate });
+                e.HasIndex(x => x.EndDate);
+
+                e.HasOne(x => x.Plan).WithMany(p => p.Enrolments).HasForeignKey(x => x.PlanId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<BenefitDependant>(e =>
+            {
+                e.HasIndex(x => new { x.EnrolmentId, x.RemovedOn });
+                e.HasOne(x => x.Enrolment).WithMany(x => x.Dependants).HasForeignKey(x => x.EnrolmentId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             b.Entity<OvertimeRequest>(e =>

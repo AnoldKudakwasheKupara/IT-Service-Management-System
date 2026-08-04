@@ -1,0 +1,213 @@
+@using IT_Service_Management_System.Models.Hr
+@model BenefitPlan
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "New Benefit Plan" : $"Edit {Model.Name}";
+    var members = (int)(ViewBag.Members ?? 0);
+
+    string Spaced(string s) => System.Text.RegularExpressions.Regex.Replace(s, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-layer-group"></i> @ViewData["Title"]</h1>
+                    <p class="page-sub">
+                        The tax treatment is part of the plan, not an afterthought — it decides what the
+                        employee actually receives.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Plans" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (members > 0)
+        {
+            <div class="notice warn">
+                <i class="fas fa-users"></i>
+                <div>
+                    @members member(s) are on this plan. Changing the contribution changes what they pay
+                    from the next run, except where their own terms were recorded as an override.
+                </div>
+            </div>
+        }
+
+        <form asp-action="EditPlan" method="post">
+            <input type="hidden" asp-for="Id" />
+
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">The benefit</h2></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label asp-for="Name" class="req"></label>
+                            <input asp-for="Name" class="inp" />
+                            <span asp-validation-for="Name" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="Provider"></label>
+                            <input asp-for="Provider" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="Category"></label>
+                            <select asp-for="Category" class="inp">
+                                @foreach (BenefitCategory c in Enum.GetValues<BenefitCategory>())
+                                {
+                                    <option value="@c" selected="@(Model.Category == c)">@Spaced(c.ToString())</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="Currency"></label>
+                            <input asp-for="Currency" class="inp" maxlength="3" />
+                        </div>
+                        <div class="fg full">
+                            <label asp-for="Description"></label>
+                            <textarea asp-for="Description" class="inp" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">Tax treatment</h2></div>
+                <div class="card-body">
+                    <p class="hint" style="margin-top:0;">
+                        A benefit in kind is taxable in the employee's hands. A contribution to an
+                        approved fund is deductible before PAYE, within the statutory limit. A medical
+                        aid contribution attracts a credit against the tax payable rather than a
+                        deduction from income. Three different answers — pick the one that applies.
+                    </p>
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label asp-for="TaxTreatment"></label>
+                            <select asp-for="TaxTreatment" class="inp">
+                                <option value="@BenefitTaxTreatment.TaxableBenefit">Taxable benefit in kind</option>
+                                <option value="@BenefitTaxTreatment.DeductibleContribution">Deductible before PAYE (approved fund)</option>
+                                <option value="@BenefitTaxTreatment.MedicalAidCredit">Attracts a medical aid tax credit</option>
+                                <option value="@BenefitTaxTreatment.Exempt">Not taxable</option>
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="TaxAuthority"></label>
+                            <input asp-for="TaxAuthority" class="inp"
+                                   placeholder="e.g. Income Tax Act [Chapter 23:06]" />
+                            <span asp-validation-for="TaxAuthority" class="field-error"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">Contribution</h2></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg full">
+                            <label asp-for="Basis"></label>
+                            <select asp-for="Basis" class="inp">
+                                <option value="@ContributionBasis.FixedAmount">A fixed amount a month</option>
+                                <option value="@ContributionBasis.PercentOfBasic">A percentage of basic salary</option>
+                            </select>
+                            <span class="hint">
+                                Amounts and rates are held separately, so a plan cannot end up half one
+                                and half the other by accident.
+                            </span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="EmployerAmount"></label>
+                            <input asp-for="EmployerAmount" type="number" step="0.01" class="inp" />
+                            <span asp-validation-for="EmployerAmount" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="EmployeeAmount"></label>
+                            <input asp-for="EmployeeAmount" type="number" step="0.01" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="EmployerRate"></label>
+                            <input asp-for="EmployerRate" type="number" step="0.0001" class="inp" />
+                            <span asp-validation-for="EmployerRate" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="EmployeeRate"></label>
+                            <input asp-for="EmployeeRate" type="number" step="0.0001" class="inp" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">Eligibility and dependants</h2></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label asp-for="QualifyingMonths"></label>
+                            <input asp-for="QualifyingMonths" type="number" min="0" max="120" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="AvailableTo"></label>
+                            <select asp-for="AvailableTo" class="inp">
+                                <option value="">Everyone</option>
+                                @foreach (EmploymentType t in Enum.GetValues<EmploymentType>())
+                                {
+                                    <option value="@t" selected="@(Model.AvailableTo == t)">@Spaced(t.ToString())</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label class="check">
+                                <input asp-for="AllowsDependants" type="checkbox" /> Dependants may be covered
+                            </label>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="MaxDependants"></label>
+                            <input asp-for="MaxDependants" type="number" min="0" max="20" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="CostPerDependant"></label>
+                            <input asp-for="CostPerDependant" type="number" step="0.01" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label class="check">
+                                <input asp-for="IsAutomatic" type="checkbox" /> Enrolment is automatic
+                            </label>
+                            <span class="hint">
+                                For a benefit that is a condition of employment rather than a choice.
+                            </span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="EffectiveFrom"></label>
+                            <input asp-for="EffectiveFrom" type="date" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="EffectiveTo"></label>
+                            <input asp-for="EffectiveTo" type="date" class="inp" />
+                        </div>
+                        <div class="fg full">
+                            <label class="check">
+                                <input asp-for="IsActive" type="checkbox" /> Active
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-hr"><i class="fas fa-save"></i> Save</button>
+                <a asp-action="Plans" class="btn-ghost-hr">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

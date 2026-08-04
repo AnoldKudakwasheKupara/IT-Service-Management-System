@@ -1,0 +1,192 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Services.Hr
+@{
+    ViewData["Title"] = "My Benefits";
+    var me = ViewBag.Employee as Employee;
+    var costs = ViewBag.Costs as List<BenefitsService.MemberCost> ?? new List<BenefitsService.MemberCost>();
+    var effect = ViewBag.Effect as BenefitsService.PayrollEffect;
+    var enrolments = ViewBag.Enrolments as List<BenefitEnrolment> ?? new List<BenefitEnrolment>();
+    var available = ViewBag.Available as List<BenefitPlan> ?? new List<BenefitPlan>();
+    var isHr = ViewBag.IsHr as bool? ?? false;
+
+    string Spaced(string s) => System.Text.RegularExpressions.Regex.Replace(s, "(?<=[a-z])(?=[A-Z])", " ");
+
+    string TreatmentLabel(BenefitTaxTreatment t) => t switch
+    {
+        BenefitTaxTreatment.TaxableBenefit => "Taxable benefit in kind",
+        BenefitTaxTreatment.DeductibleContribution => "Deductible before PAYE",
+        BenefitTaxTreatment.MedicalAidCredit => "Medical aid tax credit",
+        _ => "Not taxable"
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-hand-holding-heart"></i> My Benefits</h1>
+                    <p class="page-sub">@me?.DisplayName — what you are covered for, what it costs you, and how it affects your tax.</p>
+                </div>
+                <div class="head-actions">
+                    @if (isHr)
+                    {
+                        <a asp-action="Plans" class="btn-ghost-hr"><i class="fas fa-layer-group"></i> Plans</a>
+                        <a asp-action="Members" class="btn-ghost-hr"><i class="fas fa-users"></i> Members</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (effect != null && effect.Notes.Count > 0)
+        {
+            <div class="notice warn">
+                <i class="fas fa-triangle-exclamation"></i>
+                <div>
+                    <ul style="margin:0 0 0 1rem;">
+                        @foreach (var n in effect.Notes) { <li>@n</li> }
+                    </ul>
+                </div>
+            </div>
+        }
+
+        @if (effect != null)
+        {
+            <div class="stats">
+                <div class="stat">
+                    <div class="num">@effect.Currency @effect.EmployerCost.ToString("N2")</div>
+                    <div class="lbl">Employer's cost a month</div>
+                </div>
+                <div class="stat">
+                    <div class="num amber">@effect.Currency @effect.TaxableBenefitValue.ToString("N2")</div>
+                    <div class="lbl">Added to your taxable pay</div>
+                </div>
+                <div class="stat">
+                    <div class="num green">@effect.Currency @effect.DeductibleContributions.ToString("N2")</div>
+                    <div class="lbl">Deducted before PAYE</div>
+                </div>
+                <div class="stat">
+                    <div class="num blue">@effect.Currency @effect.MedicalAidCredit.ToString("N2")</div>
+                    <div class="lbl">Medical aid tax credit</div>
+                </div>
+            </div>
+
+            <p class="hint">
+                These are three different things and they are worth keeping apart. A benefit in kind
+                increases the income you are taxed on. A contribution to an approved fund comes off
+                before the tax is worked out. A medical aid contribution earns a credit against the
+                tax itself. Only the last one reduces tax pound for pound.
+            </p>
+        }
+
+        <div class="card flush">
+            <div class="card-head"><h2 class="section-title">Current cover</h2></div>
+            @if (costs.Count == 0)
+            {
+                <div class="empty"><i class="fas fa-hand-holding-heart"></i><p>You are not enrolled on any benefit.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead>
+                        <tr><th>Benefit</th><th>Tax treatment</th><th>Employer pays</th><th>You pay</th><th>Dependants</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in costs)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="strong-link">@c.PlanName</div>
+                                    <div class="sub">@Spaced(c.Category.ToString())</div>
+                                </td>
+                                <td class="sub">@TreatmentLabel(c.TaxTreatment)</td>
+                                <td class="num sm">@c.Currency @c.EmployerContribution.ToString("N2")</td>
+                                <td class="num sm">@c.Currency @c.EmployeeContribution.ToString("N2")</td>
+                                <td class="num sm">
+                                    @c.Dependants
+                                    @if (c.DependantCost > 0)
+                                    {
+                                        <div class="sub">@c.Currency @c.DependantCost.ToString("N2")</div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <div class="card flush">
+            <div class="card-head"><h2 class="section-title">My enrolments</h2></div>
+            @if (enrolments.Count == 0)
+            {
+                <div class="empty"><p>Nothing on record.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead><tr><th>Benefit</th><th>Membership</th><th>Cover</th><th>Dependants</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var e in enrolments)
+                        {
+                            <tr class="@(e.IsActive ? "" : "muted")">
+                                <td class="strong-link">@e.Plan?.Name</td>
+                                <td class="sub">@(e.MembershipNumber ?? "—")</td>
+                                <td class="sub">
+                                    @e.StartDate.ToString("d MMM yyyy") –
+                                    @(e.EndDate?.ToString("d MMM yyyy") ?? "current")
+                                    @if (e.EndReason != null) { <div>@e.EndReason</div> }
+                                </td>
+                                <td class="num sm">@e.Dependants.Count(d => d.IsActive)</td>
+                                <td class="act">
+                                    @if (e.Plan?.AllowsDependants == true)
+                                    {
+                                        <a asp-action="Dependants" asp-route-id="@e.Id" class="edit" title="Dependants">
+                                            <i class="fas fa-people-roof"></i>
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        @if (available.Count > 0)
+        {
+            <div class="card flush">
+                <div class="card-head"><h2 class="section-title">Benefits you are not on</h2></div>
+                <table class="tbl">
+                    <thead><tr><th>Benefit</th><th>Provider</th><th>Cost</th><th>Qualifying service</th></tr></thead>
+                    <tbody>
+                        @foreach (var p in available)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="strong-link">@p.Name</div>
+                                    @if (p.Description != null) { <div class="sub">@p.Description</div> }
+                                </td>
+                                <td class="sub">@(p.Provider ?? "—")</td>
+                                <td class="sub">@p.CostSummary</td>
+                                <td class="sub">
+                                    @(p.QualifyingMonths == 0 ? "None" : $"{p.QualifyingMonths} month(s)")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="card-body">
+                    <p class="hint" style="margin:0;">
+                        Shown so an unclaimed benefit is visible rather than quietly missed. Ask HR to enrol you.
+                    </p>
+                </div>
+            </div>
+        }
+    </div>
+</div>

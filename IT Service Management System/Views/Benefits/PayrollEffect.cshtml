@@ -1,0 +1,105 @@
+@using IT_Service_Management_System.Services.Hr
+@{
+    var anchor = (DateTime)(ViewBag.Anchor ?? DateTime.Today);
+    ViewData["Title"] = $"Benefits — Effect on Pay, {anchor:MMMM yyyy}";
+    var rows = ViewBag.Rows as List<(int EmployeeId, string Name, BenefitsService.PayrollEffect Effect)>
+               ?? new List<(int, string, BenefitsService.PayrollEffect)>();
+
+    var notes = rows.SelectMany(r => r.Effect.Notes).Distinct().ToList();
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-calculator"></i> Effect on Pay</h1>
+                    <p class="page-sub">
+                        @anchor.ToString("MMMM yyyy") — what benefits do to each employee's pay, split by
+                        tax treatment. Reported, not posted: a payroll run should pick these up
+                        deliberately rather than have them appear underneath it.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Plans" class="btn-back"><i class="fas fa-arrow-left"></i> Plans</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <form method="get" class="toolbar">
+            <input type="month" name="month" class="inp" value="@anchor.ToString("yyyy-MM")" />
+            <button type="submit" class="btn-outline-hr"><i class="fas fa-calendar"></i> Show</button>
+        </form>
+
+        @if (notes.Count > 0)
+        {
+            <div class="notice warn">
+                <i class="fas fa-triangle-exclamation"></i>
+                <div>
+                    <ul style="margin:0 0 0 1rem;">
+                        @foreach (var n in notes) { <li>@n</li> }
+                    </ul>
+                </div>
+            </div>
+        }
+
+        <div class="card flush">
+            @if (rows.Count == 0)
+            {
+                <div class="empty"><i class="fas fa-calculator"></i><p>Nobody had benefits in this month.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Added to taxable pay</th>
+                            <th>Deducted before PAYE</th>
+                            <th>Medical aid paid</th>
+                            <th>Tax credit</th>
+                            <th>Other deductions</th>
+                            <th>Employer cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in rows)
+                        {
+                            <tr>
+                                <td class="strong-link">@r.Name</td>
+                                <td class="num sm amber">@r.Effect.Currency @r.Effect.TaxableBenefitValue.ToString("N2")</td>
+                                <td class="num sm green">@r.Effect.Currency @r.Effect.DeductibleContributions.ToString("N2")</td>
+                                <td class="num sm">@r.Effect.Currency @r.Effect.MedicalAidContributions.ToString("N2")</td>
+                                <td class="num sm blue">@r.Effect.Currency @r.Effect.MedicalAidCredit.ToString("N2")</td>
+                                <td class="num sm">@r.Effect.Currency @r.Effect.OtherEmployeeDeductions.ToString("N2")</td>
+                                <td class="num sm">@r.Effect.Currency @r.Effect.EmployerCost.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td class="strong-link">Total</td>
+                            <td class="num sm">@rows.Sum(r => r.Effect.TaxableBenefitValue).ToString("N2")</td>
+                            <td class="num sm">@rows.Sum(r => r.Effect.DeductibleContributions).ToString("N2")</td>
+                            <td class="num sm">@rows.Sum(r => r.Effect.MedicalAidContributions).ToString("N2")</td>
+                            <td class="num sm">@rows.Sum(r => r.Effect.MedicalAidCredit).ToString("N2")</td>
+                            <td class="num sm">@rows.Sum(r => r.Effect.OtherEmployeeDeductions).ToString("N2")</td>
+                            <td class="num sm">@rows.Sum(r => r.Effect.EmployerCost).ToString("N2")</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            }
+        </div>
+
+        <p class="hint">
+            Totals mix currencies where plans are priced differently. Where that happens it is flagged
+            above rather than silently summed — a number that adds two currencies together is worse
+            than no number.
+        </p>
+    </div>
+</div>

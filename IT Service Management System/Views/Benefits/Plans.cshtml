@@ -1,0 +1,122 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Services.Hr
+@{
+    ViewData["Title"] = "Benefit Plans";
+    var summaries = ViewBag.Summaries as List<BenefitsService.PlanSummary> ?? new List<BenefitsService.PlanSummary>();
+    var isHr = ViewBag.IsHr as bool? ?? false;
+    var creditRate = ViewBag.MedicalCreditRate as decimal? ?? 0m;
+    var hasMedical = ViewBag.HasMedicalPlans as bool? ?? false;
+
+    string Spaced(string s) => System.Text.RegularExpressions.Regex.Replace(s, "(?<=[a-z])(?=[A-Z])", " ");
+
+    string TreatmentLabel(BenefitTaxTreatment t) => t switch
+    {
+        BenefitTaxTreatment.TaxableBenefit => "Taxable benefit in kind",
+        BenefitTaxTreatment.DeductibleContribution => "Deductible before PAYE",
+        BenefitTaxTreatment.MedicalAidCredit => "Medical aid tax credit",
+        _ => "Not taxable"
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-layer-group"></i> Benefit Plans</h1>
+                    <p class="page-sub">
+                        Each plan carries its tax treatment, because that is what decides what the
+                        employee actually receives — and what ends up on the payslip.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Members" class="btn-ghost-hr"><i class="fas fa-users"></i> Members</a>
+                    <a asp-action="PayrollEffect" class="btn-ghost-hr"><i class="fas fa-calculator"></i> Effect on pay</a>
+                    @if (isHr)
+                    {
+                        <a asp-action="EditPlan" class="btn-hr"><i class="fas fa-plus"></i> New plan</a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (hasMedical && creditRate == 0)
+        {
+            <div class="notice warn">
+                <i class="fas fa-triangle-exclamation"></i>
+                <div>
+                    <strong>The medical aid tax credit rate is not configured.</strong>
+                    Medical aid plans exist, but until a rate is entered no credit is applied and PAYE
+                    will be overstated. It is seeded at zero deliberately — a guessed rate under-deducts
+                    tax without anyone noticing. Set <code>Tax.MedicalAidCreditRate</code> on the
+                    statutory parameters page.
+                </div>
+            </div>
+        }
+
+        <div class="card flush">
+            @if (summaries.Count == 0)
+            {
+                <div class="empty"><i class="fas fa-layer-group"></i><p>No plans defined.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>Plan</th><th>Category</th><th>Tax treatment</th><th>Contribution</th>
+                            <th>Members</th><th>Employer cost / month</th><th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in summaries)
+                        {
+                            <tr class="@(s.Plan.IsCurrent ? "" : "muted")">
+                                <td>
+                                    <div class="strong-link">@s.Plan.Name</div>
+                                    <div class="sub">
+                                        @(s.Plan.Provider ?? "no provider recorded")
+                                        @if (s.Plan.IsAutomatic) { <text> · automatic enrolment</text> }
+                                        @if (!s.Plan.IsCurrent) { <text> · not in force</text> }
+                                    </div>
+                                </td>
+                                <td class="sub">@Spaced(s.Plan.Category.ToString())</td>
+                                <td>
+                                    <div>@TreatmentLabel(s.Plan.TaxTreatment)</div>
+                                    @if (s.Plan.TaxAuthority != null) { <div class="sub">@s.Plan.TaxAuthority</div> }
+                                </td>
+                                <td class="sub">@s.Plan.CostSummary</td>
+                                <td class="num sm">
+                                    @s.Members
+                                    @if (s.Dependants > 0) { <div class="sub">+@s.Dependants dependants</div> }
+                                </td>
+                                <td class="num sm">@s.Plan.Currency @s.MonthlyEmployerCost.ToString("N2")</td>
+                                <td class="act">
+                                    <a asp-action="Members" asp-route-planId="@s.Plan.Id" class="view" title="Members">
+                                        <i class="fas fa-users"></i>
+                                    </a>
+                                    @if (isHr)
+                                    {
+                                        <a asp-action="EditPlan" asp-route-id="@s.Plan.Id" class="edit"><i class="fas fa-pen"></i></a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="5" class="strong-link">Total employer cost a month</td>
+                            <td class="num sm">@summaries.Sum(s => s.MonthlyEmployerCost).ToString("N2")</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,123 @@
+@using IT_Service_Management_System.Models.Hr
+@{
+    var e = ViewBag.Enrolment as BenefitEnrolment;
+    ViewData["Title"] = $"Dependants — {e?.Plan?.Name}";
+    var isHr = ViewBag.IsHr as bool? ?? false;
+    var dependants = (e?.Dependants ?? new List<BenefitDependant>())
+        .OrderByDescending(d => d.IsActive).ThenBy(d => d.FullName).ToList();
+    var active = dependants.Count(d => d.IsActive);
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-people-roof"></i> Dependants</h1>
+                    <p class="page-sub">
+                        @e!.Employee?.DisplayName · @e.Plan?.Name
+                        @if (e.Plan?.MaxDependants > 0)
+                        {
+                            <text> · @active of @e.Plan.MaxDependants covered</text>
+                        }
+                        @if (e.Plan?.CostPerDependant > 0)
+                        {
+                            <text> · @e.Plan.Currency @e.Plan.CostPerDependant.ToString("N2") each a month</text>
+                        }
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="notice">
+            <i class="fas fa-user-shield"></i>
+            <div>
+                Only what the cover needs is held here: a name, the relationship, and a date of birth,
+                because a child's cover usually ends at an age. Nothing else about a member's family
+                belongs on an employer's system.
+            </div>
+        </div>
+
+        <div class="card flush">
+            @if (dependants.Count == 0)
+            {
+                <div class="empty"><i class="fas fa-people-roof"></i><p>Nobody covered.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead><tr><th>Name</th><th>Relationship</th><th>Age</th><th>Cover</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var d in dependants)
+                        {
+                            <tr class="@(d.IsActive ? "" : "muted")">
+                                <td class="strong-link">@d.FullName</td>
+                                <td class="sub">@d.Relationship</td>
+                                <td class="num sm">@(d.Age?.ToString() ?? "—")</td>
+                                <td class="sub">
+                                    @d.AddedOn.ToString("d MMM yyyy") –
+                                    @(d.RemovedOn?.ToString("d MMM yyyy") ?? "current")
+                                </td>
+                                <td>
+                                    @if (d.IsActive)
+                                    {
+                                        <form asp-action="RemoveDependant" method="post" class="inline-form">
+                                            <input type="hidden" name="id" value="@d.Id" />
+                                            <input type="date" name="removedOn" class="inp"
+                                                   value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                                            <button type="submit" class="btn-ghost-hr btn-sm">
+                                                <i class="fas fa-user-minus"></i> Remove
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        @if (e.Plan?.AllowsDependants == true && e.IsActive)
+        {
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">Add a dependant</h2></div>
+                <div class="card-body">
+                    <form asp-action="AddDependant" method="post">
+                        <input type="hidden" name="enrolmentId" value="@e.Id" />
+                        <div class="form-grid">
+                            <div class="fg">
+                                <label class="req">Full name</label>
+                                <input name="fullName" class="inp" required />
+                            </div>
+                            <div class="fg">
+                                <label class="req">Relationship</label>
+                                <input name="relationship" class="inp" required placeholder="e.g. Spouse, Child" />
+                            </div>
+                            <div class="fg">
+                                <label>Date of birth</label>
+                                <input type="date" name="dateOfBirth" class="inp" />
+                            </div>
+                            <div class="fg">
+                                <label>Cover from</label>
+                                <input type="date" name="addedOn" class="inp"
+                                       value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-hr"><i class="fas fa-user-plus"></i> Add</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+</div>

@@ -98,6 +98,13 @@ namespace IT_Service_Management_System.Models.Hr
         /// <summary>AIDS levy, charged on the PAYE payable rather than on gross pay.</summary>
         public const string AidsLevyRate = "Tax.AidsLevyRate";
 
+        /// <summary>
+        /// The proportion of a medical aid contribution allowed as a credit against tax payable.
+        /// A credit against the tax, not a deduction from income — the distinction changes the
+        /// answer, so it is held as its own parameter rather than folded into a rate elsewhere.
+        /// </summary>
+        public const string MedicalAidCreditRate = "Tax.MedicalAidCreditRate";
+
         // ── Employer levies ──────────────────────────────────────────────────────
         /// <summary>Manpower development levy on the gross wage bill (Manpower Planning and Development Act).</summary>
         public const string ZimdefRate = "Levy.ZimdefRate";

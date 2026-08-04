@@ -851,6 +851,10 @@
                    asp-controller="Attendance" asp-action="Index">
                     <i class="fas fa-clock"></i> My Attendance
                 </a>
+                <a class="nav-item @(currentController == "Benefits" && currentAction == "Index" ? "active" : "")"
+                   asp-controller="Benefits" asp-action="Index">
+                    <i class="fas fa-hand-holding-heart"></i> My Benefits
+                </a>
                 <a class="nav-item @(currentController == "Appraisals" ? "active" : "")"
                    asp-controller="Appraisals" asp-action="Index">
                     <i class="fas fa-chart-line"></i> My Performance
@@ -1179,6 +1183,11 @@
                        asp-controller="Attendance" asp-action="Shifts">
                         <i class="fas fa-business-time"></i>
                         Shifts
+                    </a>
+                    <a class="nav-item @(currentController == "Benefits" && currentAction != "Index" ? "active" : "")"
+                       asp-controller="Benefits" asp-action="Plans">
+                        <i class="fas fa-hand-holding-heart"></i>
+                        Benefits
                     </a>
                     <a class="nav-item @(currentController == "Appraisals" && currentAction != "Index" ? "active" : "")"
                        asp-controller="Appraisals" asp-action="Cycles">
