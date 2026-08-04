@@ -1,0 +1,422 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Services.Hr
+@{
+    var a = ViewBag.Application as JobApplication;
+    ViewData["Title"] = $"{a?.FullName} — {a?.Reference}";
+    var criteria = ViewBag.Criteria as List<SelectionCriterion> ?? new List<SelectionCriterion>();
+    var scores = ViewBag.Scores as List<CandidateScore> ?? new List<CandidateScore>();
+    var result = ViewBag.Result as RecruitmentService.CandidateResult;
+    var offer = ViewBag.Offer as JobOffer;
+    var interviews = (a?.Interviews ?? new List<CandidateInterview>()).OrderBy(i => i.ScheduledFor).ToList();
+
+    string Spaced(string s) => System.Text.RegularExpressions.Regex.Replace(s, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-id-card"></i> @a!.FullName</h1>
+                    <p class="page-sub">
+                        @a.Reference · @a.Vacancy?.Title
+                        · applied @a.ReceivedAt.ToString("d MMM yyyy")
+                        @if (a.IsInternal) { <text> · internal applicant</text> }
+                        @if (!a.EntitledToWork) { <text> · work permit required</text> }
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <span class="badge-hr b-neutral">@Spaced(a.Status.ToString())</span>
+                    <a asp-action="Applications" asp-route-id="@a.VacancyId" class="btn-back">
+                        <i class="fas fa-arrow-left"></i> Applications
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="grid-2-1">
+            <div>
+                @* ── SCORING ───────────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head">
+                        <h2 class="section-title">Scoring against the criteria</h2>
+                        @if (result != null && result.MaxScore > 0)
+                        {
+                            <span class="num sm @(result.Percentage >= 70 ? "green" : result.Percentage >= 50 ? "amber" : "red")">
+                                @result.Percentage.ToString("0.#")%
+                            </span>
+                        }
+                    </div>
+                    <div class="card-body">
+                        @if (criteria.Count == 0)
+                        {
+                            <p class="muted" style="margin:0;">
+                                No criteria are set for this vacancy, so there is nothing to score against.
+                            </p>
+                        }
+                        else
+                        {
+                            <form asp-action="Score" method="post">
+                                <input type="hidden" name="applicationId" value="@a.Id" />
+
+                                <table class="tbl">
+                                    <thead>
+                                        <tr><th>Criterion</th><th>Weight</th><th>Score (0–5)</th><th>Evidence</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var criterion in criteria)
+                                        {
+                                            var existing = scores
+                                                .Where(s => s.CriterionId == criterion.Id)
+                                                .OrderByDescending(s => s.ScoredAt).FirstOrDefault();
+                                            <tr>
+                                                <td>
+                                                    <div class="strong-link">@criterion.Name</div>
+                                                    @if (criterion.Descriptor != null) { <div class="sub">@criterion.Descriptor</div> }
+                                                    @if (criterion.IsEssential) { <div class="sub red">Essential</div> }
+                                                    <input type="hidden" name="criterionIds" value="@criterion.Id" />
+                                                </td>
+                                                <td class="num sm">×@criterion.Weight</td>
+                                                <td>
+                                                    <select name="scores" class="inp">
+                                                        @for (var s = 0; s <= 5; s++)
+                                                        {
+                                                            <option value="@s" selected="@(existing != null && existing.Score == s)">@s</option>
+                                                        }
+                                                    </select>
+                                                </td>
+                                                <td>
+                                                    <input name="comments" class="inp" value="@existing?.Comment"
+                                                           placeholder="What in the application or interview supports this score" />
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-hr"><i class="fas fa-save"></i> Save scores</button>
+                                </div>
+                            </form>
+
+                            @if (result != null && result.EssentialGaps.Count > 0)
+                            {
+                                <div class="notice warn">
+                                    <i class="fas fa-triangle-exclamation"></i>
+                                    <div>
+                                        <strong>Essential requirements not met or not yet scored:</strong>
+                                        <ul style="margin:.4rem 0 0 1rem;">
+                                            @foreach (var gap in result.EssentialGaps) { <li>@gap</li> }
+                                        </ul>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+
+                @* ── INTERVIEWS ────────────────────────────────────────────── *@
+                <div class="card">
+                    <div class="card-head"><h2 class="section-title">Interviews</h2></div>
+                    <div class="card-body">
+                        @if (interviews.Count == 0)
+                        {
+                            <p class="muted">None arranged.</p>
+                        }
+                        else
+                        {
+                            foreach (var i in interviews)
+                            {
+                                <div style="padding:.75rem 0; border-top:1px solid var(--gray-100);">
+                                    <div class="head-row">
+                                        <div>
+                                            <div class="strong-link">
+                                                @Spaced(i.Stage.ToString()) — @i.ScheduledFor.ToString("ddd d MMM yyyy, HH:mm")
+                                            </div>
+                                            <div class="sub">
+                                                @(i.Venue ?? "venue not recorded")
+                                                · panel: @(string.IsNullOrWhiteSpace(i.Panel) ? "not recorded" : i.Panel)
+                                            </div>
+                                        </div>
+                                        @if (i.Outcome.HasValue)
+                                        {
+                                            <span class="badge-hr @(i.Outcome == InterviewOutcome.Progress ? "b-active"
+                                                                    : i.Outcome == InterviewOutcome.Hold ? "b-probation" : "b-left")">
+                                                @i.Outcome
+                                            </span>
+                                        }
+                                    </div>
+
+                                    @if (i.Held)
+                                    {
+                                        @if (!string.IsNullOrWhiteSpace(i.Notes))
+                                        {
+                                            <p style="white-space:pre-wrap; margin:.5rem 0 0;">@i.Notes</p>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(i.Recommendation))
+                                        {
+                                            <p class="hint" style="margin:.4rem 0 0;"><strong>Recommendation:</strong> @i.Recommendation</p>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="RecordInterview" method="post" style="margin-top:.6rem;">
+                                            <input type="hidden" name="id" value="@i.Id" />
+                                            <div class="form-grid">
+                                                <div class="fg">
+                                                    <label class="check">
+                                                        <input type="checkbox" name="candidateAttended" value="true" checked />
+                                                        Candidate attended
+                                                    </label>
+                                                </div>
+                                                <div class="fg">
+                                                    <label>Outcome</label>
+                                                    <select name="outcome" class="inp">
+                                                        @foreach (InterviewOutcome o in Enum.GetValues<InterviewOutcome>())
+                                                        {
+                                                            <option value="@o">@o</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="fg full">
+                                                    <label>Panel notes</label>
+                                                    <textarea name="notes" class="inp" rows="4"
+                                                              placeholder="What was asked, what was answered."></textarea>
+                                                </div>
+                                                <div class="fg full">
+                                                    <label>Recommendation</label>
+                                                    <input name="recommendation" class="inp"
+                                                           placeholder="The panel's view, in its own words." />
+                                                </div>
+                                            </div>
+                                            <div class="form-actions">
+                                                <button type="submit" class="btn-outline-hr">
+                                                    <i class="fas fa-clipboard-check"></i> Record this interview
+                                                </button>
+                                            </div>
+                                        </form>
+                                    }
+                                </div>
+                            }
+                        }
+
+                        <div style="border-top:1px solid var(--gray-100); padding-top:.9rem; margin-top:.6rem;">
+                            <form asp-action="ScheduleInterview" method="post">
+                                <input type="hidden" name="applicationId" value="@a.Id" />
+                                <div class="form-grid">
+                                    <div class="fg">
+                                        <label>Stage</label>
+                                        <select name="stage" class="inp">
+                                            @foreach (InterviewStage s in Enum.GetValues<InterviewStage>())
+                                            {
+                                                <option value="@s" selected="@(s == InterviewStage.First)">@Spaced(s.ToString())</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="fg">
+                                        <label class="req">When</label>
+                                        <input type="datetime-local" name="scheduledFor" class="inp" required
+                                               value="@DateTime.Today.AddDays(3).ToString("yyyy-MM-ddT09:00")" />
+                                    </div>
+                                    <div class="fg">
+                                        <label>Venue</label>
+                                        <input name="venue" class="inp" />
+                                    </div>
+                                    <div class="fg">
+                                        <label>Panel</label>
+                                        <input name="panel" class="inp" placeholder="Names of everyone sitting" />
+                                        <span class="hint">
+                                            A one-person interview is harder to defend than a panel, and
+                                            impossible to corroborate.
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-outline-hr">
+                                        <i class="fas fa-calendar-plus"></i> Schedule an interview
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                @* ── OFFER ─────────────────────────────────────────────────── *@
+                @if (offer != null)
+                {
+                    <div class="card">
+                        <div class="card-head">
+                            <h2 class="section-title">Offer @offer.Reference</h2>
+                            <span class="badge-hr b-neutral">@offer.Status</span>
+                        </div>
+                        <div class="card-body">
+                            <dl class="dl">
+                                <div><dt class="k">Post</dt><dd class="v">@offer.JobTitle</dd></div>
+                                <div><dt class="k">Salary</dt><dd class="v">@offer.Currency @offer.BasicSalary.ToString("N2") per month</dd></div>
+                                <div><dt class="k">Starts</dt><dd class="v">@offer.StartDate.ToString("d MMM yyyy")</dd></div>
+                                <div>
+                                    <dt class="k">Probation</dt>
+                                    <dd class="v">
+                                        @(offer.ProbationMonths == 0 ? "None"
+                                          : $"{offer.ProbationMonths} month(s), to {offer.ProbationEndDate:d MMM yyyy}")
+                                    </dd>
+                                </div>
+                                @if (offer.ContractEndDate.HasValue)
+                                {
+                                    <div><dt class="k">Fixed term ends</dt><dd class="v">@offer.ContractEndDate?.ToString("d MMM yyyy")</dd></div>
+                                }
+                                <div>
+                                    <dt class="k">Expires</dt>
+                                    <dd class="v @(offer.HasLapsed ? "overdue" : "")">
+                                        @(offer.ExpiryDate?.ToString("d MMM yyyy") ?? "—")
+                                        @if (offer.HasLapsed) { <text> (lapsed)</text> }
+                                    </dd>
+                                </div>
+                            </dl>
+
+                            @if (offer.Status == OfferStatus.Issued)
+                            {
+                                <div class="act-btns">
+                                    <form asp-action="RespondToOffer" method="post" class="inline-form">
+                                        <input type="hidden" name="id" value="@offer.Id" />
+                                        <input type="hidden" name="accepted" value="true" />
+                                        <input name="note" class="inp" placeholder="Note (optional)" />
+                                        <button type="submit" class="btn-success-hr btn-sm">
+                                            <i class="fas fa-check"></i> Accepted
+                                        </button>
+                                    </form>
+                                    <form asp-action="RespondToOffer" method="post" class="inline-form">
+                                        <input type="hidden" name="id" value="@offer.Id" />
+                                        <input type="hidden" name="accepted" value="false" />
+                                        <input name="note" class="inp" placeholder="Reason given" />
+                                        <button type="submit" class="btn-danger-hr btn-sm">
+                                            <i class="fas fa-xmark"></i> Declined
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+
+                            @if (offer.Status == OfferStatus.Accepted && offer.CreatedEmployeeId == null)
+                            {
+                                <div class="notice">
+                                    <i class="fas fa-user-check"></i>
+                                    <div>
+                                        The offer terms become the employment terms. Creating the employee
+                                        record carries them across, and opens the first salary structure
+                                        effective from the start date. No login account is created — that
+                                        is an administrator's to grant.
+                                    </div>
+                                </div>
+                                <form asp-action="Hire" method="post" class="inline-form">
+                                    <input type="hidden" name="id" value="@offer.Id" />
+                                    <input name="employeeNumber" class="inp" required placeholder="Employee number" />
+                                    <button type="submit" class="btn-hr">
+                                        <i class="fas fa-user-plus"></i> Create the employee record
+                                    </button>
+                                </form>
+                            }
+
+                            @if (offer.CreatedEmployeeId.HasValue)
+                            {
+                                <div class="notice">
+                                    <i class="fas fa-circle-check"></i>
+                                    <div>
+                                        Employee record created.
+                                        <a href="/Employees/Details/@offer.CreatedEmployeeId" class="strong-link">Open it</a>.
+                                    </div>
+                                </div>
+                            }
+
+                            @if (offer.Status == OfferStatus.Draft)
+                            {
+                                <a asp-action="Offer" asp-route-applicationId="@a.Id" class="btn-outline-hr">
+                                    <i class="fas fa-pen"></i> Edit and issue
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (!a.IsRejected)
+                {
+                    <div class="card">
+                        <div class="card-body">
+                            <a asp-action="Offer" asp-route-applicationId="@a.Id" class="btn-hr">
+                                <i class="fas fa-file-contract"></i> Draft an offer
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @* ── SIDEBAR ───────────────────────────────────────────────────── *@
+            <div>
+                <div class="card">
+                    <div class="card-head"><h2 class="section-title">The applicant</h2></div>
+                    <div class="card-body">
+                        <dl class="dl">
+                            <div><dt class="k">Email</dt><dd class="v">@(a.Email ?? "—")</dd></div>
+                            <div><dt class="k">Phone</dt><dd class="v">@(a.Phone ?? "—")</dd></div>
+                            <div><dt class="k">Qualification</dt><dd class="v">@(a.HighestQualification ?? "—")</dd></div>
+                            <div><dt class="k">Experience</dt><dd class="v">@a.YearsExperience years</dd></div>
+                            <div>
+                                <dt class="k">Right to work</dt>
+                                <dd class="v">@(a.EntitledToWork ? "No permit needed" : "Permit required")</dd>
+                            </div>
+                            @if (a.Employee != null)
+                            {
+                                <div>
+                                    <dt class="k">Current post</dt>
+                                    <dd class="v">
+                                        @a.Employee.JobTitle
+                                        <div class="sub">@a.Employee.LengthOfService with the organisation</div>
+                                    </dd>
+                                </div>
+                            }
+                        </dl>
+
+                        @if (!string.IsNullOrWhiteSpace(a.CoveringStatement))
+                        {
+                            <h3 class="section-title sm">Covering statement</h3>
+                            <p style="white-space:pre-wrap;">@a.CoveringStatement</p>
+                        }
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-head"><h2 class="section-title">Move this application</h2></div>
+                    <div class="card-body">
+                        <form asp-action="SetApplicationStatus" method="post">
+                            <input type="hidden" name="id" value="@a.Id" />
+                            <div class="fg">
+                                <label>Status</label>
+                                <select name="status" class="inp">
+                                    @foreach (ApplicationStatus s in Enum.GetValues<ApplicationStatus>())
+                                    {
+                                        <option value="@s" selected="@(a.Status == s)">@Spaced(s.ToString())</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="fg">
+                                <label>Reason</label>
+                                <textarea name="reason" class="inp" rows="3"
+                                          placeholder="Required when an application goes no further.">@a.DecisionReason</textarea>
+                                <span class="hint">
+                                    A rejection nobody can explain is a rejection nobody can defend.
+                                    Say what the application lacked against the criteria.
+                                </span>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-outline-hr"><i class="fas fa-arrow-right"></i> Update</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

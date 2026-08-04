@@ -1,0 +1,141 @@
+@using IT_Service_Management_System.Models.Hr
+@{
+    var v = ViewBag.Vacancy as Vacancy;
+    ViewData["Title"] = $"Selection Criteria — {v?.Title}";
+    var criteria = ViewBag.Criteria as List<SelectionCriterion> ?? new List<SelectionCriterion>();
+    var applicationCount = (int)(ViewBag.ApplicationCount ?? 0);
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-list-check"></i> Selection Criteria</h1>
+                    <p class="page-sub">
+                        @v?.Reference — @v?.Title. Every candidate is scored 0–5 against each of these,
+                        weighted as set here.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Applications" asp-route-id="@v?.Id" class="btn-ghost-hr">
+                        <i class="fas fa-users"></i> Applications
+                    </a>
+                    <a asp-action="Vacancies" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (applicationCount > 0)
+        {
+            <div class="notice warn">
+                <i class="fas fa-triangle-exclamation"></i>
+                <div>
+                    <strong>@applicationCount application(s) already received.</strong>
+                    Criteria are meant to be fixed before applications are read. Deciding what mattered
+                    after meeting the candidates is how unlawful grounds get in without anyone intending it.
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="notice">
+                <i class="fas fa-circle-info"></i>
+                <div>
+                    Set these now, before the first application is read. Criteria fixed in advance are
+                    what makes a hiring decision defensible.
+                </div>
+            </div>
+        }
+
+        <div class="card flush">
+            <div class="card-head"><h2 class="section-title">Criteria</h2></div>
+            @if (criteria.Count == 0)
+            {
+                <div class="empty"><i class="fas fa-list-check"></i><p>None set yet.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead><tr><th>#</th><th>Criterion</th><th>Weight</th><th>Type</th><th>Max</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var c in criteria)
+                        {
+                            <tr>
+                                <td class="num sm">@c.DisplayOrder</td>
+                                <td>
+                                    <div class="strong-link">@c.Name</div>
+                                    @if (c.Descriptor != null) { <div class="sub">@c.Descriptor</div> }
+                                </td>
+                                <td class="num sm">×@c.Weight</td>
+                                <td>
+                                    <span class="badge-hr @(c.IsEssential ? "b-danger" : "b-neutral")">
+                                        @(c.IsEssential ? "Essential" : "Desirable")
+                                    </span>
+                                </td>
+                                <td class="num sm">@(5 * c.Weight)</td>
+                                <td class="act">
+                                    <form asp-action="DeleteCriterion" method="post"
+                                          onsubmit="return confirm('Remove this criterion?');">
+                                        <input type="hidden" name="id" value="@c.Id" />
+                                        <button type="submit" class="del" title="Remove"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4" class="strong-link">Total available</td>
+                            <td class="num sm">@criteria.Sum(c => 5 * c.Weight)</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            }
+        </div>
+
+        <div class="card">
+            <div class="card-head"><h2 class="section-title">Add a criterion</h2></div>
+            <div class="card-body">
+                <form asp-action="AddCriterion" method="post">
+                    <input type="hidden" name="vacancyId" value="@v?.Id" />
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label class="req">Name</label>
+                            <input name="name" class="inp" required
+                                   placeholder="e.g. Experience of network administration" />
+                        </div>
+                        <div class="fg">
+                            <label>Weight</label>
+                            <input name="weight" type="number" min="1" max="10" value="1" class="inp" />
+                            <span class="hint">How much this counts relative to the others.</span>
+                        </div>
+                        <div class="fg full">
+                            <label>What good looks like</label>
+                            <input name="descriptor" class="inp"
+                                   placeholder="What a 5 means, and what a 1 means. Scorers who share a definition agree more often." />
+                        </div>
+                        <div class="fg full">
+                            <label class="check">
+                                <input type="checkbox" name="isEssential" value="true" checked /> Essential
+                            </label>
+                            <span class="hint">
+                                A zero on an essential criterion is flagged on the shortlist rather than
+                                buried in an average.
+                            </span>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-hr"><i class="fas fa-plus"></i> Add</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

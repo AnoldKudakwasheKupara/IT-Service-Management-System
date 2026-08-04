@@ -1,0 +1,141 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Helpers
+@{
+    ViewData["Title"] = "Requisitions";
+    var reqs = ViewBag.Requisitions as List<JobRequisition> ?? new List<JobRequisition>();
+    var status = ViewBag.Status as RequisitionStatus?;
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+
+    string StatusClass(RequisitionStatus s) => s switch
+    {
+        RequisitionStatus.Draft => "b-neutral",
+        RequisitionStatus.PendingApproval => "b-probation",
+        RequisitionStatus.Approved or RequisitionStatus.Advertised => "b-active",
+        RequisitionStatus.Rejected or RequisitionStatus.Cancelled => "b-danger",
+        _ => "b-left"
+    };
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-clipboard-list"></i> Requisitions</h1>
+                    <p class="page-sub">
+                        Headcount is approved before anything is advertised. Recruiting first and seeking
+                        approval afterwards produces an offer nobody can fund.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Index" class="btn-back"><i class="fas fa-arrow-left"></i> Recruitment</a>
+                    <a asp-action="EditRequisition" class="btn-hr"><i class="fas fa-plus"></i> Raise a requisition</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <form method="get" class="toolbar">
+            <select name="status" class="inp">
+                <option value="">Any status</option>
+                @foreach (RequisitionStatus s in Enum.GetValues<RequisitionStatus>())
+                {
+                    <option value="@s" selected="@(status == s)">@Spaced(s.ToString())</option>
+                }
+            </select>
+            <button type="submit" class="btn-outline-hr"><i class="fas fa-filter"></i> Filter</button>
+            <a asp-action="Requisitions" class="btn-ghost-hr">Clear</a>
+        </form>
+
+        <div class="card flush">
+            @if (reqs.Count == 0)
+            {
+                <div class="empty"><i class="fas fa-clipboard-list"></i><p>No requisitions.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>Ref</th><th>Post</th><th>Department</th><th>Positions</th>
+                            <th>Band</th><th>Needed by</th><th>Status</th><th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in reqs)
+                        {
+                            <tr>
+                                <td class="ref">@r.Reference</td>
+                                <td>
+                                    <div class="strong-link">@r.JobTitle</div>
+                                    <div class="sub">
+                                        @Spaced(r.EmploymentType.ToString())
+                                        @if (r.ContractEndDate.HasValue) { <text>to @r.ContractEndDate?.ToString("d MMM yyyy")</text> }
+                                        @if (r.Grade != null) { <text>· @r.Grade</text> }
+                                    </div>
+                                </td>
+                                <td>@(r.Department?.Name ?? "—")</td>
+                                <td class="num sm">@r.Positions</td>
+                                <td class="sub">@r.SalaryBand</td>
+                                <td class="@(r.RequiredByDate < DateTime.Today && r.Status != RequisitionStatus.Filled ? "overdue" : "")">
+                                    @(r.RequiredByDate?.ToString("d MMM yyyy") ?? "—")
+                                </td>
+                                <td>
+                                    <span class="badge-hr @StatusClass(r.Status)">@Spaced(r.Status.ToString())</span>
+                                    @if (r.DecisionNote != null)
+                                    {
+                                        <div class="sub">@r.DecisionNote</div>
+                                    }
+                                </td>
+                                <td class="act">
+                                    <a asp-action="EditRequisition" asp-route-id="@r.Id" class="edit" title="Edit">
+                                        <i class="fas fa-pen"></i>
+                                    </a>
+                                    @if (r.Status == RequisitionStatus.Approved)
+                                    {
+                                        <a asp-action="Advertise" asp-route-requisitionId="@r.Id" class="view" title="Advertise">
+                                            <i class="fas fa-bullhorn"></i>
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+
+                            @if (r.Status == RequisitionStatus.PendingApproval)
+                            {
+                                <tr>
+                                    <td colspan="8" style="background:var(--gray-50);">
+                                        <div class="act-btns">
+                                            <form asp-action="DecideRequisition" method="post" class="inline-form">
+                                                <input type="hidden" name="id" value="@r.Id" />
+                                                <input type="hidden" name="approve" value="true" />
+                                                <input name="note" class="inp" placeholder="Approval note (optional)" />
+                                                <button type="submit" class="btn-success-hr btn-sm">
+                                                    <i class="fas fa-check"></i> Approve
+                                                </button>
+                                            </form>
+                                            <form asp-action="DecideRequisition" method="post" class="inline-form">
+                                                <input type="hidden" name="id" value="@r.Id" />
+                                                <input type="hidden" name="approve" value="false" />
+                                                <input name="note" class="inp" placeholder="Reason for rejection" required />
+                                                <button type="submit" class="btn-danger-hr btn-sm">
+                                                    <i class="fas fa-xmark"></i> Reject
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <partial name="_HrPager" model="@(ViewBag.Paging as PagingInfo)" />
+    </div>
+</div>

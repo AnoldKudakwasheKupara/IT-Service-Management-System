@@ -1,0 +1,154 @@
+@using IT_Service_Management_System.Models.Hr
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model JobRequisition
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "Raise a Requisition" : $"Requisition {Model.Reference}";
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-clipboard-list"></i> @ViewData["Title"]</h1>
+                    <p class="page-sub">
+                        The requirements written here become the yardstick every shortlisting and
+                        interview decision is measured against, so they are set before anyone applies.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Requisitions" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <form asp-action="EditRequisition" method="post">
+            <input type="hidden" asp-for="Id" />
+
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">The post</h2></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label asp-for="JobTitle" class="req"></label>
+                            <input asp-for="JobTitle" class="inp" />
+                            <span asp-validation-for="JobTitle" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="DepartmentId">Department</label>
+                            <select asp-for="DepartmentId" class="inp" asp-items="@(ViewBag.DepartmentList as SelectList)">
+                                <option value="">— none —</option>
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="Grade"></label>
+                            <input asp-for="Grade" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="Location"></label>
+                            <input asp-for="Location" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="Positions"></label>
+                            <input asp-for="Positions" type="number" min="1" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="EmploymentType"></label>
+                            <select asp-for="EmploymentType" class="inp"
+                                    asp-items="@Html.GetEnumSelectList<EmploymentType>()"></select>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="ContractEndDate"></label>
+                            <input asp-for="ContractEndDate" type="date" class="inp" />
+                            <span class="hint">
+                                Required for a fixed term. Rolling short contracts for work that is
+                                permanent in substance is a well-worn route to a dispute.
+                            </span>
+                            <span asp-validation-for="ContractEndDate" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="RequiredByDate"></label>
+                            <input asp-for="RequiredByDate" type="date" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="ReportsToEmployeeId">Reporting to</label>
+                            <select asp-for="ReportsToEmployeeId" class="inp" asp-items="@(ViewBag.EmployeeList as SelectList)">
+                                <option value="">— none —</option>
+                            </select>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="ReplacingEmployeeId">Replacement for</label>
+                            <select asp-for="ReplacingEmployeeId" class="inp" asp-items="@(ViewBag.EmployeeList as SelectList)">
+                                <option value="">— new post —</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">Requirements</h2></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg full">
+                            <label asp-for="Purpose"></label>
+                            <textarea asp-for="Purpose" class="inp" rows="3"></textarea>
+                        </div>
+                        <div class="fg full">
+                            <label asp-for="EssentialRequirements"></label>
+                            <textarea asp-for="EssentialRequirements" class="inp" rows="5"
+                                      placeholder="One per line. Only things the job genuinely cannot be done without."></textarea>
+                            <span class="hint">
+                                A requirement that is not genuinely needed narrows the field for no reason,
+                                and if it happens to correlate with a protected ground it is worse than useless.
+                            </span>
+                        </div>
+                        <div class="fg full">
+                            <label asp-for="DesirableRequirements"></label>
+                            <textarea asp-for="DesirableRequirements" class="inp" rows="4"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">Budget</h2></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label asp-for="SalaryMin"></label>
+                            <input asp-for="SalaryMin" type="number" step="0.01" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="SalaryMax"></label>
+                            <input asp-for="SalaryMax" type="number" step="0.01" class="inp" />
+                            <span asp-validation-for="SalaryMax" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="Currency"></label>
+                            <input asp-for="Currency" class="inp" maxlength="3" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-outline-hr"><i class="fas fa-save"></i> Save as draft</button>
+                <button type="submit" name="submitForApproval" value="true" class="btn-hr">
+                    <i class="fas fa-paper-plane"></i> Submit for approval
+                </button>
+                <a asp-action="Requisitions" class="btn-ghost-hr">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

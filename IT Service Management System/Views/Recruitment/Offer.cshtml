@@ -1,0 +1,126 @@
+@using IT_Service_Management_System.Models.Hr
+@model JobOffer
+@{
+    ViewData["Title"] = "Offer of Employment";
+    var a = ViewBag.Application as JobApplication;
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-file-contract"></i> Offer of Employment</h1>
+                    <p class="page-sub">
+                        @(a?.FullName ?? Model.Application?.FullName)
+                        @if (a?.Vacancy != null) { <text> · @a.Vacancy.Title</text> }
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Candidate" asp-route-id="@Model.ApplicationId" class="btn-back">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="notice">
+            <i class="fas fa-scale-balanced"></i>
+            <div>
+                The Labour Act requires an employee to be given written particulars of employment.
+                What is set here becomes those particulars, and carries into the employee record on
+                acceptance rather than being retyped — so the contract, the payroll and the register
+                cannot drift apart.
+            </div>
+        </div>
+
+        <form asp-action="Offer" method="post">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="ApplicationId" />
+
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">Terms</h2></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label asp-for="JobTitle" class="req"></label>
+                            <input asp-for="JobTitle" class="inp" />
+                            <span asp-validation-for="JobTitle" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="Grade"></label>
+                            <input asp-for="Grade" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="Location"></label>
+                            <input asp-for="Location" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="EmploymentType"></label>
+                            <select asp-for="EmploymentType" class="inp"
+                                    asp-items="@Html.GetEnumSelectList<EmploymentType>()"></select>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="BasicSalary" class="req"></label>
+                            <input asp-for="BasicSalary" type="number" step="0.01" class="inp" />
+                            <span class="hint">
+                                Gross monthly basic. NSSA and PAYE are deducted by payroll in that order —
+                                the pension contribution is allowable before tax.
+                            </span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="Currency"></label>
+                            <input asp-for="Currency" class="inp" maxlength="3" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="StartDate" class="req"></label>
+                            <input asp-for="StartDate" type="date" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="ProbationMonths"></label>
+                            <input asp-for="ProbationMonths" type="number" min="0" max="6" class="inp" />
+                            <span class="hint">
+                                Limited to three months on a permanent contract, and one on a casual or
+                                seasonal one. It may only be served once with the same employer for the
+                                same class of work.
+                            </span>
+                            <span asp-validation-for="ProbationMonths" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="ContractEndDate"></label>
+                            <input asp-for="ContractEndDate" type="date" class="inp" />
+                            <span asp-validation-for="ContractEndDate" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="ExpiryDate"></label>
+                            <input asp-for="ExpiryDate" type="date" class="inp" />
+                            <span class="hint">How long the candidate has to reply.</span>
+                        </div>
+                        <div class="fg full">
+                            <label asp-for="OtherTerms"></label>
+                            <textarea asp-for="OtherTerms" class="inp" rows="6"
+                                      placeholder="Hours of work, leave entitlement, notice period, allowances, benefits, the code of conduct that applies."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-outline-hr"><i class="fas fa-save"></i> Save as draft</button>
+                <button type="submit" name="issue" value="true" class="btn-hr">
+                    <i class="fas fa-paper-plane"></i> Issue the offer
+                </button>
+                <a asp-action="Candidate" asp-route-id="@Model.ApplicationId" class="btn-ghost-hr">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

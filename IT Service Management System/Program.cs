@@ -243,6 +243,7 @@ builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.LeaveService
 builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.PayrollService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.AttendanceService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.DisciplinaryService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Hr.RecruitmentService>();
 
 // Defensive, idempotent demo-data top-up seeder (gated by Demo:Seed, default ON).
 builder.Services.AddScoped<IT_Service_Management_System.Services.DemoDataSeeder>();

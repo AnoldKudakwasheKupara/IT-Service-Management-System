@@ -1,0 +1,198 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Services.Hr
+@{
+    ViewData["Title"] = "Recruitment";
+    var pipeline = ViewBag.Pipeline as RecruitmentService.PipelineCounts;
+    var open = ViewBag.OpenVacancies as List<Vacancy> ?? new List<Vacancy>();
+    var counts = ViewBag.ApplicationCounts as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var pending = ViewBag.PendingApproval as List<JobRequisition> ?? new List<JobRequisition>();
+    var interviews = ViewBag.UpcomingInterviews as List<CandidateInterview> ?? new List<CandidateInterview>();
+    var offers = ViewBag.OutstandingOffers as List<JobOffer> ?? new List<JobOffer>();
+
+    string Spaced(string v) => System.Text.RegularExpressions.Regex.Replace(v, "(?<=[a-z])(?=[A-Z])", " ");
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-user-plus"></i> Recruitment</h1>
+                    <p class="page-sub">
+                        Requisition, advert, selection, offer. Section 5 of the Labour Act makes
+                        discrimination in recruitment unlawful — what defends a decision is the trail,
+                        so criteria are fixed before applications are read and every rejection carries a reason.
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Requisitions" class="btn-ghost-hr"><i class="fas fa-clipboard-list"></i> Requisitions</a>
+                    <a asp-action="Vacancies" class="btn-ghost-hr"><i class="fas fa-bullhorn"></i> Vacancies</a>
+                    <a asp-action="EditRequisition" class="btn-hr"><i class="fas fa-plus"></i> Raise a requisition</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (pipeline != null)
+        {
+            <div class="stats">
+                <div class="stat"><div class="num">@pipeline.Received</div><div class="lbl">Applied</div></div>
+                <div class="stat"><div class="num blue">@pipeline.Shortlisted</div><div class="lbl">Shortlisted</div></div>
+                <div class="stat"><div class="num purple">@pipeline.Interviewed</div><div class="lbl">Interviewed</div></div>
+                <div class="stat"><div class="num amber">@pipeline.Offered</div><div class="lbl">Offered</div></div>
+                <div class="stat"><div class="num green">@pipeline.Hired</div><div class="lbl">Hired</div></div>
+                <div class="stat"><div class="num slate">@pipeline.Rejected</div><div class="lbl">Not taken forward</div></div>
+            </div>
+        }
+
+        @if (pending.Count > 0)
+        {
+            <div class="card flush">
+                <div class="card-head"><h2 class="section-title">Awaiting headcount approval</h2></div>
+                <table class="tbl">
+                    <thead><tr><th>Ref</th><th>Post</th><th>Department</th><th>Positions</th><th>Needed by</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var r in pending)
+                        {
+                            <tr>
+                                <td class="ref">@r.Reference</td>
+                                <td>
+                                    <div class="strong-link">@r.JobTitle</div>
+                                    <div class="sub">@Spaced(r.EmploymentType.ToString()) · @r.SalaryBand</div>
+                                </td>
+                                <td>@(r.Department?.Name ?? "—")</td>
+                                <td class="num sm">@r.Positions</td>
+                                <td class="@(r.RequiredByDate < DateTime.Today ? "overdue" : "")">
+                                    @(r.RequiredByDate?.ToString("d MMM yyyy") ?? "—")
+                                </td>
+                                <td class="act">
+                                    <a asp-action="Requisitions" class="view"><i class="fas fa-arrow-right"></i></a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div class="card flush">
+            <div class="card-head">
+                <h2 class="section-title">Open vacancies</h2>
+                <a asp-action="Vacancies" class="strong-link">All vacancies</a>
+            </div>
+            @if (open.Count == 0)
+            {
+                <div class="empty">
+                    <i class="fas fa-bullhorn"></i>
+                    <p>Nothing advertised. Approve a requisition first, then advertise against it.</p>
+                </div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead><tr><th>Ref</th><th>Vacancy</th><th>Closes</th><th>Applications</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var v in open)
+                        {
+                            <tr>
+                                <td class="ref">@v.Reference</td>
+                                <td>
+                                    <div class="strong-link">@v.Title</div>
+                                    <div class="sub">
+                                        @(v.OpenToInternal ? "Internal" : "")@(v.OpenToInternal && v.OpenToExternal ? " and " : "")@(v.OpenToExternal ? "external" : "")
+                                        @if (v.AdvertisedIn != null) { <text>· @v.AdvertisedIn</text> }
+                                    </div>
+                                </td>
+                                <td class="@(v.DaysRemaining < 0 ? "overdue" : v.DaysRemaining <= 3 ? "warn" : "")">
+                                    @v.CloseDate.ToString("d MMM yyyy")
+                                    <div class="sub">
+                                        @(v.DaysRemaining < 0 ? "closed" : $"{v.DaysRemaining} day(s) left")
+                                    </div>
+                                </td>
+                                <td class="num sm">@counts.GetValueOrDefault(v.Id)</td>
+                                <td><span class="badge-hr b-neutral">@Spaced(v.Status.ToString())</span></td>
+                                <td class="act">
+                                    <a asp-action="Applications" asp-route-id="@v.Id" class="view" title="Applications">
+                                        <i class="fas fa-users"></i>
+                                    </a>
+                                    <a asp-action="Criteria" asp-route-id="@v.Id" class="edit" title="Selection criteria">
+                                        <i class="fas fa-list-check"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <div class="grid-2">
+            <div class="card flush">
+                <div class="card-head"><h2 class="section-title">Interviews coming up</h2></div>
+                @if (interviews.Count == 0)
+                {
+                    <div class="empty"><p>None scheduled.</p></div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th>When</th><th>Candidate</th><th>Stage</th></tr></thead>
+                        <tbody>
+                            @foreach (var i in interviews)
+                            {
+                                <tr>
+                                    <td>@i.ScheduledFor.ToString("ddd d MMM, HH:mm")</td>
+                                    <td>
+                                        <a asp-action="Candidate" asp-route-id="@i.ApplicationId" class="strong-link">
+                                            @i.Application?.FullName
+                                        </a>
+                                        <div class="sub">@i.Application?.Vacancy?.Title</div>
+                                    </td>
+                                    <td>@Spaced(i.Stage.ToString())</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+
+            <div class="card flush">
+                <div class="card-head"><h2 class="section-title">Offers awaiting a reply</h2></div>
+                @if (offers.Count == 0)
+                {
+                    <div class="empty"><p>None outstanding.</p></div>
+                }
+                else
+                {
+                    <table class="tbl">
+                        <thead><tr><th>Candidate</th><th>Post</th><th>Expires</th></tr></thead>
+                        <tbody>
+                            @foreach (var o in offers)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-action="Candidate" asp-route-id="@o.ApplicationId" class="strong-link">
+                                            @o.Application?.FullName
+                                        </a>
+                                    </td>
+                                    <td>
+                                        @o.JobTitle
+                                        <div class="sub">@o.Currency @o.BasicSalary.ToString("N2") · starts @o.StartDate.ToString("d MMM")</div>
+                                    </td>
+                                    <td class="@(o.HasLapsed ? "overdue" : "")">
+                                        @(o.ExpiryDate?.ToString("d MMM yyyy") ?? "—")
+                                        @if (o.HasLapsed) { <div class="sub">lapsed</div> }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>

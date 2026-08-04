@@ -1,0 +1,95 @@
+@using IT_Service_Management_System.Models.Hr
+@model Vacancy
+@{
+    ViewData["Title"] = "Advertise a Vacancy";
+    var req = ViewBag.Requisition as JobRequisition;
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-bullhorn"></i> Advertise a Vacancy</h1>
+                    <p class="page-sub">
+                        @req?.Reference — @req?.JobTitle
+                        @if (req?.Department != null) { <text> · @req.Department.Name</text> }
+                        · @req?.Positions position(s)
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Requisitions" class="btn-back"><i class="fas fa-arrow-left"></i> Back</a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="notice">
+            <i class="fas fa-scale-balanced"></i>
+            <div>
+                Section 5 of the Labour Act [Chapter 28:01] makes it unlawful to discriminate in
+                advertising a vacancy on grounds of race, tribe, place of origin, political opinion,
+                colour, creed, gender, pregnancy, HIV/AIDS status or disability. The text below is what
+                gets published, and it is kept so that what was published can be produced later.
+            </div>
+        </div>
+
+        <form asp-action="Advertise" method="post">
+            <input type="hidden" asp-for="RequisitionId" />
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg full">
+                            <label asp-for="Title" class="req"></label>
+                            <input asp-for="Title" class="inp" />
+                            <span asp-validation-for="Title" class="field-error"></span>
+                        </div>
+
+                        <div class="fg full">
+                            <label asp-for="AdvertText" class="req"></label>
+                            <textarea asp-for="AdvertText" class="inp" rows="16"></textarea>
+                            <span asp-validation-for="AdvertText" class="field-error"></span>
+                        </div>
+
+                        <div class="fg">
+                            <label asp-for="OpenDate"></label>
+                            <input asp-for="OpenDate" type="date" class="inp" />
+                        </div>
+
+                        <div class="fg">
+                            <label asp-for="CloseDate"></label>
+                            <input asp-for="CloseDate" type="date" class="inp" />
+                            <span asp-validation-for="CloseDate" class="field-error"></span>
+                        </div>
+
+                        <div class="fg full">
+                            <label asp-for="AdvertisedIn"></label>
+                            <input asp-for="AdvertisedIn" class="inp"
+                                   placeholder="e.g. The Herald, 4 August; company notice board; LinkedIn" />
+                            <span class="hint">Where and when it ran, so reach can be shown if it is questioned.</span>
+                        </div>
+
+                        <div class="fg full">
+                            <label class="check"><input asp-for="OpenToInternal" type="checkbox" /> Open to internal applicants</label>
+                            <label class="check"><input asp-for="OpenToExternal" type="checkbox" /> Open to external applicants</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-hr"><i class="fas fa-bullhorn"></i> Open the vacancy</button>
+                <a asp-action="Requisitions" class="btn-ghost-hr">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

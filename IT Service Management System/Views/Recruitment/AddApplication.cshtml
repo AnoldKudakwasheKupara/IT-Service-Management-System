@@ -1,0 +1,128 @@
+@using IT_Service_Management_System.Models.Hr
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model JobApplication
+@{
+    var v = ViewBag.Vacancy as Vacancy;
+    ViewData["Title"] = "Record an Application";
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr narrow">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-user-plus"></i> Record an Application</h1>
+                    <p class="page-sub">@v?.Reference — @v?.Title · closes @v?.CloseDate.ToString("d MMM yyyy")</p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Applications" asp-route-id="@v?.Id" class="btn-back">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        <div class="notice">
+            <i class="fas fa-user-shield"></i>
+            <div>
+                Note what this form does not ask: date of birth, marital status, number of children,
+                church, home language, political affiliation, health status. None of them bear on
+                whether someone can do the job, and holding them makes it harder to show a decision
+                was not tainted by them.
+            </div>
+        </div>
+
+        <form asp-action="AddApplication" method="post">
+            <input type="hidden" asp-for="VacancyId" />
+
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">The applicant</h2></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label asp-for="FirstName" class="req"></label>
+                            <input asp-for="FirstName" class="inp" />
+                            <span asp-validation-for="FirstName" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="LastName" class="req"></label>
+                            <input asp-for="LastName" class="inp" />
+                            <span asp-validation-for="LastName" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="Email"></label>
+                            <input asp-for="Email" type="email" class="inp" />
+                            <span asp-validation-for="Email" class="field-error"></span>
+                        </div>
+                        <div class="fg">
+                            <label asp-for="Phone"></label>
+                            <input asp-for="Phone" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="NationalId"></label>
+                            <input asp-for="NationalId" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="EmployeeId">Internal applicant</label>
+                            <select asp-for="EmployeeId" class="inp" asp-items="@(ViewBag.EmployeeList as SelectList)">
+                                <option value="">— external —</option>
+                            </select>
+                            <span class="hint">
+                                Linking an internal applicant puts their service and record in front of
+                                the panel without re-keying it.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-head"><h2 class="section-title">Against the post</h2></div>
+                <div class="card-body">
+                    <div class="form-grid">
+                        <div class="fg">
+                            <label asp-for="HighestQualification"></label>
+                            <input asp-for="HighestQualification" class="inp" />
+                        </div>
+                        <div class="fg">
+                            <label asp-for="YearsExperience"></label>
+                            <input asp-for="YearsExperience" type="number" min="0" max="60" class="inp" />
+                        </div>
+                        <div class="fg full">
+                            <label class="check">
+                                <input asp-for="EntitledToWork" type="checkbox" />
+                                Entitled to work in Zimbabwe without a permit
+                            </label>
+                            <span class="hint">
+                                Asked because the Immigration Act requires a permit for a non-citizen —
+                                asked as one yes or no, not as nationality.
+                            </span>
+                        </div>
+                        <div class="fg full">
+                            <label asp-for="CoveringStatement"></label>
+                            <textarea asp-for="CoveringStatement" class="inp" rows="5"></textarea>
+                        </div>
+                        <div class="fg full">
+                            <label asp-for="CvFileName">CV reference</label>
+                            <input asp-for="CvFileName" class="inp" placeholder="Filename or document reference" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn-hr"><i class="fas fa-save"></i> Record</button>
+                <a asp-action="Applications" asp-route-id="@v?.Id" class="btn-ghost-hr">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

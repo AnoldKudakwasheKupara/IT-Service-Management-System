@@ -227,6 +227,15 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<DisciplinaryCase> DisciplinaryCases { get; set; }
         public DbSet<DisciplinaryEvent> DisciplinaryEvents { get; set; }
 
+        // ── HR: recruitment ────────────────────────────────────────────────────────
+        public DbSet<JobRequisition> JobRequisitions { get; set; }
+        public DbSet<Vacancy> Vacancies { get; set; }
+        public DbSet<SelectionCriterion> SelectionCriteria { get; set; }
+        public DbSet<JobApplication> JobApplications { get; set; }
+        public DbSet<CandidateScore> CandidateScores { get; set; }
+        public DbSet<CandidateInterview> CandidateInterviews { get; set; }
+        public DbSet<JobOffer> JobOffers { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -1063,6 +1072,87 @@ namespace IT_Service_Management_System.DbContexts
                 e.HasOne(x => x.Case).WithMany(c => c.Events).HasForeignKey(x => x.CaseId)
                     .OnDelete(DeleteBehavior.Cascade);
                 e.HasOne(x => x.RecordedBy).WithMany().HasForeignKey(x => x.RecordedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Recruitment ───────────────────────────────────────────────────────
+            b.Entity<JobRequisition>(e =>
+            {
+                e.HasQueryFilter(x => !x.IsDeleted);
+                e.HasIndex(x => x.Status);
+                e.HasOne(x => x.Department).WithMany().HasForeignKey(x => x.DepartmentId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(x => x.ReplacingEmployee).WithMany().HasForeignKey(x => x.ReplacingEmployeeId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.ReportsToEmployee).WithMany().HasForeignKey(x => x.ReportsToEmployeeId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.RaisedBy).WithMany().HasForeignKey(x => x.RaisedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(x => x.ApprovedBy).WithMany().HasForeignKey(x => x.ApprovedById)
+                    .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            b.Entity<Vacancy>(e =>
+            {
+                e.HasQueryFilter(x => !x.IsDeleted && !x.Requisition!.IsDeleted);
+                e.HasIndex(x => new { x.Status, x.CloseDate });
+                e.HasOne(x => x.Requisition).WithMany(r => r.Vacancies).HasForeignKey(x => x.RequisitionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<SelectionCriterion>(e =>
+            {
+                e.HasIndex(x => new { x.VacancyId, x.DisplayOrder });
+                e.HasOne(x => x.Vacancy).WithMany(v => v.Criteria).HasForeignKey(x => x.VacancyId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            b.Entity<JobApplication>(e =>
+            {
+                e.HasQueryFilter(x => !x.IsDeleted && !x.Vacancy!.IsDeleted);
+                e.HasIndex(x => new { x.VacancyId, x.Status });
+                e.HasIndex(x => x.Email);
+                e.HasOne(x => x.Vacancy).WithMany(v => v.Applications).HasForeignKey(x => x.VacancyId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                // An internal applicant's employee record is a link, not an owner.
+                e.HasOne(x => x.Employee).WithMany().HasForeignKey(x => x.EmployeeId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            b.Entity<CandidateInterview>(e =>
+            {
+                e.HasIndex(x => new { x.ApplicationId, x.ScheduledFor });
+                e.HasOne(x => x.Application).WithMany(a => a.Interviews).HasForeignKey(x => x.ApplicationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.ArrangedBy).WithMany().HasForeignKey(x => x.ArrangedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<CandidateScore>(e =>
+            {
+                // One score per criterion per interview — re-scoring updates rather than stacks.
+                e.HasIndex(x => new { x.ApplicationId, x.CriterionId, x.InterviewId }).IsUnique();
+
+                e.HasOne(x => x.Application).WithMany(a => a.Scores).HasForeignKey(x => x.ApplicationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                // NoAction on the other two: SQL Server will not take three cascade paths into the
+                // same table, and the application is the one that should own the delete.
+                e.HasOne(x => x.Criterion).WithMany(c => c.Scores).HasForeignKey(x => x.CriterionId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.Interview).WithMany(i => i.Scores).HasForeignKey(x => x.InterviewId)
+                    .OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(x => x.ScoredBy).WithMany().HasForeignKey(x => x.ScoredById)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            b.Entity<JobOffer>(e =>
+            {
+                e.HasIndex(x => x.Status);
+                e.HasOne(x => x.Application).WithMany().HasForeignKey(x => x.ApplicationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(x => x.CreatedEmployee).WithMany().HasForeignKey(x => x.CreatedEmployeeId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(x => x.IssuedBy).WithMany().HasForeignKey(x => x.IssuedById)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 

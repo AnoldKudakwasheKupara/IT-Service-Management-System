@@ -1,0 +1,167 @@
+@using IT_Service_Management_System.Models.Hr
+@using IT_Service_Management_System.Services.Hr
+@{
+    var v = ViewBag.Vacancy as Vacancy;
+    ViewData["Title"] = $"Applications — {v?.Title}";
+    var apps = ViewBag.Applications as List<JobApplication> ?? new List<JobApplication>();
+    var results = ViewBag.Results as Dictionary<int, RecruitmentService.CandidateResult>
+                  ?? new Dictionary<int, RecruitmentService.CandidateResult>();
+    var criteria = ViewBag.Criteria as List<SelectionCriterion> ?? new List<SelectionCriterion>();
+    var pipeline = ViewBag.Pipeline as RecruitmentService.PipelineCounts;
+    var status = ViewBag.Status as ApplicationStatus?;
+
+    string Spaced(string s) => System.Text.RegularExpressions.Regex.Replace(s, "(?<=[a-z])(?=[A-Z])", " ");
+
+    string StatusClass(ApplicationStatus s) => s switch
+    {
+        ApplicationStatus.Hired or ApplicationStatus.OfferAccepted => "b-active",
+        ApplicationStatus.Shortlisted or ApplicationStatus.Interviewed
+            or ApplicationStatus.ReferenceCheck or ApplicationStatus.OfferMade => "b-probation",
+        ApplicationStatus.NotShortlisted or ApplicationStatus.Unsuccessful
+            or ApplicationStatus.OfferDeclined or ApplicationStatus.Withdrawn => "b-left",
+        _ => "b-neutral"
+    };
+
+    var ordered = apps
+        .OrderByDescending(a => results.TryGetValue(a.Id, out var r) ? r.Percentage : -1)
+        .ThenBy(a => a.LastName).ToList();
+}
+
+<partial name="_HrStyles" />
+
+<div class="hr">
+    <div class="page-container">
+
+        <div class="page-header">
+            <div class="head-row">
+                <div>
+                    <h1 class="page-title"><i class="fas fa-users"></i> Applications</h1>
+                    <p class="page-sub">
+                        @v?.Reference — @v?.Title · closes @v?.CloseDate.ToString("d MMM yyyy")
+                        · scored against @criteria.Count criteri@(criteria.Count == 1 ? "on" : "a")
+                    </p>
+                </div>
+                <div class="head-actions">
+                    <a asp-action="Criteria" asp-route-id="@v?.Id" class="btn-ghost-hr">
+                        <i class="fas fa-list-check"></i> Criteria
+                    </a>
+                    <a asp-action="AddApplication" asp-route-vacancyId="@v?.Id" class="btn-hr">
+                        <i class="fas fa-user-plus"></i> Record an application
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <partial name="_HrAlerts" />
+
+        @if (criteria.Count == 0)
+        {
+            <div class="notice warn">
+                <i class="fas fa-triangle-exclamation"></i>
+                <div>
+                    No selection criteria are set for this vacancy, so nobody can be scored and no
+                    shortlist can be justified. Set them before reading any further.
+                </div>
+            </div>
+        }
+
+        @if (pipeline != null)
+        {
+            <div class="stats">
+                <div class="stat"><div class="num">@pipeline.Received</div><div class="lbl">Applied</div></div>
+                <div class="stat"><div class="num blue">@pipeline.Shortlisted</div><div class="lbl">Shortlisted</div></div>
+                <div class="stat"><div class="num purple">@pipeline.Interviewed</div><div class="lbl">Interviewed</div></div>
+                <div class="stat"><div class="num amber">@pipeline.Offered</div><div class="lbl">Offered</div></div>
+                <div class="stat"><div class="num green">@pipeline.Hired</div><div class="lbl">Hired</div></div>
+                <div class="stat"><div class="num slate">@pipeline.Rejected</div><div class="lbl">Not taken forward</div></div>
+            </div>
+        }
+
+        <form method="get" class="toolbar">
+            <input type="hidden" name="id" value="@v?.Id" />
+            <select name="status" class="inp">
+                <option value="">Any status</option>
+                @foreach (ApplicationStatus s in Enum.GetValues<ApplicationStatus>())
+                {
+                    <option value="@s" selected="@(status == s)">@Spaced(s.ToString())</option>
+                }
+            </select>
+            <button type="submit" class="btn-outline-hr"><i class="fas fa-filter"></i> Filter</button>
+            <a asp-action="Applications" asp-route-id="@v?.Id" class="btn-ghost-hr">Clear</a>
+        </form>
+
+        <div class="card flush">
+            @if (ordered.Count == 0)
+            {
+                <div class="empty"><i class="fas fa-users"></i><p>No applications recorded.</p></div>
+            }
+            else
+            {
+                <table class="tbl">
+                    <thead>
+                        <tr>
+                            <th>Candidate</th><th>Experience</th><th>Qualification</th>
+                            <th>Score</th><th>Scored</th><th>Status</th><th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in ordered)
+                        {
+                            results.TryGetValue(a.Id, out var r);
+                            <tr class="@(a.IsRejected ? "muted" : "")">
+                                <td>
+                                    <a asp-action="Candidate" asp-route-id="@a.Id" class="strong-link">@a.FullName</a>
+                                    <div class="sub">
+                                        @a.Reference
+                                        @if (a.IsInternal) { <text>· internal</text> }
+                                        @if (!a.EntitledToWork) { <text>· work permit required</text> }
+                                    </div>
+                                </td>
+                                <td class="num sm">@a.YearsExperience yr</td>
+                                <td class="sub">@(a.HighestQualification ?? "—")</td>
+                                <td>
+                                    @if (r == null || r.MaxScore == 0)
+                                    {
+                                        <span class="muted">not scored</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="num sm @(r.Percentage >= 70 ? "green" : r.Percentage >= 50 ? "amber" : "red")">
+                                            @r.Percentage.ToString("0.#")%
+                                        </span>
+                                        <div class="sub">@r.WeightedScore.ToString("0.#") of @r.MaxScore.ToString("0.#")</div>
+                                    }
+                                </td>
+                                <td class="sub">
+                                    @(r?.Scored ?? 0)/@criteria.Count
+                                    @if (r != null && r.EssentialGaps.Count > 0)
+                                    {
+                                        <div class="sub red">@r.EssentialGaps.Count essential gap(s)</div>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge-hr @StatusClass(a.Status)">@Spaced(a.Status.ToString())</span>
+                                    @if (a.DecisionReason != null)
+                                    {
+                                        <div class="sub">@a.DecisionReason</div>
+                                    }
+                                </td>
+                                <td class="act">
+                                    <a asp-action="Candidate" asp-route-id="@a.Id" class="view" title="Open">
+                                        <i class="fas fa-folder-open"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <p class="hint">
+            The ordering is arithmetic, not a decision. A score summarises how the panel rated someone
+            against the criteria; it does not decide who is appointed, and the reasons recorded on each
+            candidate are what has to stand up if the appointment is questioned.
+        </p>
+    </div>
+</div>
