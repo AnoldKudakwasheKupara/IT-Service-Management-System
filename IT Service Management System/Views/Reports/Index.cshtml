@@ -35,39 +35,42 @@
     </div>
 
     @* ---------- Service desk ---------- *@
+    @* Each figure links to the report it was drawn from, so the number is a
+       way in rather than a dead end. Tones follow meaning, not decoration:
+       a count that wants attention goes amber or rose, a healthy one green. *@
     <div class="report-section-head">
         <h2>Service desk</h2>
         <span class="rule"></span>
     </div>
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon primary"><i class="fas fa-ticket-alt"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.TotalTickets</div>
-                <div class="kpi-label">Total tickets<span class="kpi-sub">@Model.OpenTickets currently open</span></div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon success"><i class="fas fa-circle-check"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@resolvedPct%</div>
-                <div class="kpi-label">Resolution rate<span class="kpi-sub">@(Model.ResolvedTickets + Model.ClosedTickets) resolved or closed</span></div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon teal"><i class="fas fa-clock"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.TotalActivityHours h</div>
-                <div class="kpi-label">Activity logged<span class="kpi-sub">across @Model.TotalActivities entries</span></div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon slate"><i class="fas fa-users"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.TotalUsers</div>
-                <div class="kpi-label">Users<span class="kpi-sub">@Model.ActiveUsers active</span></div>
-            </div>
-        </div>
+    <div class="stat-grid">
+        <a class="stat-tile tone-slate" asp-action="Tickets">
+            <i class="fas fa-arrow-right stat-tile-go" aria-hidden="true"></i>
+            <span class="stat-tile-icon"><i class="fas fa-ticket-alt"></i></span>
+            <span class="stat-tile-value">@Model.TotalTickets</span>
+            <span class="stat-tile-label">Total tickets</span>
+            <span class="stat-tile-sub">@Model.OpenTickets currently open</span>
+        </a>
+        <a class="stat-tile tone-green" asp-action="Tickets">
+            <i class="fas fa-arrow-right stat-tile-go" aria-hidden="true"></i>
+            <span class="stat-tile-icon"><i class="fas fa-circle-check"></i></span>
+            <span class="stat-tile-value">@resolvedPct%</span>
+            <span class="stat-tile-label">Resolution rate</span>
+            <span class="stat-tile-sub">@(Model.ResolvedTickets + Model.ClosedTickets) resolved or closed</span>
+        </a>
+        <a class="stat-tile tone-teal" asp-action="Activity">
+            <i class="fas fa-arrow-right stat-tile-go" aria-hidden="true"></i>
+            <span class="stat-tile-icon"><i class="fas fa-clock"></i></span>
+            <span class="stat-tile-value">@Model.TotalActivityHours h</span>
+            <span class="stat-tile-label">Activity logged</span>
+            <span class="stat-tile-sub">across @Model.TotalActivities entries</span>
+        </a>
+        <a class="stat-tile tone-violet" asp-action="Users">
+            <i class="fas fa-arrow-right stat-tile-go" aria-hidden="true"></i>
+            <span class="stat-tile-icon"><i class="fas fa-users"></i></span>
+            <span class="stat-tile-value">@Model.TotalUsers</span>
+            <span class="stat-tile-label">Users</span>
+            <span class="stat-tile-sub">@Model.ActiveUsers active</span>
+        </a>
     </div>
 
     @* ---------- Asset estate ---------- *@
@@ -75,35 +78,35 @@
         <h2>Asset estate</h2>
         <span class="rule"></span>
     </div>
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon violet"><i class="fas fa-laptop-code"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.TotalAssets</div>
-                <div class="kpi-label">Assets tracked<span class="kpi-sub">@Model.AssetsIssued issued to staff</span></div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon success"><i class="fas fa-box-open"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.AssetsInStock</div>
-                <div class="kpi-label">In stock<span class="kpi-sub">available to issue</span></div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon warning"><i class="fas fa-screwdriver-wrench"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.AssetsInRepair</div>
-                <div class="kpi-label">In repair<span class="kpi-sub">@Model.MaintenanceRecords maintenance records</span></div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon slate"><i class="fas fa-coins"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Money(Model.TotalAssetValue)</div>
-                <div class="kpi-label">Total asset value<span class="kpi-sub">at recorded purchase cost</span></div>
-            </div>
-        </div>
+    <div class="stat-grid">
+        <a class="stat-tile tone-violet" asp-action="Assets">
+            <i class="fas fa-arrow-right stat-tile-go" aria-hidden="true"></i>
+            <span class="stat-tile-icon"><i class="fas fa-laptop-code"></i></span>
+            <span class="stat-tile-value">@Model.TotalAssets</span>
+            <span class="stat-tile-label">Assets tracked</span>
+            <span class="stat-tile-sub">@Model.AssetsIssued issued to staff</span>
+        </a>
+        <a class="stat-tile tone-green" asp-action="Assets">
+            <i class="fas fa-arrow-right stat-tile-go" aria-hidden="true"></i>
+            <span class="stat-tile-icon"><i class="fas fa-box-open"></i></span>
+            <span class="stat-tile-value">@Model.AssetsInStock</span>
+            <span class="stat-tile-label">In stock</span>
+            <span class="stat-tile-sub">available to issue</span>
+        </a>
+        <a class="stat-tile @(Model.AssetsInRepair > 0 ? "tone-amber" : "tone-slate")" asp-action="Maintenance">
+            <i class="fas fa-arrow-right stat-tile-go" aria-hidden="true"></i>
+            <span class="stat-tile-icon"><i class="fas fa-screwdriver-wrench"></i></span>
+            <span class="stat-tile-value">@Model.AssetsInRepair</span>
+            <span class="stat-tile-label">In repair</span>
+            <span class="stat-tile-sub">@Model.MaintenanceRecords maintenance records</span>
+        </a>
+        <a class="stat-tile tone-teal" asp-action="Assets">
+            <i class="fas fa-arrow-right stat-tile-go" aria-hidden="true"></i>
+            <span class="stat-tile-icon"><i class="fas fa-coins"></i></span>
+            <span class="stat-tile-value">@Money(Model.TotalAssetValue)</span>
+            <span class="stat-tile-label">Total asset value</span>
+            <span class="stat-tile-sub">at recorded purchase cost</span>
+        </a>
     </div>
 
     @* ---------- Spend & risk ---------- *@
@@ -111,35 +114,35 @@
         <h2>Spend &amp; risk</h2>
         <span class="rule"></span>
     </div>
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon @(Model.TotalOutstanding > 0 ? "danger" : "success")"><i class="fas fa-file-invoice-dollar"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Money(Model.TotalOutstanding)</div>
-                <div class="kpi-label">Outstanding<span class="kpi-sub">@Model.OverduePayments payment@(Model.OverduePayments == 1 ? "" : "s") overdue</span></div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon success"><i class="fas fa-circle-dollar-to-slot"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Money(Model.TotalPaid)</div>
-                <div class="kpi-label">Settled to date<span class="kpi-sub">across all payment schedules</span></div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon @(Model.CertsExpiringSoon > 0 ? "warning" : "success")"><i class="fas fa-shield-halved"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.CertsExpiringSoon</div>
-                <div class="kpi-label">Certificates expiring<span class="kpi-sub">within the next 30 days</span></div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon @(Model.CertsExpired > 0 ? "danger" : "slate")"><i class="fas fa-triangle-exclamation"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.CertsExpired</div>
-                <div class="kpi-label">Certificates expired<span class="kpi-sub">needing renewal now</span></div>
-            </div>
-        </div>
+    <div class="stat-grid">
+        <a class="stat-tile @(Model.TotalOutstanding > 0 ? "tone-rose" : "tone-green")" asp-action="Payments">
+            <i class="fas fa-arrow-right stat-tile-go" aria-hidden="true"></i>
+            <span class="stat-tile-icon"><i class="fas fa-file-invoice-dollar"></i></span>
+            <span class="stat-tile-value">@Money(Model.TotalOutstanding)</span>
+            <span class="stat-tile-label">Outstanding</span>
+            <span class="stat-tile-sub">@Model.OverduePayments payment@(Model.OverduePayments == 1 ? "" : "s") overdue</span>
+        </a>
+        <a class="stat-tile tone-green" asp-action="Payments">
+            <i class="fas fa-arrow-right stat-tile-go" aria-hidden="true"></i>
+            <span class="stat-tile-icon"><i class="fas fa-circle-dollar-to-slot"></i></span>
+            <span class="stat-tile-value">@Money(Model.TotalPaid)</span>
+            <span class="stat-tile-label">Settled to date</span>
+            <span class="stat-tile-sub">across all payment schedules</span>
+        </a>
+        <a class="stat-tile @(Model.CertsExpiringSoon > 0 ? "tone-amber" : "tone-green")" asp-action="Certificates">
+            <i class="fas fa-arrow-right stat-tile-go" aria-hidden="true"></i>
+            <span class="stat-tile-icon"><i class="fas fa-shield-halved"></i></span>
+            <span class="stat-tile-value">@Model.CertsExpiringSoon</span>
+            <span class="stat-tile-label">Certificates expiring</span>
+            <span class="stat-tile-sub">within the next 30 days</span>
+        </a>
+        <a class="stat-tile @(Model.CertsExpired > 0 ? "tone-rose" : "tone-green")" asp-action="Certificates">
+            <i class="fas fa-arrow-right stat-tile-go" aria-hidden="true"></i>
+            <span class="stat-tile-icon"><i class="fas fa-triangle-exclamation"></i></span>
+            <span class="stat-tile-value">@Model.CertsExpired</span>
+            <span class="stat-tile-label">Certificates expired</span>
+            <span class="stat-tile-sub">needing renewal now</span>
+        </a>
     </div>
 
     @* ---------- Report directory ---------- *@
