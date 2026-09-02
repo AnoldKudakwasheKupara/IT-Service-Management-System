@@ -1,4 +1,5 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Models.Itsm;
 using IT_Service_Management_System.Services.Realtime;
@@ -23,14 +24,21 @@ namespace IT_Service_Management_System.Services.Itsm
         private readonly ApplicationDbContext _db;
         private readonly ISlaService _sla;
         private readonly IRealtimeNotifier _realtime;
+        private readonly EmailDispatcher _email;
+        private readonly ConfigurationService _config;
+        private readonly Notifications.AppLinks _links;
         private readonly ILogger<SlaMonitoringService> _logger;
 
         public SlaMonitoringService(ApplicationDbContext db, ISlaService sla,
-            IRealtimeNotifier realtime, ILogger<SlaMonitoringService> logger)
+            IRealtimeNotifier realtime, EmailDispatcher email, ConfigurationService config,
+            Notifications.AppLinks links, ILogger<SlaMonitoringService> logger)
         {
             _db = db;
             _sla = sla;
             _realtime = realtime;
+            _email = email;
+            _config = config;
+            _links = links;
             _logger = logger;
         }
 
@@ -91,17 +99,56 @@ namespace IT_Service_Management_System.Services.Itsm
 
             await _db.SaveChangesAsync(ct);
 
+            var emailSlaEvents = _config.Get().NotifyOnSlaEvent;
+
             foreach (var (ticket, slaEvent) in notices)
             {
-                var level = slaEvent.Type is SlaEventType.ResponseBreached or SlaEventType.ResolutionBreached ? "error" : "warning";
+                var breached = slaEvent.Type is SlaEventType.ResponseBreached or SlaEventType.ResolutionBreached;
+                var level = breached ? "error" : "warning";
                 var notice = new RealtimeNotice("SLA alert", slaEvent.Message, $"/Tickets/Details/{ticket.Id}", level);
                 if (ticket.AssignedToId.HasValue)
                     await _realtime.NotifyUserAsync(ticket.AssignedToId.Value, notice);
                 await _realtime.NotifyStaffAsync(notice);
+
+                if (emailSlaEvents) await EmailSlaEventAsync(ticket, slaEvent, breached, ct);
             }
 
             _logger.LogInformation("Created {Count} proactive SLA events.", notices.Count);
             return notices.Count;
+        }
+
+        /// <summary>
+        /// Emails an SLA warning or breach to the assignee, or to the whole helpdesk when the ticket
+        /// is unassigned — an unassigned ticket burning its SLA is exactly the case that needs a
+        /// person, and a realtime toast only reaches whoever happens to have the app open.
+        /// </summary>
+        private async Task EmailSlaEventAsync(Ticket ticket, SlaEvent slaEvent, bool breached, CancellationToken ct)
+        {
+            var recipients = new List<User>();
+            if (ticket.AssignedToId.HasValue)
+            {
+                var assignee = await _db.Users.AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == ticket.AssignedToId.Value, ct);
+                if (assignee != null) recipients.Add(assignee);
+            }
+
+            if (recipients.Count == 0)
+                recipients = await _db.Users.AsNoTracking()
+                    .Where(u => u.IsActive && (u.Role == UserRole.Admin ||
+                                u.Role == UserRole.SystemsAdmin || u.Role == UserRole.SupportAgent))
+                    .ToListAsync(ct);
+
+            var due = slaEvent.Type is SlaEventType.ResponseWarning or SlaEventType.ResponseBreached
+                ? ticket.ResponseDueAt
+                : ticket.DueAt;
+            var link = _links.To("Tickets", "Details", ticket.Id);
+            var prefix = breached ? "SLA BREACH" : "SLA warning";
+
+            foreach (var r in recipients.DistinctBy(u => u.Id))
+                _email.Queue(r.Email, r.FirstName,
+                    $"[{prefix} {ticket.Reference}] {ticket.Title}",
+                    EmailTemplates.SlaAlert(r.FirstName, ticket.Reference, ticket.Title,
+                        ticket.Priority.ToString(), slaEvent.Message, breached, due, link));
         }
 
         private void AddIfDue(Ticket ticket, SlaEventType type, int threshold, bool isDue, string message,

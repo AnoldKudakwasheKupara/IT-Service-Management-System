@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace IT_Service_Management_System.Models
 {
@@ -72,6 +72,37 @@ namespace IT_Service_Management_System.Models
         public bool AlertOnLargeDataExport { get; set; } = true;
         public bool AlertOnBackupFailure { get; set; } = true;
         public bool AlertOnDatabaseFailure { get; set; } = true;
+
+        // ── Operational reminders ────────────────────────────────────────────────
+        /// <summary>Comma-separated recipients for operational reminders and the daily summary.
+        /// Empty falls back to every active administrator's own address.</summary>
+        [StringLength(1000)]
+        public string? OperationsEmailRecipients { get; set; }
+
+        public bool NotifyOnCertificateExpiry { get; set; } = true;
+        public bool NotifyOnMaintenanceDue { get; set; } = true;
+        public bool NotifyOnPaymentDue { get; set; } = true;
+
+        /// <summary>Comma-separated lead times, in days, at which a reminder is sent before the
+        /// due date. One email per record per threshold, deduplicated via NotificationLog.</summary>
+        [StringLength(100)]
+        public string ReminderLeadDays { get; set; } = "30,14,7,1";
+
+        /// <summary>Also chase records that are already past due, once per day.</summary>
+        public bool NotifyOnOverdue { get; set; } = true;
+
+        // ── Ticket notifications ─────────────────────────────────────────────────
+        public bool NotifyOnTicketEscalation { get; set; } = true;
+        /// <summary>Email the assignee and the helpdesk when a ticket trips an SLA warning or breach.</summary>
+        public bool NotifyOnSlaEvent { get; set; } = true;
+
+        // ── Daily summary ────────────────────────────────────────────────────────
+        public bool DailySummaryEnabled { get; set; } = true;
+        /// <summary>Hour of the day (0-23, local) at which the summary is sent.</summary>
+        [Range(0, 23)]
+        public int DailySummaryHour { get; set; } = 7;
+        /// <summary>Also send each agent a personal digest of their own tickets and logged work.</summary>
+        public bool DailySummaryPerAgent { get; set; } = true;
 
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
         [StringLength(150)]

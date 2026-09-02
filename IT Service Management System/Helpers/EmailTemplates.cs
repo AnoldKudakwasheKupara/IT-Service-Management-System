@@ -1,4 +1,4 @@
-namespace IT_Service_Management_System.Helpers
+﻿namespace IT_Service_Management_System.Helpers
 {
     /// <summary>
     /// Branded HTML email templates. All return a self-contained HTML string ready for SendEmailAsync.
@@ -385,6 +385,165 @@ namespace IT_Service_Management_System.Helpers
 
             return Wrap(firstName, body,
                 "Do not share this link. It is personal and single-use.");
+        }
+
+        // -- Operational reminders & digests -----------------------------------------
+
+        private static string Enc(string? text) => System.Net.WebUtility.HtmlEncode(text ?? string.Empty);
+
+        /// <summary>Two-column fact table. Values are encoded; keys are trusted literals.</summary>
+        private static string FactTable(IEnumerable<KeyValuePair<string, string>> facts)
+        {
+            var rows = string.Join("", facts.Select(f => $@"
+  <tr><td style=""padding:7px 14px;color:#64748b;font-size:13px;width:150px;"">{f.Key}</td><td style=""padding:7px 14px;color:#1e293b;font-size:13px;font-weight:600;"">{Enc(f.Value)}</td></tr>"));
+            return $@"
+<table style=""width:100%;border-collapse:collapse;background:#f8fafc;border-radius:8px;overflow:hidden;margin:16px 0;"">{rows}
+</table>";
+        }
+
+        private static string DangerBox(string html) => $@"
+<div style=""background:#fef2f2;border-left:4px solid #ef4444;border-radius:0 8px 8px 0;
+             padding:14px 18px;margin:20px 0;font-size:13px;color:#991b1b;"">
+  {html}
+</div>";
+
+        /// <summary>Chooses the callout style from how close (or past) the due date is.</summary>
+        private static string DueBox(int daysUntilDue, string what)
+        {
+            if (daysUntilDue < 0)
+                return DangerBox($"&#9888;&nbsp; {what} was due <strong>{Math.Abs(daysUntilDue)} day(s) ago</strong> and is overdue.");
+            if (daysUntilDue == 0)
+                return WarningBox($"&#9200;&nbsp; {what} is due <strong>today</strong>.");
+            return WarningBox($"&#9200;&nbsp; {what} is due in <strong>{daysUntilDue} day(s)</strong>.");
+        }
+
+        /// <summary>An SSL certificate approaching expiry, or already expired.</summary>
+        public static string CertificateExpiring(string systemName, string url, DateTime expiryDate,
+            int daysRemaining, string link)
+        {
+            var body = $@"
+{DueBox(daysRemaining, "An SSL certificate")}
+{FactTable(new Dictionary<string, string>
+{
+    ["System"] = systemName,
+    ["URL"] = url,
+    ["Expires on"] = expiryDate.ToString("dddd, dd MMMM yyyy"),
+    ["Days remaining"] = daysRemaining < 0 ? $"Expired {Math.Abs(daysRemaining)} day(s) ago" : daysRemaining.ToString()
+})}
+<p style=""color:#334155;font-size:14px;line-height:1.7;margin:16px 0 0;"">
+  Renew the certificate before it lapses to avoid browser warnings and service interruption.
+</p>
+{PrimaryButton(link, "&#128274;&nbsp; Open SSL Tracker")}";
+            return Wrap("Team", body, "Automated certificate reminder - Axis IT Operations.");
+        }
+
+        /// <summary>Scheduled maintenance coming up on an asset.</summary>
+        public static string MaintenanceDue(string assetName, string maintenanceType, DateTime dueDate,
+            int daysUntilDue, string? lastWorkDone, string link)
+        {
+            var facts = new Dictionary<string, string>
+            {
+                ["Asset"] = assetName,
+                ["Type"] = maintenanceType,
+                ["Scheduled for"] = dueDate.ToString("dddd, dd MMMM yyyy")
+            };
+            if (!string.IsNullOrWhiteSpace(lastWorkDone)) facts["Last work done"] = lastWorkDone!;
+
+            var body = $@"
+{DueBox(daysUntilDue, "Scheduled maintenance")}
+{FactTable(facts)}
+{PrimaryButton(link, "&#128295;&nbsp; Open Maintenance Records")}";
+            return Wrap("Team", body, "Automated maintenance reminder - Axis IT Operations.");
+        }
+
+        /// <summary>A service payment falling due.</summary>
+        public static string PaymentDue(string serviceName, decimal amount, DateTime dueDate,
+            int daysUntilDue, string status, string link)
+        {
+            var body = $@"
+{DueBox(daysUntilDue, "A service payment")}
+{FactTable(new Dictionary<string, string>
+{
+    ["Service"] = serviceName,
+    ["Amount"] = amount.ToString("N2"),
+    ["Due on"] = dueDate.ToString("dddd, dd MMMM yyyy"),
+    ["Status"] = status
+})}
+{PrimaryButton(link, "&#128179;&nbsp; Open Payments")}";
+            return Wrap("Team", body, "Automated payment reminder - Axis IT Operations.");
+        }
+
+        /// <summary>A ticket escalated, either by an agent or automatically on SLA breach.</summary>
+        public static string TicketEscalated(string recipientFirstName, string reference, string title,
+            string priority, string byName, string? reason, string link)
+        {
+            var reasonBlock = string.IsNullOrWhiteSpace(reason)
+                ? string.Empty
+                : $@"<p style=""color:#64748b;font-size:13px;margin:0 0 4px;"">Reason:</p>{Quote(reason!)}";
+            var body = $@"
+{DangerBox($"&#9888;&nbsp; Ticket <strong>{Enc(reference)}</strong> has been escalated by {Enc(byName)}.")}
+{TicketFacts(reference, title, priority, "Escalated")}
+{reasonBlock}
+{PrimaryButton(link, "&#128680;&nbsp; Open Ticket")}";
+            return Wrap(recipientFirstName, body, $"Ticket {reference}");
+        }
+
+        /// <summary>An SLA warning threshold reached, or an SLA breached.</summary>
+        public static string SlaAlert(string recipientFirstName, string reference, string title,
+            string priority, string eventDescription, bool breached, DateTime? dueAt, string link)
+        {
+            var box = breached
+                ? DangerBox($"&#9888;&nbsp; {Enc(eventDescription)}")
+                : WarningBox($"&#9200;&nbsp; {Enc(eventDescription)}");
+            var facts = new Dictionary<string, string>
+            {
+                ["Reference"] = reference,
+                ["Subject"] = title,
+                ["Priority"] = priority
+            };
+            if (dueAt.HasValue) facts["Target"] = dueAt.Value.ToString("ddd, dd MMM yyyy HH:mm");
+
+            var body = $@"
+{box}
+{FactTable(facts)}
+{PrimaryButton(link, "&#9201;&nbsp; Open Ticket")}";
+            return Wrap(recipientFirstName, body, $"Ticket {reference} - SLA");
+        }
+
+        /// <summary>
+        /// The daily digest. Headline figures render as a stat strip; each section is a heading
+        /// plus plain lines, pre-composed by the caller so this template stays pure layout.
+        /// </summary>
+        public static string DailySummary(string recipientFirstName, DateTime forDate,
+            IEnumerable<KeyValuePair<string, string>> headlineFigures,
+            IEnumerable<(string Heading, IEnumerable<string> Lines)> sections, string link)
+        {
+            var cells = string.Join("", headlineFigures.Select(f => $@"
+    <td align=""center"" style=""padding:14px 10px;background:#f8fafc;border-radius:8px;"">
+      <div style=""font-size:24px;font-weight:700;color:#1d4ed8;"">{Enc(f.Value)}</div>
+      <div style=""font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.4px;margin-top:4px;"">{f.Key}</div>
+    </td>
+    <td style=""width:8px;""></td>"));
+
+            var blocks = string.Join("", sections.Select(sec =>
+            {
+                var lines = sec.Lines.ToList();
+                var items = lines.Count == 0
+                    ? @"<li style=""color:#94a3b8;font-size:13px;"">Nothing to report.</li>"
+                    : string.Join("", lines.Select(l => $@"<li style=""color:#334155;font-size:13px;line-height:1.8;"">{Enc(l)}</li>"));
+                return $@"
+<h3 style=""color:#1e293b;font-size:14px;margin:26px 0 8px;padding-bottom:6px;border-bottom:1px solid #e2e8f0;"">{sec.Heading}</h3>
+<ul style=""margin:0;padding-left:20px;"">{items}</ul>";
+            }));
+
+            var body = $@"
+<p style=""color:#334155;font-size:15px;line-height:1.7;margin:0 0 18px;"">
+  Here is your summary for <strong>{forDate:dddd, dd MMMM yyyy}</strong>.
+</p>
+<table width=""100%"" cellpadding=""0"" cellspacing=""0""><tr>{cells}</tr></table>
+{blocks}
+{PrimaryButton(link, "&#128202;&nbsp; Open Dashboard")}";
+            return Wrap(recipientFirstName, body, "Daily summary - Axis IT Operations.");
         }
     }
 }

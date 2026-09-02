@@ -48,6 +48,9 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<UserAccessRightItem> UserAccessRightItems { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<AppConfiguration> AppConfigurations { get; set; }
+
+        /// <summary>Ledger of reminder emails already sent, so a repeating scan doesn't re-chase.</summary>
+        public DbSet<NotificationLog> NotificationLogs { get; set; }
         public DbSet<CannedResponse> CannedResponses { get; set; }
         // Retired in favour of EFM. Mapped only so the existing table and its rows survive until
         // they have been migrated across — see EmployeeFile for the plan.
@@ -431,6 +434,11 @@ namespace IT_Service_Management_System.DbContexts
                 .HasOne(m => m.Tag).WithMany(t => t.Documents).HasForeignKey(m => m.DocumentTagId)
                 .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<DocumentTag>().HasIndex(t => t.Name).IsUnique();
+
+            // The reminder scan's only question is "have I already sent this one?", asked once per
+            // cycle per record, so index exactly that lookup.
+            modelBuilder.Entity<NotificationLog>()
+                .HasIndex(n => new { n.Subject, n.EntityId, n.TriggerKey, n.DueOn });
 
             modelBuilder.Entity<DocumentCategory>()
                 .HasOne(c => c.DefaultFolder).WithMany().HasForeignKey(c => c.DefaultFolderId)

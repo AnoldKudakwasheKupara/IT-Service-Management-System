@@ -1,4 +1,4 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services.Realtime;
@@ -41,12 +41,14 @@ namespace IT_Service_Management_System.Services.Itsm
         private readonly IHttpContextAccessor _http;
         private readonly LinkGenerator _links;
         private readonly TimeProvider _clock;
+        private readonly ConfigurationService _config;
         private readonly ILogger<TicketService> _logger;
 
         public TicketService(ApplicationDbContext db, AuditService audit, EmailDispatcher email,
             ISlaService sla, IRealtimeNotifier rt, IHttpContextAccessor http, LinkGenerator links,
-            TimeProvider clock, ILogger<TicketService> logger)
+            TimeProvider clock, ConfigurationService config, ILogger<TicketService> logger)
         {
+            _config = config;
             _db = db;
             _audit = audit;
             _email = email;
@@ -340,6 +342,7 @@ namespace IT_Service_Management_System.Services.Itsm
             await _audit.LogAsync("Escalated", "Ticket", id, $"Escalated; priority {oldPriority} -> {ticket.Priority}");
             await _rt.NotifyStaffAsync(new RealtimeNotice(
                 $"Escalated: {ticket.Reference}", ticket.Title, TicketLink(ticket.Id), "error"));
+            await NotifyEscalationAsync(ticket, reason);
             return TicketOp.Success(ticket, $"Ticket escalated — priority raised to {ticket.Priority}.");
         }
 
@@ -507,6 +510,33 @@ namespace IT_Service_Management_System.Services.Itsm
                 $"[{ticket.Reference}] Status: {ticket.Status}",
                 EmailTemplates.TicketStatusChanged(ticket.CreatedBy.FirstName, ticket.Reference,
                     ticket.Title, ticket.Status.ToString(), by, TicketLink(ticket.Id)));
+        }
+
+        /// <summary>
+        /// Emails an escalation to whoever has to act on it: the assignee if there is one, the whole
+        /// helpdesk if there isn't, so a raised priority on an unassigned ticket cannot sit unseen.
+        /// The requester is deliberately left out — escalation is an internal handling decision.
+        /// </summary>
+        private async Task NotifyEscalationAsync(Ticket ticket, string? reason)
+        {
+            if (!_config.Get().NotifyOnTicketEscalation) return;
+
+            var recipients = new List<User>();
+            if (ticket.AssignedToId.HasValue)
+            {
+                var assignee = await _db.Users.AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Id == ticket.AssignedToId.Value);
+                if (assignee != null) recipients.Add(assignee);
+            }
+            if (recipients.Count == 0) recipients.AddRange(await StaffRecipientsAsync());
+
+            var by = ActorName();
+            var link = TicketLink(ticket.Id);
+            foreach (var r in recipients.DistinctBy(u => u.Id))
+                QueueEmail(r.Email, r.FirstName,
+                    $"[Escalated {ticket.Reference}] {ticket.Title}",
+                    EmailTemplates.TicketEscalated(r.FirstName, ticket.Reference, ticket.Title,
+                        ticket.Priority.ToString(), by, reason, link));
         }
 
         private async Task NotifyAssignmentAsync(Ticket ticket, int? oldAssignee)

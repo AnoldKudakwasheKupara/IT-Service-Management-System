@@ -281,6 +281,13 @@ builder.Services.AddScoped<IT_Service_Management_System.Services.Itsm.ISlaServic
     IT_Service_Management_System.Services.Itsm.SlaService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Itsm.SlaMonitoringService>();
 builder.Services.AddHostedService<IT_Service_Management_System.Services.Itsm.SlaMonitoringHostedService>();
+
+// ── Scheduled email notifications (due-date reminders + daily digest) ──────────────
+builder.Services.AddSingleton<IT_Service_Management_System.Services.Notifications.AppLinks>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Notifications.NotificationRecipients>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Notifications.OperationalReminderService>();
+builder.Services.AddScoped<IT_Service_Management_System.Services.Notifications.DailySummaryService>();
+builder.Services.AddHostedService<IT_Service_Management_System.Services.Notifications.NotificationSchedulerHostedService>();
 builder.Services.AddScoped<IT_Service_Management_System.Services.Itsm.IMyWorkService,
     IT_Service_Management_System.Services.Itsm.MyWorkService>();
 // Helpdesk ticket workflow + secure attachment handling.

@@ -1,4 +1,4 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -93,6 +93,23 @@ namespace IT_Service_Management_System.Services
             existing.AlertOnLargeDataExport = updated.AlertOnLargeDataExport;
             existing.AlertOnBackupFailure = updated.AlertOnBackupFailure;
             existing.AlertOnDatabaseFailure = updated.AlertOnDatabaseFailure;
+
+            // Operational reminders
+            existing.OperationsEmailRecipients = updated.OperationsEmailRecipients;
+            existing.NotifyOnCertificateExpiry = updated.NotifyOnCertificateExpiry;
+            existing.NotifyOnMaintenanceDue = updated.NotifyOnMaintenanceDue;
+            existing.NotifyOnPaymentDue = updated.NotifyOnPaymentDue;
+            existing.ReminderLeadDays = updated.ReminderLeadDays;
+            existing.NotifyOnOverdue = updated.NotifyOnOverdue;
+
+            // Ticket notifications
+            existing.NotifyOnTicketEscalation = updated.NotifyOnTicketEscalation;
+            existing.NotifyOnSlaEvent = updated.NotifyOnSlaEvent;
+
+            // Daily summary
+            existing.DailySummaryEnabled = updated.DailySummaryEnabled;
+            existing.DailySummaryHour = updated.DailySummaryHour;
+            existing.DailySummaryPerAgent = updated.DailySummaryPerAgent;
 
             existing.UpdatedAt = DateTime.Now;
             existing.UpdatedBy = updatedBy;

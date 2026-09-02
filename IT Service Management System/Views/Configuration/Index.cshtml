@@ -1,4 +1,4 @@
-@model IT_Service_Management_System.Models.AppConfiguration
+﻿@model IT_Service_Management_System.Models.AppConfiguration
 @{
     ViewData["Title"] = "Configuration - Axis IT Operations";
     bool smtpPwd = ViewBag.SmtpPasswordConfigured ?? false;
@@ -270,6 +270,80 @@
                             <input asp-for="AlertOnDatabaseFailure" type="checkbox" />
                             <span>Database failure</span>
                         </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operational Reminders -->
+            <div class="data-card cfg-card cfg-span">
+                <div class="card-header-custom">
+                    <i class="fas fa-clock me-2"></i>
+                    <span>Operational Reminders</span>
+                </div>
+                <div class="card-body-custom">
+                    <div class="cfg-field">
+                        <label asp-for="OperationsEmailRecipients">Reminder recipients (comma-separated)</label>
+                        <input asp-for="OperationsEmailRecipients" class="cfg-input" placeholder="itops@company.com, finance@company.com" />
+                        <p class="cfg-hint">Leave blank to send to every active administrator.</p>
+                        <span asp-validation-for="OperationsEmailRecipients" class="cfg-err"></span>
+                    </div>
+                    <div class="cfg-field">
+                        <label asp-for="ReminderLeadDays">Remind this many days before the due date</label>
+                        <input asp-for="ReminderLeadDays" class="cfg-input" placeholder="30,14,7,1" />
+                        <p class="cfg-hint">Comma-separated. One email per record at each lead time.</p>
+                        <span asp-validation-for="ReminderLeadDays" class="cfg-err"></span>
+                    </div>
+                    <div class="cfg-toggle-grid">
+                        <label class="cfg-toggle">
+                            <input asp-for="NotifyOnCertificateExpiry" type="checkbox" />
+                            <span>Expiring SSL certificates</span>
+                        </label>
+                        <label class="cfg-toggle">
+                            <input asp-for="NotifyOnMaintenanceDue" type="checkbox" />
+                            <span>Upcoming asset maintenance</span>
+                        </label>
+                        <label class="cfg-toggle">
+                            <input asp-for="NotifyOnPaymentDue" type="checkbox" />
+                            <span>Payments falling due</span>
+                        </label>
+                        <label class="cfg-toggle">
+                            <input asp-for="NotifyOnOverdue" type="checkbox" />
+                            <span>Keep chasing overdue items daily</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ticket Notifications & Daily Summary -->
+            <div class="data-card cfg-card cfg-span">
+                <div class="card-header-custom">
+                    <i class="fas fa-envelope-open-text me-2"></i>
+                    <span>Ticket Notifications &amp; Daily Summary</span>
+                </div>
+                <div class="card-body-custom">
+                    <div class="cfg-toggle-grid">
+                        <label class="cfg-toggle">
+                            <input asp-for="NotifyOnTicketEscalation" type="checkbox" />
+                            <span>Ticket escalations</span>
+                        </label>
+                        <label class="cfg-toggle">
+                            <input asp-for="NotifyOnSlaEvent" type="checkbox" />
+                            <span>SLA warnings and breaches</span>
+                        </label>
+                        <label class="cfg-toggle">
+                            <input asp-for="DailySummaryEnabled" type="checkbox" />
+                            <span>Send the daily summary</span>
+                        </label>
+                        <label class="cfg-toggle">
+                            <input asp-for="DailySummaryPerAgent" type="checkbox" />
+                            <span>Also send each agent their own digest</span>
+                        </label>
+                    </div>
+                    <div class="cfg-field">
+                        <label asp-for="DailySummaryHour">Send the summary at (hour, 0-23)</label>
+                        <input asp-for="DailySummaryHour" type="number" min="0" max="23" class="cfg-input" />
+                        <p class="cfg-hint">Covers the day that has just ended. Ticket creation, replies, assignment and status changes are always emailed as they happen.</p>
+                        <span asp-validation-for="DailySummaryHour" class="cfg-err"></span>
                     </div>
                 </div>
             </div>
