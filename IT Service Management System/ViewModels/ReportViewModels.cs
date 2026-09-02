@@ -1,4 +1,4 @@
-using IT_Service_Management_System.Models;
+﻿using IT_Service_Management_System.Models;
 
 namespace IT_Service_Management_System.ViewModels.Reports
 {
@@ -43,6 +43,14 @@ namespace IT_Service_Management_System.ViewModels.Reports
 
         // Maintenance
         public int MaintenanceRecords { get; set; }
+
+        // Headline figures for the report catalogue tiles. Each detailed report
+        // carries its own number on the hub, so the catalogue says what is worth
+        // opening rather than being ten identical links.
+        public int SlaBreachedOpen { get; set; }
+        public int TicketsLast30Days { get; set; }
+        public int SupportAgents { get; set; }
+        public int MaintenanceUpcoming { get; set; }
     }
 
     public class TicketsReportVM

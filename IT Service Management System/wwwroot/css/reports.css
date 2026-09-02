@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Axis IT Operations — Reports design system
    ------------------------------------------------------------
    One stylesheet for the reports hub and all ten detail reports.
@@ -993,8 +993,221 @@
 .report-card-link:hover .report-arrow { transform: translateX(3px); color: var(--primary); }
 
 /* ============================================================
+   Report catalogue — bento tiles
+   The hub's directory reads as a mosaic of promo tiles rather than
+   a list of links: each report gets a headline, its own live figure
+   and a call to action, and the tiles that speak for the most of the
+   estate are given the most room. Spans are set per tile in the view.
+   ============================================================ */
+
+.report-bento {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-rows: minmax(176px, auto);
+    gap: 1rem;
+}
+
+.bento-card {
+    /* Every tile is painted from these six properties; a tone variant
+       reassigns them and changes nothing else. */
+    --card-bg: var(--r-surface);
+    --card-ink: var(--r-ink);
+    /* --r-ink-soft, not --r-ink-mute: the mute tone is tuned for body text on
+       white and only reaches ~3:1 against the pale tile tints, under the 4.5:1
+       these descriptions need. */
+    --card-ink-soft: var(--r-ink-soft);
+    --card-accent: var(--primary);
+    --card-badge-bg: var(--r-slate-bg);
+    --card-cta-ink: #ffffff;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 1.4rem 1.45rem;
+    background: var(--card-bg);
+    border: 1px solid var(--r-line);
+    border-radius: 18px;
+    box-shadow: var(--r-shadow);
+    color: var(--card-ink);
+    text-decoration: none;
+    transition: transform var(--r-ease), box-shadow var(--r-ease), border-color var(--r-ease);
+}
+.bento-card:hover {
+    color: var(--card-ink);
+    text-decoration: none;
+    transform: translateY(-3px);
+    box-shadow: var(--r-shadow-md);
+    border-color: var(--r-line-strong);
+}
+.bento-card:active { transform: translateY(-1px); }
+.bento-card:focus-visible { outline: 3px solid var(--card-accent); outline-offset: 3px; }
+
+/* Tile spans. Only the wide/tall tiles opt in; the rest are 1x1. */
+.bento-card.span-2 { grid-column: span 2; }
+.bento-card.tall-2 { grid-row: span 2; }
+
+.bento-badge {
+    /* In flow, not absolutely positioned: the pill's width follows its label,
+       so any fixed gutter reserved on the title would eventually be too small
+       and the two would collide. */
+    align-self: flex-start;
+    margin-bottom: .8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .3rem .6rem;
+    border-radius: var(--r-radius-pill);
+    background: var(--card-badge-bg);
+    color: var(--card-accent);
+    font-size: .66rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.bento-badge i { font-size: .78rem; }
+
+.bento-title {
+    margin: 0 0 .45rem;
+    font-size: 1.12rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -.01em;
+    color: var(--card-ink);
+}
+.bento-card.span-2 .bento-title { font-size: 1.32rem; }
+.bento-card.is-hero .bento-title { font-size: 1.85rem; }
+
+.bento-desc {
+    margin: 0;
+    font-size: .82rem;
+    line-height: 1.55;
+    color: var(--card-ink-soft);
+    max-width: 46ch;
+}
+.bento-card.is-hero .bento-desc { font-size: .95rem; max-width: 40ch; }
+
+/* The figure sits directly above the CTA, pushed to the bottom so tiles
+   of different heights still line their calls to action up. */
+.bento-figure {
+    margin-top: auto;
+    padding-top: 1.1rem;
+    display: flex;
+    align-items: baseline;
+    gap: .5rem;
+}
+.bento-stat {
+    font-size: 1.6rem;
+    font-weight: 750;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--card-ink);
+}
+.bento-card.is-hero .bento-stat { font-size: 2.9rem; }
+.bento-stat-label {
+    font-size: .76rem;
+    font-weight: 500;
+    color: var(--card-ink-soft);
+}
+
+.bento-cta {
+    margin-top: .95rem;
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .58rem 1.05rem;
+    border-radius: var(--r-radius-pill);
+    background: var(--card-accent);
+    color: var(--card-cta-ink);
+    font-size: .78rem;
+    font-weight: 650;
+    letter-spacing: .01em;
+    transition: gap var(--r-ease), filter var(--r-ease);
+}
+.bento-cta i { font-size: .7rem; transition: transform var(--r-ease); }
+.bento-card:hover .bento-cta { filter: brightness(1.08); }
+.bento-card:hover .bento-cta i { transform: translateX(3px); }
+
+/* Decorative dot field on the dark tiles, echoing the masthead. Sits
+   under the content and never intercepts the pointer. */
+.bento-card.is-hero::after,
+.bento-card.tone-ink::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    bottom: -60px;
+    width: 240px;
+    height: 240px;
+    pointer-events: none;
+    background-image: radial-gradient(currentColor 1.4px, transparent 1.4px);
+    background-size: 13px 13px;
+    opacity: .13;
+}
+.bento-card > * { position: relative; z-index: 1; }
+
+/* ── tones ─────────────────────────────────────────────────── */
+.bento-card.is-hero {
+    --card-bg: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 58%, #d1444a 100%);
+    --card-ink: #ffffff;
+    --card-ink-soft: rgba(255, 255, 255, .8);
+    --card-accent: #ffffff;
+    --card-badge-bg: rgba(255, 255, 255, .18);
+    --card-cta-ink: var(--primary-dark);
+    border-color: transparent;
+}
+.bento-card.tone-ink {
+    --card-bg: linear-gradient(140deg, #1f2937 0%, #334155 100%);
+    --card-ink: #ffffff;
+    --card-ink-soft: rgba(255, 255, 255, .74);
+    --card-accent: #ffffff;
+    --card-badge-bg: rgba(255, 255, 255, .16);
+    --card-cta-ink: #1f2937;
+    border-color: transparent;
+}
+.bento-card.tone-violet {
+    --card-bg: linear-gradient(150deg, #f6f3ff 0%, #efeafd 100%);
+    --card-accent: var(--r-violet);
+    --card-badge-bg: #e5dcfb;
+}
+.bento-card.tone-teal {
+    --card-bg: linear-gradient(150deg, #f0fafd 0%, #e3f3f8 100%);
+    --card-accent: var(--r-teal);
+    --card-badge-bg: #d5ecf4;
+}
+.bento-card.tone-green {
+    --card-bg: linear-gradient(150deg, #f1faf5 0%, #e6f6ee 100%);
+    --card-accent: var(--r-green);
+    --card-badge-bg: #d8f0e4;
+}
+.bento-card.tone-amber {
+    --card-bg: linear-gradient(150deg, #fefaf1 0%, #fdf2e2 100%);
+    --card-accent: var(--r-amber);
+    --card-badge-bg: #fae6c8;
+}
+.bento-card.tone-rose {
+    --card-bg: linear-gradient(150deg, #fef5f6 0%, #fdeaec 100%);
+    --card-accent: var(--r-red);
+    --card-badge-bg: #fadadd;
+}
+.bento-card.tone-plain {
+    --card-accent: var(--primary);
+    --card-badge-bg: var(--primary-surface);
+}
+
+/* ============================================================
    Responsive
    ============================================================ */
+
+/* Two columns first: dropping a 4-wide mosaic straight to one column
+   wastes a tablet's width. The wide tiles keep their span (now full
+   width); the tall ones give theirs up, since a 2-row tile in a short
+   grid just leaves a hole beside it. */
+@media (max-width: 1200px) {
+    .report-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .report-bento .bento-card.tall-2 { grid-row: auto; }
+}
 
 @media (max-width: 992px) {
     .report-grid, .two-col-grid { grid-template-columns: 1fr; }
@@ -1024,6 +1237,13 @@
 
     .vbar-chart { height: 160px; }
     .report-cards-grid { grid-template-columns: 1fr; }
+    /* One column: every tile is the same size, so the spans have to go —
+       a "2 wide" tile in a 1-column grid would overflow the viewport. */
+    .report-bento { grid-template-columns: 1fr; grid-auto-rows: auto; }
+    .report-bento .bento-card.span-2,
+    .report-bento .bento-card.tall-2 { grid-column: auto; grid-row: auto; }
+    .bento-card.is-hero .bento-title { font-size: 1.5rem; }
+    .bento-card.is-hero .bento-stat { font-size: 2.2rem; }
 }
 
 /* ============================================================
@@ -1044,6 +1264,30 @@
     .panel, .report-shell .data-card { break-inside: auto; }
     .report-table thead th { position: static; background: #f1f3f6 !important; }
     .report-table tbody tr:hover { background: transparent !important; }
+
+    /* The catalogue tiles are a screen affordance: on paper the gradients cost a
+       lot of ink to say nothing, and the calls to action are unclickable. Flatten
+       the tiles to plain bordered blocks and drop the buttons; the headline, the
+       figure and the description still carry the content. */
+    .report-bento { grid-template-columns: repeat(2, 1fr) !important; gap: .5rem; }
+    .report-bento .bento-card {
+        background: #fff !important;
+        color: #0f172a !important;
+        border: 1px solid #d5dae1 !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+        padding: .8rem .9rem;
+    }
+    .report-bento .bento-card.span-2 { grid-column: span 2; }
+    .report-bento .bento-card.tall-2 { grid-row: auto; }
+    .report-bento .bento-card::after { display: none !important; }
+    .report-bento .bento-desc,
+    .report-bento .bento-stat-label { color: #55607a !important; }
+    .report-bento .bento-badge { background: #eef1f5 !important; color: #55607a !important; }
+    .report-bento .bento-title { font-size: 1rem !important; }
+    .report-bento .bento-stat { font-size: 1.2rem !important; color: #0f172a !important; }
+    .report-bento .bento-figure { padding-top: .5rem; }
+    .report-bento .bento-cta { display: none !important; }
 
     a[href]::after { content: none !important; }
 }

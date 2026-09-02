@@ -61,7 +61,17 @@ namespace IT_Service_Management_System.Controllers
                 CertsExpired = certs.Count(c => c.ExpiryDate < now),
                 CertsExpiringSoon = certs.Count(c => c.ExpiryDate >= now && c.ExpiryDate <= now.AddDays(30)),
 
-                MaintenanceRecords = _context.MaintenanceRecords.Count()
+                MaintenanceRecords = _context.MaintenanceRecords.Count(),
+
+                SlaBreachedOpen = _context.Tickets.Count(t =>
+                    t.Status != Ticket.TicketStatus.Resolved && t.Status != Ticket.TicketStatus.Closed &&
+                    t.DueAt != null && t.DueAt < now),
+                TicketsLast30Days = _context.Tickets.Count(t => t.CreatedAt >= now.AddDays(-30)),
+                SupportAgents = _context.Users.Count(u => u.IsActive &&
+                    (u.Role == UserRole.Admin || u.Role == UserRole.SystemsAdmin || u.Role == UserRole.SupportAgent)),
+                MaintenanceUpcoming = _context.MaintenanceRecords.Count(m =>
+                    m.NextMaintenanceDate != null && m.NextMaintenanceDate >= now &&
+                    m.NextMaintenanceDate <= now.AddDays(30))
             };
 
             return View(vm);

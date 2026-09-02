@@ -1,4 +1,4 @@
-@model IT_Service_Management_System.ViewModels.Reports.ReportsDashboardVM
+﻿@model IT_Service_Management_System.ViewModels.Reports.ReportsDashboardVM
 @{
     ViewData["Title"] = "Reports - Axis IT Operations";
     string Money(decimal v) => v.ToString("C0", new System.Globalization.CultureInfo("en-US"));
@@ -147,116 +147,126 @@
         <h2>Detailed reports</h2>
         <span class="rule"></span>
     </div>
-    <div class="report-cards-grid">
+    <div class="report-bento">
 
-        <a class="report-card-link" asp-action="Tickets">
-            <div class="report-card-item">
-                <div class="report-icon icon-ticket"><i class="fas fa-ticket-alt"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Tickets</h3>
-                    <p class="report-description">Status, priority, categories, top requesters and resolution rate.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
+        @* The mosaic is ordered by how much of the estate each report speaks
+           for, and sized to match: tickets take the hero tile, the risk-facing
+           reports get the tall and dark tiles so they read first. *@
+
+        <a class="bento-card is-hero span-2 tall-2" asp-action="Tickets">
+            <span class="bento-badge"><i class="fas fa-ticket-alt"></i> Service desk</span>
+            <h3 class="bento-title">Everything the helpdesk handled</h3>
+            <p class="bento-desc">
+                Status, priority and category breakdowns, your top requesters,
+                and the resolution rate behind them.
+            </p>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.TotalTickets</span>
+                <span class="bento-stat-label">tickets &middot; @Model.OpenTickets open &middot; @resolvedPct% resolved</span>
             </div>
+            <span class="bento-cta">View ticket report <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-action="SlaCompliance">
-            <div class="report-card-item">
-                <div class="report-icon icon-ticket"><i class="fas fa-gauge-high"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">SLA Compliance</h3>
-                    <p class="report-description">Response and resolution attainment, MTTR, breaches by priority.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
+        <a class="bento-card tone-ink" asp-action="SlaCompliance">
+            <span class="bento-badge"><i class="fas fa-gauge-high"></i> SLA</span>
+            <h3 class="bento-title">SLA compliance</h3>
+            <p class="bento-desc">Response and resolution attainment, MTTR and breaches by priority.</p>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.SlaBreachedOpen</span>
+                <span class="bento-stat-label">open past target</span>
             </div>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-action="AgentPerformance">
-            <div class="report-card-item">
-                <div class="report-icon icon-user"><i class="fas fa-user-gear"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Agent Performance</h3>
-                    <p class="report-description">Per-agent workload, resolution time, SLA breaches and CSAT.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
+        <a class="bento-card tone-rose tall-2" asp-action="Certificates">
+            <span class="bento-badge"><i class="fas fa-shield-halved"></i> Risk</span>
+            <h3 class="bento-title">SSL certificates</h3>
+            <p class="bento-desc">
+                Expiry buckets and the certificates that need renewing first,
+                before a lapse takes a service down.
+            </p>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.CertsExpiringSoon</span>
+                <span class="bento-stat-label">expiring in 30 days &middot; @Model.CertsExpired already expired</span>
             </div>
+            <span class="bento-cta">Review certificates <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-action="TicketTrends">
-            <div class="report-card-item">
-                <div class="report-icon icon-ticket"><i class="fas fa-chart-line"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Ticket Trends</h3>
-                    <p class="report-description">Created versus resolved volume over the last twelve months.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
+        <a class="bento-card tone-teal" asp-action="AgentPerformance">
+            <span class="bento-badge"><i class="fas fa-user-gear"></i> People</span>
+            <h3 class="bento-title">Agent performance</h3>
+            <p class="bento-desc">Workload, resolution time, SLA breaches and CSAT per agent.</p>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.SupportAgents</span>
+                <span class="bento-stat-label">agents on the desk</span>
             </div>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-action="Assets">
-            <div class="report-card-item">
-                <div class="report-icon icon-asset"><i class="fas fa-laptop-code"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Assets</h3>
-                    <p class="report-description">Status, condition, value, holders and recent asset activity.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
+        <a class="bento-card tone-plain span-2" asp-action="TicketTrends">
+            <span class="bento-badge"><i class="fas fa-chart-line"></i> Trend</span>
+            <h3 class="bento-title">Ticket trends</h3>
+            <p class="bento-desc">Created against resolved volume over the last twelve months.</p>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.TicketsLast30Days</span>
+                <span class="bento-stat-label">raised in the last 30 days</span>
             </div>
+            <span class="bento-cta">See the curve <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-action="Maintenance">
-            <div class="report-card-item">
-                <div class="report-icon icon-maintenance"><i class="fas fa-wrench"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Maintenance</h3>
-                    <p class="report-description">Work by type, recent jobs and upcoming scheduled maintenance.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
+        <a class="bento-card tone-violet" asp-action="Assets">
+            <span class="bento-badge"><i class="fas fa-laptop-code"></i> Estate</span>
+            <h3 class="bento-title">Assets</h3>
+            <p class="bento-desc">Status, condition, value, holders and recent movement.</p>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.TotalAssets</span>
+                <span class="bento-stat-label">tracked &middot; @Model.AssetsIssued issued</span>
             </div>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-action="Certificates">
-            <div class="report-card-item">
-                <div class="report-icon icon-cert"><i class="fas fa-shield-halved"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">SSL Certificates</h3>
-                    <p class="report-description">Expiry buckets and the certificates needing attention first.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
+        <a class="bento-card tone-amber" asp-action="Payments">
+            <span class="bento-badge"><i class="fas fa-file-invoice-dollar"></i> Spend</span>
+            <h3 class="bento-title">Payments</h3>
+            <p class="bento-desc">Paid, outstanding and overdue amounts, plus what falls due next.</p>
+            <div class="bento-figure">
+                <span class="bento-stat">@Money(Model.TotalOutstanding)</span>
+                <span class="bento-stat-label">outstanding &middot; @Model.OverduePayments overdue</span>
             </div>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-action="Payments">
-            <div class="report-card-item">
-                <div class="report-icon icon-payment"><i class="fas fa-file-invoice-dollar"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Payments</h3>
-                    <p class="report-description">Paid, outstanding and overdue amounts, plus upcoming dues.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
+        <a class="bento-card tone-plain" asp-action="Maintenance">
+            <span class="bento-badge"><i class="fas fa-wrench"></i> Upkeep</span>
+            <h3 class="bento-title">Maintenance</h3>
+            <p class="bento-desc">Work by type, recent jobs and what is scheduled next.</p>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.MaintenanceUpcoming</span>
+                <span class="bento-stat-label">due in 30 days &middot; @Model.MaintenanceRecords logged</span>
             </div>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-action="Activity">
-            <div class="report-card-item">
-                <div class="report-icon icon-activity"><i class="fas fa-list-check"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Activity</h3>
-                    <p class="report-description">Hours logged by category and by user, ongoing versus completed.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
+        <a class="bento-card tone-green" asp-action="Activity">
+            <span class="bento-badge"><i class="fas fa-list-check"></i> Work</span>
+            <h3 class="bento-title">Activity</h3>
+            <p class="bento-desc">Hours logged by category and by person, ongoing against completed.</p>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.TotalActivityHours h</span>
+                <span class="bento-stat-label">across @Model.TotalActivities entries</span>
             </div>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-action="Users">
-            <div class="report-card-item">
-                <div class="report-icon icon-user"><i class="fas fa-users"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Users &amp; Departments</h3>
-                    <p class="report-description">Roles, departments, active users and asset assignments.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
+        <a class="bento-card tone-teal span-2" asp-action="Users">
+            <span class="bento-badge"><i class="fas fa-users"></i> Directory</span>
+            <h3 class="bento-title">Users &amp; departments</h3>
+            <p class="bento-desc">Roles, departments, active accounts and who is holding what.</p>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.TotalUsers</span>
+                <span class="bento-stat-label">users &middot; @Model.ActiveUsers active &middot; @Model.TotalDepartments departments</span>
             </div>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
         </a>
 
     </div>
