@@ -1148,12 +1148,12 @@
 .bento-card > * { position: relative; z-index: 1; }
 
 /* ── figure tiles ─────────────────────────────────────────────
-   The headline figures, in the same visual language as the catalogue
-   tiles: tinted surface, accent-coloured icon, lift on hover. Unlike
-   the catalogue these stay a uniform size — they exist to be compared
-   with one another, and varying the tiles would imply a ranking that
-   the numbers do not have. Each one links to the report it came from.
-   .kpi-card is untouched: a dozen other views use it. */
+   The headline figures are the same component as the catalogue tiles,
+   one size down: same badge, same figure, same call to action. They
+   stay a uniform size while the catalogue varies, because these exist
+   to be compared with one another and sizing them differently would
+   imply a ranking the numbers do not carry.
+   .kpi-card is left alone — a dozen other views still use it. */
 
 .stat-grid {
     display: grid;
@@ -1161,86 +1161,16 @@
     gap: .9rem;
 }
 
-.stat-tile {
-    --card-bg: var(--r-surface);
-    --card-ink: var(--r-ink);
-    --card-ink-soft: var(--r-ink-soft);
-    --card-accent: var(--primary);
-    --card-badge-bg: var(--r-slate-bg);
-    --card-cta-ink: #ffffff;
-
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    padding: 1.15rem 1.2rem;
-    background: var(--card-bg);
-    border: 1px solid var(--r-line);
-    border-radius: var(--r-radius);
-    box-shadow: var(--r-shadow);
-    color: var(--card-ink);
-    text-decoration: none;
-    transition: transform var(--r-ease), box-shadow var(--r-ease), border-color var(--r-ease);
+.bento-card.is-compact { padding: 1.15rem 1.2rem; }
+.bento-card.is-compact .bento-badge { margin-bottom: .7rem; }
+.bento-card.is-compact .bento-title { font-size: .95rem; margin-bottom: 0; }
+.bento-card.is-compact .bento-figure { padding-top: .75rem; }
+.bento-card.is-compact .bento-stat { font-size: 1.6rem; }
+.bento-card.is-compact .bento-cta {
+    margin-top: .8rem;
+    padding: .46rem .85rem;
+    font-size: .74rem;
 }
-.stat-tile:hover {
-    color: var(--card-ink);
-    text-decoration: none;
-    transform: translateY(-2px);
-    box-shadow: var(--r-shadow-md);
-    border-color: var(--r-line-strong);
-}
-.stat-tile:active { transform: none; }
-.stat-tile:focus-visible { outline: 3px solid var(--card-accent); outline-offset: 3px; }
-
-.stat-tile-icon {
-    width: 38px;
-    height: 38px;
-    margin-bottom: .8rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 11px;
-    background: var(--card-badge-bg);
-    color: var(--card-accent);
-    font-size: .95rem;
-    transition: transform var(--r-ease);
-}
-.stat-tile:hover .stat-tile-icon { transform: scale(1.07); }
-
-.stat-tile-value {
-    font-size: 1.72rem;
-    font-weight: 750;
-    line-height: 1.05;
-    letter-spacing: -.02em;
-    font-variant-numeric: tabular-nums;
-    color: var(--card-ink);
-}
-.stat-tile-label {
-    margin-top: .35rem;
-    font-size: .85rem;
-    font-weight: 600;
-    color: var(--card-ink);
-}
-.stat-tile-sub {
-    margin-top: .15rem;
-    font-size: .77rem;
-    line-height: 1.45;
-    color: var(--card-ink-soft);
-}
-
-/* Affordance that the figure opens something, without a button on every
-   tile — twelve calls to action would shout down the catalogue below. */
-.stat-tile-go {
-    position: absolute;
-    top: 1.2rem;
-    right: 1.15rem;
-    font-size: .72rem;
-    color: var(--card-accent);
-    opacity: 0;
-    transform: translateX(-4px);
-    transition: opacity var(--r-ease), transform var(--r-ease);
-}
-.stat-tile:hover .stat-tile-go,
-.stat-tile:focus-visible .stat-tile-go { opacity: .85; transform: translateX(0); }
 
 /* ── tones ───────────────────────────────────────────────────
    Standalone, not scoped to .bento-card: a tone only reassigns the six
@@ -1330,11 +1260,9 @@
 
     .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .7rem; }
     .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
-    .stat-tile { padding: .9rem; }
-    .stat-tile-icon { width: 32px; height: 32px; margin-bottom: .6rem; font-size: .82rem; border-radius: 9px; }
-    .stat-tile-value { font-size: 1.3rem; }
-    .stat-tile-label { font-size: .78rem; }
-    .stat-tile-sub { font-size: .72rem; }
+    .bento-card.is-compact { padding: .9rem; }
+    .bento-card.is-compact .bento-stat { font-size: 1.3rem; }
+    .bento-card.is-compact .bento-title { font-size: .85rem; }
     .kpi-card { padding: .9rem; gap: .65rem; }
     .kpi-icon { width: 32px; height: 32px; font-size: .82rem; border-radius: 9px; }
     .kpi-value { font-size: 1.25rem; }
@@ -1403,16 +1331,7 @@
     .report-bento .bento-figure { padding-top: .5rem; }
     .report-bento .bento-cta { display: none !important; }
 
-    .stat-tile {
-        background: #fff !important;
-        color: #0f172a !important;
-        border: 1px solid #d5dae1 !important;
-        box-shadow: none !important;
-        break-inside: avoid;
-    }
-    .stat-tile-sub { color: #55607a !important; }
-    .stat-tile-icon { background: #eef1f5 !important; color: #55607a !important; }
-    .stat-tile-go { display: none !important; }
+    .stat-grid { grid-template-columns: repeat(4, 1fr) !important; gap: .5rem; }
 
     a[href]::after { content: none !important; }
 }
