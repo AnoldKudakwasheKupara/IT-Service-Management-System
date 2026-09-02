@@ -146,10 +146,16 @@ namespace IT_Service_Management_System.Controllers
 
         public async Task<IActionResult> ExpiringSoon()
         {
-            var threshold = DateTime.Now.AddDays(30);
+            // Not yet expired, and due inside 30 days. The lower bound matters: without
+            // it this listed every already-expired certificate too, so the filter said
+            // "expiring soon" and answered with the backlog that Expired() exists to show.
+            // Every other definition in the app (the reports, the row highlighting on
+            // this very list) already draws the line here.
+            var now = DateTime.Now;
+            var threshold = now.AddDays(30);
 
             var certs = await _context.SSLCertificates
-                .Where(c => c.ExpiryDate <= threshold)
+                .Where(c => c.ExpiryDate >= now && c.ExpiryDate <= threshold)
                 .OrderBy(c => c.ExpiryDate)
                 .ToListAsync();
 
