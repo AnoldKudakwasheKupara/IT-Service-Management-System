@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "My Dashboard - Axis IT Operations";
     var name = Context.Session.GetString("UserName") ?? "there";
     var myTotal = ViewBag.MyTotalTickets ?? 0;
@@ -30,42 +30,52 @@
         </div>
     </div>
 
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon amber"><i class="fas fa-folder-open"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@myOpen</div>
-                <div class="kpi-label">My open tickets</div>
+    @* The same tiles as the rest of the app, kept to four so the row stays
+       even: hours logged and the entry count were two cards saying one thing,
+       and are now one figure with its count underneath. This dashboard stays
+       deliberately minimal - no quick-action mosaic like the admin one, since
+       an ordinary user has only their own tickets and time to act on. *@
+    <div class="stat-grid">
+        <a class="bento-card is-compact @(myOpen > 0 ? "tone-amber" : "tone-green")"
+           asp-controller="Tickets" asp-action="Index" asp-route-status="Open">
+            <span class="bento-badge"><i class="fas fa-folder-open"></i> Waiting</span>
+            <h3 class="bento-title">My open tickets</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@myOpen</span>
+                <span class="bento-stat-label">@(myOpen > 0 ? "still being worked" : "nothing outstanding")</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon primary"><i class="fas fa-ticket-alt"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@myTotal</div>
-                <div class="kpi-label">My total tickets</div>
+            <span class="bento-cta">See them <i class="fas fa-arrow-right"></i></span>
+        </a>
+
+        <a class="bento-card is-compact tone-slate" asp-controller="Tickets" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-ticket-alt"></i> Tickets</span>
+            <h3 class="bento-title">My total tickets</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@myTotal</span>
+                <span class="bento-stat-label">raised by you</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon green"><i class="fas fa-circle-check"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@myResolved</div>
-                <div class="kpi-label">Resolved or closed</div>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+        </a>
+
+        <a class="bento-card is-compact tone-green" asp-controller="Tickets" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-circle-check"></i> Done</span>
+            <h3 class="bento-title">Resolved or closed</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@myResolved</span>
+                <span class="bento-stat-label">of your @myTotal</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon teal"><i class="fas fa-clock"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@actHours h</div>
-                <div class="kpi-label">Activity logged</div>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+        </a>
+
+        <a class="bento-card is-compact tone-teal" asp-controller="Activity" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-clock"></i> Work</span>
+            <h3 class="bento-title">Activity logged</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@actHours h</span>
+                <span class="bento-stat-label">across @actCount entr@(actCount == 1 ? "y" : "ies")</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon violet"><i class="fas fa-list-check"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@actCount</div>
-                <div class="kpi-label">My activities</div>
-            </div>
-        </div>
+            <span class="bento-cta">Open tracker <i class="fas fa-arrow-right"></i></span>
+        </a>
     </div>
 
     <div class="panel">
