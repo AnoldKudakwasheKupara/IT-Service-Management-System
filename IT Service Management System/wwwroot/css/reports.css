@@ -1161,6 +1161,12 @@
     gap: .9rem;
 }
 
+/* Three-up, for a set of six figures that would otherwise leave a ragged
+   row of two. The narrower breakpoints below have to restate this or the
+   two-class selector would out-specify them and stay three-wide on a phone. */
+.stat-grid.is-3col,
+.report-bento.is-3col { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
 .bento-card.is-compact { padding: 1.15rem 1.2rem; }
 .bento-card.is-compact .bento-badge { margin-bottom: .7rem; }
 .bento-card.is-compact .bento-title { font-size: .95rem; margin-bottom: 0; }
@@ -1242,9 +1248,11 @@
    width); the tall ones give theirs up, since a 2-row tile in a short
    grid just leaves a hole beside it. */
 @media (max-width: 1200px) {
-    .report-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .report-bento,
+    .report-bento.is-3col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .report-bento .bento-card.tall-2 { grid-row: auto; }
-    .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat-grid,
+    .stat-grid.is-3col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 992px) {
@@ -1259,7 +1267,8 @@
     .report-btn, .report-shell .btn-create-ticket { flex: 1; justify-content: center; }
 
     .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .7rem; }
-    .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+    .stat-grid,
+    .stat-grid.is-3col { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
     .bento-card.is-compact { padding: .9rem; }
     .bento-card.is-compact .bento-stat { font-size: 1.3rem; }
     .bento-card.is-compact .bento-title { font-size: .85rem; }
@@ -1281,7 +1290,8 @@
     .report-cards-grid { grid-template-columns: 1fr; }
     /* One column: every tile is the same size, so the spans have to go —
        a "2 wide" tile in a 1-column grid would overflow the viewport. */
-    .report-bento { grid-template-columns: 1fr; grid-auto-rows: auto; }
+    .report-bento,
+    .report-bento.is-3col { grid-template-columns: 1fr; grid-auto-rows: auto; }
     .report-bento .bento-card.span-2,
     .report-bento .bento-card.tall-2 { grid-column: auto; grid-row: auto; }
     .bento-card.is-hero .bento-title { font-size: 1.5rem; }
@@ -1331,7 +1341,7 @@
     .report-bento .bento-figure { padding-top: .5rem; }
     .report-bento .bento-cta { display: none !important; }
 
-    .stat-grid { grid-template-columns: repeat(4, 1fr) !important; gap: .5rem; }
+    .stat-grid, .stat-grid.is-3col { grid-template-columns: repeat(4, 1fr) !important; gap: .5rem; }
 
     a[href]::after { content: none !important; }
 }

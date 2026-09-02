@@ -1,4 +1,4 @@
-@{
+﻿@{
     ViewData["Title"] = "Dashboard - Axis IT Helpdesk";
 
     var totalTickets = ViewBag.TotalTickets ?? 0;
@@ -46,49 +46,73 @@
         </div>
     </div>
 
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon primary"><i class="fas fa-ticket-alt"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@totalTickets</div>
-                <div class="kpi-label">Total tickets<span class="kpi-sub">@completed resolved or closed</span></div>
+    @* Six figures, three-up so the row does not end ragged. Each opens the
+       screen it summarises - the open and in-progress counts deep-link into
+       the ticket queue already filtered - and the tones follow meaning, so a
+       quiet day reads green and only what needs attention is amber or rose. *@
+    <div class="stat-grid is-3col">
+        <a class="bento-card is-compact tone-slate" asp-controller="Tickets" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-ticket-alt"></i> Tickets</span>
+            <h3 class="bento-title">Total tickets</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@totalTickets</span>
+                <span class="bento-stat-label">@completed resolved or closed</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon @(openTickets > 0 ? "warning" : "success")"><i class="fas fa-folder-open"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@openTickets</div>
-                <div class="kpi-label">Open tickets<span class="kpi-sub">@(openTickets > 0 ? "action needed" : "all clear")</span></div>
+            <span class="bento-cta">Open the queue <i class="fas fa-arrow-right"></i></span>
+        </a>
+
+        <a class="bento-card is-compact @(openTickets > 0 ? "tone-amber" : "tone-green")"
+           asp-controller="Tickets" asp-action="Index" asp-route-status="Open">
+            <span class="bento-badge"><i class="fas fa-folder-open"></i> Queue</span>
+            <h3 class="bento-title">Open tickets</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@openTickets</span>
+                <span class="bento-stat-label">@(openTickets > 0 ? "action needed" : "all clear")</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon violet"><i class="fas fa-spinner"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@inProgressTickets</div>
-                <div class="kpi-label">In progress<span class="kpi-sub">@active active in total</span></div>
+            <span class="bento-cta">See them <i class="fas fa-arrow-right"></i></span>
+        </a>
+
+        <a class="bento-card is-compact tone-violet"
+           asp-controller="Tickets" asp-action="Index" asp-route-status="InProgress">
+            <span class="bento-badge"><i class="fas fa-spinner"></i> Working</span>
+            <h3 class="bento-title">In progress</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@inProgressTickets</span>
+                <span class="bento-stat-label">@active active in total</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon teal"><i class="fas fa-users"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@totalUsers</div>
-                <div class="kpi-label">Users<span class="kpi-sub">across @totalDepartments departments</span></div>
+            <span class="bento-cta">See them <i class="fas fa-arrow-right"></i></span>
+        </a>
+
+        <a class="bento-card is-compact tone-teal" asp-controller="Users" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-users"></i> People</span>
+            <h3 class="bento-title">Users</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@totalUsers</span>
+                <span class="bento-stat-label">across @totalDepartments departments</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon slate"><i class="fas fa-laptop-code"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@totalAssets</div>
-                <div class="kpi-label">Assets tracked<span class="kpi-sub">in the asset register</span></div>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+        </a>
+
+        <a class="bento-card is-compact tone-violet" asp-controller="Assets" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-laptop-code"></i> Estate</span>
+            <h3 class="bento-title">Assets tracked</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@totalAssets</span>
+                <span class="bento-stat-label">in the asset register</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon @(expiringCertificates > 0 ? "danger" : "success")"><i class="fas fa-shield-halved"></i></div>
-            <div class="kpi-body">
-                <div class="kpi-value">@expiringCertificates</div>
-                <div class="kpi-label">Certificates expiring<span class="kpi-sub">within 30 days</span></div>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+        </a>
+
+        <a class="bento-card is-compact @(expiringCertificates > 0 ? "tone-rose" : "tone-green")"
+           asp-controller="SSLCertificates" asp-action="ExpiringSoon">
+            <span class="bento-badge"><i class="fas fa-shield-halved"></i> Risk</span>
+            <h3 class="bento-title">Certificates expiring</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@expiringCertificates</span>
+                <span class="bento-stat-label">within 30 days</span>
             </div>
-        </div>
+            <span class="bento-cta">Review <i class="fas fa-arrow-right"></i></span>
+        </a>
     </div>
 
     <div class="report-grid">
@@ -202,72 +226,63 @@
         <h2>Jump to</h2>
         <span class="rule"></span>
     </div>
-    <div class="report-cards-grid">
+    <div class="report-bento is-3col">
 
-        <a class="report-card-link" asp-controller="SSLCertificates" asp-action="ExpiringSoon">
-            <div class="report-card-item">
-                <div class="report-icon icon-cert"><i class="fas fa-lock"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">SSL certificates</h3>
-                    <p class="report-description">@expiringCertificates expiring within the next 30 days.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
+        @* Six tiles across three columns: a 2x2 hero beside two stacked
+           singles, then a row of three. Fills the grid exactly, so there is
+           no hole to explain. *@
+
+        <a class="bento-card is-hero span-2 tall-2" asp-controller="SSLCertificates" asp-action="ExpiringSoon">
+            <span class="bento-badge"><i class="fas fa-shield-halved"></i> Expiring soon</span>
+            <h3 class="bento-title">Certificates that need renewing</h3>
+            <p class="bento-desc">
+                The certificates closest to lapsing, in the order they will go.
+                A lapse takes the service down with it.
+            </p>
+            <div class="bento-figure">
+                <span class="bento-stat">@expiringCertificates</span>
+                <span class="bento-stat-label">expiring within the next 30 days</span>
             </div>
+            <span class="bento-cta">Review certificates <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-controller="Assets" asp-action="Index">
-            <div class="report-card-item">
-                <div class="report-icon icon-asset"><i class="fas fa-laptop"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Asset register</h3>
-                    <p class="report-description">@totalAssets assets tracked across the estate.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
+        <a class="bento-card tone-ink" asp-controller="Assets" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-laptop"></i> Estate</span>
+            <h3 class="bento-title">Asset register</h3>
+            <p class="bento-desc">Everything tracked across the estate, and who is holding it.</p>
+            <div class="bento-figure">
+                <span class="bento-stat">@totalAssets</span>
+                <span class="bento-stat-label">assets tracked</span>
             </div>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-controller="AuditLogs" asp-action="Index">
-            <div class="report-card-item">
-                <div class="report-icon icon-maintenance"><i class="fas fa-history"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Audit logs</h3>
-                    <p class="report-description">Every change recorded across the system.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
-            </div>
+        <a class="bento-card tone-violet" asp-controller="AuditLogs" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-history"></i> Trail</span>
+            <h3 class="bento-title">Audit logs</h3>
+            <p class="bento-desc">Every change recorded across the system, with who made it.</p>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-controller="Activity" asp-action="Create">
-            <div class="report-card-item">
-                <div class="report-icon icon-activity"><i class="fas fa-tasks"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Log activity</h3>
-                    <p class="report-description">Record time spent against a category of work.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
-            </div>
+        <a class="bento-card tone-teal" asp-controller="Activity" asp-action="Create">
+            <span class="bento-badge"><i class="fas fa-stopwatch"></i> Log</span>
+            <h3 class="bento-title">Log activity</h3>
+            <p class="bento-desc">Record time spent against a category of work.</p>
+            <span class="bento-cta">Start logging <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-controller="Assets" asp-action="Create">
-            <div class="report-card-item">
-                <div class="report-icon icon-asset"><i class="fas fa-box"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Add an asset</h3>
-                    <p class="report-description">Register new hardware into the estate.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
-            </div>
+        <a class="bento-card tone-green" asp-controller="Assets" asp-action="Create">
+            <span class="bento-badge"><i class="fas fa-box"></i> Add</span>
+            <h3 class="bento-title">Add an asset</h3>
+            <p class="bento-desc">Register new hardware into the estate.</p>
+            <span class="bento-cta">New asset <i class="fas fa-arrow-right"></i></span>
         </a>
 
-        <a class="report-card-link" asp-controller="PaymentSchedule" asp-action="Create">
-            <div class="report-card-item">
-                <div class="report-icon icon-payment"><i class="fas fa-file-invoice-dollar"></i></div>
-                <div class="report-content">
-                    <h3 class="report-title-item">Payment schedule</h3>
-                    <p class="report-description">Set up a new service payment obligation.</p>
-                </div>
-                <i class="fas fa-chevron-right report-arrow"></i>
-            </div>
+        <a class="bento-card tone-amber" asp-controller="PaymentSchedule" asp-action="Create">
+            <span class="bento-badge"><i class="fas fa-file-invoice-dollar"></i> Spend</span>
+            <h3 class="bento-title">Payment schedule</h3>
+            <p class="bento-desc">Set up a new recurring service payment obligation.</p>
+            <span class="bento-cta">New schedule <i class="fas fa-arrow-right"></i></span>
         </a>
 
     </div>
