@@ -265,12 +265,18 @@
                                 <a asp-action="Details" asp-route-id="@ticket.Id" class="action-btn btn-view" title="View Details" aria-label="View ticket @ticket.Reference">
                                     <i class="fas fa-eye" aria-hidden="true"></i>
                                 </a>
-                                <a asp-action="Edit" asp-route-id="@ticket.Id" class="action-btn btn-edit" title="Edit Ticket" aria-label="Edit ticket @ticket.Reference">
-                                    <i class="fas fa-pencil-alt" aria-hidden="true"></i>
-                                </a>
-                                <a asp-action="Delete" asp-route-id="@ticket.Id" class="btn btn-danger" title="Delete Ticket" aria-label="Delete ticket @ticket.Reference">
-                                    <i class="fas fa-trash" aria-hidden="true"></i>
-                                </a>
+                                @if (Context.IsHelpdeskStaff())
+                                {
+                                    <a asp-action="Edit" asp-route-id="@ticket.Id" class="action-btn btn-edit" title="Edit Ticket" aria-label="Edit ticket @ticket.Reference">
+                                        <i class="fas fa-pencil-alt" aria-hidden="true"></i>
+                                    </a>
+                                }
+                                @if (Context.CanDelete())
+                                {
+                                    <a asp-action="Delete" asp-route-id="@ticket.Id" class="btn btn-danger" title="Delete Ticket" aria-label="Delete ticket @ticket.Reference">
+                                        <i class="fas fa-trash" aria-hidden="true"></i>
+                                    </a>
+                                }
                             </td>
                         </tr>
                     }

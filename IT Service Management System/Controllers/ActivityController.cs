@@ -1,4 +1,5 @@
 ﻿using IT_Service_Management_System.DbContexts;
+using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -21,6 +22,16 @@ namespace IT_Service_Management_System.Controllers
                 return RedirectToAction("Login", "Account");
 
             return null;
+        }
+
+        // Deleting is administrator-only: ordinary users may log and correct their own
+        // activity, but removing a record is a system action.
+        private IActionResult? CheckDeleteAccess()
+        {
+            var access = CheckAccess();
+            if (access != null) return access;
+
+            return HttpContext.CanDelete() ? null : RedirectToAction("AccessDenied", "Home");
         }
 
         public async Task<IActionResult> Index()
@@ -134,7 +145,7 @@ namespace IT_Service_Management_System.Controllers
         }
         public async Task<IActionResult> Delete(int id)
         {
-            var access = CheckAccess();
+            var access = CheckDeleteAccess();
             if (access != null) return access;
 
             var userId = HttpContext.Session.GetInt32("UserId");
@@ -151,7 +162,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ActionName("Delete")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var access = CheckAccess();
+            var access = CheckDeleteAccess();
             if (access != null) return access;
 
             var userId = HttpContext.Session.GetInt32("UserId");

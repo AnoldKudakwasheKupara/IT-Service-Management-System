@@ -1,4 +1,4 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Filters;
 using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Hubs;
@@ -328,9 +328,12 @@ app.MapHub<IT_Service_Management_System.Hubs.NotificationHub>("/hubs/notificatio
 // Liveness/readiness endpoint for load balancers and uptime monitors.
 app.MapHealthChecks("/health");
 
+// Defaults to Home/Index, so "/" is the dashboard and a bare controller name
+// (/Reports, /Tickets) resolves to that module's landing page. Visitors without a
+// session are sent to /Account/Login by the global SessionAuthorizationFilter.
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}")
+    pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 try

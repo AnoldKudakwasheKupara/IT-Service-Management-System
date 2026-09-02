@@ -1,4 +1,4 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services.Itsm;
@@ -33,6 +33,10 @@ namespace IT_Service_Management_System.Controllers
         private int Uid => HttpContext.Session.GetInt32("UserId") ?? 0;
         private string? Role => HttpContext.Session.GetString("UserRole");
         private bool IsStaff => TicketService.IsStaff(Role);
+
+        // Deleting a ticket destroys a record of work, so it stays with administrators —
+        // agents work the queue (assign, hold, escalate, close) but cannot remove tickets.
+        private bool CanDelete => Roles.IsFullAccess(Role);
 
         // Session-based auth has no ASP.NET auth scheme, so Forbid() would throw. Redirect instead.
         private IActionResult Denied() => RedirectToAction("AccessDenied", "Home");
@@ -89,6 +93,8 @@ namespace IT_Service_Management_System.Controllers
                 .Select(t => t.Category).Distinct().OrderBy(c => c).ToListAsync();
 
             var (tickets, paging) = await ordered.PageAsync(page);
+            ViewBag.IsStaff = IsStaff;
+            ViewBag.CanDelete = CanDelete;
             ViewBag.Paging = paging;
             ViewBag.Search = q;
             ViewBag.Status = status;
@@ -283,10 +289,10 @@ namespace IT_Service_Management_System.Controllers
             return Redirect(await _tickets.CloseAsync(id, closingNotes, Uid), id);
         }
 
-        // ── delete (staff) ───────────────────────────────────────────────────────────
+        // ── delete (administrators) ──────────────────────────────────────────────────
         public async Task<IActionResult> Delete(int id)
         {
-            if (!IsStaff) return Denied();
+            if (!CanDelete) return Denied();
             var ticket = await _context.Tickets.Include(t => t.CreatedBy)
                 .Include(t => t.Messages).Include(t => t.Attachments)
                 .AsSplitQuery()   // two collection includes — avoid a cartesian row explosion
@@ -299,7 +305,7 @@ namespace IT_Service_Management_System.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (!IsStaff) return Denied();
+            if (!CanDelete) return Denied();
             var op = await _tickets.SoftDeleteAsync(id);
             if (op.Status == TicketOpStatus.NotFound) return NotFound();
             if (op.Message != null) TempData[op.Status == TicketOpStatus.Ok ? "Success" : "Error"] = op.Message;

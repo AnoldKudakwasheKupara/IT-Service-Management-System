@@ -1,4 +1,4 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models.Itsm;
 using IT_Service_Management_System.Services;
@@ -28,6 +28,10 @@ namespace IT_Service_Management_System.Controllers
         private int Uid => HttpContext.Session.GetInt32("UserId") ?? 0;
         private string? Role => HttpContext.Session.GetString("UserRole");
         private bool CanManage => Roles.IsFullAccess(Role);
+
+        // Session-based auth has no ASP.NET auth scheme, so Forbid() would throw a 500.
+        // Send the user to the access-denied page instead.
+        private IActionResult Denied() => RedirectToAction("AccessDenied", "Home");
 
         public async Task<IActionResult> Index(string? q, string? category)
         {
@@ -115,7 +119,7 @@ namespace IT_Service_Management_System.Controllers
 
         public async Task<IActionResult> Queue(ServiceRequestStatus? status)
         {
-            if (!CanManage) return Forbid();
+            if (!CanManage) return Denied();
             var query = _db.ServiceRequests.AsNoTracking().Include(r => r.ServiceCatalogItem)
                 .Include(r => r.RequestedBy).Include(r => r.AssignedTo).AsQueryable();
             if (status.HasValue) query = query.Where(r => r.Status == status);
@@ -129,7 +133,7 @@ namespace IT_Service_Management_System.Controllers
                 .Include(r => r.RequestedBy).Include(r => r.AssignedTo).Include(r => r.ApprovedBy)
                 .FirstOrDefaultAsync(r => r.Id == id);
             if (request == null) return NotFound();
-            if (!CanManage && request.RequestedById != Uid) return Forbid();
+            if (!CanManage && request.RequestedById != Uid) return Denied();
             if (CanManage)
                 ViewBag.Agents = await _db.Users.Where(u => u.IsActive &&
                         (u.Role == UserRole.Admin || u.Role == UserRole.SystemsAdmin))
@@ -140,7 +144,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Decide(int id, bool approve, string? notes)
         {
-            if (!CanManage) return Forbid();
+            if (!CanManage) return Denied();
             var request = await _db.ServiceRequests.FindAsync(id);
             if (request == null) return NotFound();
             var next = approve ? ServiceRequestStatus.Approved : ServiceRequestStatus.Rejected;
@@ -166,7 +170,7 @@ namespace IT_Service_Management_System.Controllers
         public async Task<IActionResult> UpdateRequest(int id, ServiceRequestStatus status, int? assignedToId,
             string? fulfillmentNotes, string? holdReason)
         {
-            if (!CanManage) return Forbid();
+            if (!CanManage) return Denied();
             var request = await _db.ServiceRequests.FindAsync(id);
             if (request == null) return NotFound();
             if (!ServiceRequestWorkflow.CanTransition(request.Status, status))
@@ -193,7 +197,7 @@ namespace IT_Service_Management_System.Controllers
         {
             var request = await _db.ServiceRequests.FindAsync(id);
             if (request == null) return NotFound();
-            if (!CanManage && request.RequestedById != Uid) return Forbid();
+            if (!CanManage && request.RequestedById != Uid) return Denied();
             if (!ServiceRequestWorkflow.CanTransition(request.Status, ServiceRequestStatus.Cancelled))
             {
                 TempData["Error"] = "This request can no longer be cancelled.";
@@ -209,7 +213,7 @@ namespace IT_Service_Management_System.Controllers
 
         public async Task<IActionResult> Manage()
         {
-            if (!CanManage) return Forbid();
+            if (!CanManage) return Denied();
             ViewBag.Owners = await _db.Users.Where(u => u.IsActive &&
                     (u.Role == UserRole.Admin || u.Role == UserRole.SystemsAdmin))
                 .OrderBy(u => u.FirstName).ToListAsync();
@@ -221,7 +225,7 @@ namespace IT_Service_Management_System.Controllers
             string category, string? icon, TicketPriority defaultPriority, int fulfillmentTargetMinutes,
             bool requiresApproval, bool isPublished, int? ownerId)
         {
-            if (!CanManage) return Forbid();
+            if (!CanManage) return Denied();
             if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(summary) || string.IsNullOrWhiteSpace(category)
                 || fulfillmentTargetMinutes < 1)
             {
@@ -253,7 +257,7 @@ namespace IT_Service_Management_System.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleItem(int id)
         {
-            if (!CanManage) return Forbid();
+            if (!CanManage) return Denied();
             var item = await _db.ServiceCatalogItems.FindAsync(id);
             if (item == null) return NotFound();
             item.IsPublished = !item.IsPublished;
