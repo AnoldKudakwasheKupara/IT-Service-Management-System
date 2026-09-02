@@ -18,6 +18,20 @@
       "runtimeExecutable": "dotnet",
       "runtimeArgs": ["run", "--project", "C:/Users/Anold Kupara/source/repos/CatholicHubZim/CatholicHubZim/CatholicHubZim.csproj", "--urls", "http://localhost:5174"],
       "port": 5174
+    },
+    {
+      "name": "asset360",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "C:/Users/Anold Kupara/source/repos/Asset360/Asset360/Asset360.csproj", "--no-launch-profile", "--urls", "http://localhost:5199"],
+      "port": 5199,
+      "env": { "ASPNETCORE_ENVIRONMENT": "Development" }
+    },
+    {
+      "name": "assetflow",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "C:/Users/Anold Kupara/source/repos/AssetFlow/AssetFlow/AssetFlow.csproj", "--no-launch-profile", "--urls", "http://localhost:5059"],
+      "port": 5059,
+      "env": { "ASPNETCORE_ENVIRONMENT": "Development" }
     }
   ]
 }

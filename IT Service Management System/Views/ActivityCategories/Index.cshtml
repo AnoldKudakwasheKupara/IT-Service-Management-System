@@ -79,7 +79,7 @@
                     <tbody>
                         @foreach (var item in Model.OrderBy(c => c.Name))
                         {
-                           
+                            <tr>
                                 <td class="category-name-cell">
                                     <div class="category-info">
                                         <div class="category-icon">
@@ -89,13 +89,13 @@
                                             <strong>@item.Name</strong>
                                         </div>
                                     </div>
-                                 </td>
+                                </td>
                                 <td class="activities-cell">
                                     <div class="activities-info">
                                         <i class="fas fa-tasks"></i>
                                         <span>@(item.Activities?.Count ?? 0) activity(s)</span>
                                     </div>
-                                 </td>
+                                </td>
                                 <td class="action-buttons">
                                     <a asp-action="Details" asp-route-id="@item.Id" class="action-btn btn-view" title="View Details">
                                         <i class="fas fa-eye"></i>
@@ -106,8 +106,8 @@
                                     <a asp-action="Delete" asp-route-id="@item.Id" class="action-btn btn-delete" title="Delete Category" onclick="return confirm('Are you sure you want to delete this category? Activities using this category will be affected.');">
                                         <i class="fas fa-trash-alt"></i>
                                     </a>
-                                 </td>
-                            
+                                </td>
+                            </tr>
                         }
                     </tbody>
                 </table>

@@ -1,0 +1,1049 @@
+/* ============================================================
+   Axis IT Operations — Reports design system
+   ------------------------------------------------------------
+   One stylesheet for the reports hub and all ten detail reports.
+   Every report view used to carry its own 400–600 line <style>
+   block; those blocks were near-copies of each other and drifted.
+   This file is the single definition of the report vocabulary:
+
+     surface   .report-shell .report-masthead .panel
+     figures   .kpi-grid .kpi-card
+     data      .report-table .bars .vbar-chart
+     labels    .status-badge .priority-badge .type-badge …
+     catalogue .report-cards-grid .report-card-link
+
+   Loaded from _Layout after site.css, so it may lean on the
+   shared tokens (--primary, --gray-*, --radius-*) defined there.
+   ============================================================ */
+
+.report-shell {
+    /* Report-local tokens. Scoped to the shell rather than :root so a
+       report page can never leak its palette into the sidebar/topbar —
+       the bug that forced --primary-surface to exist in site.css. */
+    --r-surface: #ffffff;
+    --r-canvas: #f6f7f9;
+    --r-line: #e9edf2;
+    --r-line-strong: #dde3ea;
+    --r-ink: #0f172a;
+    --r-ink-soft: #55607a;
+    --r-ink-mute: #8792a8;
+
+    --r-radius: 14px;
+    --r-radius-sm: 10px;
+    --r-radius-pill: 999px;
+
+    --r-shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 1px 3px rgba(16, 24, 40, .06);
+    --r-shadow-md: 0 4px 8px -2px rgba(16, 24, 40, .06), 0 12px 24px -8px rgba(16, 24, 40, .10);
+    --r-ease: 200ms cubic-bezier(.4, 0, .2, 1);
+
+    --r-green: #12855c;
+    --r-green-bg: #e8f6ef;
+    --r-amber: #a35b06;
+    --r-amber-bg: #fdf3e3;
+    --r-red: #c8323b;
+    --r-red-bg: #fdeeef;
+    --r-violet: #6d4bd8;
+    --r-violet-bg: #f0ecfd;
+    --r-teal: #0e7490;
+    --r-teal-bg: #e5f4f8;
+    --r-slate-bg: #eef1f5;
+
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 0 .25rem 3rem;
+    color: var(--r-ink);
+}
+
+/* Numbers line up in columns and never jitter as they change. */
+.report-shell .kpi-value,
+.report-shell .stat-figure,
+.report-shell .bar-value,
+.report-shell .report-table td,
+.report-shell .summary-value {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+}
+
+/* ============================================================
+   Masthead — the band at the top of every report
+   ============================================================ */
+
+.report-masthead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    padding: .25rem 0 1.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--r-line);
+}
+
+.report-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--r-ink-mute);
+    margin-bottom: .6rem;
+}
+.report-eyebrow i { font-size: .7rem; color: var(--primary); }
+
+.report-masthead h1 > i { color: var(--primary); font-size: 1.35rem; }
+
+.report-masthead h1,
+.report-shell .page-title {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -.02em;
+    line-height: 1.2;
+    color: var(--r-ink);
+    margin: 0;
+}
+
+.report-lede {
+    margin: .55rem 0 0;
+    font-size: .9rem;
+    line-height: 1.5;
+    color: var(--r-ink-soft);
+    max-width: 62ch;
+}
+
+.report-meta {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-top: .7rem;
+    font-size: .78rem;
+    color: var(--r-ink-mute);
+}
+.report-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: .6; }
+
+.report-actions {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+/* ---- Buttons ------------------------------------------------ */
+
+.report-btn,
+.report-shell .btn-create-ticket {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .6rem 1.05rem;
+    border-radius: var(--r-radius-sm);
+    border: 1px solid var(--r-line-strong);
+    background: var(--r-surface);
+    color: var(--r-ink-soft);
+    font-family: inherit;
+    font-size: .84rem;
+    font-weight: 600;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--r-ease), border-color var(--r-ease), color var(--r-ease), box-shadow var(--r-ease), transform var(--r-ease);
+}
+.report-btn:hover,
+.report-shell .btn-create-ticket:hover {
+    background: var(--r-canvas);
+    border-color: var(--r-ink-mute);
+    color: var(--r-ink);
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: var(--r-shadow);
+}
+.report-btn:active,
+.report-shell .btn-create-ticket:active { transform: translateY(0); box-shadow: none; }
+
+.report-btn.primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+.report-btn.primary:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    color: #fff;
+    box-shadow: 0 6px 16px -6px rgba(177, 29, 35, .55);
+}
+
+/* ============================================================
+   KPI figures
+   ============================================================ */
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
+    gap: .9rem;
+    margin-bottom: 1.75rem;
+}
+
+.kpi-card {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: .85rem;
+    padding: 1.15rem 1.2rem;
+    background: var(--r-surface);
+    border: 1px solid var(--r-line);
+    border-radius: var(--r-radius);
+    box-shadow: var(--r-shadow);
+    overflow: hidden;
+    transition: border-color var(--r-ease), box-shadow var(--r-ease), transform var(--r-ease);
+}
+.kpi-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--r-line-strong);
+    box-shadow: var(--r-shadow-md);
+}
+
+.kpi-icon {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    font-size: .95rem;
+    /* Tinted plate rather than a saturated gradient block: ten of these in a
+       row as gradients read as a toy dashboard, not an operations report. */
+    background: var(--r-slate-bg);
+    color: var(--r-ink-soft);
+    transition: transform var(--r-ease);
+}
+.kpi-card:hover .kpi-icon { transform: scale(1.06); }
+
+.kpi-icon.primary { background: var(--primary-surface); color: var(--primary); }
+.kpi-icon.success, .kpi-icon.green { background: var(--r-green-bg); color: var(--r-green); }
+.kpi-icon.warning, .kpi-icon.amber { background: var(--r-amber-bg); color: var(--r-amber); }
+.kpi-icon.danger,  .kpi-icon.red   { background: var(--r-red-bg); color: var(--r-red); }
+.kpi-icon.violet { background: var(--r-violet-bg); color: var(--r-violet); }
+.kpi-icon.teal   { background: var(--r-teal-bg); color: var(--r-teal); }
+.kpi-icon.slate  { background: var(--r-slate-bg); color: var(--r-ink-soft); }
+
+.kpi-body { min-width: 0; }
+
+.kpi-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -.025em;
+    line-height: 1.1;
+    color: var(--r-ink);
+    /* Long money values shrink rather than overflowing the tile. */
+    overflow-wrap: anywhere;
+}
+
+.kpi-label {
+    margin-top: .3rem;
+    font-size: .78rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--r-ink-soft);
+    /* Sentence case, not the shouty uppercase these labels used to carry —
+       several of them are long enough to wrap to three lines. */
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.kpi-sub {
+    display: block;
+    margin-top: .1rem;
+    font-size: .73rem;
+    color: var(--r-ink-mute);
+}
+
+/* Three reports were written against the older .stats-cards vocabulary.
+   Rather than rewrite their markup, map it onto the KPI look. */
+.report-shell .stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
+    gap: .9rem;
+    margin-bottom: 1.75rem;
+}
+.report-shell .stat-card {
+    display: flex;
+    align-items: flex-start;
+    gap: .85rem;
+    padding: 1.15rem 1.2rem;
+    background: var(--r-surface);
+    border: 1px solid var(--r-line);
+    border-radius: var(--r-radius);
+    box-shadow: var(--r-shadow);
+    transition: border-color var(--r-ease), box-shadow var(--r-ease), transform var(--r-ease);
+}
+.report-shell .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--r-line-strong);
+    box-shadow: var(--r-shadow-md);
+}
+.report-shell .stat-icon {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: var(--r-slate-bg);
+    color: var(--r-ink-soft);
+    font-size: .95rem;
+}
+.report-shell .stat-icon.primary { background: var(--primary-surface); color: var(--primary); }
+.report-shell .stat-icon.success, .report-shell .stat-icon.green { background: var(--r-green-bg); color: var(--r-green); }
+.report-shell .stat-icon.warning, .report-shell .stat-icon.amber { background: var(--r-amber-bg); color: var(--r-amber); }
+.report-shell .stat-icon.danger,  .report-shell .stat-icon.red   { background: var(--r-red-bg); color: var(--r-red); }
+.report-shell .stat-icon.violet { background: var(--r-violet-bg); color: var(--r-violet); }
+.report-shell .stat-icon.teal   { background: var(--r-teal-bg); color: var(--r-teal); }
+.report-shell .stat-info h3 {
+    margin: 0;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -.025em;
+    line-height: 1.1;
+    color: var(--r-ink);
+    font-variant-numeric: tabular-nums;
+}
+.report-shell .stat-info p {
+    margin: .3rem 0 0;
+    font-size: .78rem;
+    font-weight: 500;
+    line-height: 1.35;
+    color: var(--r-ink-soft);
+}
+
+.report-shell .btn-back {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--r-line-strong);
+    border-radius: var(--r-radius-sm);
+    background: var(--r-surface);
+    color: var(--r-ink-soft);
+    text-decoration: none;
+    transition: background var(--r-ease), color var(--r-ease), transform var(--r-ease);
+}
+.report-shell .btn-back:hover { background: var(--r-canvas); color: var(--primary); transform: translateX(-2px); }
+
+.report-shell .text-muted { color: var(--r-ink-mute) !important; }
+.report-shell .text-gray { color: var(--r-ink-mute); }
+
+/* Row-level emphasis. */
+.report-shell tr.cert-expired td { background: var(--r-red-bg); }
+.report-shell tr.cert-expiring td { background: var(--r-amber-bg); }
+.report-shell tr.upcoming-urgent td { background: var(--r-amber-bg); }
+
+/* ============================================================
+   Panels — the card every chart / table sits in
+   ============================================================ */
+
+.report-grid,
+.two-col-grid {
+    display: grid;
+    gap: 1.15rem;
+    margin-bottom: 1.15rem;
+}
+.report-grid { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+.two-col-grid { grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); }
+
+.panel,
+.report-shell .data-card,
+.report-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--r-surface);
+    border: 1px solid var(--r-line);
+    border-radius: var(--r-radius);
+    box-shadow: var(--r-shadow);
+    overflow: hidden;
+    transition: border-color var(--r-ease), box-shadow var(--r-ease);
+}
+.panel:hover,
+.report-shell .data-card:hover,
+.report-card:hover { border-color: var(--r-line-strong); box-shadow: var(--r-shadow-md); }
+
+.panel-header,
+.report-shell .card-header-custom,
+.report-card-header {
+    display: flex;
+    align-items: center;
+    /* Title left, meta right. site.css puts space-between on .card-header-custom,
+       which pushed the header's icon to one edge and its label to the other —
+       the children here are an icon and a title, not a title and an action. */
+    justify-content: flex-start;
+    gap: .6rem;
+    padding: 1rem 1.25rem;
+    background: transparent;
+    border-bottom: 1px solid var(--r-line);
+    font-size: .92rem;
+    font-weight: 650;
+    color: var(--r-ink);
+}
+.panel-header > i,
+.report-shell .card-header-custom > i,
+.report-card-header i {
+    color: var(--primary);
+    font-size: .88rem;
+    flex-shrink: 0;
+}
+/* Only actual controls and counters go to the trailing edge — a plain <span>
+   is the header's own title and must stay next to its icon. */
+.panel-header > a,
+.panel-header > button,
+.panel-header > .record-count,
+.panel-header > .ticket-count,
+.report-shell .card-header-custom > a,
+.report-shell .card-header-custom > button,
+.report-shell .card-header-custom > .record-count,
+.report-shell .card-header-custom > .ticket-count { margin-left: auto; }
+
+.panel-body,
+.report-shell .card-body-custom,
+.report-card-body { padding: 1.25rem; }
+
+.panel-body.flush,
+.report-shell .card-body-custom.flush { padding: 0; }
+
+.record-count,
+.ticket-count,
+.stat-number {
+    font-size: .78rem;
+    font-weight: 500;
+    color: var(--r-ink-mute);
+}
+
+/* ============================================================
+   Horizontal bar breakdowns
+   ============================================================ */
+
+.bars { display: flex; flex-direction: column; gap: .75rem; }
+
+.bar-row {
+    display: grid;
+    grid-template-columns: minmax(96px, 148px) 1fr 44px;
+    align-items: center;
+    gap: .8rem;
+}
+
+.bar-label {
+    font-size: .82rem;
+    font-weight: 500;
+    color: var(--r-ink-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bar-track {
+    height: 8px;
+    border-radius: var(--r-radius-pill);
+    background: var(--r-canvas);
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    min-width: 4px;
+    border-radius: var(--r-radius-pill);
+    background: var(--primary);
+    transition: width 600ms cubic-bezier(.4, 0, .2, 1);
+}
+/* Two naming conventions reach these bars: the colour names (.green) and the
+   semantic names the Razor helpers emit (.success). Both are supported. */
+.bar-fill.green,  .bar-fill.success { background: var(--r-green); }
+.bar-fill.amber,  .bar-fill.warning { background: #e0921f; }
+.bar-fill.red,    .bar-fill.danger  { background: var(--r-red); }
+.bar-fill.violet { background: var(--r-violet); }
+.bar-fill.teal   { background: var(--r-teal); }
+.bar-fill.slate  { background: var(--r-ink-mute); }
+.bar-fill.primary { background: var(--primary); }
+
+.bar-value {
+    font-size: .82rem;
+    font-weight: 650;
+    color: var(--r-ink);
+    text-align: right;
+}
+
+/* ---- Vertical (month) bar chart ---- */
+
+.vbar-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: .5rem;
+    height: 210px;
+    padding-top: .5rem;
+}
+.vbar-month { display: flex; flex-direction: column; align-items: center; gap: .5rem; flex: 1; min-width: 0; height: 100%; }
+.vbar-pair { display: flex; align-items: flex-end; justify-content: center; gap: 3px; flex: 1; width: 100%; }
+.vbar {
+    width: 45%;
+    max-width: 18px;
+    min-height: 3px;
+    border-radius: 4px 4px 0 0;
+    transition: height 600ms cubic-bezier(.4, 0, .2, 1), opacity var(--r-ease);
+}
+.vbar.created  { background: var(--r-violet); }
+.vbar.resolved { background: var(--r-green); }
+.vbar-month:hover .vbar { opacity: .85; }
+.vbar-label { font-size: .68rem; font-weight: 500; color: var(--r-ink-mute); white-space: nowrap; }
+
+.chart-legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--r-line);
+}
+.legend-item { display: inline-flex; align-items: center; gap: .45rem; font-size: .78rem; color: var(--r-ink-soft); }
+.legend-swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--r-ink-mute); }
+.legend-swatch.created  { background: var(--r-violet); }
+.legend-swatch.resolved { background: var(--r-green); }
+.legend-swatch.amber    { background: #e0921f; }
+.legend-swatch.violet   { background: var(--r-violet); }
+
+/* ============================================================
+   Tables
+   ============================================================ */
+
+.table-responsive {
+    overflow-x: auto;
+    /* Momentum scroll on touch, and the scrollbar doesn't cover the last row. */
+    -webkit-overflow-scrolling: touch;
+}
+
+.report-table,
+.report-shell .tickets-table,
+.report-shell .data-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: .84rem;
+}
+
+.report-table thead th,
+.report-shell .tickets-table thead th,
+.report-shell .data-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: .7rem 1.25rem;
+    background: var(--r-canvas);
+    border-bottom: 1px solid var(--r-line-strong);
+    text-align: left;
+    font-size: .69rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: var(--r-ink-mute);
+    white-space: nowrap;
+}
+
+.report-table tbody td,
+.report-shell .tickets-table tbody td,
+.report-shell .data-table tbody td {
+    padding: .8rem 1.25rem;
+    border-bottom: 1px solid var(--r-line);
+    vertical-align: middle;
+    color: var(--r-ink-soft);
+}
+
+.report-table tbody tr,
+.report-shell .tickets-table tbody tr,
+.report-shell .data-table tbody tr { transition: background var(--r-ease); }
+
+.report-table tbody tr:hover,
+.report-shell .tickets-table tbody tr:hover,
+.report-shell .data-table tbody tr:hover { background: var(--r-canvas); }
+
+.report-table tbody tr:last-child td,
+.report-shell .tickets-table tbody tr:last-child td,
+.report-shell .data-table tbody tr:last-child td { border-bottom: none; }
+
+/* Emphasised cell text — the per-page "name" classes, unified. */
+.report-shell .asset-name,
+.report-shell .holder-name,
+.report-shell .system-name,
+.report-shell .service-name,
+.report-shell .user-name,
+.report-shell .category-name,
+.report-shell .month-label,
+.report-shell .ticket-title-text,
+.report-shell .date-highlight,
+.report-shell .amount-highlight {
+    font-weight: 600;
+    color: var(--r-ink);
+}
+.report-shell .amount-highlight.danger { color: var(--r-red); }
+
+.report-shell .requester-name,
+.report-shell .technician-name,
+.report-shell .activity-user { color: var(--r-ink-soft); }
+
+/* Secondary cell text — dates and truncated free text. */
+.report-shell .ticket-date,
+.report-shell .activity-date,
+.report-shell .maintenance-date,
+.report-shell .activity-performed,
+.report-shell .cert-url,
+.report-shell .problem-description,
+.report-shell .notes-description,
+.report-shell .no-csat {
+    font-size: .78rem;
+    color: var(--r-ink-mute);
+}
+.report-shell .ticket-date,
+.report-shell .activity-date,
+.report-shell .maintenance-date { white-space: nowrap; }
+
+.report-shell .cert-url,
+.report-shell .problem-description,
+.report-shell .notes-description {
+    display: block;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.report-shell .cert-date { font-weight: 600; white-space: nowrap; color: var(--r-ink); }
+.report-shell .cert-date.expired { color: var(--r-red); }
+.report-shell .cert-date.expiring { color: var(--r-amber); }
+
+/* Every row in the overdue panel is overdue, so a full red wash tells the
+   reader nothing and shouts at them for it. A red edge marks the row; the
+   amount and the badge carry the actual state. */
+.report-shell tr.overdue-row td:first-child { box-shadow: inset 3px 0 0 var(--r-red); }
+.report-shell tr.overdue-row:hover td { background: var(--r-red-bg); }
+.report-shell .overdue-date { color: var(--r-red); font-weight: 600; }
+.report-shell .upcoming-date { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+
+.report-shell .date-cell { display: inline-flex; align-items: center; gap: .4rem; white-space: nowrap; }
+.report-shell .date-cell i { color: var(--r-ink-mute); font-size: .75rem; }
+
+.report-shell .ref-link { color: var(--primary); font-weight: 600; text-decoration: none; }
+.report-shell .ref-link:hover { text-decoration: underline; }
+
+.report-shell .csat-star { color: #e0921f; }
+
+/* Avatar + name pair used in the agent tables. */
+.report-shell .agent-cell { display: inline-flex; align-items: center; gap: .6rem; }
+.report-shell .agent-cell span { font-weight: 600; color: var(--r-ink); }
+.report-shell .list-avatar {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--primary-surface);
+    color: var(--primary);
+    font-size: .72rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform var(--r-ease);
+}
+.report-shell .list-avatar:hover { transform: scale(1.08); }
+
+/* ============================================================
+   Badges & pills
+   ============================================================ */
+
+.report-shell .status-badge,
+.report-shell .priority-badge,
+.report-shell .type-badge,
+.report-shell .event-badge,
+.report-shell .condition-badge,
+.report-shell .urgency-badge,
+.report-shell .days-badge,
+.report-shell .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .2rem .6rem;
+    border-radius: var(--r-radius-pill);
+    border: 1px solid transparent;
+    font-size: .7rem;
+    font-weight: 650;
+    letter-spacing: .01em;
+    line-height: 1.5;
+    white-space: nowrap;
+    /* Neutral by default; the modifier classes below tint it. */
+    background: var(--r-slate-bg);
+    color: var(--r-ink-soft);
+}
+.report-shell .status-badge i,
+.report-shell .days-badge i,
+.report-shell .urgency-badge i { font-size: .65rem; }
+
+/* Semantic tints, shared by every badge family. */
+.report-shell .status-open,
+.report-shell .status-pending,
+.report-shell .status-expiring,
+.report-shell .priority-medium,
+.report-shell .urgency-badge.soon,
+.report-shell .days-expiring,
+.report-shell .type-preventive,
+.report-shell .event-issued,
+.report-shell .badge-warning,
+.report-shell .pill.amber { background: var(--r-amber-bg); color: var(--r-amber); border-color: #f6dfb6; }
+
+.report-shell .status-resolved,
+.report-shell .status-paid,
+.report-shell .priority-low,
+.report-shell .event-returned,
+.report-shell .badge-success,
+.report-shell .pill.green { background: var(--r-green-bg); color: var(--r-green); border-color: #bde4d2; }
+
+.report-shell .status-overdue,
+.report-shell .status-expired,
+.report-shell .priority-critical,
+.report-shell .priority-high,
+.report-shell .urgency-badge.urgent,
+.report-shell .days-expired,
+.report-shell .type-corrective,
+.report-shell .event-disposed,
+.report-shell .badge-critical,
+.report-shell .pill.red { background: var(--r-red-bg); color: var(--r-red); border-color: #f6c9cd; }
+
+.report-shell .status-progress,
+.report-shell .type-predictive,
+.report-shell .event-repaired,
+.report-shell .pill.violet { background: var(--r-violet-bg); color: var(--r-violet); border-color: #d9cffa; }
+
+.report-shell .badge-primary { background: var(--primary-surface); color: var(--primary); border-color: #f0c3c5; }
+
+.report-shell .status-closed,
+.report-shell .type-default,
+.report-shell .event-default,
+.report-shell .badge-gray,
+.report-shell .pill.slate { background: var(--r-slate-bg); color: var(--r-ink-soft); border-color: var(--r-line-strong); }
+
+/* Count chips beside a group name. */
+.report-shell .ticket-count-badge,
+.report-shell .asset-count-badge,
+.report-shell .payment-count-badge,
+.report-shell .activity-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    padding: .15rem .55rem;
+    border-radius: var(--r-radius-pill);
+    background: var(--primary-surface);
+    border: 1px solid #f0c3c5;
+    color: var(--primary-dark);
+    font-size: .76rem;
+    font-weight: 700;
+}
+
+.report-shell .text-green { color: var(--r-green); font-weight: 650; }
+.report-shell .text-red   { color: var(--r-red); font-weight: 650; }
+.report-shell .text-amber { color: var(--r-amber); font-weight: 650; }
+
+/* ============================================================
+   Summary strips & notes
+   ============================================================ */
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: .75rem;
+}
+.summary-item {
+    padding: .85rem 1rem;
+    background: var(--r-canvas);
+    border: 1px solid var(--r-line);
+    border-radius: var(--r-radius-sm);
+    transition: border-color var(--r-ease), background var(--r-ease);
+}
+.summary-item:hover { background: var(--r-surface); border-color: var(--r-line-strong); }
+/* These are <span>s in the markup — without display:block the label and its
+   figure run together on one line ("MEASURED 22"). */
+.summary-label {
+    display: block;
+    font-size: .7rem;
+    font-weight: 650;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--r-ink-mute);
+}
+.summary-value { display: block; margin-top: .3rem; font-size: 1.15rem; font-weight: 700; color: var(--r-ink); }
+
+.report-shell .asset-note,
+.report-shell .activity-note {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .75rem 1.25rem;
+    background: var(--r-canvas);
+    border-top: 1px solid var(--r-line);
+    font-size: .78rem;
+    color: var(--r-ink-mute);
+}
+.report-shell .asset-note i,
+.report-shell .activity-note i { color: var(--primary); font-size: .85rem; }
+
+/* ---- Empty states ---- */
+
+.empty-mini,
+.report-shell .empty-state-mini,
+.report-shell .empty-state-sm {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: 2.25rem 1.25rem;
+    text-align: center;
+    color: var(--r-ink-mute);
+    font-size: .85rem;
+}
+.empty-mini i,
+.report-shell .empty-state-mini i,
+.report-shell .empty-state-sm i { font-size: 1.5rem; color: var(--r-line-strong); }
+
+.report-shell .empty-state-mini.success i { color: var(--r-green); font-size: 2rem; }
+
+.report-shell .healthy-summary {
+    display: flex;
+    align-items: center;
+    gap: 1.15rem;
+    padding: .5rem 0;
+}
+.report-shell .healthy-icon {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--r-radius-sm);
+    background: var(--r-green-bg);
+    color: var(--r-green);
+}
+.report-shell .healthy-icon i { font-size: 1.35rem !important; }
+.report-shell .healthy-text { flex: 1; font-size: .87rem; color: var(--r-ink-soft); }
+.report-shell .healthy-text strong { color: var(--r-green); }
+
+/* ---- Activity feed (the dashboard's "recent activity" panel) ---- */
+
+.feed { list-style: none; margin: 0; padding: .5rem; }
+
+.feed-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: .65rem .75rem;
+    border-radius: var(--r-radius-sm);
+    transition: background var(--r-ease);
+}
+.feed-item:hover { background: var(--r-canvas); }
+
+.feed-icon {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: var(--r-slate-bg);
+    color: var(--r-ink-soft);
+    font-size: .72rem;
+}
+.feed-icon.ticket, .feed-icon.tickets { background: var(--primary-surface); color: var(--primary); }
+.feed-icon.asset, .feed-icon.assets { background: var(--r-violet-bg); color: var(--r-violet); }
+.feed-icon.user, .feed-icon.users { background: var(--r-teal-bg); color: var(--r-teal); }
+.feed-icon.success, .feed-icon.resolved { background: var(--r-green-bg); color: var(--r-green); }
+.feed-icon.warning { background: var(--r-amber-bg); color: var(--r-amber); }
+.feed-icon.danger { background: var(--r-red-bg); color: var(--r-red); }
+
+.feed-body { display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+.feed-text { font-size: .84rem; line-height: 1.45; color: var(--r-ink-soft); }
+.feed-time { font-size: .72rem; color: var(--r-ink-mute); }
+
+/* ============================================================
+   Report catalogue (the hub's directory of reports)
+   ============================================================ */
+
+.report-section-head {
+    display: flex;
+    align-items: baseline;
+    gap: .65rem;
+    margin: 2rem 0 .9rem;
+}
+.report-section-head h2 {
+    margin: 0;
+    font-size: .78rem;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+    color: var(--r-ink-mute);
+}
+.report-section-head .rule { flex: 1; height: 1px; background: var(--r-line); }
+
+.report-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(304px, 1fr));
+    gap: .9rem;
+}
+
+.report-card-link { text-decoration: none; color: inherit; display: block; }
+.report-card-link:hover { text-decoration: none; color: inherit; }
+
+.report-card-item {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: .9rem;
+    height: 100%;
+    padding: 1.15rem 1.2rem;
+    background: var(--r-surface);
+    border: 1px solid var(--r-line);
+    border-radius: var(--r-radius);
+    box-shadow: var(--r-shadow);
+    transition: border-color var(--r-ease), box-shadow var(--r-ease), transform var(--r-ease);
+}
+.report-card-item::before {
+    /* Brand hairline that wipes in on hover — motion without movement noise. */
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    border-radius: var(--r-radius) 0 0 var(--r-radius);
+    background: var(--primary);
+    transform: scaleY(0);
+    transform-origin: center;
+    transition: transform var(--r-ease);
+}
+.report-card-link:hover .report-card-item {
+    transform: translateY(-2px);
+    border-color: var(--r-line-strong);
+    box-shadow: var(--r-shadow-md);
+}
+.report-card-link:hover .report-card-item::before { transform: scaleY(1); }
+.report-card-link:focus-visible .report-card-item { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+.report-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: var(--r-slate-bg);
+    color: var(--r-ink-soft);
+    font-size: 1rem;
+    transition: transform var(--r-ease);
+}
+.report-card-link:hover .report-icon { transform: scale(1.06); }
+
+.report-icon.icon-ticket      { background: var(--primary-surface); color: var(--primary); }
+.report-icon.icon-asset       { background: var(--r-violet-bg); color: var(--r-violet); }
+.report-icon.icon-user        { background: var(--r-teal-bg); color: var(--r-teal); }
+.report-icon.icon-activity    { background: var(--r-green-bg); color: var(--r-green); }
+.report-icon.icon-payment     { background: var(--r-amber-bg); color: var(--r-amber); }
+.report-icon.icon-cert        { background: var(--r-red-bg); color: var(--r-red); }
+.report-icon.icon-maintenance { background: var(--r-slate-bg); color: var(--r-ink-soft); }
+
+.report-content { flex: 1; min-width: 0; }
+.report-title-item {
+    margin: 0 0 .3rem;
+    font-size: .93rem;
+    font-weight: 650;
+    color: var(--r-ink);
+    transition: color var(--r-ease);
+}
+.report-card-link:hover .report-title-item { color: var(--primary); }
+.report-description {
+    margin: 0;
+    font-size: .8rem;
+    line-height: 1.5;
+    color: var(--r-ink-mute);
+}
+
+.report-arrow {
+    align-self: center;
+    flex-shrink: 0;
+    font-size: .75rem;
+    color: var(--r-line-strong);
+    transition: transform var(--r-ease), color var(--r-ease);
+}
+.report-card-link:hover .report-arrow { transform: translateX(3px); color: var(--primary); }
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+@media (max-width: 992px) {
+    .report-grid, .two-col-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .report-shell { padding-bottom: 2rem; }
+    .report-masthead { padding-bottom: 1.15rem; margin-bottom: 1.15rem; }
+    .report-masthead h1, .report-shell .page-title { font-size: 1.4rem; }
+    .report-actions { width: 100%; }
+    .report-btn, .report-shell .btn-create-ticket { flex: 1; justify-content: center; }
+
+    .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .7rem; }
+    .kpi-card { padding: .9rem; gap: .65rem; }
+    .kpi-icon { width: 32px; height: 32px; font-size: .82rem; border-radius: 9px; }
+    .kpi-value { font-size: 1.25rem; }
+    .kpi-label { font-size: .73rem; }
+
+    .bar-row { grid-template-columns: minmax(76px, 108px) 1fr 34px; gap: .6rem; }
+    .bar-label, .bar-value { font-size: .75rem; }
+
+    .panel-header, .report-shell .card-header-custom, .report-card-header { padding: .85rem 1rem; font-size: .86rem; }
+    .panel-body, .report-shell .card-body-custom, .report-card-body { padding: 1rem; }
+
+    .report-table thead th, .report-shell .tickets-table thead th, .report-shell .data-table thead th { padding: .6rem .8rem; }
+    .report-table tbody td, .report-shell .tickets-table tbody td, .report-shell .data-table tbody td { padding: .65rem .8rem; font-size: .78rem; }
+
+    .vbar-chart { height: 160px; }
+    .report-cards-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   Print — the report is the page; the app chrome is not
+   ============================================================ */
+
+@media print {
+    .sidebar, .topbar, .report-actions, .mobile-toggle { display: none !important; }
+    .main-area, .app-layout, .content-area { margin: 0 !important; padding: 0 !important; }
+
+    .report-shell { max-width: none; padding: 0; }
+
+    .kpi-card, .panel, .report-shell .data-card, .report-card, .report-card-item {
+        box-shadow: none !important;
+        border: 1px solid #d5dae1 !important;
+        break-inside: avoid;
+    }
+    .panel, .report-shell .data-card { break-inside: auto; }
+    .report-table thead th { position: static; background: #f1f3f6 !important; }
+    .report-table tbody tr:hover { background: transparent !important; }
+
+    a[href]::after { content: none !important; }
+}

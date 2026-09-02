@@ -1,4 +1,4 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Models.Itsm;
 using IT_Service_Management_System.ViewModels.Reports;
@@ -13,54 +13,11 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly TimeProvider _clock;
-        private readonly IT_Service_Management_System.Services.Hr.HrAnalyticsService _hrAnalytics;
 
-        public ReportsController(ApplicationDbContext context, TimeProvider clock,
-            IT_Service_Management_System.Services.Hr.HrAnalyticsService hrAnalytics)
+        public ReportsController(ApplicationDbContext context, TimeProvider clock)
         {
             _context = context;
             _clock = clock;
-            _hrAnalytics = hrAnalytics;
-        }
-
-        /// <summary>
-        /// Workforce analytics — headcount, turnover, tenure, and the aggregate of what the exit
-        /// and stay interviews have been collecting all along.
-        /// </summary>
-        [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin", "HR")]
-        public async Task<IActionResult> Workforce(DateTime? from, DateTime? to)
-        {
-            // Twelve months to date is the window most HR reporting is quoted over.
-            var today = _clock.GetLocalNow().Date;
-            var start = from ?? today.AddMonths(-12);
-            var end = to ?? today;
-            if (end < start) end = start;
-
-            return View(await _hrAnalytics.BuildAsync(start, end));
-        }
-
-        // 🧑‍💼 HR ANALYTICS — accessible to HR as well as full-access roles.
-        [IT_Service_Management_System.Filters.RoleAuthorize("Admin", "SystemsAdmin", "HR")]
-        public IActionResult Hr()
-        {
-            var clearances = _context.ExitClearances.AsNoTracking().Include(c => c.Employee).ToList();
-
-            var vm = new HrReportVM
-            {
-                TotalClearances = clearances.Count,
-                ClearancesInProgress = clearances.Count(c => c.Status == Models.ClearanceStatus.InProgress),
-                ClearancesCompleted = clearances.Count(c => c.Status == Models.ClearanceStatus.Completed),
-                ExitInterviews = _context.ExitInterviews.Count(),
-                EngagementInterviews = _context.EngagementStayInterviews.Count(),
-                TalentRecords = _context.TalentIdentifications.Count(),
-                ClearancesByStatus = clearances.GroupBy(c => c.Status.ToString())
-                    .Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
-                ClearancesByStage = clearances.GroupBy(c => c.CurrentStage.ToString())
-                    .Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
-                RecentClearances = clearances.OrderByDescending(c => c.CreatedDate).Take(10).ToList()
-            };
-
-            return View(vm);
         }
 
         private static bool IsStock(string? status) =>
@@ -420,39 +377,6 @@ namespace IT_Service_Management_System.Controllers
                     .OrderByDescending(a => a.Resolved).ToList()
             };
             vm.TotalResolved = vm.Agents.Sum(a => a.Resolved);
-            return View(vm);
-        }
-
-        // 🧩 ITIL OVERVIEW (Problems, Changes, CMDB)
-        public IActionResult ItilOverview()
-        {
-            var now = DateTime.Now;
-            var problems = _context.Problems.AsNoTracking().ToList();
-            var changes = _context.ChangeRequests.AsNoTracking().ToList();
-            var cis = _context.ConfigurationItems.AsNoTracking().ToList();
-            var closedChanges = changes.Where(c => c.ImplementedSuccessfully != null).ToList();
-
-            var vm = new ItilOverviewVM
-            {
-                TotalProblems = problems.Count,
-                OpenProblems = problems.Count(p => p.Status != ProblemStatus.Resolved && p.Status != ProblemStatus.Closed),
-                KnownErrors = problems.Count(p => p.Status == ProblemStatus.KnownError),
-                TotalChanges = changes.Count,
-                ChangesAwaitingApproval = changes.Count(c => c.Status == ChangeStatus.SubmittedForApproval),
-                ChangeSuccessRate = closedChanges.Count == 0 ? 0 : (int)Math.Round(100.0 * closedChanges.Count(c => c.ImplementedSuccessfully == true) / closedChanges.Count),
-                TotalCis = cis.Count,
-                CriticalCis = cis.Count(c => c.Criticality == CiCriticality.Critical),
-                ProblemsByStatus = problems.GroupBy(p => p.Status.ToString()).Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
-                ChangesByStatus = changes.GroupBy(c => c.Status.ToString()).Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
-                ChangesByType = changes.GroupBy(c => c.Type.ToString()).Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
-                ChangesByRisk = changes.GroupBy(c => c.Risk.ToString()).Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
-                CisByStatus = cis.GroupBy(c => c.Status.ToString()).Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
-                CisByCriticality = cis.GroupBy(c => c.Criticality.ToString()).Select(g => new NameCount(g.Key, g.Count())).OrderByDescending(x => x.Count).ToList(),
-                RecentProblems = _context.Problems.AsNoTracking().OrderByDescending(p => p.CreatedAt).Take(8).ToList(),
-                UpcomingChanges = _context.ChangeRequests.AsNoTracking()
-                    .Where(c => c.ScheduledStart != null && c.ScheduledStart >= now)
-                    .OrderBy(c => c.ScheduledStart).Take(8).ToList()
-            };
             return View(vm);
         }
 
