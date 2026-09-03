@@ -376,7 +376,10 @@ namespace IT_Service_Management_System.Controllers
 
             var vm = new AgentPerformanceVM
             {
-                Unassigned = await _context.Tickets.CountAsync(t => t.AssignedToId == null),
+                // Open and unassigned — the backlog nobody has picked up. Without the status
+                // filter this counted tickets closed straight from Open (duplicates, spam)
+                // as if they were still waiting for someone.
+                Unassigned = await _context.Tickets.CountAsync(t => t.AssignedToId == null && t.Status == TicketStatus.Open),
                 Agents = rows.Select(r => new AgentRow(
                         string.IsNullOrWhiteSpace(r.FirstName + r.LastName)
                             ? "User #" + r.AssignedToId : $"{r.FirstName} {r.LastName}",

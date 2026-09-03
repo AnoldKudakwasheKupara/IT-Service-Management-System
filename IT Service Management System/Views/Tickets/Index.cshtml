@@ -105,6 +105,14 @@
                 </select>
             </div>
             <div class="filter-group">
+                <label>Assignment</label>
+                @{ var curUnassigned = ViewBag.Unassigned is bool u && u; }
+                <select name="unassigned" class="filter-select">
+                    <option value="false" selected="@(!curUnassigned)">Anyone</option>
+                    <option value="true" selected="@curUnassigned">Unassigned only</option>
+                </select>
+            </div>
+            <div class="filter-group">
                 <label>Search</label>
                 <div class="search-wrapper">
                     <i class="fas fa-search"></i>

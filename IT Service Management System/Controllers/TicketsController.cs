@@ -56,7 +56,7 @@ namespace IT_Service_Management_System.Controllers
         }
 
         // ── list ─────────────────────────────────────────────────────────────────────
-        public async Task<IActionResult> Index(int page = 1, string? q = null, string? status = null, string? priority = null, string? category = null)
+        public async Task<IActionResult> Index(int page = 1, string? q = null, string? status = null, string? priority = null, string? category = null, bool unassigned = false)
         {
             // Role-scoped base set drives the (unfiltered) summary counts so the stat cards
             // stay stable regardless of the current search/filter or page.
@@ -85,6 +85,11 @@ namespace IT_Service_Management_System.Controllers
             if (!string.IsNullOrWhiteSpace(category))
                 query = query.Where(t => t.Category == category);
 
+            // Tickets nobody has picked up. The agent-performance report counts these and
+            // links here, so the list has to be able to show exactly that set.
+            if (unassigned)
+                query = query.Where(t => t.AssignedToId == null);
+
             var ordered = query.OrderByDescending(t => t.UpdatedAt ?? t.CreatedAt);
 
             // Distinct categories (queues) for the filter dropdown.
@@ -99,6 +104,7 @@ namespace IT_Service_Management_System.Controllers
             ViewBag.Search = q;
             ViewBag.Status = status;
             ViewBag.Priority = priority;
+            ViewBag.Unassigned = unassigned;
             ViewBag.Category = category;
 
             return View(tickets);
