@@ -29,35 +29,39 @@
     </div>
 
     <!-- STATISTICS CARDS -->
-    <div class="stats-cards">
-        <div class="stat-card">
-            <div class="stat-icon primary">
-                <i class="fas fa-users"></i>
-            </div>
-            <div class="stat-info">
-                <h3>@Model.Agents.Count</h3>
-                <p>Active Agents</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon success">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-info">
-                <h3>@Model.TotalResolved</h3>
-                <p>Total Resolved</p>
+    @* The backlog tile is the one figure here with records behind it, so it is
+       the one that links - to the queue filtered to open, unassigned tickets,
+       exactly the set it counted. "Agents with tickets" is every user who has
+       ever held an assignment, active or not; it is not a headcount of staff. *@
+    <h2 class="sr-only">Key figures</h2>
+    <div class="stat-grid is-3col">
+        <div class="bento-card is-compact is-static tone-slate">
+            <span class="bento-badge"><i class="fas fa-users" aria-hidden="true"></i> Team</span>
+            <h3 class="bento-title">Agents with tickets</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Agents.Count</span>
+                <span class="bento-stat-label">assigned at least one ticket</span>
             </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon warning">
-                <i class="fas fa-user-slash"></i>
-            </div>
-            <div class="stat-info">
-                <h3>@Model.Unassigned</h3>
-                <p>Unassigned Tickets</p>
+        <div class="bento-card is-compact is-static tone-green">
+            <span class="bento-badge"><i class="fas fa-check-circle" aria-hidden="true"></i> Done</span>
+            <h3 class="bento-title">Total resolved</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.TotalResolved</span>
+                <span class="bento-stat-label">across all agents</span>
             </div>
         </div>
+        <a class="bento-card is-compact @(Model.Unassigned > 0 ? "tone-amber" : "tone-green")" asp-controller="Tickets" asp-action="Index" asp-route-status="Open" asp-route-unassigned="true">
+            <span class="bento-badge"><i class="fas fa-user-slash" aria-hidden="true"></i> Backlog</span>
+            <h3 class="bento-title">Unassigned tickets</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Unassigned</span>
+                <span class="bento-stat-label">open, nobody has picked them up</span>
+            </div>
+            <span class="bento-cta">Open the queue <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
     </div>
+
 
     <!-- AGENTS TABLE -->
     <div class="data-card">

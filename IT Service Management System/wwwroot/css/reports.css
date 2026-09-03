@@ -7,7 +7,7 @@
    This file is the single definition of the report vocabulary:
 
      surface   .report-shell .report-masthead .panel
-     figures   .kpi-grid .kpi-card
+     figures   .kpi-grid .kpi-card  |  .stat-grid .bento-card.is-compact
      data      .report-table .bars .vbar-chart
      labels    .status-badge .priority-badge .type-badge …
      catalogue .report-cards-grid .report-card-link
@@ -263,65 +263,6 @@
     margin-top: .1rem;
     font-size: .73rem;
     color: var(--r-ink-mute);
-}
-
-/* Three reports were written against the older .stats-cards vocabulary.
-   Rather than rewrite their markup, map it onto the KPI look. */
-.report-shell .stats-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(212px, 1fr));
-    gap: .9rem;
-    margin-bottom: 1.75rem;
-}
-.report-shell .stat-card {
-    display: flex;
-    align-items: flex-start;
-    gap: .85rem;
-    padding: 1.15rem 1.2rem;
-    background: var(--r-surface);
-    border: 1px solid var(--r-line);
-    border-radius: var(--r-radius);
-    box-shadow: var(--r-shadow);
-    transition: border-color var(--r-ease), box-shadow var(--r-ease), transform var(--r-ease);
-}
-.report-shell .stat-card:hover {
-    transform: translateY(-2px);
-    border-color: var(--r-line-strong);
-    box-shadow: var(--r-shadow-md);
-}
-.report-shell .stat-icon {
-    width: 38px;
-    height: 38px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 11px;
-    background: var(--r-slate-bg);
-    color: var(--r-ink-soft);
-    font-size: .95rem;
-}
-.report-shell .stat-icon.primary { background: var(--primary-surface); color: var(--primary); }
-.report-shell .stat-icon.success, .report-shell .stat-icon.green { background: var(--r-green-bg); color: var(--r-green); }
-.report-shell .stat-icon.warning, .report-shell .stat-icon.amber { background: var(--r-amber-bg); color: var(--r-amber); }
-.report-shell .stat-icon.danger,  .report-shell .stat-icon.red   { background: var(--r-red-bg); color: var(--r-red); }
-.report-shell .stat-icon.violet { background: var(--r-violet-bg); color: var(--r-violet); }
-.report-shell .stat-icon.teal   { background: var(--r-teal-bg); color: var(--r-teal); }
-.report-shell .stat-info h3 {
-    margin: 0;
-    font-size: 1.6rem;
-    font-weight: 700;
-    letter-spacing: -.025em;
-    line-height: 1.1;
-    color: var(--r-ink);
-    font-variant-numeric: tabular-nums;
-}
-.report-shell .stat-info p {
-    margin: .3rem 0 0;
-    font-size: .78rem;
-    font-weight: 500;
-    line-height: 1.35;
-    color: var(--r-ink-soft);
 }
 
 .report-shell .btn-back {
@@ -1018,6 +959,7 @@
     --card-ink-soft: var(--r-ink-soft);
     --card-accent: var(--primary);
     --card-badge-bg: var(--r-slate-bg);
+    --card-badge-ink: var(--primary);
     --card-cta-ink: #ffffff;
 
     position: relative;
@@ -1033,14 +975,14 @@
     text-decoration: none;
     transition: transform var(--r-ease), box-shadow var(--r-ease), border-color var(--r-ease);
 }
-.bento-card:hover {
+.bento-card:not(.is-static):hover {
     color: var(--card-ink);
     text-decoration: none;
     transform: translateY(-3px);
     box-shadow: var(--r-shadow-md);
     border-color: var(--r-line-strong);
 }
-.bento-card:active { transform: translateY(-1px); }
+.bento-card:not(.is-static):active { transform: translateY(-1px); }
 .bento-card:focus-visible { outline: 3px solid var(--card-accent); outline-offset: 3px; }
 
 /* Tile spans. Only the wide/tall tiles opt in; the rest are 1x1. */
@@ -1059,7 +1001,7 @@
     padding: .3rem .6rem;
     border-radius: var(--r-radius-pill);
     background: var(--card-badge-bg);
-    color: var(--card-accent);
+    color: var(--card-badge-ink);   /* measured >= 5.4:1 on every tint; --card-accent was 3.9-4.4 */
     font-size: .66rem;
     font-weight: 700;
     letter-spacing: .05em;
@@ -1094,10 +1036,13 @@
     margin-top: auto;
     padding-top: 1.1rem;
     display: flex;
+    flex-wrap: wrap;          /* the label drops under a long figure instead of clipping */
     align-items: baseline;
-    gap: .5rem;
+    gap: .25rem .5rem;
 }
 .bento-stat {
+    min-width: 0;             /* let a flex item shrink; otherwise "$31,482.00" overflows a phone tile */
+    overflow-wrap: anywhere;
     font-size: 1.6rem;
     font-weight: 750;
     line-height: 1;
@@ -1167,6 +1112,24 @@
 .stat-grid.is-3col,
 .report-bento.is-3col { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
+/* For a strip whose length is decided at render time — the asset report
+   appends a tile per status it actually found, and the certificate report
+   has five. auto-fit lets the track count follow the width rather than a
+   fixed count. Measured content column: 922px at a 1280 window, 1008 at
+   1366, 1082 at 1440. At 200px minimum that is five across from about 1440
+   up, and four with a fifth on a second row below it. Forcing five onto a
+   1366 laptop would need tiles under 190px, too narrow for a currency
+   figure, so the ragged row is the deliberate trade. Below the 1200px
+   breakpoint the media queries set the count outright. */
+.stat-grid.is-auto { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+
+/* A tile with nowhere honest to send you — a computed rate, or a figure whose
+   only list is scoped to the signed-in user. Rendered as a div, so it is not a
+   focus stop that does nothing when activated, and excluded from the :hover
+   and :active rules above rather than overridden, so it never lifts, never
+   presses, and keeps whatever border its tone gave it. */
+.bento-card.is-static { cursor: default; }
+
 .bento-card.is-compact { padding: 1.15rem 1.2rem; }
 .bento-card.is-compact .bento-badge { margin-bottom: .7rem; }
 .bento-card.is-compact .bento-title { font-size: .95rem; margin-bottom: 0; }
@@ -1184,6 +1147,7 @@
    below can wear the same palette without either owning it. Declared
    after both components so it wins on source order. */
 .bento-card.is-hero {
+    --card-badge-ink: #ffffff;
     --card-bg: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 58%, #d1444a 100%);
     --card-ink: #ffffff;
     --card-ink-soft: rgba(255, 255, 255, .8);
@@ -1193,6 +1157,7 @@
     border-color: transparent;
 }
 .tone-ink {
+    --card-badge-ink: #ffffff;
     --card-bg: linear-gradient(140deg, #1f2937 0%, #334155 100%);
     --card-ink: #ffffff;
     --card-ink-soft: rgba(255, 255, 255, .74);
@@ -1202,26 +1167,31 @@
     border-color: transparent;
 }
 .tone-violet {
+    --card-badge-ink: #5a3bc0;
     --card-bg: linear-gradient(150deg, #f6f3ff 0%, #efeafd 100%);
     --card-accent: var(--r-violet);
     --card-badge-bg: #e5dcfb;
 }
 .tone-teal {
+    --card-badge-ink: #0b5f76;
     --card-bg: linear-gradient(150deg, #f0fafd 0%, #e3f3f8 100%);
     --card-accent: var(--r-teal);
     --card-badge-bg: #d5ecf4;
 }
 .tone-green {
+    --card-badge-ink: #0f6b4a;
     --card-bg: linear-gradient(150deg, #f1faf5 0%, #e6f6ee 100%);
     --card-accent: var(--r-green);
     --card-badge-bg: #d8f0e4;
 }
 .tone-amber {
+    --card-badge-ink: #8a4c04;
     --card-bg: linear-gradient(150deg, #fefaf1 0%, #fdf2e2 100%);
     --card-accent: var(--r-amber);
     --card-badge-bg: #fae6c8;
 }
 .tone-rose {
+    --card-badge-ink: #a8262f;
     --card-bg: linear-gradient(150deg, #fef5f6 0%, #fdeaec 100%);
     --card-accent: var(--r-red);
     --card-badge-bg: #fadadd;
@@ -1252,7 +1222,8 @@
     .report-bento.is-3col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .report-bento .bento-card.tall-2 { grid-row: auto; }
     .stat-grid,
-    .stat-grid.is-3col { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat-grid.is-3col,
+    .stat-grid.is-auto { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 992px) {
@@ -1268,7 +1239,8 @@
 
     .kpi-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .7rem; }
     .stat-grid,
-    .stat-grid.is-3col { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
+    .stat-grid.is-3col,
+    .stat-grid.is-auto { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; }
     .bento-card.is-compact { padding: .9rem; }
     .bento-card.is-compact .bento-stat { font-size: 1.3rem; }
     .bento-card.is-compact .bento-title { font-size: .85rem; }
@@ -1317,12 +1289,13 @@
     .report-table thead th { position: static; background: #f1f3f6 !important; }
     .report-table tbody tr:hover { background: transparent !important; }
 
-    /* The catalogue tiles are a screen affordance: on paper the gradients cost a
+    /* The tiles — catalogue and figure strips alike — are a screen affordance: on paper the gradients cost a
        lot of ink to say nothing, and the calls to action are unclickable. Flatten
        the tiles to plain bordered blocks and drop the buttons; the headline, the
        figure and the description still carry the content. */
     .report-bento { grid-template-columns: repeat(2, 1fr) !important; gap: .5rem; }
-    .report-bento .bento-card {
+    .report-bento .bento-card,
+    .stat-grid .bento-card {
         background: #fff !important;
         color: #0f172a !important;
         border: 1px solid #d5dae1 !important;
@@ -1332,16 +1305,24 @@
     }
     .report-bento .bento-card.span-2 { grid-column: span 2; }
     .report-bento .bento-card.tall-2 { grid-row: auto; }
-    .report-bento .bento-card::after { display: none !important; }
+    .report-bento .bento-card::after,
+    .stat-grid .bento-card::after { display: none !important; }
     .report-bento .bento-desc,
-    .report-bento .bento-stat-label { color: #55607a !important; }
-    .report-bento .bento-badge { background: #eef1f5 !important; color: #55607a !important; }
-    .report-bento .bento-title { font-size: 1rem !important; }
-    .report-bento .bento-stat { font-size: 1.2rem !important; color: #0f172a !important; }
-    .report-bento .bento-figure { padding-top: .5rem; }
-    .report-bento .bento-cta { display: none !important; }
+    .stat-grid .bento-desc,
+    .report-bento .bento-stat-label,
+    .stat-grid .bento-stat-label { color: #55607a !important; }
+    .report-bento .bento-badge,
+    .stat-grid .bento-badge { background: #eef1f5 !important; color: #55607a !important; }
+    .report-bento .bento-title,
+    .stat-grid .bento-title { font-size: 1rem !important; }
+    .report-bento .bento-stat,
+    .stat-grid .bento-stat { font-size: 1.2rem !important; color: #0f172a !important; }
+    .report-bento .bento-figure,
+    .stat-grid .bento-figure { padding-top: .5rem; }
+    .report-bento .bento-cta,
+    .stat-grid .bento-cta { display: none !important; }
 
-    .stat-grid, .stat-grid.is-3col { grid-template-columns: repeat(4, 1fr) !important; gap: .5rem; }
+    .stat-grid, .stat-grid.is-3col, .stat-grid.is-auto { grid-template-columns: repeat(4, 1fr) !important; gap: .5rem; }
 
     a[href]::after { content: none !important; }
 }

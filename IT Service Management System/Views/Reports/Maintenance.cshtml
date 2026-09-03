@@ -22,35 +22,41 @@
     </div>
 
     <!-- KPI CARDS -->
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon primary">
-                <i class="fas fa-clipboard-list"></i>
+    @* The figures are the same tile used on the hub and the dashboards. Each
+       one opens the records behind it, so the report is a way into the data
+       rather than a dead end, and the tones follow meaning: amber and rose
+       want attention, green is healthy, slate is a neutral total. *@
+    <h2 class="sr-only">Key figures</h2>
+    <div class="stat-grid is-3col">
+        <a class="bento-card is-compact tone-slate" asp-controller="MaintenanceRecords" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-clipboard-list" aria-hidden="true"></i> Logged</span>
+            <h3 class="bento-title">Total records</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Total</span>
+                <span class="bento-stat-label">job@(Model.Total == 1 ? "" : "s") recorded</span>
             </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Total</div>
-                <div class="kpi-label">Total Records</div>
+            <span class="bento-cta">Open records <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact tone-violet" asp-controller="MaintenanceRecords" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-calendar-check" aria-hidden="true"></i> Due</span>
+            <h3 class="bento-title">Upcoming scheduled</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.UpcomingCount</span>
+                <span class="bento-stat-label">next date from today onward</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon warning">
-                <i class="fas fa-calendar-day"></i>
+            <span class="bento-cta">Open records <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact tone-violet" asp-controller="MaintenanceRecords" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-tags" aria-hidden="true"></i> Kinds</span>
+            <h3 class="bento-title">Maintenance types</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.ByType.Count</span>
+                <span class="bento-stat-label">distinct type@(Model.ByType.Count == 1 ? "" : "s") of work</span>
             </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.UpcomingCount</div>
-                <div class="kpi-label">Upcoming Scheduled</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon violet">
-                <i class="fas fa-layer-group"></i>
-            </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.ByType.Count</div>
-                <div class="kpi-label">Maintenance Types</div>
-            </div>
-        </div>
+            <span class="bento-cta">Open records <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
     </div>
+
 
     <!-- BY TYPE CHART -->
     <div class="data-card">

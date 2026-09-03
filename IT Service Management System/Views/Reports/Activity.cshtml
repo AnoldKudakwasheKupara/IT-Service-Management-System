@@ -22,44 +22,47 @@
     </div>
 
     <!-- KPI CARDS -->
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon primary">
-                <i class="fas fa-list-check"></i>
-            </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Total</div>
-                <div class="kpi-label">Total Activities</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon success">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.TotalHours h</div>
-                <div class="kpi-label">Total Hours Logged</div>
+    @* The figures are the same tile used on the hub and the dashboards. Each
+       one is shown rather than linked: this report is itself the only
+       admin-wide view of logged time, since /Activity shows the signed-in
+       user's own entries for today. The tones follow meaning: amber wants
+       attention, green is healthy, slate is a neutral total. *@
+    <h2 class="sr-only">Key figures</h2>
+    <div class="stat-grid">
+        <div class="bento-card is-compact is-static tone-slate">
+            <span class="bento-badge"><i class="fas fa-list-check" aria-hidden="true"></i> Entries</span>
+            <h3 class="bento-title">Total activities</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Total</span>
+                <span class="bento-stat-label">logged in total</span>
             </div>
         </div>
-        <div class="kpi-card">
-            <div class="kpi-icon warning">
-                <i class="fas fa-play-circle"></i>
-            </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Ongoing</div>
-                <div class="kpi-label">Ongoing</div>
+        <div class="bento-card is-compact is-static tone-teal">
+            <span class="bento-badge"><i class="fas fa-clock" aria-hidden="true"></i> Time</span>
+            <h3 class="bento-title">Total hours logged</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.TotalHours h</span>
+                <span class="bento-stat-label">across completed entries</span>
             </div>
         </div>
-        <div class="kpi-card">
-            <div class="kpi-icon slate">
-                <i class="fas fa-check-circle"></i>
+        <div class="bento-card is-compact is-static @(Model.Ongoing > 0 ? "tone-amber" : "tone-green")">
+            <span class="bento-badge"><i class="fas fa-spinner" aria-hidden="true"></i> Running</span>
+            <h3 class="bento-title">Ongoing</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Ongoing</span>
+                <span class="bento-stat-label">no end time yet</span>
             </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Completed</div>
-                <div class="kpi-label">Completed</div>
+        </div>
+        <div class="bento-card is-compact is-static tone-green">
+            <span class="bento-badge"><i class="fas fa-check-circle" aria-hidden="true"></i> Done</span>
+            <h3 class="bento-title">Completed</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Completed</span>
+                <span class="bento-stat-label">with an end time recorded</span>
             </div>
         </div>
     </div>
+
 
     <!-- TWO COLUMN GRID: Hours by Category & Activities by Category -->
     <div class="two-col-grid">

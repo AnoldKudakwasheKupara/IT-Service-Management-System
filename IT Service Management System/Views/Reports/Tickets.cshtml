@@ -22,62 +22,68 @@
     </div>
 
     <!-- KPI CARDS -->
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon primary">
-                <i class="fas fa-ticket-alt"></i>
+    @* The figures are the same tile used on the hub and the dashboards. Each
+       one opens the records behind it, so the report is a way into the data
+       rather than a dead end, and the tones follow meaning: amber and rose
+       want attention, green is healthy, slate is a neutral total. *@
+    <h2 class="sr-only">Key figures</h2>
+    <div class="stat-grid is-3col">
+        <a class="bento-card is-compact tone-slate" asp-controller="Tickets" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-ticket-alt" aria-hidden="true"></i> Tickets</span>
+            <h3 class="bento-title">Total tickets</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Total</span>
+                <span class="bento-stat-label">logged in total</span>
             </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Total</div>
-                <div class="kpi-label">Total Tickets</div>
+            <span class="bento-cta">Open the queue <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact @(Model.Open > 0 ? "tone-amber" : "tone-green")" asp-controller="Tickets" asp-action="Index" asp-route-status="Open">
+            <span class="bento-badge"><i class="fas fa-folder-open" aria-hidden="true"></i> Queue</span>
+            <h3 class="bento-title">Open</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Open</span>
+                <span class="bento-stat-label">waiting to be picked up</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon warning">
-                <i class="fas fa-folder-open"></i>
+            <span class="bento-cta">See them <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact tone-violet" asp-controller="Tickets" asp-action="Index" asp-route-status="InProgress">
+            <span class="bento-badge"><i class="fas fa-spinner" aria-hidden="true"></i> Working</span>
+            <h3 class="bento-title">In progress</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.InProgress</span>
+                <span class="bento-stat-label">being worked now</span>
             </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Open</div>
-                <div class="kpi-label">Open</div>
+            <span class="bento-cta">See them <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact tone-green" asp-controller="Tickets" asp-action="Index" asp-route-status="Resolved">
+            <span class="bento-badge"><i class="fas fa-check-circle" aria-hidden="true"></i> Done</span>
+            <h3 class="bento-title">Resolved</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Resolved</span>
+                <span class="bento-stat-label">awaiting closure</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon violet">
-                <i class="fas fa-spinner"></i>
+            <span class="bento-cta">See them <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact tone-slate" asp-controller="Tickets" asp-action="Index" asp-route-status="Closed">
+            <span class="bento-badge"><i class="fas fa-lock" aria-hidden="true"></i> Archive</span>
+            <h3 class="bento-title">Closed</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Closed</span>
+                <span class="bento-stat-label">signed off</span>
             </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.InProgress</div>
-                <div class="kpi-label">In Progress</div>
+            <span class="bento-cta">See them <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact tone-violet" asp-controller="Tickets" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-percent" aria-hidden="true"></i> Outcome</span>
+            <h3 class="bento-title">Resolution rate</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.ResolutionRate%</span>
+                <span class="bento-stat-label">resolved or closed</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon success">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Resolved</div>
-                <div class="kpi-label">Resolved</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon slate">
-                <i class="fas fa-lock"></i>
-            </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Closed</div>
-                <div class="kpi-label">Closed</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon success">
-                <i class="fas fa-percent"></i>
-            </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.ResolutionRate%</div>
-                <div class="kpi-label">Resolution Rate</div>
-            </div>
-        </div>
+            <span class="bento-cta">Open the queue <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
     </div>
+
 
     <!-- TWO COLUMN GRID: By Status & By Priority -->
     <div class="two-col-grid">

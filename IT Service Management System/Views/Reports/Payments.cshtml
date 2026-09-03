@@ -23,44 +23,50 @@
     </div>
 
     <!-- KPI CARDS -->
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon slate">
-                <i class="fas fa-coins"></i>
+    @* The figures are the same tile used on the hub and the dashboards. Each
+       one opens the records behind it, so the report is a way into the data
+       rather than a dead end, and the tones follow meaning: amber and rose
+       want attention, green is healthy, slate is a neutral total. *@
+    <h2 class="sr-only">Key figures</h2>
+    <div class="stat-grid">
+        <a class="bento-card is-compact tone-slate" asp-controller="Payments" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-coins" aria-hidden="true"></i> Billed</span>
+            <h3 class="bento-title">Total billed</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Money(Model.TotalAmount)</span>
+                <span class="bento-stat-label">across all schedules</span>
             </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Money(Model.TotalAmount)</div>
-                <div class="kpi-label">Total Billed</div>
+            <span class="bento-cta">Open payments <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact tone-green" asp-controller="Payments" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-check-circle" aria-hidden="true"></i> Settled</span>
+            <h3 class="bento-title">Paid</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Money(Model.TotalPaid)</span>
+                <span class="bento-stat-label">settled to date</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon success">
-                <i class="fas fa-check-circle"></i>
+            <span class="bento-cta">Open payments <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact @(Model.TotalOutstanding > 0 ? "tone-amber" : "tone-green")" asp-controller="Payments" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-hourglass-half" aria-hidden="true"></i> Owing</span>
+            <h3 class="bento-title">Outstanding</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Money(Model.TotalOutstanding)</span>
+                <span class="bento-stat-label">not yet settled</span>
             </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Money(Model.TotalPaid)</div>
-                <div class="kpi-label">Paid</div>
+            <span class="bento-cta">Open payments <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact @(Model.TotalOverdue > 0 ? "tone-rose" : "tone-green")" asp-controller="Payments" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Overdue</span>
+            <h3 class="bento-title">Overdue</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Money(Model.TotalOverdue)</span>
+                <span class="bento-stat-label">past the due date</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon warning">
-                <i class="fas fa-hourglass-half"></i>
-            </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Money(Model.TotalOutstanding)</div>
-                <div class="kpi-label">Outstanding</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon danger">
-                <i class="fas fa-triangle-exclamation"></i>
-            </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Money(Model.TotalOverdue)</div>
-                <div class="kpi-label">Overdue</div>
-            </div>
-        </div>
+            <span class="bento-cta">Open payments <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
     </div>
+
 
     <!-- TWO COLUMN GRID: Amount by Status & Count by Status -->
     <div class="two-col-grid">

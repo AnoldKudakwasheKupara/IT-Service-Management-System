@@ -24,44 +24,54 @@
     </div>
 
     <!-- STATISTICS CARDS -->
-    <div class="stats-cards">
-        <div class="stat-card">
-            <div class="stat-icon primary">
-                <i class="fas fa-reply"></i>
-            </div>
-            <div class="stat-info">
-                <h3>@Model.ResponseCompliance%</h3>
-                <p>Response Compliance</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon success">
-                <i class="fas fa-check-double"></i>
-            </div>
-            <div class="stat-info">
-                <h3>@Model.ResolutionCompliance%</h3>
-                <p>Resolution Compliance</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon warning">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="stat-info">
-                <h3>@Model.AvgResponseHours h</h3>
-                <p>Avg Response</p>
+    @* Attainment and averages, in the same tile as the rest of the reporting.
+       These are computed rates rather than a set of records, so they are shown
+       rather than linked - there is no list that "94% response compliance"
+       could open. The rate tones use the same 90/75 lines as BadgeFor() below,
+       so the strip and the by-priority table cannot disagree; with nothing
+       measured yet the tiles say so instead of painting 0% amber. *@
+    @{
+        var respMeasured = Model.ResponseMet + Model.ResponseBreached > 0;
+        var resMeasured = Model.ResolutionMet + Model.ResolutionBreached > 0;
+        string RateTone(double pct, bool measured) =>
+            !measured ? "tone-slate" : pct >= 90 ? "tone-green" : pct >= 75 ? "tone-amber" : "tone-rose";
+    }
+    <h2 class="sr-only">Key figures</h2>
+    <div class="stat-grid">
+        <div class="bento-card is-compact is-static @RateTone(Model.ResponseCompliance, respMeasured)">
+            <span class="bento-badge"><i class="fas fa-reply" aria-hidden="true"></i> Response</span>
+            <h3 class="bento-title">Response compliance</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@(respMeasured ? $"{Model.ResponseCompliance}%" : "—")</span>
+                <span class="bento-stat-label">@(respMeasured ? "answered inside target" : "no measured tickets yet")</span>
             </div>
         </div>
-        <div class="stat-card">
-            <div class="stat-icon violet">
-                <i class="fas fa-hourglass-half"></i>
+        <div class="bento-card is-compact is-static @RateTone(Model.ResolutionCompliance, resMeasured)">
+            <span class="bento-badge"><i class="fas fa-check-double" aria-hidden="true"></i> Resolution</span>
+            <h3 class="bento-title">Resolution compliance</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@(resMeasured ? $"{Model.ResolutionCompliance}%" : "—")</span>
+                <span class="bento-stat-label">@(resMeasured ? "resolved inside target" : "no measured tickets yet")</span>
             </div>
-            <div class="stat-info">
-                <h3>@Model.AvgResolutionHours h</h3>
-                <p>MTTR (Avg Resolution)</p>
+        </div>
+        <div class="bento-card is-compact is-static tone-teal">
+            <span class="bento-badge"><i class="fas fa-clock" aria-hidden="true"></i> Speed</span>
+            <h3 class="bento-title">Average response</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@(respMeasured ? $"{Model.AvgResponseHours} h" : "—")</span>
+                <span class="bento-stat-label">@(respMeasured ? "to a first reply" : "nothing measured yet")</span>
+            </div>
+        </div>
+        <div class="bento-card is-compact is-static tone-violet">
+            <span class="bento-badge"><i class="fas fa-hourglass-half" aria-hidden="true"></i> MTTR</span>
+            <h3 class="bento-title">Average resolution</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@(resMeasured ? $"{Model.AvgResolutionHours} h" : "—")</span>
+                <span class="bento-stat-label">@(resMeasured ? "from raised to resolved" : "nothing measured yet")</span>
             </div>
         </div>
     </div>
+
 
     <!-- SUMMARY GRID -->
     <div class="data-card">

@@ -35,46 +35,47 @@
        and are now one figure with its count underneath. This dashboard stays
        deliberately minimal - no quick-action mosaic like the admin one, since
        an ordinary user has only their own tickets and time to act on. *@
+    <h2 class="sr-only">Your figures</h2>
     <div class="stat-grid">
         <a class="bento-card is-compact @(myOpen > 0 ? "tone-amber" : "tone-green")"
            asp-controller="Tickets" asp-action="Index" asp-route-status="Open">
-            <span class="bento-badge"><i class="fas fa-folder-open"></i> Waiting</span>
+            <span class="bento-badge"><i class="fas fa-folder-open" aria-hidden="true"></i> Waiting</span>
             <h3 class="bento-title">My open tickets</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@myOpen</span>
                 <span class="bento-stat-label">@(myOpen > 0 ? "still being worked" : "nothing outstanding")</span>
             </div>
-            <span class="bento-cta">See them <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">See them <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
         <a class="bento-card is-compact tone-slate" asp-controller="Tickets" asp-action="Index">
-            <span class="bento-badge"><i class="fas fa-ticket-alt"></i> Tickets</span>
+            <span class="bento-badge"><i class="fas fa-ticket-alt" aria-hidden="true"></i> Tickets</span>
             <h3 class="bento-title">My total tickets</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@myTotal</span>
                 <span class="bento-stat-label">raised by you</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
         <a class="bento-card is-compact tone-green" asp-controller="Tickets" asp-action="Index">
-            <span class="bento-badge"><i class="fas fa-circle-check"></i> Done</span>
+            <span class="bento-badge"><i class="fas fa-circle-check" aria-hidden="true"></i> Done</span>
             <h3 class="bento-title">Resolved or closed</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@myResolved</span>
                 <span class="bento-stat-label">of your @myTotal</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
         <a class="bento-card is-compact tone-teal" asp-controller="Activity" asp-action="Index">
-            <span class="bento-badge"><i class="fas fa-clock"></i> Work</span>
+            <span class="bento-badge"><i class="fas fa-clock" aria-hidden="true"></i> Work</span>
             <h3 class="bento-title">Activity logged</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@actHours h</span>
                 <span class="bento-stat-label">across @actCount entr@(actCount == 1 ? "y" : "ies")</span>
             </div>
-            <span class="bento-cta">Open tracker <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open tracker <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
     </div>
 

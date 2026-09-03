@@ -22,26 +22,30 @@
     </div>
 
     <!-- STATISTICS CARDS -->
-    <div class="stats-cards">
-        <div class="stat-card">
-            <div class="stat-icon primary">
-                <i class="fas fa-ticket"></i>
+    @* Twelve-month totals. Both open the queue, which is the set of records
+       these counts were drawn from. *@
+    <h2 class="sr-only">Key figures</h2>
+    <div class="stat-grid is-auto">
+        <a class="bento-card is-compact tone-slate" asp-controller="Tickets" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-ticket" aria-hidden="true"></i> Raised</span>
+            <h3 class="bento-title">Total created</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.TotalCreated</span>
+                <span class="bento-stat-label">over the last twelve months</span>
             </div>
-            <div class="stat-info">
-                <h3>@Model.TotalCreated</h3>
-                <p>Total Created</p>
+            <span class="bento-cta">Open the queue <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact tone-green" asp-controller="Tickets" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-check-circle" aria-hidden="true"></i> Cleared</span>
+            <h3 class="bento-title">Total resolved</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.TotalResolved</span>
+                <span class="bento-stat-label">over the same period</span>
             </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon success">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stat-info">
-                <h3>@Model.TotalResolved</h3>
-                <p>Total Resolved</p>
-            </div>
-        </div>
+            <span class="bento-cta">Open the queue <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
     </div>
+
 
     <!-- CHART -->
     <div class="data-card">

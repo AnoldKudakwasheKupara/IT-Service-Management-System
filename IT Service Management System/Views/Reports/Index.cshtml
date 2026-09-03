@@ -45,40 +45,40 @@
     </div>
     <div class="stat-grid">
         <a class="bento-card is-compact tone-slate" asp-action="Tickets">
-            <span class="bento-badge"><i class="fas fa-ticket-alt"></i> Tickets</span>
+            <span class="bento-badge"><i class="fas fa-ticket-alt" aria-hidden="true"></i> Tickets</span>
             <h3 class="bento-title">Total tickets</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.TotalTickets</span>
                 <span class="bento-stat-label">@Model.OpenTickets currently open</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
-        <a class="bento-card is-compact tone-green" asp-action="Tickets">
-            <span class="bento-badge"><i class="fas fa-circle-check"></i> Outcome</span>
+        <a class="bento-card is-compact tone-violet" asp-action="Tickets">
+            <span class="bento-badge"><i class="fas fa-circle-check" aria-hidden="true"></i> Outcome</span>
             <h3 class="bento-title">Resolution rate</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@resolvedPct%</span>
                 <span class="bento-stat-label">@(Model.ResolvedTickets + Model.ClosedTickets) resolved or closed</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
         <a class="bento-card is-compact tone-teal" asp-action="Activity">
-            <span class="bento-badge"><i class="fas fa-clock"></i> Work</span>
+            <span class="bento-badge"><i class="fas fa-clock" aria-hidden="true"></i> Work</span>
             <h3 class="bento-title">Activity logged</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.TotalActivityHours h</span>
                 <span class="bento-stat-label">across @Model.TotalActivities entries</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
         <a class="bento-card is-compact tone-violet" asp-action="Users">
-            <span class="bento-badge"><i class="fas fa-users"></i> People</span>
+            <span class="bento-badge"><i class="fas fa-users" aria-hidden="true"></i> People</span>
             <h3 class="bento-title">Users</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.TotalUsers</span>
                 <span class="bento-stat-label">@Model.ActiveUsers active</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
     </div>
 
@@ -89,40 +89,40 @@
     </div>
     <div class="stat-grid">
         <a class="bento-card is-compact tone-violet" asp-action="Assets">
-            <span class="bento-badge"><i class="fas fa-laptop-code"></i> Estate</span>
+            <span class="bento-badge"><i class="fas fa-laptop-code" aria-hidden="true"></i> Estate</span>
             <h3 class="bento-title">Assets tracked</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.TotalAssets</span>
                 <span class="bento-stat-label">@Model.AssetsIssued issued to staff</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
         <a class="bento-card is-compact tone-green" asp-action="Assets">
-            <span class="bento-badge"><i class="fas fa-box-open"></i> Stock</span>
+            <span class="bento-badge"><i class="fas fa-box-open" aria-hidden="true"></i> Stock</span>
             <h3 class="bento-title">In stock</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.AssetsInStock</span>
                 <span class="bento-stat-label">available to issue</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
         <a class="bento-card is-compact @(Model.AssetsInRepair > 0 ? "tone-amber" : "tone-slate")" asp-action="Maintenance">
-            <span class="bento-badge"><i class="fas fa-screwdriver-wrench"></i> Upkeep</span>
+            <span class="bento-badge"><i class="fas fa-screwdriver-wrench" aria-hidden="true"></i> Upkeep</span>
             <h3 class="bento-title">In repair</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.AssetsInRepair</span>
                 <span class="bento-stat-label">@Model.MaintenanceRecords maintenance records</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
         <a class="bento-card is-compact tone-teal" asp-action="Assets">
-            <span class="bento-badge"><i class="fas fa-coins"></i> Value</span>
+            <span class="bento-badge"><i class="fas fa-coins" aria-hidden="true"></i> Value</span>
             <h3 class="bento-title">Total asset value</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@Money(Model.TotalAssetValue)</span>
                 <span class="bento-stat-label">at recorded purchase cost</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
     </div>
 
@@ -133,40 +133,40 @@
     </div>
     <div class="stat-grid">
         <a class="bento-card is-compact @(Model.TotalOutstanding > 0 ? "tone-rose" : "tone-green")" asp-action="Payments">
-            <span class="bento-badge"><i class="fas fa-file-invoice-dollar"></i> Spend</span>
+            <span class="bento-badge"><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> Spend</span>
             <h3 class="bento-title">Outstanding</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@Money(Model.TotalOutstanding)</span>
                 <span class="bento-stat-label">@Model.OverduePayments payment@(Model.OverduePayments == 1 ? "" : "s") overdue</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
         <a class="bento-card is-compact tone-green" asp-action="Payments">
-            <span class="bento-badge"><i class="fas fa-circle-dollar-to-slot"></i> Settled</span>
+            <span class="bento-badge"><i class="fas fa-circle-dollar-to-slot" aria-hidden="true"></i> Settled</span>
             <h3 class="bento-title">Settled to date</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@Money(Model.TotalPaid)</span>
                 <span class="bento-stat-label">across all payment schedules</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
         <a class="bento-card is-compact @(Model.CertsExpiringSoon > 0 ? "tone-amber" : "tone-green")" asp-action="Certificates">
-            <span class="bento-badge"><i class="fas fa-shield-halved"></i> Risk</span>
+            <span class="bento-badge"><i class="fas fa-shield-halved" aria-hidden="true"></i> Risk</span>
             <h3 class="bento-title">Certificates expiring</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.CertsExpiringSoon</span>
                 <span class="bento-stat-label">within the next 30 days</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
         <a class="bento-card is-compact @(Model.CertsExpired > 0 ? "tone-rose" : "tone-green")" asp-action="Certificates">
-            <span class="bento-badge"><i class="fas fa-triangle-exclamation"></i> Risk</span>
+            <span class="bento-badge"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i> Risk</span>
             <h3 class="bento-title">Certificates expired</h3>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.CertsExpired</span>
                 <span class="bento-stat-label">needing renewal now</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
     </div>
 
@@ -182,7 +182,7 @@
            reports get the tall and dark tiles so they read first. *@
 
         <a class="bento-card is-hero span-2 tall-2" asp-action="Tickets">
-            <span class="bento-badge"><i class="fas fa-ticket-alt"></i> Service desk</span>
+            <span class="bento-badge"><i class="fas fa-ticket-alt" aria-hidden="true"></i> Service desk</span>
             <h3 class="bento-title">Everything the helpdesk handled</h3>
             <p class="bento-desc">
                 Status, priority and category breakdowns, your top requesters,
@@ -192,22 +192,22 @@
                 <span class="bento-stat">@Model.TotalTickets</span>
                 <span class="bento-stat-label">tickets &middot; @Model.OpenTickets open &middot; @resolvedPct% resolved</span>
             </div>
-            <span class="bento-cta">View ticket report <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">View ticket report <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
         <a class="bento-card tone-ink" asp-action="SlaCompliance">
-            <span class="bento-badge"><i class="fas fa-gauge-high"></i> SLA</span>
+            <span class="bento-badge"><i class="fas fa-gauge-high" aria-hidden="true"></i> SLA</span>
             <h3 class="bento-title">SLA compliance</h3>
             <p class="bento-desc">Response and resolution attainment, MTTR and breaches by priority.</p>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.SlaBreachedOpen</span>
                 <span class="bento-stat-label">open past target</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
         <a class="bento-card tone-rose tall-2" asp-action="Certificates">
-            <span class="bento-badge"><i class="fas fa-shield-halved"></i> Risk</span>
+            <span class="bento-badge"><i class="fas fa-shield-halved" aria-hidden="true"></i> Risk</span>
             <h3 class="bento-title">SSL certificates</h3>
             <p class="bento-desc">
                 Expiry buckets and the certificates that need renewing first,
@@ -217,84 +217,84 @@
                 <span class="bento-stat">@Model.CertsExpiringSoon</span>
                 <span class="bento-stat-label">expiring in 30 days &middot; @Model.CertsExpired already expired</span>
             </div>
-            <span class="bento-cta">Review certificates <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Review certificates <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
         <a class="bento-card tone-teal" asp-action="AgentPerformance">
-            <span class="bento-badge"><i class="fas fa-user-gear"></i> People</span>
+            <span class="bento-badge"><i class="fas fa-user-gear" aria-hidden="true"></i> People</span>
             <h3 class="bento-title">Agent performance</h3>
             <p class="bento-desc">Workload, resolution time, SLA breaches and CSAT per agent.</p>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.SupportAgents</span>
                 <span class="bento-stat-label">agents on the desk</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
         <a class="bento-card tone-plain span-2" asp-action="TicketTrends">
-            <span class="bento-badge"><i class="fas fa-chart-line"></i> Trend</span>
+            <span class="bento-badge"><i class="fas fa-chart-line" aria-hidden="true"></i> Trend</span>
             <h3 class="bento-title">Ticket trends</h3>
             <p class="bento-desc">Created against resolved volume over the last twelve months.</p>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.TicketsLast30Days</span>
                 <span class="bento-stat-label">raised in the last 30 days</span>
             </div>
-            <span class="bento-cta">See the curve <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">See the curve <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
         <a class="bento-card tone-violet" asp-action="Assets">
-            <span class="bento-badge"><i class="fas fa-laptop-code"></i> Estate</span>
+            <span class="bento-badge"><i class="fas fa-laptop-code" aria-hidden="true"></i> Estate</span>
             <h3 class="bento-title">Assets</h3>
             <p class="bento-desc">Status, condition, value, holders and recent movement.</p>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.TotalAssets</span>
                 <span class="bento-stat-label">tracked &middot; @Model.AssetsIssued issued</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
         <a class="bento-card tone-amber" asp-action="Payments">
-            <span class="bento-badge"><i class="fas fa-file-invoice-dollar"></i> Spend</span>
+            <span class="bento-badge"><i class="fas fa-file-invoice-dollar" aria-hidden="true"></i> Spend</span>
             <h3 class="bento-title">Payments</h3>
             <p class="bento-desc">Paid, outstanding and overdue amounts, plus what falls due next.</p>
             <div class="bento-figure">
                 <span class="bento-stat">@Money(Model.TotalOutstanding)</span>
                 <span class="bento-stat-label">outstanding &middot; @Model.OverduePayments overdue</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
         <a class="bento-card tone-plain" asp-action="Maintenance">
-            <span class="bento-badge"><i class="fas fa-wrench"></i> Upkeep</span>
+            <span class="bento-badge"><i class="fas fa-wrench" aria-hidden="true"></i> Upkeep</span>
             <h3 class="bento-title">Maintenance</h3>
             <p class="bento-desc">Work by type, recent jobs and what is scheduled next.</p>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.MaintenanceUpcoming</span>
                 <span class="bento-stat-label">due in 30 days &middot; @Model.MaintenanceRecords logged</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
         <a class="bento-card tone-green" asp-action="Activity">
-            <span class="bento-badge"><i class="fas fa-list-check"></i> Work</span>
+            <span class="bento-badge"><i class="fas fa-list-check" aria-hidden="true"></i> Work</span>
             <h3 class="bento-title">Activity</h3>
             <p class="bento-desc">Hours logged by category and by person, ongoing against completed.</p>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.TotalActivityHours h</span>
                 <span class="bento-stat-label">across @Model.TotalActivities entries</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
         <a class="bento-card tone-teal span-2" asp-action="Users">
-            <span class="bento-badge"><i class="fas fa-users"></i> Directory</span>
+            <span class="bento-badge"><i class="fas fa-users" aria-hidden="true"></i> Directory</span>
             <h3 class="bento-title">Users &amp; departments</h3>
             <p class="bento-desc">Roles, departments, active accounts and who is holding what.</p>
             <div class="bento-figure">
                 <span class="bento-stat">@Model.TotalUsers</span>
                 <span class="bento-stat-label">users &middot; @Model.ActiveUsers active &middot; @Model.TotalDepartments departments</span>
             </div>
-            <span class="bento-cta">Open <i class="fas fa-arrow-right"></i></span>
+            <span class="bento-cta">Open <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
         </a>
 
     </div>

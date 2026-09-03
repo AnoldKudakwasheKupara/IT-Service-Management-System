@@ -22,53 +22,59 @@
     </div>
 
     <!-- KPI CARDS -->
-    <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-icon primary">
-                <i class="fas fa-certificate"></i>
+    @* The figures are the same tile used on the hub and the dashboards. Each
+       one opens the records behind it, so the report is a way into the data
+       rather than a dead end, and the tones follow meaning: amber and rose
+       want attention, green is healthy, slate is a neutral total. *@
+    <h2 class="sr-only">Key figures</h2>
+    <div class="stat-grid is-auto">
+        <a class="bento-card is-compact tone-slate" asp-controller="SSLCertificates" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-certificate" aria-hidden="true"></i> Tracked</span>
+            <h3 class="bento-title">Total certificates</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Total</span>
+                <span class="bento-stat-label">in the register</span>
             </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Total</div>
-                <div class="kpi-label">Total Certificates</div>
+            <span class="bento-cta">Open tracker <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact @(Model.Expired > 0 ? "tone-rose" : "tone-green")" asp-controller="SSLCertificates" asp-action="Expired">
+            <span class="bento-badge"><i class="fas fa-ban" aria-hidden="true"></i> Lapsed</span>
+            <h3 class="bento-title">Expired</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Expired</span>
+                <span class="bento-stat-label">needing renewal now</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon danger">
-                <i class="fas fa-ban"></i>
+            <span class="bento-cta">Review <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact @(Model.Within30 > 0 ? "tone-amber" : "tone-green")" asp-controller="SSLCertificates" asp-action="ExpiringSoon">
+            <span class="bento-badge"><i class="fas fa-clock" aria-hidden="true"></i> Urgent</span>
+            <h3 class="bento-title">Expiring within 30 days</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Within30</span>
+                <span class="bento-stat-label">renew inside the month</span>
             </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Expired</div>
-                <div class="kpi-label">Expired</div>
+            <span class="bento-cta">Review <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact tone-violet" asp-controller="SSLCertificates" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-calendar-days" aria-hidden="true"></i> Soon</span>
+            <h3 class="bento-title">Expiring in 31&ndash;90 days</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Within90</span>
+                <span class="bento-stat-label">time to plan the renewal</span>
             </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon warning">
-                <i class="fas fa-hourglass-end"></i>
+            <span class="bento-cta">Open tracker <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
+        <a class="bento-card is-compact tone-green" asp-controller="SSLCertificates" asp-action="Index">
+            <span class="bento-badge"><i class="fas fa-shield-halved" aria-hidden="true"></i> Healthy</span>
+            <h3 class="bento-title">Healthy</h3>
+            <div class="bento-figure">
+                <span class="bento-stat">@Model.Healthy</span>
+                <span class="bento-stat-label">more than 90 days left</span>
             </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Within30</div>
-                <div class="kpi-label">Expiring ≤ 30 days</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon violet">
-                <i class="fas fa-hourglass-half"></i>
-            </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Within90</div>
-                <div class="kpi-label">Expiring 31–90 days</div>
-            </div>
-        </div>
-        <div class="kpi-card">
-            <div class="kpi-icon success">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="kpi-body">
-                <div class="kpi-value">@Model.Healthy</div>
-                <div class="kpi-label">Healthy (&gt; 90 days)</div>
-            </div>
-        </div>
+            <span class="bento-cta">Open tracker <i class="fas fa-arrow-right" aria-hidden="true"></i></span>
+        </a>
     </div>
+
 
     <!-- ATTENTION CERTIFICATES -->
     <div class="data-card">
