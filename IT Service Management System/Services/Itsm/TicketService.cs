@@ -108,8 +108,6 @@ namespace IT_Service_Management_System.Services.Itsm
             _db.Tickets.Add(ticket);
             await _db.SaveChangesAsync();
 
-            await _audit.LogAsync("Created", "Ticket", ticket.Id, $"Ticket '{ticket.Title}' created");
-
             await _rt.NotifyStaffAsync(new RealtimeNotice(
                 $"New ticket {ticket.Reference}", ticket.Title, TicketLink(ticket.Id),
                 ticket.Priority == TicketPriority.Critical ? "error" : "info"));

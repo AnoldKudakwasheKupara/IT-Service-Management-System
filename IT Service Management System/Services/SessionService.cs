@@ -1,4 +1,4 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -66,6 +66,9 @@ namespace IT_Service_Management_System.Services
 
             http.Session.SetInt32("UserId", user.Id);
             http.Session.SetString("UserName", user.FirstName);
+            // The UI greets people by first name; the audit trail needs the whole name to
+            // identify one person unambiguously, so it is carried separately.
+            http.Session.SetString("UserFullName", $"{user.FirstName} {user.LastName}".Trim());
             http.Session.SetString("UserRole", user.Role.ToString());
             http.Session.SetString(SessionTokenKey, token);
             http.Session.SetString(SecurityStampKey, user.SecurityStamp);

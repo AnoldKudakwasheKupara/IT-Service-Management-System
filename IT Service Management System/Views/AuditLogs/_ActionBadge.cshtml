@@ -1,0 +1,30 @@
+@model string
+@*
+    One consistent badge for an audit action, shared by the list, the detail page and the
+    timeline. Known actions get their own colour and icon; anything else falls back to a
+    neutral chip, so a newly logged action name renders sensibly without a code change.
+*@
+@{
+    var action = Model ?? string.Empty;
+
+    var (css, icon) = action switch
+    {
+        "Created" => ("audit-created", "fa-plus-circle"),
+        "Updated" => ("audit-updated", "fa-pen"),
+        "Deleted" => ("audit-deleted", "fa-trash-alt"),
+        "Login" => ("audit-login", "fa-sign-in-alt"),
+        "Logout" => ("audit-logout", "fa-sign-out-alt"),
+        "Login Failed" or "Login Blocked" or "MFA Failed" => ("audit-failed", "fa-triangle-exclamation"),
+        "Account Locked" or "MFA Locked" => ("audit-failed", "fa-lock"),
+        "Account Unlocked" => ("audit-updated", "fa-lock-open"),
+        "Accessed" => ("audit-read", "fa-eye"),
+        "Exported" => ("audit-read", "fa-file-export"),
+        "Integrity Check" => ("audit-read", "fa-shield-halved"),
+        "Retention Purge" => ("audit-system", "fa-broom"),
+        "Approved" => ("audit-created", "fa-check"),
+        "Rejected" => ("audit-deleted", "fa-xmark"),
+        "Permission Changed" or "Reset Password" or "Set Password" => ("audit-security", "fa-key"),
+        _ => ("audit-other", "fa-circle-dot")
+    };
+}
+<span class="audit-badge @css"><i class="fas @icon"></i> @(string.IsNullOrEmpty(action) ? "—" : action)</span>

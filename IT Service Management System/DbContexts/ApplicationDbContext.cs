@@ -787,8 +787,35 @@ namespace IT_Service_Management_System.DbContexts
             // an index on the nvarchar column serves equality filters well.)
             modelBuilder.Entity<Ticket>().HasIndex(t => new { t.Status, t.AssignedToId });
             modelBuilder.Entity<Ticket>().HasIndex(t => new { t.Status, t.Priority });
-            modelBuilder.Entity<AuditLog>().HasIndex(a => a.Timestamp);
-            modelBuilder.Entity<AuditLog>().HasIndex(a => new { a.UserId, a.Timestamp });
+            // The audit trail is written far more than it is read, so it carries only the indexes
+            // its actual queries need: the reverse-chronological list, the per-user filter, the
+            // per-record timeline, and the per-request grouping.
+            modelBuilder.Entity<AuditLog>(entity =>
+            {
+                entity.HasIndex(a => a.Timestamp);
+                entity.HasIndex(a => new { a.UserId, a.Timestamp });
+                entity.HasIndex(a => new { a.Entity, a.EntityId, a.Timestamp });
+                entity.HasIndex(a => new { a.Action, a.Timestamp });
+                entity.HasIndex(a => a.CorrelationId);
+
+                entity.Property(a => a.UserId).HasMaxLength(50);
+                entity.Property(a => a.UserName).HasMaxLength(200);
+                entity.Property(a => a.UserRole).HasMaxLength(50);
+                entity.Property(a => a.Action).HasMaxLength(100);
+                entity.Property(a => a.Entity).HasMaxLength(150);
+                entity.Property(a => a.EntityKey).HasMaxLength(200);
+                entity.Property(a => a.IpAddress).HasMaxLength(64);
+                entity.Property(a => a.Location).HasMaxLength(200);
+                entity.Property(a => a.Device).HasMaxLength(150);
+                entity.Property(a => a.CorrelationId).HasMaxLength(100);
+                entity.Property(a => a.RequestPath).HasMaxLength(400);
+                entity.Property(a => a.HttpMethod).HasMaxLength(10);
+                // SHA-256 rendered as hex.
+                entity.Property(a => a.Hash).HasMaxLength(64);
+                entity.Property(a => a.PreviousHash).HasMaxLength(64);
+                // Stored as text so the trail stays readable without the enum definition.
+                entity.Property(a => a.Source).HasConversion<string>().HasMaxLength(20);
+            });
 
             modelBuilder.Entity<IsoDocument>().HasIndex(d => d.Status);
             modelBuilder.Entity<IsoDocument>().HasIndex(d => d.ReviewDate);

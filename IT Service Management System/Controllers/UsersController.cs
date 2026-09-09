@@ -189,8 +189,6 @@ namespace IT_Service_Management_System.Controllers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            await _auditService.LogAsync("Created", "User", user.Id, $"User {user.Email} created");
-
             // Admin alert: a new privileged account was created.
             if (IsPrivileged(user.Role))
             {
@@ -283,13 +281,6 @@ namespace IT_Service_Management_System.Controllers
             // do NOT touch PasswordHash here.
 
             await _context.SaveChangesAsync();
-
-            // ✅ AUDIT LOG
-            await _auditService.LogAsync(
-                "Updated",
-                "User",
-                user.Id,
-                $"User {user.Email} updated");
 
             // Notify on email change (both old and new addresses).
             bool emailChanged = !string.Equals(oldEmail, existingUser.Email, StringComparison.OrdinalIgnoreCase);
@@ -406,6 +397,7 @@ namespace IT_Service_Management_System.Controllers
             await _auditService.LogAsync("Profile Updated", "User", user.Id, "User updated profile");
 
             HttpContext.Session.SetString("UserName", user.FirstName);
+            HttpContext.Session.SetString("UserFullName", $"{user.FirstName} {user.LastName}".Trim());
 
             bool emailChanged = !string.Equals(oldEmail, user.Email, StringComparison.OrdinalIgnoreCase);
             if (emailChanged)
@@ -491,9 +483,6 @@ namespace IT_Service_Management_System.Controllers
 
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
-
-            // ✅ AUDIT LOG
-            await _auditService.LogAsync("Deleted", "User", id, $"User ID {id} deleted");
 
             TempData["Success"] = $"User {user.Email} deleted.";
             return RedirectToAction("Index");

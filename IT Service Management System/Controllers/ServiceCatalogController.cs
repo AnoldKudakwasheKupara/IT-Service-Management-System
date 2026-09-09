@@ -98,7 +98,6 @@ namespace IT_Service_Management_System.Controllers
             };
             _db.ServiceRequests.Add(request);
             await _db.SaveChangesAsync();
-            await _audit.LogAsync("Created", "ServiceRequest", request.Id, $"{request.Reference}: {item.Name}");
             if (request.AssignedToId.HasValue)
                 await _realtime.NotifyUserAsync(request.AssignedToId.Value,
                     new RealtimeNotice($"New service request {request.Reference}", request.Subject,
@@ -249,7 +248,6 @@ namespace IT_Service_Management_System.Controllers
             item.UpdatedAt = DateTime.Now;
             if (id == 0) _db.ServiceCatalogItems.Add(item);
             await _db.SaveChangesAsync();
-            await _audit.LogAsync(id == 0 ? "Created" : "Updated", "ServiceCatalogItem", item.Id, item.Name);
             TempData["Success"] = $"Catalogue item '{item.Name}' saved.";
             return RedirectToAction(nameof(Manage));
         }

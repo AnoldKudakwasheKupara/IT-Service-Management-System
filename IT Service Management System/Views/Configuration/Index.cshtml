@@ -348,6 +348,33 @@
                 </div>
             </div>
 
+            <!-- Audit Trail -->
+            <div class="data-card cfg-card cfg-span">
+                <div class="card-header-custom">
+                    <i class="fas fa-history me-2"></i>
+                    <span>Audit Trail</span>
+                </div>
+                <div class="card-body-custom">
+                    <div class="cfg-toggle-grid">
+                        <label class="cfg-toggle">
+                            <input asp-for="AuditCaptureEntityChanges" type="checkbox" />
+                            <span>Record every data change automatically</span>
+                        </label>
+                    </div>
+                    <p class="cfg-hint">
+                        With this on, every record created, edited or deleted anywhere in the system is
+                        logged with its before and after values. Turning it off leaves only explicitly
+                        logged events &mdash; sign-ins, exports, approvals &mdash; and takes effect immediately.
+                    </p>
+                    <div class="cfg-field">
+                        <label asp-for="AuditRetentionDays">Keep audit entries for (days)</label>
+                        <input asp-for="AuditRetentionDays" type="number" min="0" max="3650" class="cfg-input" />
+                        <p class="cfg-hint">0 keeps everything forever. The nightly purge records what it removed, so the trail can account for its own gaps.</p>
+                        <span asp-validation-for="AuditRetentionDays" class="cfg-err"></span>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- Form Actions -->

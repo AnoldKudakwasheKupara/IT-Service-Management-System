@@ -104,6 +104,16 @@ namespace IT_Service_Management_System.Models
         /// <summary>Also send each agent a personal digest of their own tickets and logged work.</summary>
         public bool DailySummaryPerAgent { get; set; } = true;
 
+        // ── Audit trail ──────────────────────────────────────────────────────────
+        /// <summary>Capture every entity insert/update/delete automatically, with field-level
+        /// before/after values. Turning this off leaves only explicitly logged events.</summary>
+        public bool AuditCaptureEntityChanges { get; set; } = true;
+
+        /// <summary>How long entries are kept before the nightly purge removes them.
+        /// 0 = keep forever. The purge records what it removed.</summary>
+        [Range(0, 3650)]
+        public int AuditRetentionDays { get; set; } = 365;
+
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
         [StringLength(150)]
         public string? UpdatedBy { get; set; }

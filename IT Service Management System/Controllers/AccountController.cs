@@ -1,7 +1,8 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
+using IT_Service_Management_System.Services.Auditing;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -140,6 +141,12 @@ namespace IT_Service_Management_System.Controllers
 
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
 
+            // Sign-in writes to the user's own row (failed-attempt counters, lockout, last-login)
+            // before any session exists. Naming the actor now keeps those entries attributed to the
+            // account they concern instead of to "Anonymous".
+            if (user != null)
+                AuditContextProvider.SetActor(HttpContext, user.Id, $"{user.FirstName} {user.LastName}".Trim(), user.Role.ToString());
+
             // Account-locked check (per-user, configurable).
             if (user != null && user.IsLockedOut)
             {
@@ -264,6 +271,7 @@ namespace IT_Service_Management_System.Controllers
 
             var user = await _context.Users.FindAsync(pendingId.Value);
             if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
+            AuditContextProvider.SetActor(HttpContext, user.Id, $"{user.FirstName} {user.LastName}".Trim(), user.Role.ToString());
 
             var method = user.MfaMethod != MfaMethod.None ? user.MfaMethod : MfaMethod.Email;
             ViewBag.MaskedEmail = MaskEmail(user.Email);
@@ -282,6 +290,7 @@ namespace IT_Service_Management_System.Controllers
 
             var user = await _context.Users.FindAsync(pendingId.Value);
             if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
+            AuditContextProvider.SetActor(HttpContext, user.Id, $"{user.FirstName} {user.LastName}".Trim(), user.Role.ToString());
 
             var method = user.MfaMethod != MfaMethod.None ? user.MfaMethod : MfaMethod.Email;
             ViewBag.MaskedEmail = MaskEmail(user.Email);
@@ -350,6 +359,7 @@ namespace IT_Service_Management_System.Controllers
 
             var user = await _context.Users.FindAsync(pendingId.Value);
             if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
+            AuditContextProvider.SetActor(HttpContext, user.Id, $"{user.FirstName} {user.LastName}".Trim(), user.Role.ToString());
 
             // Authenticator users have no email to resend — their code is in the app.
             if (user.MfaMethod == MfaMethod.Authenticator)
@@ -538,6 +548,8 @@ namespace IT_Service_Management_System.Controllers
                 ViewBag.TokenError = "This link is invalid or has already been used.";
                 return View();
             }
+
+            AuditContextProvider.SetActor(HttpContext, user.Id, $"{user.FirstName} {user.LastName}".Trim(), user.Role.ToString());
 
             if (user.TokenExpiry == null || user.TokenExpiry < DateTime.Now)
             {
