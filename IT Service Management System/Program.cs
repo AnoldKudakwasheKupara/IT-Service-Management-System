@@ -31,8 +31,6 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add<RoleAuthorizationFilter>();
     // Validate the anti-forgery token on every unsafe (POST/PUT/DELETE) request.
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
-    // Populate the nav notification-bell count for every rendered page.
-    options.Filters.Add<NotificationBadgeFilter>();
 });
 
 // Allow the anti-forgery token to be supplied via a request header (used by AJAX calls).

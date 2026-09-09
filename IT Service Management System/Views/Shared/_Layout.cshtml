@@ -925,17 +925,6 @@
                         <span class="topbar-search-kbd">Ctrl K</span>
                     </button>
 
-                    <!-- Notification bell — opens the unified inbox across all modules -->
-                    @{
-                        var efmUnread = ViewData["EfmUnread"] as int? ?? 0;
-                    }
-                    <a asp-controller="Notifications" asp-action="Index" class="topbar-bell" title="Notifications" aria-label="Notifications"
-                       style="position:relative;display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;color:var(--gray-600);text-decoration:none;margin-right:0.75rem;transition:background .15s;">
-                        <i class="fas fa-bell" style="font-size:1.1rem;"></i>
-                        <span id="efmBellBadge" data-count="@efmUnread"
-                              style="position:absolute;top:4px;right:4px;background:#ef4444;color:#fff;font-size:0.6rem;font-weight:700;min-width:16px;height:16px;padding:0 4px;border-radius:8px;align-items:center;justify-content:center;line-height:1;display:@(efmUnread > 0 ? "inline-flex" : "none");">@(efmUnread > 99 ? "99+" : efmUnread.ToString())</span>
-                    </a>
-
                     <!-- User Profile -->
                     <div class="user-profile">
                         <a asp-controller="Users" asp-action="Profile" class="profile-link">
@@ -1217,14 +1206,8 @@
             // finds Two-Factor Auth. Matched against the destination's href.
             var ALIASES = {
                 '/Tickets': 'helpdesk incident issue support ticket queue',
-                '/MyWork': 'my queue assigned to me todo tasks',
                 '/ServiceCatalog': 'service request catalogue order new request',
                 '/Activity': 'timesheet worklog activity log',
-                '/Problems': 'problem root cause known error itil',
-                '/Changes': 'change request cab release itil',
-                '/Cmdb': 'configuration item asset ci dependency itil',
-                '/SlaPolicies': 'sla target response resolution breach',
-                '/Incidents': 'major incident outage p1',
                 '/Assets': 'hardware equipment inventory device',
                 '/SSLCertificates': 'ssl tls certificate expiry',
                 '/Users': 'people staff employee account role',
@@ -1233,26 +1216,6 @@
                 '/Security': 'security dashboard threats sessions lockout',
                 '/Configuration': 'settings config options preferences',
                 '/Backup': 'backup restore disaster recovery',
-                '/MeetingMinutes': 'meeting minutes agenda action items',
-                '/ExitClearance': 'offboarding exit leaver clearance',
-                '/ExitInterview': 'exit interview leaver feedback',
-                '/EmployeeDocuments': 'hr files employee documents personnel folder',
-                '/Ecie': 'ai assistant ask intelligence compliance question',
-                '/Ims': 'iso dashboard integrated management compliance overview',
-                '/IsoDocuments': 'policy procedure work instruction form record document control iso',
-                '/IsoAudits': 'internal audit finding programme iso 9001 27001',
-                '/Capa': 'corrective preventive action capa car',
-                '/NonConformances': 'non conformance nc defect',
-                '/Risk': 'risk register heat map threat treatment',
-                '/Suppliers': 'vendor supplier evaluation procurement',
-                '/Training': 'training competency course certificate skills',
-                '/ManagementReviews': 'management review iso 9.3',
-                '/Objectives': 'objective kpi target goal',
-                '/ComplianceRegister': 'compliance obligation legal regulatory',
-                '/Improvements': 'improvement kaizen suggestion opportunity',
-                '/Evidence': 'evidence repository proof attachment',
-                '/IsoReports': 'iso report export excel pdf',
-                '/Notifications': 'notifications alerts bell inbox',
                 '/Mfa': '2fa two factor authenticator otp security',
                 '/Reports': 'report analytics metrics dashboard export'
             };
@@ -1374,19 +1337,19 @@
         })();
     </script>
 
-    <!-- Real-time notifications (SignalR): live bell badge + toasts -->
+    @* Real-time notifications (SignalR): toasts for ticket and SLA events.
+
+       This used to also drive a bell badge, but every notification the bell
+       counted came from a persisted table belonging to a module that has since
+       been retired, so the count and the inbox behind it were removed. The live
+       push path is unaffected and still worth having: TicketService and
+       SlaMonitoringService raise a notice on a new ticket, an assignment, an
+       escalation and an SLA breach, and those surface here as toasts. *@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
     <script>
         (function () {
-            var badge = document.getElementById('efmBellBadge');
-            if (!badge || typeof signalR === 'undefined') return;   // only for authenticated pages
-
-            function bumpBadge() {
-                var n = (parseInt(badge.getAttribute('data-count')) || 0) + 1;
-                badge.setAttribute('data-count', n);
-                badge.textContent = n > 99 ? '99+' : n;
-                badge.style.display = 'inline-flex';
-            }
+            // Anonymous pages don't render the shell, so there is no hub to join.
+            if (typeof signalR === 'undefined' || !document.querySelector('.app-layout')) return;
 
             var connection = new signalR.HubConnectionBuilder()
                 .withUrl('/hubs/notifications')
@@ -1394,19 +1357,17 @@
                 .build();
 
             connection.on('notification', function (notice) {
-                bumpBadge();
-                if (window.toastr) {
-                    var t = (toastr[notice.level] || toastr.info)(
-                        (notice.message || ''), (notice.title || 'Notification'),
-                        { timeOut: 6000, closeButton: true, progressBar: true });
-                    if (notice.url && t) {
-                        t.css('cursor', 'pointer');
-                        t.on('click', function () { window.location.href = notice.url; });
-                    }
+                if (!window.toastr) return;
+                var t = (toastr[notice.level] || toastr.info)(
+                    (notice.message || ''), (notice.title || 'Notification'),
+                    { timeOut: 6000, closeButton: true, progressBar: true });
+                if (notice.url && t) {
+                    t.css('cursor', 'pointer');
+                    t.on('click', function () { window.location.href = notice.url; });
                 }
             });
 
-            connection.start().catch(function () { /* hub unavailable — bell still works via page loads */ });
+            connection.start().catch(function () { /* hub unavailable — pages still render */ });
         })();
     </script>
 
