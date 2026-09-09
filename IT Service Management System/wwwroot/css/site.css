@@ -243,10 +243,18 @@ textarea:focus-visible,
     font-size: 0.875rem;
 }
 
-/* ---- Statistics cards (Ticket-dashboard style) ---- */
+/* ---- Statistics cards (Ticket-dashboard style) ----
+   Almost every index page shows exactly four of these. The track
+   minimum has to be small enough that four fit across the content
+   column, or the fourth card wraps onto a row of its own: at 240px
+   only three tracks fit a 1366-wide laptop (~1020px of content), so
+   every one of those pages laid out 3 + 1. 200px fits four from
+   ~900px of content upward. auto-fit collapses the spare tracks, so
+   pages showing two or three cards still stretch them across the
+   full width rather than leaving a hole. */
 .stats-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
