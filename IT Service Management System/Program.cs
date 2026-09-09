@@ -29,8 +29,6 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add<SessionAuthorizationFilter>();
     // Enforce [RoleAuthorize] role restrictions (runs after the login check).
     options.Filters.Add<RoleAuthorizationFilter>();
-    // Make routes of modules retired from the UI unreachable.
-    options.Filters.Add<ModuleAvailabilityFilter>();
     // Validate the anti-forgery token on every unsafe (POST/PUT/DELETE) request.
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
     // Populate the nav notification-bell count for every rendered page.
