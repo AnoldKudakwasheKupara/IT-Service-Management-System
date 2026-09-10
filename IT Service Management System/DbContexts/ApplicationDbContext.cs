@@ -84,8 +84,6 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<SlaCalendar> SlaCalendars { get; set; }
         public DbSet<SlaHoliday> SlaHolidays { get; set; }
         public DbSet<SlaEvent> SlaEvents { get; set; }
-        public DbSet<ServiceCatalogItem> ServiceCatalogItems { get; set; }
-        public DbSet<ServiceRequest> ServiceRequests { get; set; }
         public DbSet<MajorIncident> MajorIncidents { get; set; }
         public DbSet<MajorIncidentAffectedItem> MajorIncidentAffectedItems { get; set; }
         public DbSet<MajorIncidentTimelineEntry> MajorIncidentTimelineEntries { get; set; }
@@ -546,25 +544,6 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<Ticket>()
                 .HasOne(t => t.SlaPolicy).WithMany().HasForeignKey(t => t.SlaPolicyId)
                 .OnDelete(DeleteBehavior.SetNull);
-
-            modelBuilder.Entity<ServiceCatalogItem>().Property(i => i.DefaultPriority).HasConversion<string>();
-            modelBuilder.Entity<ServiceCatalogItem>()
-                .HasOne(i => i.Owner).WithMany().HasForeignKey(i => i.OwnerId).OnDelete(DeleteBehavior.SetNull);
-            modelBuilder.Entity<ServiceCatalogItem>().HasIndex(i => new { i.IsPublished, i.Category });
-
-            modelBuilder.Entity<ServiceRequest>().Property(r => r.Priority).HasConversion<string>();
-            modelBuilder.Entity<ServiceRequest>().Property(r => r.Status).HasConversion<string>();
-            modelBuilder.Entity<ServiceRequest>()
-                .HasOne(r => r.ServiceCatalogItem).WithMany(i => i.Requests)
-                .HasForeignKey(r => r.ServiceCatalogItemId).OnDelete(DeleteBehavior.Restrict);
-            modelBuilder.Entity<ServiceRequest>()
-                .HasOne(r => r.RequestedBy).WithMany().HasForeignKey(r => r.RequestedById).OnDelete(DeleteBehavior.NoAction);
-            modelBuilder.Entity<ServiceRequest>()
-                .HasOne(r => r.AssignedTo).WithMany().HasForeignKey(r => r.AssignedToId).OnDelete(DeleteBehavior.NoAction);
-            modelBuilder.Entity<ServiceRequest>()
-                .HasOne(r => r.ApprovedBy).WithMany().HasForeignKey(r => r.ApprovedById).OnDelete(DeleteBehavior.NoAction);
-            modelBuilder.Entity<ServiceRequest>().HasIndex(r => new { r.Status, r.DueAt });
-            modelBuilder.Entity<ServiceRequest>().HasIndex(r => new { r.RequestedById, r.CreatedAt });
 
             // ── Major incident management ───────────────────────────────────────────────
             // Enums stored as readable strings; children cascade; user/ticket links never cascade.

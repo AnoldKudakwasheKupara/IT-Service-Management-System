@@ -1,10 +1,9 @@
-using static IT_Service_Management_System.Models.Ticket;
+﻿using static IT_Service_Management_System.Models.Ticket;
 
 namespace IT_Service_Management_System.Services.Itsm
 {
     /// <summary>
-    /// Central transition rules for helpdesk tickets — the ticket counterpart of
-    /// <see cref="ServiceRequestWorkflow"/>. Without it any status could be set from any other, so a
+    /// Central transition rules for helpdesk tickets. Without it any status could be set from any other, so a
     /// closed ticket could jump straight back to In Progress (bypassing Reopen and its audit entry),
     /// or a resolved one could be parked on hold with no active work left to pause.
     /// </summary>

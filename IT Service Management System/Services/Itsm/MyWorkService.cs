@@ -1,4 +1,4 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Enums;
 using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models.Efm;
@@ -35,19 +35,6 @@ namespace IT_Service_Management_System.Services.Itsm
                 Source = "Helpdesk", Url = $"/Tickets/Details/{t.Id}", DueAt = t.DueAt, CreatedAt = t.CreatedAt,
                 PriorityScore = (int)t.Priority + 1,
                 IsSlaRisk = t.IsSlaBreached || (t.DueAt.HasValue && t.DueAt <= now.AddHours(4))
-            }));
-
-            var requests = await _db.ServiceRequests.AsNoTracking().Include(r => r.ServiceCatalogItem)
-                .Where(r => r.AssignedToId == userId && r.Status != ServiceRequestStatus.AwaitingApproval &&
-                            r.Status != ServiceRequestStatus.Fulfilled &&
-                            r.Status != ServiceRequestStatus.Rejected && r.Status != ServiceRequestStatus.Cancelled)
-                .ToListAsync(ct);
-            items.AddRange(requests.Select(r => new WorkItemVm
-            {
-                Kind = "Service Request", Reference = r.Reference, Title = r.Subject,
-                Status = r.Status.ToString(), Source = r.ServiceCatalogItem?.Name ?? "Service Catalogue",
-                Url = $"/ServiceCatalog/RequestDetails/{r.Id}", DueAt = r.DueAt, CreatedAt = r.CreatedAt,
-                PriorityScore = (int)r.Priority + 1, IsSlaRisk = r.IsOverdue
             }));
 
             var actions = await _db.ActionItems.AsNoTracking()
@@ -114,16 +101,6 @@ namespace IT_Service_Management_System.Services.Itsm
 
             if (fullAccess)
             {
-                var requestApprovals = await _db.ServiceRequests.AsNoTracking().Include(r => r.ServiceCatalogItem)
-                    .Where(r => r.Status == ServiceRequestStatus.AwaitingApproval).ToListAsync(ct);
-                items.AddRange(requestApprovals.Select(r => new WorkItemVm
-                {
-                    Kind = "Approval", Reference = r.Reference, Title = r.Subject, Status = "AwaitingApproval",
-                    Source = r.ServiceCatalogItem?.Name ?? "Service Catalogue",
-                    Url = $"/ServiceCatalog/RequestDetails/{r.Id}", DueAt = r.DueAt, CreatedAt = r.CreatedAt,
-                    PriorityScore = (int)r.Priority + 1, RequiresDecision = true
-                }));
-
                 var changes = await _db.ChangeRequests.AsNoTracking()
                     .Where(c => c.Status == ChangeStatus.SubmittedForApproval).ToListAsync(ct);
                 items.AddRange(changes.Select(c => new WorkItemVm
