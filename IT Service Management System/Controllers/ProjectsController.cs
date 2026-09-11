@@ -771,6 +771,179 @@ namespace IT_Service_Management_System.Controllers
             return highest + 10;
         }
 
+        // ── gantt ────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// The project's schedule as a Gantt chart: milestones and tasks positioned on one time
+        /// axis, with baselines, the critical path and dependency arrows.
+        ///
+        /// All the geometry is worked out here as percentages of the chart window, so the view does
+        /// no date arithmetic and the bars, the axis ticks, the today line and the arrows are all
+        /// derived from a single window that cannot drift between them.
+        /// </summary>
+        public async Task<IActionResult> Gantt(int id)
+        {
+            var context = await LoadForTabAsync(id);
+            if (context.Result != null) return context.Result;
+            var project = context.Project!;
+
+            var milestones = await _db.Milestones.AsNoTracking()
+                .Where(m => m.ProjectId == id)
+                .OrderBy(m => m.SortOrder).ThenBy(m => m.DueDate).ThenBy(m => m.Id)
+                .ToListAsync();
+
+            var tasks = await _db.ProjectTasks.AsNoTracking()
+                .Include(t => t.AssignedTo)
+                .Where(t => t.ProjectId == id && t.Status != ProjectTaskStatus.Cancelled)
+                .ToListAsync();
+
+            var taskIds = tasks.Select(t => t.Id).ToList();
+            var dependencies = await _db.TaskDependencies.AsNoTracking()
+                .Where(d => taskIds.Contains(d.TaskId))
+                .Select(d => new { d.TaskId, d.PredecessorTaskId })
+                .ToListAsync();
+
+            // A task needs both ends to be drawn. One date is enough to infer the other — a single
+            // day — but neither means it cannot go on a timeline at all.
+            var scheduled = tasks.Where(t => t.StartDate.HasValue || t.DueDate.HasValue).ToList();
+            var model = new ProjectGanttVm
+            {
+                Project = project,
+                CanContribute = context.CanContribute,
+                Unscheduled = tasks.Where(t => !t.StartDate.HasValue && !t.DueDate.HasValue)
+                                   .OrderBy(t => t.BoardOrder).ToList()
+            };
+
+            // ── The window: everything that has to fit, padded so bars do not touch the edges ──
+            var dates = new List<DateTime>();
+            foreach (var t in scheduled)
+            {
+                dates.Add(t.StartDate ?? t.DueDate!.Value);
+                dates.Add(t.DueDate ?? t.StartDate!.Value);
+                if (t.BaselineStartDate.HasValue) dates.Add(t.BaselineStartDate.Value);
+                if (t.BaselineDueDate.HasValue) dates.Add(t.BaselineDueDate.Value);
+            }
+            foreach (var m in milestones) dates.Add(m.DueDate);
+            if (project.StartDate.HasValue) dates.Add(project.StartDate.Value);
+            if (project.EndDate.HasValue) dates.Add(project.EndDate.Value);
+            dates.Add(DateTime.Today);
+
+            var start = dates.Min().Date.AddDays(-3);
+            var end = dates.Max().Date.AddDays(3);
+            // A window narrower than a fortnight makes every bar a sliver; widen it.
+            if ((end - start).TotalDays < 14) end = start.AddDays(14);
+
+            var totalDays = Math.Max(1, (end - start).TotalDays);
+            model.WindowStart = start;
+            model.WindowEnd = end;
+            model.WindowDays = (int)totalDays;
+
+            double Left(DateTime d) => Math.Clamp((d.Date - start).TotalDays / totalDays * 100.0, 0, 100);
+            double Width(DateTime from, DateTime to)
+            {
+                // Inclusive of the end day, so a one-day task is visible rather than zero-wide.
+                var days = Math.Max(1, (to.Date - from.Date).TotalDays + 1);
+                return Math.Clamp(days / totalDays * 100.0, 0.4, 100);
+            }
+
+            if (DateTime.Today >= start && DateTime.Today <= end)
+                model.TodayPercent = Left(DateTime.Today);
+
+            // ── Rows: each milestone, then the tasks under it, then unattached tasks ──
+            var rows = new List<GanttRow>();
+
+            void AddTasks(int? milestoneId)
+            {
+                foreach (var t in scheduled.Where(t => t.MilestoneId == milestoneId)
+                                           .OrderBy(t => t.StartDate ?? t.DueDate)
+                                           .ThenBy(t => t.Id))
+                {
+                    var from = (t.StartDate ?? t.DueDate!.Value).Date;
+                    var to = (t.DueDate ?? t.StartDate!.Value).Date;
+                    if (to < from) to = from;
+
+                    var done = t.Status == ProjectTaskStatus.Completed;
+                    var row = new GanttRow
+                    {
+                        Kind = GanttRowKind.Task,
+                        Id = t.Id,
+                        Name = t.Name,
+                        Start = from,
+                        End = to,
+                        PercentComplete = done ? 100 : Math.Clamp(t.PercentComplete, 0, 100),
+                        Status = t.Status.ToString(),
+                        Assignee = t.AssignedTo == null ? null : t.AssignedTo.FirstName,
+                        IsCritical = t.IsOnCriticalPath,
+                        IsDone = done,
+                        IsOverdue = !done && t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Today,
+                        MilestoneId = t.MilestoneId,
+                        LeftPercent = Left(from),
+                        WidthPercent = Width(from, to),
+                        PredecessorTaskIds = dependencies.Where(d => d.TaskId == t.Id)
+                                                         .Select(d => d.PredecessorTaskId).ToList()
+                    };
+
+                    if (t.BaselineStartDate.HasValue && t.BaselineDueDate.HasValue)
+                    {
+                        row.BaselineStart = t.BaselineStartDate;
+                        row.BaselineEnd = t.BaselineDueDate;
+                        row.BaselineLeftPercent = Left(t.BaselineStartDate.Value);
+                        row.BaselineWidthPercent = Width(t.BaselineStartDate.Value, t.BaselineDueDate.Value);
+                    }
+
+                    rows.Add(row);
+                }
+            }
+
+            foreach (var m in milestones)
+            {
+                var achieved = m.Status == MilestoneStatus.Achieved;
+                var at = (m.AchievedDate ?? m.DueDate).Date;
+                rows.Add(new GanttRow
+                {
+                    Kind = GanttRowKind.Milestone,
+                    Id = m.Id,
+                    Name = m.Name,
+                    Start = at,
+                    End = at,
+                    Status = m.Status.ToString(),
+                    IsDone = achieved,
+                    IsOverdue = m.IsOverdue,
+                    PercentComplete = achieved ? 100 : 0,
+                    LeftPercent = Left(at),
+                    WidthPercent = Width(at, at),
+                    BaselineStart = m.BaselineDate,
+                    BaselineLeftPercent = m.BaselineDate.HasValue ? Left(m.BaselineDate.Value) : null
+                });
+                AddTasks(m.Id);
+            }
+
+            AddTasks(null);
+
+            for (var i = 0; i < rows.Count; i++) rows[i].Index = i;
+            model.Rows = rows;
+
+            // ── Axis ticks: one per month the window covers ──
+            var cursor = new DateTime(start.Year, start.Month, 1);
+            while (cursor <= end)
+            {
+                var monthEnd = cursor.AddMonths(1).AddDays(-1);
+                var visibleFrom = cursor < start ? start : cursor;
+                var visibleTo = monthEnd > end ? end : monthEnd;
+
+                model.Ticks.Add(new GanttTick
+                {
+                    Label = cursor.ToString("MMM yyyy"),
+                    LeftPercent = Left(visibleFrom),
+                    WidthPercent = Math.Max(0, (visibleTo - visibleFrom).TotalDays + 1) / totalDays * 100.0,
+                    IsMonthStart = true
+                });
+                cursor = cursor.AddMonths(1);
+            }
+
+            return View(model);
+        }
+
         // ── associations with the service desk ───────────────────────────────────
 
         public async Task<IActionResult> Associations(int id)

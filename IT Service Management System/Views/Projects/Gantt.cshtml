@@ -1,0 +1,247 @@
+@model IT_Service_Management_System.ViewModels.Pm.ProjectGanttVm
+@using IT_Service_Management_System.ViewModels.Pm
+@using System.Globalization
+
+@{
+    var p = Model.Project;
+    ViewData["Title"] = $"Gantt — {p.Name} - Axis IT Helpdesk";
+    ViewData["Tab"] = "gantt";
+
+    var rowH = ProjectGanttVm.RowHeight;
+
+    // Arrow geometry is emitted in an SVG whose viewBox is 1000 wide, so an x in per-mille
+    // of the chart maps straight across however wide the chart actually renders.
+    string X(double percent) => (percent * 10).ToString("0.##", CultureInfo.InvariantCulture);
+    string Pct(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
+
+    var byId = Model.Rows.Where(r => r.Kind == GanttRowKind.Task).ToDictionary(r => r.Id);
+}
+
+<div class="page-container">
+    @await Html.PartialAsync("_ProjectHeader", p)
+
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--primary-surface); color: var(--primary);">
+                <i class="fas fa-chart-gantt"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Rows.Count</h3>
+                <p>Bars on the chart</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+                <i class="fas fa-bolt"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.CriticalCount</h3>
+                <p>On the critical path</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-light); color: #b45309;">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.OverdueCount</h3>
+                <p>Overdue</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--gray-100); color: var(--gray-500);">
+                <i class="fas fa-calendar-xmark"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Unscheduled.Count</h3>
+                <p>Undated</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card mb-4">
+        <div class="card-header-custom">
+            <div><i class="fas fa-chart-gantt me-2"></i><span>Schedule</span></div>
+            <span class="record-count">
+                @Model.WindowStart.ToString("d MMM yyyy") &ndash; @Model.WindowEnd.ToString("d MMM yyyy")
+            </span>
+        </div>
+
+        @if (Model.Rows.Count > 0)
+        {
+            <div class="gantt-legend">
+                <span><i class="swatch bar-task"></i> Task</span>
+                <span><i class="swatch bar-done"></i> Complete</span>
+                <span><i class="swatch bar-critical"></i> Critical path</span>
+                <span><i class="swatch bar-overdue"></i> Overdue</span>
+                @if (Model.HasBaseline)
+                {
+                    <span><i class="swatch bar-baseline"></i> Baseline</span>
+                }
+                <span><i class="swatch bar-today"></i> Today</span>
+            </div>
+
+            <div class="gantt">
+                <!-- Labels stay put; the chart scrolls under them on narrow screens. -->
+                <div class="gantt-labels">
+                    <div class="gantt-corner">Milestone / task</div>
+                    @foreach (var r in Model.Rows)
+                    {
+                        <div class="gantt-label @(r.Kind == GanttRowKind.Milestone ? "is-milestone" : "")"
+                             style="height:@(rowH)px" title="@r.Name">
+                            @if (r.Kind == GanttRowKind.Milestone)
+                            {
+                                <i class="fas fa-flag-checkered"></i>
+                            }
+                            <span class="nm">@r.Name</span>
+                            @if (!string.IsNullOrEmpty(r.Assignee))
+                            {
+                                <span class="who">@r.Assignee</span>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="gantt-scroll">
+                    <div class="gantt-chart" style="height:@(Model.ChartHeight + 28)px">
+                        <!-- Month axis -->
+                        <div class="gantt-axis">
+                            @foreach (var t in Model.Ticks)
+                            {
+                                <div class="gantt-tick" style="left:@Pct(t.LeftPercent)%;width:@Pct(t.WidthPercent)%">
+                                    <span>@t.Label</span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="gantt-rows" style="height:@(Model.ChartHeight)px">
+                            @foreach (var t in Model.Ticks)
+                            {
+                                <div class="gantt-gridline" style="left:@Pct(t.LeftPercent)%"></div>
+                            }
+
+                            @if (Model.TodayPercent.HasValue)
+                            {
+                                <div class="gantt-today" style="left:@Pct(Model.TodayPercent.Value)%" title="Today"></div>
+                            }
+
+                            @* Dependency arrows, drawn beneath the bars so they never cover a label.
+                               Elbow from the predecessor's finish to the successor's start. *@
+                            <svg class="gantt-links" viewBox="0 0 1000 @Model.ChartHeight"
+                                 preserveAspectRatio="none" aria-hidden="true">
+                                @foreach (var row in Model.Rows.Where(r => r.PredecessorTaskIds.Count > 0))
+                                {
+                                    foreach (var predId in row.PredecessorTaskIds)
+                                    {
+                                        if (!byId.TryGetValue(predId, out var pred)) { continue; }
+
+                                        var x1 = pred.LeftPercent + pred.WidthPercent;
+                                        var y1 = pred.Index * rowH + rowH / 2.0;
+                                        var x2 = row.LeftPercent;
+                                        var y2 = row.Index * rowH + rowH / 2.0;
+                                        var mid = Math.Max(x1 + 0.4, x2 - 0.6);
+
+                                        <path d="M @X(x1) @Pct(y1) H @X(mid) V @Pct(y2) H @X(x2)"
+                                              class="gantt-link" vector-effect="non-scaling-stroke" />
+                                    }
+                                }
+                            </svg>
+
+                            @foreach (var r in Model.Rows)
+                            {
+                                <div class="gantt-row" style="top:@(r.Index * rowH)px;height:@(rowH)px">
+                                    @if (r.BaselineLeftPercent.HasValue && r.BaselineWidthPercent.HasValue)
+                                    {
+                                        <div class="bar-baseline"
+                                             style="left:@Pct(r.BaselineLeftPercent.Value)%;width:@Pct(r.BaselineWidthPercent.Value)%"
+                                             title="Baseline @r.BaselineStart?.ToString("d MMM") – @r.BaselineEnd?.ToString("d MMM")"></div>
+                                    }
+
+                                    @if (r.Kind == GanttRowKind.Milestone)
+                                    {
+                                        <div class="gantt-diamond @(r.IsDone ? "is-done" : r.IsOverdue ? "is-overdue" : "")"
+                                             style="left:@Pct(r.LeftPercent)%"
+                                             title="@r.Name — @r.Status, @r.Start.ToString("d MMM yyyy")"></div>
+                                    }
+                                    else
+                                    {
+                                        var cls = r.IsDone ? "bar-done"
+                                            : r.IsOverdue ? "bar-overdue"
+                                            : r.IsCritical ? "bar-critical" : "bar-task";
+                                        <div class="gantt-bar @cls"
+                                             style="left:@Pct(r.LeftPercent)%;width:@Pct(r.WidthPercent)%"
+                                             title="@r.Name — @r.Status, @r.Start.ToString("d MMM") to @r.End.ToString("d MMM"), @r.PercentComplete% done">
+                                            @if (r.PercentComplete > 0 && !r.IsDone)
+                                            {
+                                                <div class="gantt-progress" style="width:@r.PercentComplete%"></div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-chart-gantt"></i>
+                <h3>Nothing to plot yet</h3>
+                <p>
+                    Add milestones, or give tasks a start or due date, and they appear here on a
+                    shared time axis.
+                </p>
+                <a class="btn-create" asp-action="Tasks" asp-route-id="@p.Id">
+                    <i class="fas fa-list-check"></i> Go to tasks
+                </a>
+            </div>
+        }
+    </div>
+
+    @if (Model.Unscheduled.Count > 0)
+    {
+        <!-- Undated work is listed rather than dropped: a plan that quietly hides tasks reads as
+             complete when it is not. -->
+        <div class="data-card mb-5">
+            <div class="card-header-custom">
+                <div><i class="fas fa-calendar-xmark me-2"></i><span>Not on the chart</span></div>
+                <span class="record-count">@Model.Unscheduled.Count without dates</span>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Status</th>
+                            <th>Assignee</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in Model.Unscheduled)
+                        {
+                            <tr>
+                                <td><strong style="font-size:0.86rem;">@t.Name</strong></td>
+                                <td><span class="pstatus pstatus-@t.Status">@t.Status</span></td>
+                                <td>@(t.AssignedTo?.FullName ?? "Unassigned")</td>
+                                <td>
+                                    @if (Model.CanContribute)
+                                    {
+                                        <a class="btn-soft-action" asp-action="Tasks" asp-route-id="@p.Id">
+                                            <i class="fas fa-calendar-plus"></i> Give it dates
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@await Html.PartialAsync("_ProjectStyles")
+@await Html.PartialAsync("_GanttStyles")
