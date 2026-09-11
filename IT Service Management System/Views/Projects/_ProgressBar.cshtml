@@ -1,0 +1,30 @@
+@model IT_Service_Management_System.Models.Pm.Project
+@*
+    Progress against schedule in one control. The bar is work completed; the thin marker is how
+    much of the planned schedule has elapsed. A bar sitting behind its marker is running late, and
+    the fill colour says so without the reader having to compare two numbers.
+*@
+@{
+    var done = Math.Clamp(Model.ProgressPercent, 0, 100);
+    var elapsed = Math.Clamp(Model.SchedulePercentElapsed, 0, 100);
+    var gap = elapsed - done;
+
+    // Only judge an open project against the clock; a finished one is simply done.
+    var state = !Model.IsOpen || gap <= 5 ? "" : gap <= 20 ? "is-behind" : "is-late";
+}
+<div class="progress-cell">
+    <div class="progress-track" role="progressbar" aria-valuenow="@done" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-fill @state" style="width:@done%"></div>
+        @if (Model.IsOpen && Model.StartDate.HasValue && Model.EndDate.HasValue)
+        {
+            <span class="progress-marker" style="left:@elapsed%" title="@elapsed% of the schedule elapsed"></span>
+        }
+    </div>
+    <div class="progress-label">
+        <span>@done% done</span>
+        @if (Model.IsOpen && Model.StartDate.HasValue && Model.EndDate.HasValue)
+        {
+            <span>@elapsed% elapsed</span>
+        }
+    </div>
+</div>

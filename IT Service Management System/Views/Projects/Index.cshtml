@@ -1,0 +1,254 @@
+@model IT_Service_Management_System.ViewModels.Pm.ProjectsIndexVm
+@using IT_Service_Management_System.Models.Pm
+
+@{
+    ViewData["Title"] = "Projects - Axis IT Helpdesk";
+    var f = Model.Filter;
+    var canCreate = ViewBag.CanCreate as bool? ?? false;
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-controller="Home" asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="flex-grow-1">
+                <h1 class="page-title">
+                    <i class="fas fa-diagram-project me-2" style="color: var(--primary);"></i>
+                    Projects
+                </h1>
+                <p class="text-muted mt-2">Delivery progress, schedule health and ownership across the portfolio</p>
+            </div>
+            @if (canCreate)
+            {
+                <a asp-action="Create" class="btn-create">
+                    <i class="fas fa-plus"></i> New project
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Counts span the whole visible portfolio, not the filter — they are the
+         denominator a reader narrows against, so they stay still. -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--primary-surface); color: var(--primary);">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.TotalCount</h3>
+                <p>Total projects</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.OpenCount</h3>
+                <p>Still open</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.OverdueCount</h3>
+                <p>Past end date</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-light); color: #b45309;">
+                <i class="fas fa-heart-pulse"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.AtRiskCount</h3>
+                <p>Amber or red</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Filter projects</span>
+        </div>
+        <form method="get" asp-action="Index" class="filters-body">
+            <div class="filter-group">
+                <label>Status</label>
+                <select name="status" class="filter-select">
+                    <option value="">Any status</option>
+                    @foreach (var s in Enum.GetValues<ProjectStatus>())
+                    {
+                        <option value="@s" selected="@(f.Status == s)">@s.ToString()</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Health</label>
+                <select name="health" class="filter-select">
+                    <option value="">Any health</option>
+                    @foreach (var h in Enum.GetValues<ProjectHealth>())
+                    {
+                        <option value="@h" selected="@(f.Health == h)">@h.ToString()</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Category</label>
+                <select name="category" class="filter-select">
+                    <option value="">Any category</option>
+                    @foreach (var c in Enum.GetValues<ProjectCategory>())
+                    {
+                        <option value="@c" selected="@(f.Category == c)">@c.ToString()</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Manager</label>
+                <select name="manager" class="filter-select">
+                    <option value="">Anyone</option>
+                    @foreach (var m in Model.Managers)
+                    {
+                        <option value="@m" selected="@(f.Manager == m)">@m</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Schedule</label>
+                <select name="overdue" class="filter-select">
+                    <option value="false" selected="@(!f.Overdue)">All projects</option>
+                    <option value="true" selected="@f.Overdue">Past end date only</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Search</label>
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="q" value="@f.Q" placeholder="Name, code or client..." class="search-input">
+                </div>
+            </div>
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary);color:#fff;border:none;">
+                <i class="fas fa-search"></i> Apply
+            </button>
+            @if (f.IsActive)
+            {
+                <a asp-action="Index" class="btn-clear-filters">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            }
+        </form>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div>
+                <i class="fas fa-list me-2"></i>
+                <span>Project register</span>
+            </div>
+            @if (ViewBag.Paging != null)
+            {
+                <span class="record-count">@(((IT_Service_Management_System.Helpers.PagingInfo)ViewBag.Paging).TotalCount) matching</span>
+            }
+        </div>
+
+        <div class="table-responsive">
+            @if (Model.Projects.Count > 0)
+            {
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th><i class="fas fa-diagram-project me-1"></i> Project</th>
+                            <th><i class="fas fa-circle-dot me-1"></i> Status</th>
+                            <th><i class="fas fa-heart-pulse me-1"></i> Health</th>
+                            <th><i class="fas fa-chart-line me-1"></i> Progress</th>
+                            <th><i class="fas fa-calendar me-1"></i> Ends</th>
+                            <th><i class="fas fa-user-tie me-1"></i> Manager</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model.Projects)
+                        {
+                            <tr>
+                                <td>
+                                    <a class="project-name" asp-action="Details" asp-route-id="@p.Id">@p.Name</a>
+                                    <span class="project-code">@p.Reference</span>
+                                    @if (!string.IsNullOrWhiteSpace(p.Client))
+                                    {
+                                        <span class="client-chip"><i class="fas fa-building"></i> @p.Client</span>
+                                    }
+                                </td>
+                                <td><span class="pstatus pstatus-@p.Status">@p.Status</span></td>
+                                <td>
+                                    <span class="health-lamp health-@p.Health">@p.Health</span>
+                                    @if (!string.IsNullOrWhiteSpace(p.HealthNote))
+                                    {
+                                        <div style="font-size:0.68rem;color:var(--gray-400);" title="@p.HealthNote">
+                                            @(p.HealthNote.Length > 40 ? p.HealthNote[..40] + "…" : p.HealthNote)
+                                        </div>
+                                    }
+                                </td>
+                                <td>@await Html.PartialAsync("_ProgressBar", p)</td>
+                                <td class="date-cell">
+                                    @(p.EndDate?.ToString("yyyy-MM-dd") ?? "—")
+                                    @if (p.EndDate.HasValue)
+                                    {
+                                        <div>
+                                            <span class="variance variance-@ScheduleVariance.Band(p.ScheduleVarianceDays)">
+                                                @p.ScheduleVarianceLabel
+                                            </span>
+                                        </div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (p.ProjectManager != null)
+                                    {
+                                        <div class="list-avatar-cell">
+                                            <div class="list-avatar">@p.ProjectManager.FirstName.Substring(0, 1).ToUpper()</div>
+                                            <span style="font-size:0.8rem;">@p.ProjectManager.FullName</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="chip-muted">Unassigned</span>
+                                    }
+                                </td>
+                                <td>
+                                    <a class="action-btn btn-view" asp-action="Details" asp-route-id="@p.Id" title="Open project">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-diagram-project"></i>
+                    <h3>No projects to show</h3>
+                    <p>
+                        @(f.IsActive
+                            ? "No projects match this filter. Try widening it or clearing it."
+                            : "Nothing has been registered yet, or you are not on any project team.")
+                    </p>
+                    @if (canCreate && !f.IsActive)
+                    {
+                        <a asp-action="Create" class="btn-create"><i class="fas fa-plus"></i> New project</a>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (ViewBag.Paging != null)
+        {
+            @await Html.PartialAsync("_Pagination", (IT_Service_Management_System.Helpers.PagingInfo)ViewBag.Paging)
+        }
+    </div>
+</div>
+
+@await Html.PartialAsync("_ProjectStyles")

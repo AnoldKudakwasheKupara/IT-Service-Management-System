@@ -1,0 +1,108 @@
+@*
+    Styles shared by every project page. Structure (page-container, data-card, filters-card,
+    stats-cards, data-table, badges, action buttons) all comes from site.css so these pages read
+    like Tickets and Audit Logs; only the things unique to project delivery live here — health
+    lamps, progress bars, variance chips and the milestone timeline.
+*@
+<style>
+    /* ── Health: the RAG lamp that drives portfolio triage ───────────────── */
+    .health-lamp {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.74rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .health-lamp::before {
+        content: "";
+        width: 0.6rem;
+        height: 0.6rem;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .health-Green        { color: var(--success); }
+    .health-Green::before { background: var(--success); }
+    .health-Amber        { color: #b45309; }
+    .health-Amber::before { background: var(--warning); }
+    .health-Red          { color: var(--danger); }
+    .health-Red::before   { background: var(--danger); }
+
+    /* ── Status chips. Enum names are CamelCase, so the class is too. ────── */
+    .pstatus {
+        display: inline-block;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.71rem;
+        font-weight: 600;
+        white-space: nowrap;
+        border: 1px solid transparent;
+    }
+    .pstatus-Draft      { background: var(--gray-100); color: var(--gray-600); border-color: var(--gray-300); }
+    .pstatus-Planning   { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+    .pstatus-Approved   { background: #ecfeff; color: #0e7490; border-color: #a5f3fc; }
+    .pstatus-Active     { background: var(--success-light); color: var(--success); border-color: #c6e0c9; }
+    .pstatus-OnHold     { background: var(--warning-light); color: #b45309; border-color: #ffe0b3; }
+    .pstatus-Delayed    { background: var(--danger-light); color: var(--danger); border-color: #fed7d7; }
+    .pstatus-Completed  { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .pstatus-Cancelled  { background: var(--gray-100); color: var(--gray-500); border-color: var(--gray-300); }
+    .pstatus-Archived   { background: var(--gray-100); color: var(--gray-400); border-color: var(--gray-200); }
+
+    /* ── Progress bar. Doubles as a schedule comparison: the thin marker is
+         how much of the plan has elapsed, so a bar behind its marker is late. ── */
+    .progress-cell { min-width: 150px; }
+    .progress-track {
+        position: relative;
+        height: 0.5rem;
+        background: var(--gray-200);
+        border-radius: 999px;
+        overflow: visible;
+    }
+    .progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: var(--success);
+        transition: width 0.3s;
+    }
+    .progress-fill.is-behind { background: var(--warning); }
+    .progress-fill.is-late   { background: var(--danger); }
+    .progress-marker {
+        position: absolute;
+        top: -0.2rem;
+        width: 2px;
+        height: 0.9rem;
+        background: var(--gray-500);
+        border-radius: 1px;
+    }
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.68rem;
+        color: var(--gray-500);
+        margin-top: 0.25rem;
+    }
+
+    /* ── Variance chips ─────────────────────────────────────────────────── */
+    .variance {
+        display: inline-block;
+        padding: 0.15rem 0.45rem;
+        border-radius: 0.35rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    .variance-ahead    { background: var(--success-light); color: var(--success); }
+    .variance-ontrack  { background: var(--gray-100); color: var(--gray-600); }
+    .variance-slipping { background: var(--warning-light); color: #b45309; }
+    .variance-late     { background: var(--danger-light); color: var(--danger); }
+
+    .project-name { font-weight: 600; color: var(--gray-800); text-decoration: none; }
+    .project-name:hover { color: var(--primary); }
+    .project-code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.72rem;
+        color: var(--gray-400);
+        display: block;
+    }
+    .client-chip { font-size: 0.72rem; color: var(--gray-500); }
+</style>
