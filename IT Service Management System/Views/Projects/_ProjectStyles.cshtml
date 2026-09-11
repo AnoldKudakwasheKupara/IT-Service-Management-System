@@ -205,4 +205,98 @@
 
     .inline-form { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: flex-end; padding: 1rem 1.5rem; }
     .inline-form .filter-group { min-width: 140px; }
+
+    /* Board task statuses reuse the project status chips where the names match, so
+       these fill in the ones they do not cover. */
+    .pstatus-NotStarted  { background: var(--gray-100); color: var(--gray-600); border-color: var(--gray-300); }
+    .pstatus-Assigned    { background: #eef2ff; color: #4338ca; border-color: #c7d2fe; }
+    .pstatus-InProgress  { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .pstatus-Waiting     { background: var(--warning-light); color: #b45309; border-color: #ffe0b3; }
+    .pstatus-Blocked     { background: var(--danger-light); color: var(--danger); border-color: #fed7d7; }
+    .pstatus-UnderReview { background: #f5f3ff; color: #6d28d9; border-color: #ddd6fe; }
+    .pstatus-Planned     { background: var(--gray-100); color: var(--gray-600); border-color: var(--gray-300); }
+    .pstatus-AtRisk      { background: var(--warning-light); color: #b45309; border-color: #ffe0b3; }
+    .pstatus-Achieved    { background: var(--success-light); color: var(--success); border-color: #c6e0c9; }
+    .pstatus-Missed      { background: var(--danger-light); color: var(--danger); border-color: #fed7d7; }
+
+    .tprio {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 0.1rem 0.35rem;
+        border-radius: 0.3rem;
+    }
+    .tprio-Low      { background: var(--gray-100); color: var(--gray-500); }
+    .tprio-Medium   { background: #eff6ff; color: #1d4ed8; }
+    .tprio-High     { background: var(--warning-light); color: #b45309; }
+    .tprio-Critical { background: var(--danger-light); color: var(--danger); }
+
+    .active-view { border-color: var(--primary); color: var(--primary); font-weight: 700; }
+
+    /* ── Kanban board ───────────────────────────────────────────────────── */
+    .kanban {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(215px, 1fr);
+        gap: 0.85rem;
+        overflow-x: auto;
+        padding-bottom: 0.75rem;
+        align-items: start;
+    }
+    .kanban-col {
+        background: var(--gray-50);
+        border: 1px solid var(--gray-200);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+    }
+    .kanban-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.7rem 0.9rem;
+        background: #fff;
+        border-bottom: 1px solid var(--gray-200);
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--gray-700);
+    }
+    .kanban-count {
+        background: var(--gray-100);
+        color: var(--gray-500);
+        border-radius: 999px;
+        padding: 0.05rem 0.45rem;
+        font-size: 0.7rem;
+    }
+    .kanban-body { padding: 0.6rem; display: flex; flex-direction: column; gap: 0.6rem; min-height: 4rem; }
+    .kanban-card {
+        background: #fff;
+        border: 1px solid var(--gray-200);
+        border-left: 3px solid var(--primary);
+        border-radius: 0.6rem;
+        padding: 0.6rem 0.7rem;
+        box-shadow: var(--shadow-sm);
+    }
+    .kanban-card.is-blocked { border-left-color: var(--danger); }
+    .kanban-card-title { font-size: 0.8rem; font-weight: 600; color: var(--gray-800); margin-bottom: 0.4rem; }
+    .kanban-card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        font-size: 0.68rem;
+        color: var(--gray-500);
+        align-items: center;
+    }
+    .kanban-card-actions { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.5rem; }
+    .lane-btn {
+        font-size: 0.62rem;
+        padding: 0.12rem 0.35rem;
+        border: 1px solid var(--gray-200);
+        background: var(--gray-50);
+        color: var(--gray-500);
+        border-radius: 0.3rem;
+        cursor: pointer;
+        transition: var(--transition-smooth);
+    }
+    .lane-btn:hover { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .kanban-empty { font-size: 0.72rem; color: var(--gray-400); text-align: center; padding: 0.75rem 0; margin: 0; }
 </style>

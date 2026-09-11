@@ -554,6 +554,202 @@ namespace IT_Service_Management_System.Controllers
                 .ToListAsync();
         }
 
+        // ── tasks ────────────────────────────────────────────────────────────────
+
+        public async Task<IActionResult> Tasks(int id, string view = "list", int? milestoneId = null,
+            int? assigneeId = null, bool openOnly = false)
+        {
+            var context = await LoadForTabAsync(id);
+            if (context.Result != null) return context.Result;
+
+            IQueryable<ProjectTask> query = _db.ProjectTasks
+                .Include(t => t.AssignedTo)
+                .Include(t => t.Milestone)
+                .Where(t => t.ProjectId == id);
+
+            if (milestoneId.HasValue)
+                query = query.Where(t => t.MilestoneId == milestoneId.Value);
+
+            if (assigneeId.HasValue)
+                query = query.Where(t => t.AssignedToId == assigneeId.Value);
+
+            if (openOnly)
+                query = query.Where(t => t.Status != ProjectTaskStatus.Completed &&
+                                         t.Status != ProjectTaskStatus.Cancelled);
+
+            var tasks = await query
+                // Board position first so the lanes read in the order someone arranged them;
+                // the list view inherits that same sequence rather than inventing its own.
+                .OrderBy(t => t.BoardOrder).ThenBy(t => t.DueDate ?? DateTime.MaxValue).ThenBy(t => t.Id)
+                .ToListAsync();
+
+            ViewBag.Owners = await TeamAndOwnersAsync(id);
+            ViewBag.Milestones = await _db.Milestones.AsNoTracking()
+                .Where(m => m.ProjectId == id)
+                .OrderBy(m => m.SortOrder).ThenBy(m => m.DueDate)
+                .ToListAsync();
+
+            return View(new ProjectTasksVm
+            {
+                Project = context.Project!,
+                Tasks = tasks,
+                CanContribute = context.CanContribute,
+                View = view == "board" ? "board" : "list",
+                MilestoneId = milestoneId,
+                AssigneeId = assigneeId,
+                OpenOnly = openOnly
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveTask(int id, ProjectTask input, string? returnView = null)
+        {
+            var context = await LoadForTabAsync(id, needContribute: true);
+            if (context.Result != null) return context.Result;
+
+            if (string.IsNullOrWhiteSpace(input.Name))
+            {
+                TempData["Error"] = "A task needs a name.";
+                return RedirectToAction(nameof(Tasks), new { id, view = returnView });
+            }
+
+            ProjectTask task;
+            if (input.Id == 0)
+            {
+                task = new ProjectTask
+                {
+                    ProjectId = id,
+                    BoardOrder = await NextBoardOrderAsync(id)
+                };
+                _db.ProjectTasks.Add(task);
+            }
+            else
+            {
+                var existing = await _db.ProjectTasks
+                    .FirstOrDefaultAsync(t => t.Id == input.Id && t.ProjectId == id);
+                if (existing == null) return NotFound();
+                task = existing;
+            }
+
+            task.Name = input.Name.Trim();
+            task.MilestoneId = input.MilestoneId;
+            task.AssignedToId = input.AssignedToId;
+            task.Priority = input.Priority;
+            task.DueDate = input.DueDate;
+            task.EstimatedHours = input.EstimatedHours;
+
+            ApplyStatus(task, input.Status);
+
+            await _db.SaveChangesAsync();
+            await RefreshProgressAsync(id);
+
+            TempData["Success"] = input.Id == 0 ? "Task added." : "Task updated.";
+            return RedirectToAction(nameof(Tasks), new { id, view = returnView });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MoveTask(int id, int taskId, KanbanColumn column)
+        {
+            var context = await LoadForTabAsync(id, needContribute: true);
+            if (context.Result != null) return context.Result;
+
+            var task = await _db.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId && t.ProjectId == id);
+            if (task == null) return NotFound();
+
+            task.Column = column;
+
+            // The board lane and the status are separate fields so the board can be rearranged
+            // freely, but dropping a card in Completed and leaving the status at In Progress makes
+            // the two disagree in the reports. Moving to an end lane carries the status with it.
+            if (column == KanbanColumn.Completed)
+                ApplyStatus(task, ProjectTaskStatus.Completed);
+            else if (task.Status == ProjectTaskStatus.Completed)
+                ApplyStatus(task, ProjectTaskStatus.InProgress);
+
+            await _db.SaveChangesAsync();
+            await RefreshProgressAsync(id);
+
+            return RedirectToAction(nameof(Tasks), new { id, view = "board" });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteTask(int id, int taskId, string? returnView = null)
+        {
+            var context = await LoadForTabAsync(id, needContribute: true);
+            if (context.Result != null) return context.Result;
+
+            var task = await _db.ProjectTasks.FirstOrDefaultAsync(t => t.Id == taskId && t.ProjectId == id);
+            if (task == null) return NotFound();
+
+            // Subtasks would be orphaned by a bare delete and SQL Server will not cascade a
+            // self-reference, so they are re-parented to whatever this task hung off.
+            var children = await _db.ProjectTasks.Where(t => t.ParentTaskId == taskId).ToListAsync();
+            foreach (var child in children) child.ParentTaskId = task.ParentTaskId;
+
+            _db.ProjectTasks.Remove(task);
+            await _db.SaveChangesAsync();
+            await RefreshProgressAsync(id);
+
+            TempData["Success"] = "Task deleted.";
+            return RedirectToAction(nameof(Tasks), new { id, view = returnView });
+        }
+
+        /// <summary>
+        /// Applies a status change and the dates that go with it. Completion stamps the date and
+        /// forces the percentage to 100; reopening clears both, so a task cannot sit at "100% but
+        /// In Progress" and quietly inflate the project roll-up.
+        /// </summary>
+        private static void ApplyStatus(ProjectTask task, ProjectTaskStatus status)
+        {
+            task.Status = status;
+
+            if (status == ProjectTaskStatus.Completed)
+            {
+                task.CompletionDate ??= DateTime.Today;
+                task.PercentComplete = 100;
+                task.Column = KanbanColumn.Completed;
+            }
+            else
+            {
+                task.CompletionDate = null;
+                if (task.PercentComplete == 100) task.PercentComplete = 0;
+                if (task.Column == KanbanColumn.Completed) task.Column = KanbanColumn.InProgress;
+            }
+        }
+
+        /// <summary>
+        /// Rolls task completion up into the project percentage, for projects that asked for it.
+        /// Kept here rather than in the view so the figure is the same wherever it is read.
+        /// </summary>
+        private async Task RefreshProgressAsync(int projectId)
+        {
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
+            if (project == null || !project.AutoCalculateProgress) return;
+
+            var total = await _db.ProjectTasks.CountAsync(t => t.ProjectId == projectId &&
+                                                               t.Status != ProjectTaskStatus.Cancelled);
+            if (total == 0) return;
+
+            var done = await _db.ProjectTasks.CountAsync(t => t.ProjectId == projectId &&
+                                                              t.Status == ProjectTaskStatus.Completed);
+
+            project.ProgressPercent = done * 100 / total;
+            project.UpdatedAt = DateTime.Now;
+            await _db.SaveChangesAsync();
+        }
+
+        private async Task<int> NextBoardOrderAsync(int projectId)
+        {
+            var highest = await _db.ProjectTasks
+                .Where(t => t.ProjectId == projectId)
+                .Select(t => (int?)t.BoardOrder)
+                .MaxAsync() ?? 0;
+            return highest + 10;
+        }
+
         // ── tab plumbing ─────────────────────────────────────────────────────────
 
         /// <summary>

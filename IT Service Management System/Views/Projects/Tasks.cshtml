@@ -1,0 +1,357 @@
+﻿@model IT_Service_Management_System.ViewModels.Pm.ProjectTasksVm
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Pm
+
+@{
+    var p = Model.Project;
+    ViewData["Title"] = $"Tasks — {p.Name} - Axis IT Helpdesk";
+    ViewData["Tab"] = "tasks";
+
+    var owners = ViewBag.Owners as List<User> ?? new List<User>();
+    var milestones = ViewBag.Milestones as List<Milestone> ?? new List<Milestone>();
+
+    // Hoisted: Razor cannot parse a nested double-quoted call inside an attribute value.
+    var listRoute = Model.RouteValues("list");
+    var boardRoute = Model.RouteValues("board");
+}
+
+<div class="page-container">
+    @await Html.PartialAsync("_ProjectHeader", p)
+
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--primary-surface); color: var(--primary);">
+                <i class="fas fa-list-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Tasks.Count</h3>
+                <p>Tasks shown</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Completed</h3>
+                <p>Completed</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Overdue</h3>
+                <p>Overdue</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-light); color: #b45309;">
+                <i class="fas fa-ban"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Blocked</h3>
+                <p>Blocked</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-filter"></i>
+            <span>Filter and view</span>
+        </div>
+        <form method="get" asp-action="Tasks" asp-route-id="@p.Id" class="filters-body">
+            <input type="hidden" name="view" value="@Model.View" />
+            <div class="filter-group">
+                <label>Milestone</label>
+                <select name="milestoneId" class="filter-select">
+                    <option value="">Any milestone</option>
+                    @foreach (var m in milestones)
+                    {
+                        <option value="@m.Id" selected="@(Model.MilestoneId == m.Id)">@m.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Assignee</label>
+                <select name="assigneeId" class="filter-select">
+                    <option value="">Anyone</option>
+                    @foreach (var u in owners)
+                    {
+                        <option value="@u.Id" selected="@(Model.AssigneeId == u.Id)">@u.FullName</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Show</label>
+                <select name="openOnly" class="filter-select">
+                    <option value="false" selected="@(!Model.OpenOnly)">All tasks</option>
+                    <option value="true" selected="@Model.OpenOnly">Open only</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-clear-filters" style="background:var(--primary);color:#fff;border:none;">
+                <i class="fas fa-search"></i> Apply
+            </button>
+            @if (Model.IsFiltered)
+            {
+                <a asp-action="Tasks" asp-route-id="@p.Id" asp-route-view="@Model.View" class="btn-clear-filters">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+            }
+            <div class="ms-auto d-flex gap-1">
+                <a class="btn-clear-filters @(Model.View == "list" ? "active-view" : "")"
+                   asp-action="Tasks" asp-route-id="@p.Id" asp-all-route-data="listRoute">
+                    <i class="fas fa-list"></i> List
+                </a>
+                <a class="btn-clear-filters @(Model.View == "board" ? "active-view" : "")"
+                   asp-action="Tasks" asp-route-id="@p.Id" asp-all-route-data="boardRoute">
+                    <i class="fas fa-columns"></i> Board
+                </a>
+            </div>
+        </form>
+    </div>
+
+    @if (Model.View == "board")
+    {
+        <!-- The board is the same tasks as the list, arranged by lane. Cards move with buttons
+             rather than drag-and-drop: it works without JavaScript and on a phone. -->
+        <div class="kanban">
+            @foreach (var column in Enum.GetValues<KanbanColumn>())
+            {
+                var cards = Model.InColumn(column).ToList();
+                <div class="kanban-col">
+                    <div class="kanban-head">
+                        <span>@column.ToString()</span>
+                        <span class="kanban-count">@cards.Count</span>
+                    </div>
+                    <div class="kanban-body">
+                        @foreach (var t in cards)
+                        {
+                            <div class="kanban-card @(t.Status == ProjectTaskStatus.Blocked ? "is-blocked" : "")">
+                                <div class="kanban-card-title">@t.Name</div>
+                                <div class="kanban-card-meta">
+                                    @if (t.AssignedTo != null)
+                                    {
+                                        <span><i class="fas fa-user"></i> @t.AssignedTo.FirstName</span>
+                                    }
+                                    @if (t.DueDate.HasValue)
+                                    {
+                                        var late = t.DueDate.Value.Date < DateTime.Today &&
+                                                   t.Status != ProjectTaskStatus.Completed;
+                                        <span style="@(late ? "color:var(--danger);" : "")">
+                                            <i class="fas fa-calendar"></i> @t.DueDate.Value.ToString("MMM d")
+                                        </span>
+                                    }
+                                    <span class="tprio tprio-@t.Priority">@t.Priority</span>
+                                </div>
+                                @if (Model.CanContribute)
+                                {
+                                    <div class="kanban-card-actions">
+                                        @foreach (var target in Enum.GetValues<KanbanColumn>())
+                                        {
+                                            if (target != column)
+                                            {
+                                                <form method="post" asp-action="MoveTask" asp-route-id="@p.Id">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="taskId" value="@t.Id" />
+                                                    <input type="hidden" name="column" value="@target" />
+                                                    <button type="submit" class="lane-btn" title="Move to @target">@target.ToString()</button>
+                                                </form>
+                                            }
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                        @if (cards.Count == 0)
+                        {
+                            <p class="kanban-empty">Nothing here</p>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div><i class="fas fa-list-check me-2"></i><span>Tasks</span></div>
+                <span class="record-count">@Model.Tasks.Count shown</span>
+            </div>
+
+            @if (Model.Tasks.Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-list-check me-1"></i> Task</th>
+                                <th><i class="fas fa-flag me-1"></i> Milestone</th>
+                                <th><i class="fas fa-user me-1"></i> Assignee</th>
+                                <th><i class="fas fa-circle-dot me-1"></i> Status</th>
+                                <th><i class="fas fa-calendar me-1"></i> Due</th>
+                                <th style="width: 4rem;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var t in Model.Tasks)
+                            {
+                                var overdue = t.DueDate.HasValue && t.DueDate.Value.Date < DateTime.Today &&
+                                              t.Status != ProjectTaskStatus.Completed &&
+                                              t.Status != ProjectTaskStatus.Cancelled;
+                                <tr>
+                                    @if (Model.CanContribute)
+                                    {
+                                        <td colspan="5">
+                                            <form method="post" asp-action="SaveTask" asp-route-id="@p.Id"
+                                                  class="d-flex gap-2 flex-wrap align-items-center">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="Id" value="@t.Id" />
+                                                <input type="hidden" name="returnView" value="list" />
+                                                <input type="text" name="Name" value="@t.Name" required
+                                                       class="filter-select" style="flex: 2; min-width: 170px;" />
+                                                <select name="MilestoneId" class="filter-select" style="max-width: 150px;">
+                                                    <option value="">On the project</option>
+                                                    @foreach (var m in milestones)
+                                                    {
+                                                        <option value="@m.Id" selected="@(m.Id == t.MilestoneId)">@m.Name</option>
+                                                    }
+                                                </select>
+                                                <select name="AssignedToId" class="filter-select" style="max-width: 150px;">
+                                                    <option value="">Unassigned</option>
+                                                    @foreach (var u in owners)
+                                                    {
+                                                        <option value="@u.Id" selected="@(u.Id == t.AssignedToId)">@u.FullName</option>
+                                                    }
+                                                </select>
+                                                <select name="Status" class="filter-select" style="max-width: 135px;">
+                                                    @foreach (var st in Enum.GetValues<ProjectTaskStatus>())
+                                                    {
+                                                        <option value="@st" selected="@(st == t.Status)">@st</option>
+                                                    }
+                                                </select>
+                                                <select name="Priority" class="filter-select" style="max-width: 110px;">
+                                                    @foreach (var pr in Enum.GetValues<TaskPriority>())
+                                                    {
+                                                        <option value="@pr" selected="@(pr == t.Priority)">@pr</option>
+                                                    }
+                                                </select>
+                                                <input type="date" name="DueDate" class="filter-select" style="max-width: 150px;"
+                                                       value="@(t.DueDate?.ToString("yyyy-MM-dd"))" />
+                                                <input type="hidden" name="EstimatedHours" value="@t.EstimatedHours" />
+                                                <button type="submit" class="action-btn btn-approve" title="Save this task">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    }
+                                    else
+                                    {
+                                        <td><strong style="font-size: 0.86rem;">@t.Name</strong></td>
+                                        <td>
+                                            @if (t.Milestone != null)
+                                            {
+                                                <span class="entity-chip">@t.Milestone.Name</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="chip-muted">On the project</span>
+                                            }
+                                        </td>
+                                        <td>@(t.AssignedTo?.FullName ?? "Unassigned")</td>
+                                        <td><span class="pstatus pstatus-@t.Status">@t.Status</span></td>
+                                        <td class="date-cell" style="@(overdue ? "color:var(--danger);font-weight:600;" : "")">
+                                            @(t.DueDate?.ToString("yyyy-MM-dd") ?? "—")
+                                        </td>
+                                    }
+                                    <td>
+                                        @if (Model.CanContribute)
+                                        {
+                                            <form method="post" asp-action="DeleteTask" asp-route-id="@p.Id"
+                                                  onsubmit="return confirm('Delete this task?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="taskId" value="@t.Id" />
+                                                <input type="hidden" name="returnView" value="list" />
+                                                <button type="submit" class="action-btn btn-delete" title="Delete task">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="fas fa-list-check"></i>
+                    <h3>No tasks@(Model.IsFiltered ? " match this filter" : " yet")</h3>
+                    <p>
+                        @(Model.IsFiltered
+                            ? "Try widening the filter or clearing it."
+                            : "Add the work this project has to get through. Tasks can sit under a milestone or straight on the project.")
+                    </p>
+                </div>
+            }
+
+            @if (Model.CanContribute)
+            {
+                <form method="post" asp-action="SaveTask" asp-route-id="@p.Id" class="inline-form"
+                      style="border-top: 1px solid var(--gray-200); background: var(--gray-50);">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="Id" value="0" />
+                    <input type="hidden" name="returnView" value="@Model.View" />
+                    <input type="hidden" name="Status" value="@ProjectTaskStatus.NotStarted" />
+                    <div class="filter-group" style="flex: 2;">
+                        <label>Add a task</label>
+                        <input type="text" name="Name" class="filter-select" required placeholder="What needs doing?" />
+                    </div>
+                    <div class="filter-group">
+                        <label>Milestone</label>
+                        <select name="MilestoneId" class="filter-select">
+                            <option value="">On the project</option>
+                            @foreach (var m in milestones)
+                            {
+                                <option value="@m.Id" selected="@(Model.MilestoneId == m.Id)">@m.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Assignee</label>
+                        <select name="AssignedToId" class="filter-select">
+                            <option value="">Unassigned</option>
+                            @foreach (var u in owners)
+                            {
+                                <option value="@u.Id">@u.FullName</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Due</label>
+                        <input type="date" name="DueDate" class="filter-select" />
+                    </div>
+                    <div class="filter-group" style="max-width: 110px;">
+                        <label>Priority</label>
+                        <select name="Priority" class="filter-select">
+                            @foreach (var pr in Enum.GetValues<TaskPriority>())
+                            {
+                                <option value="@pr" selected="@(pr == TaskPriority.Medium)">@pr</option>
+                            }
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-create-sm">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </form>
+            }
+        </div>
+    }
+</div>
+
+@await Html.PartialAsync("_ProjectStyles")
