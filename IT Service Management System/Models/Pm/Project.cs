@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
@@ -115,6 +115,27 @@ namespace IT_Service_Management_System.Models.Pm
 
         [NotMapped]
         public int? DaysRemaining => EndDate.HasValue ? (int)(EndDate.Value.Date - DateTime.Today).TotalDays : null;
+
+        /// <summary>
+        /// Signed schedule variance in days against the planned end date: positive means late,
+        /// negative means early. Once the project has actually finished this is its final figure;
+        /// while it is still running the clock keeps moving, so an open project that has sailed
+        /// past its end date reports a growing delay rather than freezing at zero.
+        /// </summary>
+        [NotMapped]
+        public int? ScheduleVarianceDays
+        {
+            get
+            {
+                if (!EndDate.HasValue) return null;
+                var reference = ActualEndDate ?? DateTime.Today;
+                return (int)(reference.Date - EndDate.Value.Date).TotalDays;
+            }
+        }
+
+        /// <summary>Human reading of <see cref="ScheduleVarianceDays"/>, e.g. "12 days delay".</summary>
+        [NotMapped]
+        public string ScheduleVarianceLabel => ScheduleVariance.Describe(ScheduleVarianceDays);
 
         /// <summary>Percentage of the planned schedule that has elapsed — compare against ProgressPercent.</summary>
         [NotMapped]

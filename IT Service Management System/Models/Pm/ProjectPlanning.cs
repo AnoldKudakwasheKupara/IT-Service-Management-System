@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
@@ -108,6 +108,13 @@ namespace IT_Service_Management_System.Models.Pm
 
         public MilestoneStatus Status { get; set; } = MilestoneStatus.Planned;
 
+        /// <summary>
+        /// Manual position in the plan. Milestones are a sequence the project manager decides, not
+        /// something the due dates can be trusted to imply — two milestones often share a date, and
+        /// a slipped one should not jump its neighbours. Lower sorts first.
+        /// </summary>
+        public int SortOrder { get; set; }
+
         public int? OwnerId { get; set; }
         [ValidateNever] public User? Owner { get; set; }
 
@@ -135,6 +142,14 @@ namespace IT_Service_Management_System.Models.Pm
 
         [NotMapped]
         public bool IsOverdue => Status is MilestoneStatus.Planned or MilestoneStatus.AtRisk && DueDate.Date < DateTime.Today;
+
+        /// <summary>Signed variance against the due date: positive is late, negative is early.</summary>
+        [NotMapped]
+        public int VarianceDays => (int)((AchievedDate ?? DateTime.Today).Date - DueDate.Date).TotalDays;
+
+        /// <summary>Human reading of <see cref="VarianceDays"/>, e.g. "1 day ahead".</summary>
+        [NotMapped]
+        public string VarianceLabel => ScheduleVariance.Describe(VarianceDays);
     }
 
     /// <summary>A tangible output the project must produce and hand over.</summary>
