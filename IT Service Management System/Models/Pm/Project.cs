@@ -12,8 +12,16 @@ namespace IT_Service_Management_System.Models.Pm
     {
         public int Id { get; set; }
 
-        /// <summary>Human-readable code, e.g. PRJ-2026-014. Auto-generated when left blank.</summary>
+        /// <summary>
+        /// Human-readable code, e.g. PRJ-2026-014. Auto-generated when left blank.
+        ///
+        /// ValidateNever because this is a non-nullable string, which MVC treats as implicitly
+        /// required under nullable reference types — that would reject the blank value the
+        /// generate-a-code path depends on. The controller settles this field on every save, so
+        /// whatever the form posts is advisory anyway.
+        /// </summary>
         [StringLength(30)]
+        [ValidateNever]
         public string Code { get; set; } = string.Empty;
 
         [Required, StringLength(200)]

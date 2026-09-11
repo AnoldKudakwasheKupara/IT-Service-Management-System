@@ -1,4 +1,4 @@
-@model IT_Service_Management_System.Models.Pm.Project
+﻿@model IT_Service_Management_System.Models.Pm.Project
 @using IT_Service_Management_System.Models
 @using IT_Service_Management_System.Models.Pm
 
@@ -37,7 +37,10 @@
             <input type="hidden" asp-for="Id" />
         }
 
-        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+        @* "All", not "ModelOnly": most fields here have no inline message of their own, so a
+           property-level error would otherwise reject the form with nothing on screen to explain
+           it. Better a summary that repeats Name than a form that silently refuses to save. *@
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
         <div class="data-card mb-4">
             <div class="card-header-custom">
