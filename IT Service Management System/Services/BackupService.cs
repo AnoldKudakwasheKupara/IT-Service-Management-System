@@ -1,4 +1,4 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,16 +25,14 @@ namespace IT_Service_Management_System.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ConfigurationService _config;
-        private readonly AuditService _audit;
         private readonly AlertService _alerts;
         private readonly ILogger<BackupService> _logger;
 
         public BackupService(ApplicationDbContext context, ConfigurationService config,
-            AuditService audit, AlertService alerts, ILogger<BackupService> logger)
+            AlertService alerts, ILogger<BackupService> logger)
         {
             _context = context;
             _config = config;
-            _audit = audit;
             _alerts = alerts;
             _logger = logger;
         }
@@ -94,15 +92,12 @@ namespace IT_Service_Management_System.Services
 
                 ApplyRetention(path, cfg.BackupRetentionCount);
 
-                await _audit.LogAsync("Backup Created", "Backup", null,
-                    $"Database backup created and verified: {Path.GetFileName(file)}");
 
                 return (true, $"Backup created and verified: {Path.GetFileName(file)}");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Backup failed");
-                await _audit.LogAsync("Backup Failed", "Backup", null, ex.Message);
                 await _alerts.BackupFailureAsync(ex.Message);
                 return (false, $"Backup failed: {ex.Message}");
             }
@@ -122,12 +117,10 @@ namespace IT_Service_Management_System.Services
             {
                 await _context.Database.ExecuteSqlRawAsync(
                     "RESTORE VERIFYONLY FROM DISK = @path;", new SqlParameter("@path", full));
-                await _audit.LogAsync("Backup Verified", "Backup", null, $"Verified backup {fileName}");
                 return (true, $"{fileName} is valid and restorable.");
             }
             catch (Exception ex)
             {
-                await _audit.LogAsync("Backup Verify Failed", "Backup", null, $"{fileName}: {ex.Message}");
                 await _alerts.BackupFailureAsync($"Verification failed for {fileName}: {ex.Message}");
                 return (false, $"Verification failed: {ex.Message}");
             }

@@ -34,7 +34,6 @@ namespace IT_Service_Management_System.Services.Itsm
     public class TicketService
     {
         private readonly ApplicationDbContext _db;
-        private readonly AuditService _audit;
         private readonly EmailDispatcher _email;
         private readonly ISlaService _sla;
         private readonly IRealtimeNotifier _rt;
@@ -44,13 +43,12 @@ namespace IT_Service_Management_System.Services.Itsm
         private readonly ConfigurationService _config;
         private readonly ILogger<TicketService> _logger;
 
-        public TicketService(ApplicationDbContext db, AuditService audit, EmailDispatcher email,
+        public TicketService(ApplicationDbContext db, EmailDispatcher email,
             ISlaService sla, IRealtimeNotifier rt, IHttpContextAccessor http, LinkGenerator links,
             TimeProvider clock, ConfigurationService config, ILogger<TicketService> logger)
         {
             _config = config;
             _db = db;
-            _audit = audit;
             _email = email;
             _sla = sla;
             _rt = rt;
@@ -159,7 +157,6 @@ namespace IT_Service_Management_System.Services.Itsm
             try { await _db.SaveChangesAsync(); }
             catch (DbUpdateConcurrencyException) { return TicketOp.Concurrency; }
 
-            await _audit.LogAsync("Updated", "Ticket", ticket.Id, $"Ticket '{ticket.Title}' updated");
             NotifyStatusChange(ticket, oldStatus);
             await NotifyAssignmentAsync(ticket, oldAssignee);
             return TicketOp.Success(ticket);
@@ -182,8 +179,6 @@ namespace IT_Service_Management_System.Services.Itsm
             try { await _db.SaveChangesAsync(); }
             catch (DbUpdateConcurrencyException) { return TicketOp.Concurrency; }
 
-            await _audit.LogAsync("Assigned", "Ticket", ticket.Id,
-                assignedToId == null ? "Ticket unassigned" : $"Ticket assigned to user #{assignedToId}");
             await NotifyAssignmentAsync(ticket, oldAssignee);
             if (assignedToId != null)
                 await _rt.NotifyUserAsync(assignedToId.Value, new RealtimeNotice(
@@ -230,7 +225,6 @@ namespace IT_Service_Management_System.Services.Itsm
                 ApplyStatusTimestamps(ticket, oldStatus, Now);
                 try { await _db.SaveChangesAsync(); }
                 catch (DbUpdateConcurrencyException) { return TicketOp.Concurrency; }
-                await _audit.LogAsync("Status Changed", "Ticket", ticket.Id, $"Status {oldStatus} -> {status}");
                 NotifyStatusChange(ticket, oldStatus);
             }
             return TicketOp.Success(ticket, $"Ticket marked {status}.");
@@ -250,7 +244,6 @@ namespace IT_Service_Management_System.Services.Itsm
             ApplyStatusTimestamps(ticket, oldStatus, Now);
             try { await _db.SaveChangesAsync(); }
             catch (DbUpdateConcurrencyException) { return TicketOp.Concurrency; }
-            await _audit.LogAsync("Reopened", "Ticket", ticket.Id, "Ticket reopened");
             NotifyStatusChange(ticket, oldStatus);
             return TicketOp.Success(ticket, "Ticket reopened.");
         }
@@ -278,8 +271,6 @@ namespace IT_Service_Management_System.Services.Itsm
             });
             try { await _db.SaveChangesAsync(); }
             catch (DbUpdateConcurrencyException) { return TicketOp.Concurrency; }
-            await _audit.LogAsync("On Hold", "Ticket", id,
-                string.IsNullOrWhiteSpace(reason) ? "Ticket placed on hold" : $"On hold: {reason.Trim()}");
             return TicketOp.Success(ticket, "Ticket placed on hold — SLA paused.");
         }
 
@@ -305,7 +296,6 @@ namespace IT_Service_Management_System.Services.Itsm
             });
             try { await _db.SaveChangesAsync(); }
             catch (DbUpdateConcurrencyException) { return TicketOp.Concurrency; }
-            await _audit.LogAsync("Resumed", "Ticket", id, $"Resumed from hold ({ticket.PausedMinutes} min paused total)");
             return TicketOp.Success(ticket, "Ticket resumed — SLA running again.");
         }
 
@@ -337,7 +327,6 @@ namespace IT_Service_Management_System.Services.Itsm
             });
             try { await _db.SaveChangesAsync(); }
             catch (DbUpdateConcurrencyException) { return TicketOp.Concurrency; }
-            await _audit.LogAsync("Escalated", "Ticket", id, $"Escalated; priority {oldPriority} -> {ticket.Priority}");
             await _rt.NotifyStaffAsync(new RealtimeNotice(
                 $"Escalated: {ticket.Reference}", ticket.Title, TicketLink(ticket.Id), "error"));
             await NotifyEscalationAsync(ticket, reason);
@@ -370,7 +359,6 @@ namespace IT_Service_Management_System.Services.Itsm
 
             try { await _db.SaveChangesAsync(); }
             catch (DbUpdateConcurrencyException) { return TicketOp.Concurrency; }
-            await _audit.LogAsync("Closed", "Ticket", id, $"Ticket closed. Notes: {closingNotes ?? "None"}");
             NotifyStatusChange(ticket, oldStatus);
             return TicketOp.Success(ticket, $"Ticket {ticket.Reference} closed.");
         }
@@ -387,7 +375,6 @@ namespace IT_Service_Management_System.Services.Itsm
             ticket.SatisfactionComment = string.IsNullOrWhiteSpace(comment) ? null : comment.Trim();
             try { await _db.SaveChangesAsync(); }
             catch (DbUpdateConcurrencyException) { return TicketOp.Concurrency; }
-            await _audit.LogAsync("Satisfaction Rated", "Ticket", id, $"Rated {ticket.SatisfactionRating}/5");
             return TicketOp.Success(ticket, "Thanks for your feedback!");
         }
 
@@ -401,7 +388,6 @@ namespace IT_Service_Management_System.Services.Itsm
             ticket.DeletedAt = Now;
             try { await _db.SaveChangesAsync(); }
             catch (DbUpdateConcurrencyException) { return TicketOp.Concurrency; }
-            await _audit.LogAsync("Deleted", "Ticket", id, $"Ticket ID {id} deleted (soft)");
             return TicketOp.Success(ticket, $"Ticket {ticket.Reference} deleted.");
         }
 
@@ -452,8 +438,6 @@ namespace IT_Service_Management_System.Services.Itsm
             ticket.UpdatedAt = now;
             await _db.SaveChangesAsync();
 
-            await _audit.LogAsync(internalNote ? "Internal Note Added" : "Reply Added",
-                "Ticket", ticketId, internalNote ? "Internal note posted" : "Reply posted");
 
             var senderName = sender?.FullName ?? "Someone";
             if (!internalNote)

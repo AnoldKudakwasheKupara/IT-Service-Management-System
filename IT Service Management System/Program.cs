@@ -4,7 +4,6 @@ using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Hubs;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
-using IT_Service_Management_System.Services.Auditing;
 using IT_Service_Management_System.Services.Efm;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
@@ -100,9 +99,6 @@ builder.Services.AddScoped<IEmailSender>(sp =>
 // Read the configurable idle timeout from the DB (falls back to 30 min if unavailable,
 // e.g. on a brand-new database before the table exists). Applied at startup.
 int sessionIdleMinutes = 30;
-// Audit capture is configurable too, and the interceptor is wired into the DbContext itself,
-// so its switch has to be known before the context is registered.
-var auditOptions = new AuditOptions();
 try
 {
     var probeOptions = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -112,8 +108,6 @@ try
     var cfg = probe.AppConfigurations.AsNoTracking().FirstOrDefault();
     if (cfg != null && cfg.SessionIdleTimeoutMinutes > 0)
         sessionIdleMinutes = cfg.SessionIdleTimeoutMinutes;
-    if (cfg != null)
-        auditOptions.CaptureEntityChanges = cfg.AuditCaptureEntityChanges;
 }
 catch
 {
@@ -129,34 +123,18 @@ builder.Services.AddSession(options =>
     options.Cookie.SameSite = SameSiteMode.Strict;
 });
 
-// ── Audit trail ──────────────────────────────────────────────────────────────
-// Registered before the DbContext because the interceptor is part of its options.
-// The writer is a singleton: it owns the process-wide lock that keeps the hash chain linear.
-builder.Services.AddSingleton(auditOptions);
-builder.Services.AddSingleton<AuditWriter>();
-builder.Services.AddScoped<AuditContextProvider>();
-builder.Services.AddScoped<AuditInterceptor>();
-
-builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
-    options
-        .UseSqlServer(
-            builder.Configuration.GetConnectionString("DefaultConnection"),
-            sql =>
-            {
-                // Survive transient SQL faults (failovers, throttling, brief network blips)
-                // instead of surfacing them as hard 500s; cap long-running commands.
-                sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
-                sql.CommandTimeout(60);
-            })
-        // Every save through this context is audited, wherever in the app it originates.
-        .AddInterceptors(sp.GetRequiredService<AuditInterceptor>()));
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sql =>
+        {
+            // Survive transient SQL faults (failovers, throttling, brief network blips)
+            // instead of surfacing them as hard 500s; cap long-running commands.
+            sql.EnableRetryOnFailure(maxRetryCount: 5, maxRetryDelay: TimeSpan.FromSeconds(10), errorNumbersToAdd: null);
+            sql.CommandTimeout(60);
+        }));
 
 builder.Services.AddHttpContextAccessor();
-
-builder.Services.AddScoped<AuditService>();
-
-// Nightly enforcement of the configured audit retention period.
-builder.Services.AddHostedService<AuditRetentionHostedService>();
 
 builder.Services.AddScoped<ConfigurationService>();
 

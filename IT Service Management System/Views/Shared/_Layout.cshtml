@@ -844,10 +844,6 @@
                        asp-controller="Departments" asp-action="Index">
                         <i class="fas fa-building"></i> Departments
                     </a>
-                    <a class="nav-item @(currentController == "AuditLogs" ? "active" : "")"
-                       asp-controller="AuditLogs" asp-action="Index">
-                        <i class="fas fa-history"></i> Audit Trail
-                    </a>
 
                     <div class="nav-group">Security</div>
                     <a class="nav-item @(currentController == "Security" ? "active" : "")"
@@ -1209,7 +1205,6 @@
                 '/SSLCertificates': 'ssl tls certificate expiry',
                 '/Users': 'people staff employee account role',
                 '/Departments': 'department team org unit',
-                '/AuditLogs': 'audit trail history who did what',
                 '/Security': 'security dashboard threats sessions lockout',
                 '/Configuration': 'settings config options preferences',
                 '/Backup': 'backup restore disaster recovery',

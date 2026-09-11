@@ -1,4 +1,4 @@
-using IT_Service_Management_System.Helpers;
+﻿using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 
 namespace IT_Service_Management_System.Services
@@ -11,14 +11,12 @@ namespace IT_Service_Management_System.Services
     {
         private readonly ConfigurationService _config;
         private readonly IEmailSender _email;
-        private readonly AuditService _audit;
         private readonly ILogger<AlertService> _logger;
 
-        public AlertService(ConfigurationService config, IEmailSender email, AuditService audit, ILogger<AlertService> logger)
+        public AlertService(ConfigurationService config, IEmailSender email, ILogger<AlertService> logger)
         {
             _config = config;
             _email = email;
-            _audit = audit;
             _logger = logger;
         }
 
@@ -34,7 +32,6 @@ namespace IT_Service_Management_System.Services
             var recipients = Recipients(cfg).ToList();
 
             // Always record the alert in the audit trail, even if no recipients are configured.
-            await _audit.LogAsync("Security Alert", "Security", null, auditDetails);
 
             if (recipients.Count == 0)
             {

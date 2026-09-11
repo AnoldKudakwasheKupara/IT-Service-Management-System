@@ -1,6 +1,5 @@
 ﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models;
-using IT_Service_Management_System.Services.Auditing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -16,15 +15,12 @@ namespace IT_Service_Management_System.Services
         private readonly ApplicationDbContext _context;
         private readonly IMemoryCache _cache;
         private readonly IConfiguration _appConfig;
-        private readonly AuditOptions _auditOptions;
 
-        public ConfigurationService(ApplicationDbContext context, IMemoryCache cache,
-            IConfiguration appConfig, AuditOptions auditOptions)
+        public ConfigurationService(ApplicationDbContext context, IMemoryCache cache, IConfiguration appConfig)
         {
             _context = context;
             _cache = cache;
             _appConfig = appConfig;
-            _auditOptions = auditOptions;
         }
 
         /// <summary>Returns the current configuration, creating a default row on first use.</summary>
@@ -115,19 +111,11 @@ namespace IT_Service_Management_System.Services
             existing.DailySummaryHour = updated.DailySummaryHour;
             existing.DailySummaryPerAgent = updated.DailySummaryPerAgent;
 
-            // Audit trail
-            existing.AuditCaptureEntityChanges = updated.AuditCaptureEntityChanges;
-            existing.AuditRetentionDays = updated.AuditRetentionDays;
-
             existing.UpdatedAt = DateTime.Now;
             existing.UpdatedBy = updatedBy;
 
             await _context.SaveChangesAsync();
             _cache.Remove(CacheKey);
-
-            // The interceptor reads this switch on every save, so the change applies immediately
-            // rather than at the next restart.
-            _auditOptions.CaptureEntityChanges = existing.AuditCaptureEntityChanges;
         }
 
         private AppConfiguration CreateDefault() => new()

@@ -2,7 +2,6 @@
 using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Services;
-using IT_Service_Management_System.Services.Auditing;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +15,6 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailDispatcher _email;
-        private readonly AuditService _auditService;
         private readonly SessionService _sessions;
         private readonly ConfigurationService _configService;
         private readonly AlertService _alerts;
@@ -37,7 +35,6 @@ namespace IT_Service_Management_System.Controllers
         public AccountController(
             ApplicationDbContext context,
             EmailDispatcher email,
-            AuditService auditService,
             SessionService sessions,
             ConfigurationService configService,
             AlertService alerts,
@@ -49,7 +46,6 @@ namespace IT_Service_Management_System.Controllers
         {
             _context = context;
             _email = email;
-            _auditService = auditService;
             _sessions = sessions;
             _configService = configService;
             _alerts = alerts;
@@ -133,8 +129,6 @@ namespace IT_Service_Management_System.Controllers
 
             if (await IsRateLimitedAsync(throttleKey))
             {
-                await _auditService.LogAsync("Login Blocked", "User", null,
-                    $"Rate-limited login attempt for {email}");
                 ViewBag.Error = "Too many failed attempts. Please try again in a few minutes.";
                 return View();
             }
@@ -145,14 +139,11 @@ namespace IT_Service_Management_System.Controllers
             // before any session exists. Naming the actor now keeps those entries attributed to the
             // account they concern instead of to "Anonymous".
             if (user != null)
-                AuditContextProvider.SetActor(HttpContext, user.Id, $"{user.FirstName} {user.LastName}".Trim(), user.Role.ToString());
 
             // Account-locked check (per-user, configurable).
             if (user != null && user.IsLockedOut)
             {
                 await RegisterAttemptAsync(throttleKey);
-                await _auditService.LogAsync("Login Blocked", "User", user.Id,
-                    $"Login attempt on locked account {user.Email}");
                 ViewBag.Error = $"This account is locked due to repeated failed sign-ins. Try again after {user.LockoutEnd:h:mm tt}.";
                 return View();
             }
@@ -177,11 +168,6 @@ namespace IT_Service_Management_System.Controllers
 
                     await _context.SaveChangesAsync();
 
-                    await _auditService.LogAsync(justLocked ? "Account Locked" : "Login Failed",
-                        "User", user.Id,
-                        justLocked
-                            ? $"Account {user.Email} locked after repeated failed sign-ins"
-                            : $"Failed login ({user.FailedLoginCount}) for {user.Email}");
 
                     // Notify the user (locked → always; otherwise a one-time heads-up partway to lockout).
                     if (justLocked)
@@ -204,8 +190,6 @@ namespace IT_Service_Management_System.Controllers
                 }
                 else
                 {
-                    await _auditService.LogAsync("Login Failed", "User", null,
-                        $"Failed login attempt for {email}");
                 }
 
                 ViewBag.Error = "Invalid credentials or account not activated.";
@@ -231,8 +215,6 @@ namespace IT_Service_Management_System.Controllers
                 if (method == MfaMethod.Authenticator)
                 {
                     // Nothing to send — the code comes from the user's authenticator app.
-                    await _auditService.LogAsync("MFA Challenge", "User", user.Id,
-                        $"Authenticator challenge for {user.Email}");
                 }
                 else
                 {
@@ -246,8 +228,6 @@ namespace IT_Service_Management_System.Controllers
                         EmailTemplates.MfaCode(user.FirstName, code, config.MfaOtpValidityMinutes));
                     SurfaceDevOtp(user.Email, code, config.MfaOtpValidityMinutes);
 
-                    await _auditService.LogAsync("MFA Challenge", "User", user.Id,
-                        $"OTP issued to {user.Email}");
                 }
 
                 return RedirectToAction(nameof(VerifyMfa));
@@ -271,7 +251,6 @@ namespace IT_Service_Management_System.Controllers
 
             var user = await _context.Users.FindAsync(pendingId.Value);
             if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
-            AuditContextProvider.SetActor(HttpContext, user.Id, $"{user.FirstName} {user.LastName}".Trim(), user.Role.ToString());
 
             var method = user.MfaMethod != MfaMethod.None ? user.MfaMethod : MfaMethod.Email;
             ViewBag.MaskedEmail = MaskEmail(user.Email);
@@ -290,7 +269,6 @@ namespace IT_Service_Management_System.Controllers
 
             var user = await _context.Users.FindAsync(pendingId.Value);
             if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
-            AuditContextProvider.SetActor(HttpContext, user.Id, $"{user.FirstName} {user.LastName}".Trim(), user.Role.ToString());
 
             var method = user.MfaMethod != MfaMethod.None ? user.MfaMethod : MfaMethod.Email;
             ViewBag.MaskedEmail = MaskEmail(user.Email);
@@ -325,13 +303,9 @@ namespace IT_Service_Management_System.Controllers
                     await _context.SaveChangesAsync();
                     await _cache.RemoveAsync(attemptKey);
                     HttpContext.Session.Remove(MfaPendingKey);
-                    await _auditService.LogAsync("MFA Locked", "User", user.Id,
-                        $"Too many invalid MFA attempts for {user.Email}");
                     return RedirectToAction(nameof(Login), new { mfaFailed = true });
                 }
 
-                await _auditService.LogAsync("MFA Failed", "User", user.Id,
-                    $"Invalid MFA code ({attempts}/{MaxMfaAttempts}) for {user.Email}");
                 ViewBag.Error = $"Incorrect code. {MaxMfaAttempts - attempts} attempt(s) left.";
                 return View();
             }
@@ -345,8 +319,6 @@ namespace IT_Service_Management_System.Controllers
 
             await _cache.RemoveAsync($"mfa-attempts:{user.Id}");
             HttpContext.Session.Remove(MfaPendingKey);
-            await _auditService.LogAsync(usedRecovery ? "MFA Recovery Used" : "MFA Verified", "User", user.Id,
-                usedRecovery ? $"Recovery code used for {user.Email}" : $"Code verified for {user.Email}");
 
             return await FinalizeLoginAsync(user);
         }
@@ -359,7 +331,6 @@ namespace IT_Service_Management_System.Controllers
 
             var user = await _context.Users.FindAsync(pendingId.Value);
             if (user == null) { HttpContext.Session.Remove(MfaPendingKey); return RedirectToAction(nameof(Login)); }
-            AuditContextProvider.SetActor(HttpContext, user.Id, $"{user.FirstName} {user.LastName}".Trim(), user.Role.ToString());
 
             // Authenticator users have no email to resend — their code is in the app.
             if (user.MfaMethod == MfaMethod.Authenticator)
@@ -406,12 +377,9 @@ namespace IT_Service_Management_System.Controllers
                 .ToListAsync();
 
             await _sessions.StartSessionAsync(user);
-            await _auditService.LogAsync("Login", "User", user.Id, $"User {user.Email} logged in");
 
             if (!knownDevice)
             {
-                await _auditService.LogAsync("New Device Login", "User", user.Id,
-                    $"{user.Email} signed in from a new device ({_sessions.CurrentDevice()})");
                 await TrySendEmailAsync(user.Email, user.FirstName,
                     "New sign-in to your account — Axis IT Operations",
                     EmailTemplates.NewDeviceLogin(user.FirstName, _sessions.CurrentDevice(),
@@ -469,7 +437,6 @@ namespace IT_Service_Management_System.Controllers
             if (userId != null)
             {
                 await _sessions.RevokeCurrentAsync("User logged out");
-                await _auditService.LogAsync("Logout", "User", userId, "User logged out");
             }
 
             HttpContext.Session.Clear();
@@ -491,8 +458,6 @@ namespace IT_Service_Management_System.Controllers
                 user.SecurityStamp = Guid.NewGuid().ToString("N");
                 await _context.SaveChangesAsync();
                 await _sessions.RevokeAllAsync(user.Id, "User logged out from all devices");
-                await _auditService.LogAsync("Logout All Devices", "User", user.Id,
-                    $"{user.Email} logged out from all devices");
             }
 
             HttpContext.Session.Clear();
@@ -549,7 +514,6 @@ namespace IT_Service_Management_System.Controllers
                 return View();
             }
 
-            AuditContextProvider.SetActor(HttpContext, user.Id, $"{user.FirstName} {user.LastName}".Trim(), user.Role.ToString());
 
             if (user.TokenExpiry == null || user.TokenExpiry < DateTime.Now)
             {
@@ -593,8 +557,6 @@ namespace IT_Service_Management_System.Controllers
             // Revoke any tracked sessions for this user (password just changed).
             await _sessions.RevokeAllAsync(user.Id, "Password changed");
 
-            await _auditService.LogAsync("Set Password", "User", user.Id,
-                isNewAccount ? "Account activated — first password set" : "Password reset via email link");
 
             // Send confirmation email. TrySendEmailAsync swallows/logs errors, so awaiting it
             // guarantees delivery is attempted without ever breaking the redirect.
@@ -645,7 +607,6 @@ namespace IT_Service_Management_System.Controllers
             await _context.SaveChangesAsync();
 
             await RegisterAttemptAsync(throttleKey);
-            await _auditService.LogAsync("Forgot Password", "User", user.Id, "Password reset requested");
 
             var resetLink = Url.Action("SetPassword", "Account",
                 new { token = rawToken }, Request.Scheme)!;

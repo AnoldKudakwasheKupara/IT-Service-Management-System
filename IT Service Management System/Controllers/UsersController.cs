@@ -13,16 +13,14 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly EmailDispatcher _email;
-        private readonly AuditService _auditService;
         private readonly AlertService _alerts;
         private readonly SessionService _sessions;
         private readonly ILogger<UsersController> _logger;
 
-        public UsersController(ApplicationDbContext context, EmailDispatcher email, AuditService auditService, AlertService alerts, SessionService sessions, ILogger<UsersController> logger)
+        public UsersController(ApplicationDbContext context, EmailDispatcher email, AlertService alerts, SessionService sessions, ILogger<UsersController> logger)
         {
             _context = context;
             _email = email;
-            _auditService = auditService;
             _alerts = alerts;
             _sessions = sessions;
             _logger = logger;
@@ -303,8 +301,6 @@ namespace IT_Service_Management_System.Controllers
             // Audit a role change for the security/compliance trail.
             if (oldRole != existingUser.Role)
             {
-                await _auditService.LogAsync("Permission Changed", "User", existingUser.Id,
-                    $"Role changed from {oldRole} to {existingUser.Role} for {existingUser.Email}");
 
                 // Let the affected user know their access level changed.
                 await TrySendEmailAsync(existingUser.Email, existingUser.FirstName,
@@ -394,7 +390,6 @@ namespace IT_Service_Management_System.Controllers
             await _context.SaveChangesAsync();
 
             // ✅ AUDIT LOG
-            await _auditService.LogAsync("Profile Updated", "User", user.Id, "User updated profile");
 
             HttpContext.Session.SetString("UserName", user.FirstName);
             HttpContext.Session.SetString("UserFullName", $"{user.FirstName} {user.LastName}".Trim());
@@ -454,8 +449,6 @@ namespace IT_Service_Management_System.Controllers
             user.MfaEnabled = enable;
             await _context.SaveChangesAsync();
 
-            await _auditService.LogAsync(enable ? "MFA Enabled" : "MFA Disabled", "User", user.Id,
-                $"{user.Email} {(enable ? "enabled" : "disabled")} email OTP MFA");
 
             if (was && !enable)
             {
@@ -505,8 +498,6 @@ namespace IT_Service_Management_System.Controllers
             user.TokenExpiry = DateTime.Now.AddHours(1);
             await _context.SaveChangesAsync();
 
-            await _auditService.LogAsync("Reset Password", "User", user.Id,
-                $"Admin-triggered password reset link sent to {user.Email}");
 
             var resetLink = Url.Action("SetPassword", "Account",
                 new { token = resetToken }, Request.Scheme)!;
@@ -542,8 +533,6 @@ namespace IT_Service_Management_System.Controllers
             user.TokenExpiry = DateTime.Now.AddHours(24);
             await _context.SaveChangesAsync();
 
-            await _auditService.LogAsync("Resend Invitation", "User", user.Id,
-                $"Activation email resent to {user.Email}");
 
             var activationLink = Url.Action("SetPassword", "Account",
                 new { token = activationToken }, Request.Scheme)!;

@@ -1,4 +1,4 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Services;
 using IT_Service_Management_System.ViewModels.Reports;
 using IT_Service_Management_System.ViewModels.Security;
@@ -12,26 +12,15 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ConfigurationService _configService;
-        private readonly AuditService _auditService;
         private readonly SessionService _sessions;
-
-        // Audit actions considered "security events" for the dashboard feed.
-        private static readonly string[] SecurityActions =
-        {
-            "Login", "Login Failed", "Login Blocked", "Logout", "Logout All Devices",
-            "Account Locked", "Account Unlocked", "Set Password", "Forgot Password",
-            "Reset Password", "Resend Invitation", "Session Revoked"
-        };
 
         public SecurityController(
             ApplicationDbContext context,
             ConfigurationService configService,
-            AuditService auditService,
             SessionService sessions)
         {
             _context = context;
             _configService = configService;
-            _auditService = auditService;
             _sessions = sessions;
         }
 
@@ -59,31 +48,10 @@ namespace IT_Service_Management_System.Controllers
                 .OrderByDescending(s => s.LastSeenAt)
                 .ToListAsync();
 
-            var failed24 = await _context.AuditLogs.AsNoTracking()
-                .CountAsync(a => a.Action == "Login Failed" && a.Timestamp >= now.AddHours(-24));
-            var failed7 = await _context.AuditLogs.AsNoTracking()
-                .CountAsync(a => a.Action == "Login Failed" && a.Timestamp >= now.AddDays(-7));
-
-            var topFailed = await _context.AuditLogs.AsNoTracking()
-                .Where(a => a.Action == "Login Failed" && a.Timestamp >= now.AddDays(-7))
-                .GroupBy(a => a.Details)
-                .Select(g => new { Name = g.Key, Count = g.Count() })
-                .OrderByDescending(x => x.Count)
-                .Take(8)
-                .ToListAsync();
-
-            var recentEvents = await _context.AuditLogs.AsNoTracking()
-                .Where(a => SecurityActions.Contains(a.Action))
-                .OrderByDescending(a => a.Timestamp)
-                .Take(25)
-                .ToListAsync();
-
             var vm = new SecurityDashboardVM
             {
                 GeneratedAt = now,
                 TotalUsers = users.Count,
-                FailedLogins24h = failed24,
-                FailedLogins7d = failed7,
                 LockedUsersCount = users.Count(u => u.LockoutEnd.HasValue && u.LockoutEnd > now),
                 ActiveSessionsCount = activeSessions.Count,
                 ExpiredPasswordsCount = expiredUsers.Count,
@@ -96,9 +64,7 @@ namespace IT_Service_Management_System.Controllers
                     .OrderByDescending(u => u.LockoutEnd).ToList(),
                 DisabledAccounts = users.Where(u => !u.IsActive).OrderBy(u => u.FirstName).ToList(),
                 ExpiredPasswordUsers = expiredUsers,
-                ActiveSessions = activeSessions,
-                RecentSecurityEvents = recentEvents,
-                TopFailedLoginTargets = topFailed.Select(x => new NameCount(x.Name, x.Count)).ToList()
+                ActiveSessions = activeSessions
             };
 
             return View(vm);
@@ -116,8 +82,6 @@ namespace IT_Service_Management_System.Controllers
             user.FailedLoginCount = 0;
             await _context.SaveChangesAsync();
 
-            await _auditService.LogAsync("Account Unlocked", "User", user.Id,
-                $"Account {user.Email} manually unlocked");
 
             TempData["Success"] = $"{user.Email} has been unlocked.";
             return RedirectToAction(nameof(Index));
@@ -137,8 +101,6 @@ namespace IT_Service_Management_System.Controllers
                 session.RevokedReason = "Revoked by administrator";
                 await _context.SaveChangesAsync();
 
-                await _auditService.LogAsync("Session Revoked", "UserSession", session.Id,
-                    $"Session for user #{session.UserId} revoked by admin");
             }
 
             TempData["Success"] = "Session revoked.";
