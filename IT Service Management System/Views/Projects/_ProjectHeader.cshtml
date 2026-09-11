@@ -1,0 +1,54 @@
+@model IT_Service_Management_System.Models.Pm.Project
+@*
+    The project's identity strip and tab bar, shared by every tab of the record.
+
+    Tabs are real URLs rather than client-side panels: each one is its own action with its own
+    query, so a milestone plan or a task board is linkable, bookmarkable and does not pay for the
+    other tabs' data on every load. ViewData["Tab"] says which one is current.
+*@
+@{
+    var tab = ViewData["Tab"] as string ?? "overview";
+
+    (string Key, string Action, string Icon, string Label)[] tabs =
+    {
+        ("overview",     "Details",      "fa-circle-info",     "Overview"),
+        ("milestones",   "Milestones",   "fa-flag-checkered",  "Milestones"),
+        ("tasks",        "Tasks",        "fa-list-check",      "Tasks"),
+        ("associations", "Associations", "fa-link",            "Associations")
+    };
+}
+
+<div class="page-header">
+    <div class="d-flex align-items-center gap-3 mb-3">
+        <a asp-action="Index" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="flex-grow-1">
+            <h1 class="page-title">
+                <i class="fas fa-diagram-project me-2" style="color: var(--primary);"></i>
+                @Model.Name
+            </h1>
+            <p class="text-muted mt-2 mb-0">
+                <span class="project-code d-inline">@Model.Reference</span>
+                @if (!string.IsNullOrWhiteSpace(Model.Client))
+                {
+                    <span class="mx-2">&middot;</span><span>@Model.Client</span>
+                }
+                <span class="mx-2">&middot;</span>
+                <span class="pstatus pstatus-@Model.Status">@Model.Status</span>
+                <span class="mx-1"></span>
+                <span class="health-lamp health-@Model.Health">@Model.Health</span>
+            </p>
+        </div>
+    </div>
+
+    <nav class="project-tabs" aria-label="Project sections">
+        @foreach (var t in tabs)
+        {
+            <a class="project-tab @(tab == t.Key ? "active" : "")"
+               asp-action="@t.Action" asp-route-id="@Model.Id">
+                <i class="fas @t.Icon"></i> @t.Label
+            </a>
+        }
+    </nav>
+</div>

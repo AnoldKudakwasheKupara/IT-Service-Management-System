@@ -1,0 +1,287 @@
+@model IT_Service_Management_System.ViewModels.Pm.ProjectDetailsVm
+@using IT_Service_Management_System.Models.Pm
+
+@{
+    var p = Model.Project;
+    ViewData["Title"] = $"{p.Name} - Axis IT Helpdesk";
+    ViewData["Tab"] = "overview";
+}
+
+<div class="page-container">
+    @await Html.PartialAsync("_ProjectHeader", p)
+
+    <div class="project-grid">
+        <div>
+            <div class="data-card mb-4">
+                <div class="card-header-custom">
+                    <div><i class="fas fa-circle-info me-2"></i><span>Project details</span></div>
+                    @if (Model.CanEdit)
+                    {
+                        <a class="btn-create-sm" asp-action="Edit" asp-route-id="@p.Id">
+                            <i class="fas fa-pen"></i> Edit
+                        </a>
+                    }
+                </div>
+                <div class="field-grid">
+                    <div class="field-item">
+                        <label>Type</label>
+                        <div class="value">@p.Type</div>
+                    </div>
+                    <div class="field-item">
+                        <label>Category</label>
+                        <div class="value">@p.Category</div>
+                    </div>
+                    <div class="field-item">
+                        <label>Priority</label>
+                        <div class="value">@p.Priority</div>
+                    </div>
+                    <div class="field-item">
+                        <label>Department</label>
+                        <div class="value">@(p.Department?.Name ?? "—")</div>
+                    </div>
+                    <div class="field-item">
+                        <label>Manager</label>
+                        <div class="value">@(p.ProjectManager?.FullName ?? "Unassigned")</div>
+                    </div>
+                    <div class="field-item">
+                        <label>Sponsor</label>
+                        <div class="value">@(p.Sponsor?.FullName ?? "Unassigned")</div>
+                    </div>
+                    <div class="field-item">
+                        <label>Scheduled start</label>
+                        <div class="value">@(p.StartDate?.ToString("yyyy-MM-dd") ?? "—")</div>
+                    </div>
+                    <div class="field-item">
+                        <label>Scheduled end</label>
+                        <div class="value">@(p.EndDate?.ToString("yyyy-MM-dd") ?? "—")</div>
+                    </div>
+                    <div class="field-item">
+                        <label>Actual start</label>
+                        <div class="value">@(p.ActualStartDate?.ToString("yyyy-MM-dd") ?? "—")</div>
+                    </div>
+                    <div class="field-item">
+                        <label>Actual end</label>
+                        <div class="value">@(p.ActualEndDate?.ToString("yyyy-MM-dd") ?? "—")</div>
+                    </div>
+                    <div class="field-item">
+                        <label>Baseline end</label>
+                        <div class="value">@(p.BaselineEndDate?.ToString("yyyy-MM-dd") ?? "Not baselined")</div>
+                    </div>
+                    <div class="field-item">
+                        <label>Budget</label>
+                        <div class="value">
+                            @p.Currency @p.TotalBudget.ToString("N2")
+                            @if (p.ApprovedChangeValue != 0)
+                            {
+                                <div style="font-size:0.7rem;color:var(--gray-400);">
+                                    incl. @p.Currency @p.ApprovedChangeValue.ToString("N2") approved changes
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(p.Location))
+                    {
+                        <div class="field-item">
+                            <label>Location</label>
+                            <div class="value">@p.Location</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(p.Tags))
+                    {
+                        <div class="field-item">
+                            <label>Tags</label>
+                            <div class="value">@p.Tags</div>
+                        </div>
+                    }
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(p.Description))
+                {
+                    <div style="padding: 0 1.5rem 1.25rem;">
+                        <label style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--gray-400);">Description</label>
+                        <p style="font-size:0.86rem;color:var(--gray-600);margin:0.3rem 0 0;white-space:pre-wrap;">@p.Description</p>
+                    </div>
+                }
+            </div>
+
+            <div class="data-card">
+                <div class="card-header-custom">
+                    <div><i class="fas fa-users me-2"></i><span>Team</span></div>
+                    <span class="record-count">@Model.Team.Count active</span>
+                </div>
+
+                @if (Model.Team.Count > 0)
+                {
+                    @foreach (var m in Model.Team)
+                    {
+                        <div class="team-row">
+                            <div class="list-avatar">@(m.User?.FirstName.Substring(0, 1).ToUpper() ?? "?")</div>
+                            <div class="who">
+                                <span class="name">@(m.User?.FullName ?? "Unknown user")</span>
+                                <span class="meta">
+                                    @m.AllocationPercent% allocated
+                                    @if (m.FromDate.HasValue)
+                                    {
+                                        <text>&middot; since @m.FromDate.Value.ToString("yyyy-MM-dd")</text>
+                                    }
+                                </span>
+                            </div>
+                            <span class="team-role">@m.Role</span>
+                            @if (Model.CanEdit)
+                            {
+                                <form method="post" asp-action="RemoveTeamMember" asp-route-id="@p.Id"
+                                      onsubmit="return confirm('Roll @(m.User?.FullName ?? "this member") off the project? Their booked time stays attributed to them.');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="memberId" value="@m.Id" />
+                                    <button type="submit" class="action-btn btn-delete" title="Roll off the project">
+                                        <i class="fas fa-user-minus"></i>
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state" style="padding: 2rem;">
+                        <i class="fas fa-users"></i>
+                        <h3>No one on the team yet</h3>
+                        <p>Add the people delivering this project so work can be assigned to them.</p>
+                    </div>
+                }
+
+                @if (Model.CanEdit && Model.AssignableUsers.Count > 0)
+                {
+                    <form method="post" asp-action="AddTeamMember" asp-route-id="@p.Id" class="inline-form"
+                          style="border-top: 1px solid var(--gray-200); background: var(--gray-50);">
+                        @Html.AntiForgeryToken()
+                        <div class="filter-group" style="flex: 2;">
+                            <label>Add someone</label>
+                            <select name="userId" class="filter-select" required>
+                                <option value="">Choose a person…</option>
+                                @foreach (var u in Model.AssignableUsers)
+                                {
+                                    <option value="@u.Id">@u.FullName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="filter-group">
+                            <label>Role</label>
+                            <select name="role" class="filter-select">
+                                @foreach (var r in Enum.GetValues<TeamRole>())
+                                {
+                                    <option value="@r" selected="@(r == TeamRole.Member)">@r</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="filter-group" style="max-width: 120px;">
+                            <label>Allocation %</label>
+                            <input type="number" name="allocationPercent" class="filter-select" value="100" min="0" max="100" />
+                        </div>
+                        <button type="submit" class="btn-create-sm">
+                            <i class="fas fa-user-plus"></i> Add
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <!-- Summary rail: the figures a manager checks before opening anything else. -->
+        <div>
+            <div class="data-card mb-4">
+                <div class="card-header-custom">
+                    <div><i class="fas fa-gauge-high me-2"></i><span>Summary</span></div>
+                </div>
+
+                <div class="rollup">
+                    <div class="rollup-head">
+                        <span>Overall progress</span>
+                        <strong>@p.ProgressPercent%</strong>
+                    </div>
+                    @await Html.PartialAsync("_ProgressBar", p)
+                </div>
+
+                <div class="rollup">
+                    <div class="rollup-head">
+                        <span>Milestones</span>
+                        <strong>@Model.MilestonesAchieved / @Model.MilestonesTotal</strong>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" style="width:@Model.MilestonePercent%"></div>
+                    </div>
+                </div>
+
+                <div class="rollup">
+                    <div class="rollup-head">
+                        <span>Tasks</span>
+                        <strong>@Model.TasksCompleted / @Model.TasksTotal</strong>
+                    </div>
+                    <div class="progress-track">
+                        <div class="progress-fill" style="width:@Model.TaskPercent%"></div>
+                    </div>
+                </div>
+
+                <div class="rail-stat">
+                    <span class="label">Schedule</span>
+                    <span class="variance variance-@ScheduleVariance.Band(p.ScheduleVarianceDays)">
+                        @p.ScheduleVarianceLabel
+                    </span>
+                </div>
+                <div class="rail-stat">
+                    <span class="label">Days remaining</span>
+                    <span class="figure">@(p.DaysRemaining?.ToString() ?? "—")</span>
+                </div>
+                <div class="rail-stat">
+                    <span class="label">Linked records</span>
+                    <span class="figure">
+                        <a asp-action="Associations" asp-route-id="@p.Id" class="text-decoration-none">@Model.LinkedRecords</a>
+                    </span>
+                </div>
+                <div class="rail-stat">
+                    <span class="label">Open risks</span>
+                    <span class="figure">@Model.OpenRisks</span>
+                </div>
+                <div class="rail-stat">
+                    <span class="label">Open issues</span>
+                    <span class="figure">@Model.OpenIssues</span>
+                </div>
+                <div class="rail-stat">
+                    <span class="label">Created</span>
+                    <span class="figure" style="font-weight:500;font-size:0.78rem;color:var(--gray-500);">
+                        @p.CreatedAt.ToString("yyyy-MM-dd")
+                    </span>
+                </div>
+            </div>
+
+            @if (Model.CanEdit)
+            {
+                <div class="data-card">
+                    <div class="card-header-custom">
+                        <div><i class="fas fa-shuffle me-2"></i><span>Move status</span></div>
+                    </div>
+                    <form method="post" asp-action="ChangeStatus" asp-route-id="@p.Id" class="inline-form">
+                        @Html.AntiForgeryToken()
+                        <div class="filter-group" style="flex: 1;">
+                            <label>Status</label>
+                            <select name="status" class="filter-select">
+                                @foreach (var s in Enum.GetValues<ProjectStatus>())
+                                {
+                                    <option value="@s" selected="@(s == p.Status)">@s</option>
+                                }
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-create-sm">
+                            <i class="fas fa-check"></i> Apply
+                        </button>
+                    </form>
+                    <p style="font-size:0.72rem;color:var(--gray-400);padding:0 1.5rem 1rem;margin:0;">
+                        Completing or cancelling a project stamps its actual end date, which is what
+                        every schedule-variance figure is measured against.
+                    </p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_ProjectStyles")

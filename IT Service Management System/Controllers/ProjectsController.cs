@@ -88,6 +88,147 @@ namespace IT_Service_Management_System.Controllers
             return View(model);
         }
 
+        // ── the project record ───────────────────────────────────────────────────
+
+        public async Task<IActionResult> Details(int id)
+        {
+            var project = await _db.Projects
+                .Include(p => p.ProjectManager)
+                .Include(p => p.Sponsor)
+                .Include(p => p.Department)
+                .Include(p => p.CreatedBy)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (project == null) return NotFound();
+
+            var team = await _db.ProjectTeamMembers
+                .Include(m => m.User)
+                .Where(m => m.ProjectId == id && m.IsActive)
+                .OrderBy(m => m.Role)
+                .ToListAsync();
+
+            if (!PmAccess.CanView(project, Uid, Role, team.Select(m => m.UserId))) return Denied();
+
+            // Roll-ups are counted in the database. A project with hundreds of tasks should not
+            // load them all just to print "84 of 95 done".
+            var model = new ProjectDetailsVm
+            {
+                Project = project,
+                Team = team,
+                MilestonesTotal = await _db.Milestones.CountAsync(m => m.ProjectId == id),
+                MilestonesAchieved = await _db.Milestones
+                    .CountAsync(m => m.ProjectId == id && m.Status == MilestoneStatus.Achieved),
+                TasksTotal = await _db.ProjectTasks.CountAsync(t => t.ProjectId == id),
+                TasksCompleted = await _db.ProjectTasks
+                    .CountAsync(t => t.ProjectId == id && t.Status == ProjectTaskStatus.Completed),
+                LinkedRecords = await _db.ProjectItsmLinks.CountAsync(l => l.ProjectId == id),
+                OpenRisks = await _db.ProjectRisks
+                    .CountAsync(r => r.ProjectId == id && r.Status != PmRiskStatus.Closed),
+                OpenIssues = await _db.ProjectIssues
+                    .CountAsync(i => i.ProjectId == id && i.Status != IssueStatus.Closed),
+                CanEdit = PmAccess.CanEdit(project, Uid, Role),
+                CanContribute = PmAccess.CanContribute(project, Uid, Role, team.Select(m => m.UserId)),
+                CanApprove = PmAccess.CanApprove(Role)
+            };
+
+            if (model.CanEdit)
+            {
+                var onTeam = team.Select(m => m.UserId).ToList();
+                model.AssignableUsers = await _db.Users.AsNoTracking()
+                    .Where(u => u.IsActive && !onTeam.Contains(u.Id))
+                    .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
+                    .ToListAsync();
+            }
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangeStatus(int id, ProjectStatus status)
+        {
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == id);
+            if (project == null) return NotFound();
+            if (!PmAccess.CanEdit(project, Uid, Role)) return Denied();
+
+            // Reaching a terminal state stamps the actual finish, which is what every schedule
+            // variance figure is measured against — leaving it null would report a growing delay
+            // on a project that has in fact landed.
+            project.Status = status;
+            project.UpdatedAt = DateTime.Now;
+
+            if (status is ProjectStatus.Completed or ProjectStatus.Cancelled)
+                project.ActualEndDate ??= DateTime.Today;
+            else
+                project.ActualEndDate = null;
+
+            if (status == ProjectStatus.Active)
+                project.ActualStartDate ??= DateTime.Today;
+
+            await _db.SaveChangesAsync();
+            TempData["Success"] = $"Project moved to {status}.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddTeamMember(int id, int userId, TeamRole role, int allocationPercent = 100)
+        {
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == id);
+            if (project == null) return NotFound();
+            if (!PmAccess.CanEdit(project, Uid, Role)) return Denied();
+
+            // Someone who rolled off keeps their row so their time entries stay attributable;
+            // adding them back reactivates that row rather than creating a duplicate.
+            var existing = await _db.ProjectTeamMembers
+                .FirstOrDefaultAsync(m => m.ProjectId == id && m.UserId == userId);
+
+            if (existing != null)
+            {
+                existing.IsActive = true;
+                existing.Role = role;
+                existing.AllocationPercent = allocationPercent;
+                existing.ToDate = null;
+            }
+            else
+            {
+                _db.ProjectTeamMembers.Add(new ProjectTeamMember
+                {
+                    ProjectId = id,
+                    UserId = userId,
+                    Role = role,
+                    AllocationPercent = allocationPercent,
+                    FromDate = DateTime.Today
+                });
+            }
+
+            await _db.SaveChangesAsync();
+            TempData["Success"] = "Team member added.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveTeamMember(int id, int memberId)
+        {
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == id);
+            if (project == null) return NotFound();
+            if (!PmAccess.CanEdit(project, Uid, Role)) return Denied();
+
+            var member = await _db.ProjectTeamMembers
+                .FirstOrDefaultAsync(m => m.Id == memberId && m.ProjectId == id);
+            if (member == null) return NotFound();
+
+            // Rolled off, not deleted: time already booked against this project must stay
+            // attributable to the person who booked it.
+            member.IsActive = false;
+            member.ToDate = DateTime.Today;
+
+            await _db.SaveChangesAsync();
+            TempData["Success"] = "Team member rolled off.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         // ── query helpers ────────────────────────────────────────────────────────
 
         /// <summary>
