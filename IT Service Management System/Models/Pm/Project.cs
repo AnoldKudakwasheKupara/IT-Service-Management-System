@@ -167,6 +167,7 @@ namespace IT_Service_Management_System.Models.Pm
         [ValidateNever] public ICollection<TimeEntry> TimeEntries { get; set; } = new List<TimeEntry>();
         [ValidateNever] public ICollection<ProjectAttachment> Attachments { get; set; } = new List<ProjectAttachment>();
         [ValidateNever] public ICollection<ProjectLink> Dependencies { get; set; } = new List<ProjectLink>();
+        [ValidateNever] public ICollection<ProjectItsmLink> ItsmLinks { get; set; } = new List<ProjectItsmLink>();
     }
 
     /// <summary>A person assigned to a project team, with the hat they wear on it.</summary>

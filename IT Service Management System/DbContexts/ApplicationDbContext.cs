@@ -158,6 +158,7 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<ProjectPhase> ProjectPhases { get; set; }
         public DbSet<WbsItem> WbsItems { get; set; }
         public DbSet<Milestone> Milestones { get; set; }
+        public DbSet<ProjectItsmLink> ProjectItsmLinks { get; set; }
         public DbSet<Deliverable> Deliverables { get; set; }
         // Tasks
         public DbSet<ProjectTask> ProjectTasks { get; set; }
@@ -1438,6 +1439,28 @@ namespace IT_Service_Management_System.DbContexts
             {
                 e.HasOne(a => a.Project).WithMany(p => p.Attachments).HasForeignKey(a => a.ProjectId).OnDelete(DeleteBehavior.Cascade);
                 e.HasOne(a => a.UploadedBy).WithMany().HasForeignKey(a => a.UploadedById).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Links out to the service desk. The project owns the link; every other end is
+            // NoAction, both to honour the module's single-cascade-path rule and because a ticket
+            // being removed should not silently erase the record that a project answered it.
+            b.Entity<ProjectItsmLink>(e =>
+            {
+                e.HasOne(l => l.Project).WithMany(p => p.ItsmLinks).HasForeignKey(l => l.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                e.HasOne(l => l.Milestone).WithMany().HasForeignKey(l => l.MilestoneId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(l => l.Ticket).WithMany().HasForeignKey(l => l.TicketId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(l => l.ChangeRequest).WithMany().HasForeignKey(l => l.ChangeRequestId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(l => l.Problem).WithMany().HasForeignKey(l => l.ProblemId).OnDelete(DeleteBehavior.NoAction);
+                e.HasOne(l => l.CreatedBy).WithMany().HasForeignKey(l => l.CreatedById).OnDelete(DeleteBehavior.Restrict);
+
+                e.Property(l => l.Relation).HasConversion<string>().HasMaxLength(30);
+
+                // The service desk asks "what project is this ticket on?" as often as the project
+                // asks "what tickets do we own?", so both directions are indexed.
+                e.HasIndex(l => new { l.ProjectId, l.Relation });
+                e.HasIndex(l => l.TicketId);
+                e.HasIndex(l => l.ChangeRequestId);
+                e.HasIndex(l => l.ProblemId);
             });
 
             b.Entity<ProjectActivityLog>(e =>
