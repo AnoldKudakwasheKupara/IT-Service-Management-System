@@ -88,6 +88,151 @@ namespace IT_Service_Management_System.Controllers
             return View(model);
         }
 
+        // ── create and edit ──────────────────────────────────────────────────────
+
+        public async Task<IActionResult> Create()
+        {
+            if (!CanCreate()) return Denied();
+
+            await PopulateFormAsync();
+            return View("Form", new Project
+            {
+                // Sensible opening plan: starts today, a quarter long. Both are editable, but a
+                // blank date pair makes every progress and variance figure read as unknown.
+                StartDate = DateTime.Today,
+                EndDate = DateTime.Today.AddMonths(3),
+                Status = ProjectStatus.Draft
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(Project input)
+        {
+            if (!CanCreate()) return Denied();
+
+            if (!ModelState.IsValid)
+            {
+                await PopulateFormAsync();
+                return View("Form", input);
+            }
+
+            input.Code = await ResolveCodeAsync(input.Code, null);
+            input.CreatedById = Uid;
+            input.CreatedAt = DateTime.Now;
+
+            // Whoever starts a project manages it until someone says otherwise. A project with no
+            // owner is the thing that quietly rots, so it never starts out that way.
+            input.ProjectManagerId ??= Uid;
+
+            _db.Projects.Add(input);
+            await _db.SaveChangesAsync();
+
+            TempData["Success"] = $"Project {input.Reference} created.";
+            return RedirectToAction(nameof(Details), new { id = input.Id });
+        }
+
+        public async Task<IActionResult> Edit(int id)
+        {
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == id);
+            if (project == null) return NotFound();
+            if (!PmAccess.CanEdit(project, Uid, Role)) return Denied();
+
+            await PopulateFormAsync();
+            return View("Form", project);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(Project input)
+        {
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == input.Id);
+            if (project == null) return NotFound();
+            if (!PmAccess.CanEdit(project, Uid, Role)) return Denied();
+
+            if (!ModelState.IsValid)
+            {
+                await PopulateFormAsync();
+                return View("Form", input);
+            }
+
+            // Copied field by field rather than by attaching the posted entity: a form post must
+            // not be able to reassign ownership metadata, progress roll-ups or the approval stamp.
+            project.Code = await ResolveCodeAsync(input.Code, project.Id);
+            project.Name = input.Name;
+            project.Description = input.Description;
+            project.Client = input.Client;
+            project.DepartmentId = input.DepartmentId;
+            project.SponsorId = input.SponsorId;
+            project.ProjectManagerId = input.ProjectManagerId;
+            project.Priority = input.Priority;
+            project.Category = input.Category;
+            project.Type = input.Type;
+            project.StartDate = input.StartDate;
+            project.EndDate = input.EndDate;
+            project.Budget = input.Budget;
+            project.Currency = input.Currency;
+            project.Location = input.Location;
+            project.Tags = input.Tags;
+            project.Health = input.Health;
+            project.HealthNote = input.HealthNote;
+            project.AutoCalculateProgress = input.AutoCalculateProgress;
+
+            // Hand-entered progress is only honoured when the roll-up is switched off; otherwise
+            // the figure belongs to the tasks and would be overwritten on the next refresh anyway.
+            if (!input.AutoCalculateProgress)
+                project.ProgressPercent = input.ProgressPercent;
+
+            project.UpdatedAt = DateTime.Now;
+
+            await _db.SaveChangesAsync();
+
+            TempData["Success"] = "Project updated.";
+            return RedirectToAction(nameof(Details), new { id = project.Id });
+        }
+
+        /// <summary>
+        /// Settles the project code. Blank means "generate one"; a supplied code is kept unless it
+        /// collides, since Code carries a unique index and a duplicate would surface as a raw SQL
+        /// error on save rather than something the user can act on.
+        /// </summary>
+        private async Task<string> ResolveCodeAsync(string? requested, int? ownId)
+        {
+            var code = (requested ?? string.Empty).Trim();
+
+            if (code.Length > 0)
+            {
+                var taken = await _db.Projects
+                    .AnyAsync(p => p.Code == code && (ownId == null || p.Id != ownId));
+                if (!taken) return code;
+            }
+
+            var year = DateTime.Today.Year;
+            var prefix = $"PRJ-{year}-";
+            var used = await _db.Projects
+                .Where(p => p.Code.StartsWith(prefix))
+                .Select(p => p.Code)
+                .ToListAsync();
+
+            var next = 1;
+            foreach (var existing in used)
+            {
+                if (int.TryParse(existing[prefix.Length..], out var n) && n >= next)
+                    next = n + 1;
+            }
+
+            return $"{prefix}{next:D3}";
+        }
+
+        private async Task PopulateFormAsync()
+        {
+            ViewBag.Departments = await _db.Departments.AsNoTracking()
+                .OrderBy(d => d.Name).ToListAsync();
+            ViewBag.Users = await _db.Users.AsNoTracking()
+                .Where(u => u.IsActive)
+                .OrderBy(u => u.FirstName).ThenBy(u => u.LastName).ToListAsync();
+        }
+
         // ── the project record ───────────────────────────────────────────────────
 
         public async Task<IActionResult> Details(int id)
