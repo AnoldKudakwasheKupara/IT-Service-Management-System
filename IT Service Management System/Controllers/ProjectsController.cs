@@ -750,6 +750,113 @@ namespace IT_Service_Management_System.Controllers
             return highest + 10;
         }
 
+        // ── associations with the service desk ───────────────────────────────────
+
+        public async Task<IActionResult> Associations(int id)
+        {
+            var context = await LoadForTabAsync(id);
+            if (context.Result != null) return context.Result;
+
+            var links = await _db.ProjectItsmLinks
+                .Include(l => l.Ticket)
+                .Include(l => l.ChangeRequest)
+                .Include(l => l.Problem)
+                .Include(l => l.Milestone)
+                .Include(l => l.CreatedBy)
+                .Where(l => l.ProjectId == id)
+                .OrderBy(l => l.Relation).ThenByDescending(l => l.CreatedAt)
+                .ToListAsync();
+
+            // Candidates exclude what is already linked, so the same ticket cannot be attached
+            // twice and the list shrinks as the project claims its work.
+            var linkedTicketIds = links.Where(l => l.TicketId.HasValue)
+                                       .Select(l => l.TicketId!.Value).ToList();
+
+            var candidates = await _db.Tickets.AsNoTracking()
+                .Where(t => !linkedTicketIds.Contains(t.Id))
+                .OrderByDescending(t => t.CreatedAt)
+                .Take(200)
+                .Select(t => new TicketOption(t.Id, t.Reference, t.Title, t.Status.ToString()))
+                .ToListAsync();
+
+            return View(new ProjectAssociationsVm
+            {
+                Project = context.Project!,
+                Links = links,
+                TicketOptions = candidates,
+                Milestones = await _db.Milestones.AsNoTracking()
+                    .Where(m => m.ProjectId == id)
+                    .OrderBy(m => m.SortOrder).ThenBy(m => m.DueDate)
+                    .ToListAsync(),
+                CanContribute = context.CanContribute
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LinkRecord(int id, int ticketId, ProjectLinkRelation relation,
+            int? milestoneId, string? note)
+        {
+            var context = await LoadForTabAsync(id, needContribute: true);
+            if (context.Result != null) return context.Result;
+
+            var ticketExists = await _db.Tickets.AnyAsync(t => t.Id == ticketId);
+            if (!ticketExists)
+            {
+                TempData["Error"] = "That ticket no longer exists.";
+                return RedirectToAction(nameof(Associations), new { id });
+            }
+
+            // One ticket, one link. Re-linking the same ticket under a different relation is a
+            // correction, not a second fact, so the existing row moves rather than multiplying.
+            var existing = await _db.ProjectItsmLinks
+                .FirstOrDefaultAsync(l => l.ProjectId == id && l.TicketId == ticketId);
+
+            if (existing != null)
+            {
+                existing.Relation = relation;
+                existing.MilestoneId = milestoneId;
+                existing.Note = note;
+                TempData["Success"] = "Association updated.";
+            }
+            else
+            {
+                _db.ProjectItsmLinks.Add(new ProjectItsmLink
+                {
+                    ProjectId = id,
+                    TicketId = ticketId,
+                    Relation = relation,
+                    MilestoneId = milestoneId,
+                    Note = note,
+                    CreatedById = Uid
+                });
+                TempData["Success"] = "Ticket linked to the project.";
+            }
+
+            await _db.SaveChangesAsync();
+            return RedirectToAction(nameof(Associations), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UnlinkRecord(int id, int linkId)
+        {
+            var context = await LoadForTabAsync(id, needContribute: true);
+            if (context.Result != null) return context.Result;
+
+            var link = await _db.ProjectItsmLinks
+                .FirstOrDefaultAsync(l => l.Id == linkId && l.ProjectId == id);
+            if (link == null) return NotFound();
+
+            // Only the association goes. The ticket itself is the service desk's record and has
+            // nothing to do with whether a project chose to claim it.
+            _db.ProjectItsmLinks.Remove(link);
+            await _db.SaveChangesAsync();
+
+            TempData["Success"] = "Association removed.";
+            return RedirectToAction(nameof(Associations), new { id });
+        }
+
         // ── tab plumbing ─────────────────────────────────────────────────────────
 
         /// <summary>

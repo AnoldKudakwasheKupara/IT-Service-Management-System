@@ -1,0 +1,199 @@
+@model IT_Service_Management_System.ViewModels.Pm.ProjectAssociationsVm
+@using IT_Service_Management_System.Models.Pm
+@using IT_Service_Management_System.ViewModels.Pm
+
+@{
+    var p = Model.Project;
+    ViewData["Title"] = $"Associations — {p.Name} - Axis IT Helpdesk";
+    ViewData["Tab"] = "associations";
+}
+
+<div class="page-container">
+    @await Html.PartialAsync("_ProjectHeader", p)
+
+    <div class="stats-cards mb-4">
+        @foreach (var relation in Enum.GetValues<ProjectLinkRelation>())
+        {
+            <div class="stat-card">
+                <div class="stat-icon" style="background: var(--primary-surface); color: var(--primary);">
+                    <i class="fas @ProjectAssociationsVm.Icon(relation)"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>@Model.CountOf(relation)</h3>
+                    <p>@ProjectAssociationsVm.Heading(relation)</p>
+                </div>
+            </div>
+        }
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--gray-100); color: var(--gray-500);">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Links.Count</h3>
+                <p>Linked in total</p>
+            </div>
+        </div>
+    </div>
+
+    @foreach (var relation in Enum.GetValues<ProjectLinkRelation>())
+    {
+        var links = Model.Of(relation).ToList();
+        <div class="data-card mb-4">
+            <div class="card-header-custom">
+                <div>
+                    <i class="fas @ProjectAssociationsVm.Icon(relation) me-2"></i>
+                    <span>@ProjectAssociationsVm.Heading(relation)</span>
+                </div>
+                <span class="record-count">@links.Count</span>
+            </div>
+
+            @if (links.Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-hashtag me-1"></i> Record</th>
+                                <th><i class="fas fa-flag me-1"></i> Milestone</th>
+                                <th><i class="fas fa-note-sticky me-1"></i> Note</th>
+                                <th><i class="fas fa-user me-1"></i> Linked by</th>
+                                <th style="width: 4rem;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var link in links)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (link.TicketId.HasValue)
+                                        {
+                                            <a class="project-name" asp-controller="Tickets" asp-action="Details"
+                                               asp-route-id="@link.TicketId">@link.TargetReference</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="project-name">@link.TargetReference</span>
+                                        }
+                                        <span class="project-code">@link.TargetKind</span>
+                                        <div style="font-size: 0.78rem; color: var(--gray-600);">@link.TargetTitle</div>
+                                    </td>
+                                    <td>
+                                        @if (link.Milestone != null)
+                                        {
+                                            <span class="entity-chip">@link.Milestone.Name</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="chip-muted">Whole project</span>
+                                        }
+                                    </td>
+                                    <td style="font-size: 0.8rem; color: var(--gray-600); max-width: 260px;">
+                                        @(string.IsNullOrWhiteSpace(link.Note) ? "—" : link.Note)
+                                    </td>
+                                    <td class="date-cell">
+                                        @(link.CreatedBy?.FullName ?? "—")
+                                        <div style="font-size: 0.68rem; color: var(--gray-400);">
+                                            @link.CreatedAt.ToString("yyyy-MM-dd")
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (Model.CanContribute)
+                                        {
+                                            <form method="post" asp-action="UnlinkRecord" asp-route-id="@p.Id"
+                                                  onsubmit="return confirm('Remove this association? The ticket itself is untouched.');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="linkId" value="@link.Id" />
+                                                <button type="submit" class="action-btn btn-delete" title="Remove the association">
+                                                    <i class="fas fa-link-slash"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="empty-state" style="padding: 2rem;">
+                    <i class="fas @ProjectAssociationsVm.Icon(relation)"></i>
+                    <h3>Nothing linked here</h3>
+                    <p>@ProjectAssociationsVm.Blurb(relation)</p>
+                </div>
+            }
+        </div>
+    }
+
+    @if (Model.CanContribute)
+    {
+        <div class="data-card mb-5">
+            <div class="card-header-custom">
+                <div><i class="fas fa-plus me-2"></i><span>Link a ticket</span></div>
+                <span class="record-count">@Model.TicketOptions.Count available</span>
+            </div>
+
+            @if (Model.TicketOptions.Count > 0)
+            {
+                <form method="post" asp-action="LinkRecord" asp-route-id="@p.Id" class="inline-form">
+                    @Html.AntiForgeryToken()
+                    <div class="filter-group" style="flex: 2; min-width: 240px;">
+                        <label>Ticket</label>
+                        <select name="ticketId" class="filter-select" required>
+                            <option value="">Choose a ticket…</option>
+                            @foreach (var t in Model.TicketOptions)
+                            {
+                                <option value="@t.Id">@t.Reference — @t.Title (@t.Status)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Relation</label>
+                        <select name="relation" class="filter-select">
+                            @foreach (var r in Enum.GetValues<ProjectLinkRelation>())
+                            {
+                                <option value="@r" selected="@(r == ProjectLinkRelation.Related)">
+                                    @ProjectAssociationsVm.Heading(r)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Milestone</label>
+                        <select name="milestoneId" class="filter-select">
+                            <option value="">Whole project</option>
+                            @foreach (var m in Model.Milestones)
+                            {
+                                <option value="@m.Id">@m.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="filter-group" style="flex: 1;">
+                        <label>Note</label>
+                        <input type="text" name="note" class="filter-select" maxlength="500"
+                               placeholder="Why these are connected" />
+                    </div>
+                    <button type="submit" class="btn-create-sm">
+                        <i class="fas fa-link"></i> Link
+                    </button>
+                </form>
+            }
+            else
+            {
+                <div class="empty-state" style="padding: 2rem;">
+                    <i class="fas fa-ticket"></i>
+                    <h3>No tickets left to link</h3>
+                    <p>Every ticket in range is already associated with this project.</p>
+                </div>
+            }
+
+            <p style="font-size: 0.72rem; color: var(--gray-400); padding: 0 1.5rem 1rem; margin: 0;">
+                Changes and problems can be linked the same way once those modules have a UI again —
+                the record already carries their columns.
+            </p>
+        </div>
+    }
+</div>
+
+@await Html.PartialAsync("_ProjectStyles")
