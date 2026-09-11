@@ -150,6 +150,15 @@ namespace IT_Service_Management_System.Controllers
             if (!staff)
                 ticket.Messages = ticket.Messages.Where(m => !m.IsInternal).ToList();
 
+            // A ticket that belongs to a project should say so here, not only on the project.
+            // The association is worth as much to whoever is working the ticket.
+            ViewBag.ProjectLinks = await _context.ProjectItsmLinks.AsNoTracking()
+                .Include(l => l.Project)
+                .Include(l => l.Milestone)
+                .Where(l => l.TicketId == id)
+                .OrderBy(l => l.Relation)
+                .ToListAsync();
+
             ViewBag.IsStaff = staff;
             ViewBag.Agents = staff ? await _tickets.AgentsAsync() : new List<User>();
             ViewBag.CannedResponses = staff

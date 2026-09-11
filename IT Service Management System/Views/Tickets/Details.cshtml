@@ -189,6 +189,56 @@
                     }
             </div>
 
+            @{
+                var projectLinks = ViewBag.ProjectLinks
+                    as List<IT_Service_Management_System.Models.Pm.ProjectItsmLink>
+                    ?? new List<IT_Service_Management_System.Models.Pm.ProjectItsmLink>();
+            }
+            @if (projectLinks.Count > 0)
+            {
+                <!-- The other half of the project association. Whoever is working the ticket needs
+                     to know it belongs to a project as much as the project needs to know it owns
+                     the ticket, and the relation says which way round the two stand. -->
+                <div class="linked-projects">
+                    <h3 class="section-title">
+                        <i class="fas fa-diagram-project"></i>
+                        @(projectLinks.Count == 1 ? "Linked project" : "Linked projects")
+                    </h3>
+                    @foreach (var link in projectLinks)
+                    {
+                        <a class="linked-project" asp-controller="Projects" asp-action="Details"
+                           asp-route-id="@link.ProjectId">
+                            <div class="linked-project-main">
+                                <strong>@(link.Project?.Name ?? "Project")</strong>
+                                <span class="linked-project-ref">@(link.Project?.Reference)</span>
+                            </div>
+                            <div class="linked-project-meta">
+                                @switch (link.Relation)
+                                {
+                                    case IT_Service_Management_System.Models.Pm.ProjectLinkRelation.InitiatedProject:
+                                        <span><i class="fas fa-arrow-right-to-bracket"></i> This ticket started the project</span>
+                                        break;
+                                    case IT_Service_Management_System.Models.Pm.ProjectLinkRelation.CausedByProject:
+                                        <span><i class="fas fa-arrow-right-from-bracket"></i> Raised because of the project</span>
+                                        break;
+                                    default:
+                                        <span><i class="fas fa-link"></i> Delivered as part of the project</span>
+                                        break;
+                                }
+                                @if (link.Milestone != null)
+                                {
+                                    <span><i class="fas fa-flag"></i> @link.Milestone.Name</span>
+                                }
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(link.Note))
+                            {
+                                <p class="linked-project-note">@link.Note</p>
+                            }
+                        </a>
+                    }
+                </div>
+            }
+
             <!-- Description Section -->
             <div class="description-section">
                 <h3 class="section-title">
@@ -1085,6 +1135,42 @@
     }
 
     /* Flash banner */
+    /* Linked projects — styled to sit with the ticket's own meta blocks. */
+    .linked-projects { margin: 1.5rem 0; }
+    .linked-project {
+        display: block;
+        border: 1px solid var(--gray-200);
+        border-left: 3px solid var(--primary);
+        border-radius: 0.75rem;
+        padding: 0.85rem 1rem;
+        margin-bottom: 0.6rem;
+        text-decoration: none;
+        background: #fff;
+        transition: all 0.2s;
+    }
+    .linked-project:hover { background: var(--gray-50); box-shadow: var(--shadow-sm); }
+    .linked-project-main { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+    .linked-project-main strong { color: var(--gray-800); font-size: 0.92rem; }
+    .linked-project-ref {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.72rem;
+        color: var(--gray-400);
+    }
+    .linked-project-meta {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 0.35rem;
+        font-size: 0.76rem;
+        color: var(--gray-500);
+    }
+    .linked-project-note {
+        margin: 0.5rem 0 0;
+        font-size: 0.78rem;
+        color: var(--gray-600);
+        font-style: italic;
+    }
+
     .ticket-flash {
         background: #f0fdf4; border-left: 4px solid var(--success); color: #166534;
         padding: 0.8rem 1rem; border-radius: 0.6rem; margin-bottom: 1rem;
