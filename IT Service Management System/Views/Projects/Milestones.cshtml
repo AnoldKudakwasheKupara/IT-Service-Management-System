@@ -1,0 +1,242 @@
+@model IT_Service_Management_System.ViewModels.Pm.ProjectPlanVm
+@using IT_Service_Management_System.Models
+@using IT_Service_Management_System.Models.Pm
+
+@{
+    var p = Model.Project;
+    ViewData["Title"] = $"Milestones — {p.Name} - Axis IT Helpdesk";
+    ViewData["Tab"] = "milestones";
+
+    var owners = ViewBag.Owners as List<User> ?? new List<User>();
+    var taskCounts = ViewBag.TaskCounts as Dictionary<int, (int Total, int Done)>
+                     ?? new Dictionary<int, (int, int)>();
+}
+
+<div class="page-container">
+    @await Html.PartialAsync("_ProjectHeader", p)
+
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--primary-surface); color: var(--primary);">
+                <i class="fas fa-flag-checkered"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Milestones.Count</h3>
+                <p>Milestones</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Achieved</h3>
+                <p>Achieved</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Overdue</h3>
+                <p>Overdue</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #eff6ff; color: #1d4ed8;">
+                <i class="fas fa-percent"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.Percent%</h3>
+                <p>Plan complete</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-card">
+        <div class="card-header-custom">
+            <div><i class="fas fa-list-ol me-2"></i><span>The plan, in order</span></div>
+            <span class="record-count">Arranged by the project manager, not by date</span>
+        </div>
+
+        @if (Model.Milestones.Count > 0)
+        {
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 3rem;">#</th>
+                            <th><i class="fas fa-flag me-1"></i> Milestone</th>
+                            <th><i class="fas fa-calendar me-1"></i> Due</th>
+                            <th><i class="fas fa-circle-dot me-1"></i> Status</th>
+                            <th><i class="fas fa-user me-1"></i> Owner</th>
+                            <th><i class="fas fa-list-check me-1"></i> Tasks</th>
+                            <th style="width: 7rem;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < Model.Milestones.Count; i++)
+                        {
+                            var m = Model.Milestones[i];
+                            var counts = taskCounts.TryGetValue(m.Id, out var c) ? c : (Total: 0, Done: 0);
+                            <tr>
+                                <td style="color: var(--gray-400); font-weight: 600;">@(i + 1)</td>
+
+                                @if (Model.CanContribute)
+                                {
+                                    <!-- Each row is its own form, so a milestone can be corrected in
+                                         place without a separate edit page or any JavaScript. -->
+                                    <td colspan="4">
+                                        <form method="post" asp-action="SaveMilestone" asp-route-id="@p.Id"
+                                              class="d-flex gap-2 flex-wrap align-items-center">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="Id" value="@m.Id" />
+                                            <input type="text" name="Name" value="@m.Name" required
+                                                   class="filter-select" style="flex: 2; min-width: 180px;" />
+                                            <input type="date" name="DueDate" value="@m.DueDate.ToString("yyyy-MM-dd")"
+                                                   class="filter-select" style="max-width: 150px;" />
+                                            <select name="Status" class="filter-select" style="max-width: 130px;">
+                                                @foreach (var s in Enum.GetValues<MilestoneStatus>())
+                                                {
+                                                    <option value="@s" selected="@(s == m.Status)">@s</option>
+                                                }
+                                            </select>
+                                            <select name="OwnerId" class="filter-select" style="max-width: 160px;">
+                                                <option value="">Unassigned</option>
+                                                @foreach (var u in owners)
+                                                {
+                                                    <option value="@u.Id" selected="@(u.Id == m.OwnerId)">@u.FullName</option>
+                                                }
+                                            </select>
+                                            <label class="d-flex align-items-center gap-1" style="font-size: 0.72rem; color: var(--gray-500);">
+                                                <input type="checkbox" name="RequiresClientApproval" value="true"
+                                                       class="form-check-input m-0" checked="@m.RequiresClientApproval" />
+                                                Sign-off
+                                            </label>
+                                            <button type="submit" class="action-btn btn-approve" title="Save this milestone">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                        <div style="font-size: 0.7rem; margin-top: 0.35rem;">
+                                            <span class="variance variance-@ScheduleVariance.Band(m.VarianceDays)">@m.VarianceLabel</span>
+                                            @if (m.BaselineDate.HasValue && m.BaselineDate.Value.Date != m.DueDate.Date)
+                                            {
+                                                <span style="color: var(--gray-400); margin-left: 0.4rem;">
+                                                    baseline @m.BaselineDate.Value.ToString("yyyy-MM-dd")
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                }
+                                else
+                                {
+                                    <td>
+                                        <strong style="font-size: 0.86rem;">@m.Name</strong>
+                                        <div style="font-size: 0.7rem; margin-top: 0.2rem;">
+                                            <span class="variance variance-@ScheduleVariance.Band(m.VarianceDays)">@m.VarianceLabel</span>
+                                        </div>
+                                    </td>
+                                    <td class="date-cell">@m.DueDate.ToString("yyyy-MM-dd")</td>
+                                    <td><span class="pstatus pstatus-@m.Status">@m.Status</span></td>
+                                    <td>@(m.Owner?.FullName ?? "Unassigned")</td>
+                                }
+
+                                <td>
+                                    @if (counts.Total > 0)
+                                    {
+                                        <span style="font-size: 0.8rem;">@counts.Done / @counts.Total</span>
+                                        <div class="progress-track" style="margin-top: 0.25rem; width: 70px;">
+                                            <div class="progress-fill" style="width:@(counts.Done * 100 / counts.Total)%"></div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="chip-muted">None</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    @if (Model.CanContribute)
+                                    {
+                                        <div class="action-buttons">
+                                            <form method="post" asp-action="MoveMilestone" asp-route-id="@p.Id">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="milestoneId" value="@m.Id" />
+                                                <input type="hidden" name="direction" value="up" />
+                                                <button type="submit" class="action-btn btn-view" title="Move earlier in the plan"
+                                                        disabled="@(i == 0)">
+                                                    <i class="fas fa-arrow-up"></i>
+                                                </button>
+                                            </form>
+                                            <form method="post" asp-action="MoveMilestone" asp-route-id="@p.Id">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="milestoneId" value="@m.Id" />
+                                                <input type="hidden" name="direction" value="down" />
+                                                <button type="submit" class="action-btn btn-view" title="Move later in the plan"
+                                                        disabled="@(i == Model.Milestones.Count - 1)">
+                                                    <i class="fas fa-arrow-down"></i>
+                                                </button>
+                                            </form>
+                                            <form method="post" asp-action="DeleteMilestone" asp-route-id="@p.Id"
+                                                  onsubmit="return confirm('Delete @m.Name? Any tasks under it stay, sitting directly on the project.');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="milestoneId" value="@m.Id" />
+                                                <button type="submit" class="action-btn btn-delete" title="Delete milestone">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-flag-checkered"></i>
+                <h3>No milestones yet</h3>
+                <p>Break the project into the stages it has to clear, then hang tasks off them.</p>
+            </div>
+        }
+
+        @if (Model.CanContribute)
+        {
+            <form method="post" asp-action="SaveMilestone" asp-route-id="@p.Id" class="inline-form"
+                  style="border-top: 1px solid var(--gray-200); background: var(--gray-50);">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="0" />
+                <div class="filter-group" style="flex: 2;">
+                    <label>Add a milestone</label>
+                    <input type="text" name="Name" class="filter-select" required
+                           placeholder="e.g. User acceptance testing signed off" />
+                </div>
+                <div class="filter-group">
+                    <label>Due</label>
+                    <input type="date" name="DueDate" class="filter-select"
+                           value="@DateTime.Today.AddMonths(1).ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="filter-group">
+                    <label>Owner</label>
+                    <select name="OwnerId" class="filter-select">
+                        <option value="">Unassigned</option>
+                        @foreach (var u in owners)
+                        {
+                            <option value="@u.Id">@u.FullName</option>
+                        }
+                    </select>
+                </div>
+                <input type="hidden" name="Status" value="@MilestoneStatus.Planned" />
+                <button type="submit" class="btn-create-sm">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+@await Html.PartialAsync("_ProjectStyles")

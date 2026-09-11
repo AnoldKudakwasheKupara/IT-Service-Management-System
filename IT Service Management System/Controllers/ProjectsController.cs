@@ -1,6 +1,7 @@
 ﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Helpers.Pm;
+using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Models.Pm;
 using IT_Service_Management_System.ViewModels.Pm;
 using Microsoft.AspNetCore.Mvc;
@@ -372,6 +373,214 @@ namespace IT_Service_Management_System.Controllers
             await _db.SaveChangesAsync();
             TempData["Success"] = "Team member rolled off.";
             return RedirectToAction(nameof(Details), new { id });
+        }
+
+        // ── milestones ───────────────────────────────────────────────────────────
+
+        public async Task<IActionResult> Milestones(int id)
+        {
+            var context = await LoadForTabAsync(id);
+            if (context.Result != null) return context.Result;
+
+            var milestones = await _db.Milestones
+                .Include(m => m.Owner)
+                .Where(m => m.ProjectId == id)
+                .OrderBy(m => m.SortOrder).ThenBy(m => m.DueDate).ThenBy(m => m.Id)
+                .ToListAsync();
+
+            // Task counts per milestone, in one query rather than one per row.
+            var taskCounts = await _db.ProjectTasks
+                .Where(t => t.ProjectId == id && t.MilestoneId != null)
+                .GroupBy(t => t.MilestoneId!.Value)
+                .Select(g => new
+                {
+                    MilestoneId = g.Key,
+                    Total = g.Count(),
+                    Done = g.Count(t => t.Status == ProjectTaskStatus.Completed)
+                })
+                .ToListAsync();
+
+            ViewBag.TaskCounts = taskCounts.ToDictionary(c => c.MilestoneId, c => (c.Total, c.Done));
+            ViewBag.Owners = await TeamAndOwnersAsync(id);
+
+            return View(new ProjectPlanVm
+            {
+                Project = context.Project!,
+                Milestones = milestones,
+                CanContribute = context.CanContribute
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveMilestone(int id, Milestone input)
+        {
+            var context = await LoadForTabAsync(id, needContribute: true);
+            if (context.Result != null) return context.Result;
+
+            if (string.IsNullOrWhiteSpace(input.Name))
+            {
+                TempData["Error"] = "A milestone needs a name.";
+                return RedirectToAction(nameof(Milestones), new { id });
+            }
+
+            Milestone milestone;
+            if (input.Id == 0)
+            {
+                milestone = new Milestone
+                {
+                    ProjectId = id,
+                    // New milestones land at the end of the plan. Spacing by 10 leaves room to drop
+                    // something in between later without renumbering the whole list.
+                    SortOrder = await NextMilestoneOrderAsync(id),
+                    // The first committed date is the baseline slippage is measured from. Capture it
+                    // now, because once the date has moved the original is unrecoverable.
+                    BaselineDate = input.DueDate
+                };
+                _db.Milestones.Add(milestone);
+            }
+            else
+            {
+                var existing = await _db.Milestones
+                    .FirstOrDefaultAsync(m => m.Id == input.Id && m.ProjectId == id);
+                if (existing == null) return NotFound();
+                milestone = existing;
+            }
+
+            milestone.Name = input.Name.Trim();
+            milestone.DueDate = input.DueDate;
+            milestone.OwnerId = input.OwnerId;
+            milestone.Status = input.Status;
+            milestone.RequiresClientApproval = input.RequiresClientApproval;
+
+            // Achieving a milestone stamps the date it happened; reopening one clears it, so the
+            // variance figure cannot keep quoting a completion that was undone.
+            if (input.Status == MilestoneStatus.Achieved)
+                milestone.AchievedDate ??= DateTime.Today;
+            else
+                milestone.AchievedDate = null;
+
+            await _db.SaveChangesAsync();
+
+            TempData["Success"] = input.Id == 0 ? "Milestone added." : "Milestone updated.";
+            return RedirectToAction(nameof(Milestones), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MoveMilestone(int id, int milestoneId, string direction)
+        {
+            var context = await LoadForTabAsync(id, needContribute: true);
+            if (context.Result != null) return context.Result;
+
+            var ordered = await _db.Milestones
+                .Where(m => m.ProjectId == id)
+                .OrderBy(m => m.SortOrder).ThenBy(m => m.DueDate).ThenBy(m => m.Id)
+                .ToListAsync();
+
+            var index = ordered.FindIndex(m => m.Id == milestoneId);
+            if (index < 0) return NotFound();
+
+            var target = direction == "up" ? index - 1 : index + 1;
+            if (target < 0 || target >= ordered.Count)
+                return RedirectToAction(nameof(Milestones), new { id });
+
+            (ordered[index], ordered[target]) = (ordered[target], ordered[index]);
+
+            // Renumber the whole list from the swapped order. Rewriting every row is cheap at this
+            // scale and leaves a clean sequence, rather than trading two values that may both be
+            // zero on milestones created before ordering existed.
+            for (var i = 0; i < ordered.Count; i++)
+                ordered[i].SortOrder = (i + 1) * 10;
+
+            await _db.SaveChangesAsync();
+            return RedirectToAction(nameof(Milestones), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMilestone(int id, int milestoneId)
+        {
+            var context = await LoadForTabAsync(id, needContribute: true);
+            if (context.Result != null) return context.Result;
+
+            var milestone = await _db.Milestones
+                .FirstOrDefaultAsync(m => m.Id == milestoneId && m.ProjectId == id);
+            if (milestone == null) return NotFound();
+
+            // Tasks outlive the milestone they were grouped under. Deleting a stage of the plan
+            // must not delete the work, so those tasks fall back to sitting on the project itself.
+            var orphaned = await _db.ProjectTasks
+                .Where(t => t.MilestoneId == milestoneId).ToListAsync();
+            foreach (var task in orphaned) task.MilestoneId = null;
+
+            _db.Milestones.Remove(milestone);
+            await _db.SaveChangesAsync();
+
+            TempData["Success"] = orphaned.Count == 0
+                ? "Milestone deleted."
+                : $"Milestone deleted. {orphaned.Count} task(s) now sit directly on the project.";
+            return RedirectToAction(nameof(Milestones), new { id });
+        }
+
+        private async Task<int> NextMilestoneOrderAsync(int projectId)
+        {
+            var highest = await _db.Milestones
+                .Where(m => m.ProjectId == projectId)
+                .Select(m => (int?)m.SortOrder)
+                .MaxAsync() ?? 0;
+            return highest + 10;
+        }
+
+        /// <summary>Who can own a milestone or task: the active team, plus the manager and sponsor.</summary>
+        private async Task<List<User>> TeamAndOwnersAsync(int projectId)
+        {
+            var ids = await _db.ProjectTeamMembers
+                .Where(m => m.ProjectId == projectId && m.IsActive)
+                .Select(m => m.UserId)
+                .ToListAsync();
+
+            var owners = await _db.Projects.AsNoTracking()
+                .Where(p => p.Id == projectId)
+                .Select(p => new { p.ProjectManagerId, p.SponsorId })
+                .FirstOrDefaultAsync();
+
+            if (owners?.ProjectManagerId != null) ids.Add(owners.ProjectManagerId.Value);
+            if (owners?.SponsorId != null) ids.Add(owners.SponsorId.Value);
+
+            return await _db.Users.AsNoTracking()
+                .Where(u => ids.Contains(u.Id))
+                .OrderBy(u => u.FirstName).ThenBy(u => u.LastName)
+                .ToListAsync();
+        }
+
+        // ── tab plumbing ─────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Every tab needs the same three things: the project, whether this user may see it, and
+        /// whether they may change anything on it. Resolving that once keeps the guard identical
+        /// across tabs — a permission check re-typed per action is one that eventually differs.
+        /// </summary>
+        private async Task<(Project? Project, bool CanContribute, IActionResult? Result)> LoadForTabAsync(
+            int id, bool needContribute = false)
+        {
+            var project = await _db.Projects
+                .Include(p => p.ProjectManager)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (project == null) return (null, false, NotFound());
+
+            var team = await _db.ProjectTeamMembers
+                .Where(m => m.ProjectId == id && m.IsActive)
+                .Select(m => m.UserId)
+                .ToListAsync();
+
+            if (!PmAccess.CanView(project, Uid, Role, team)) return (null, false, Denied());
+
+            var canContribute = PmAccess.CanContribute(project, Uid, Role, team);
+            if (needContribute && !canContribute) return (null, false, Denied());
+
+            return (project, canContribute, null);
         }
 
         // ── query helpers ────────────────────────────────────────────────────────
