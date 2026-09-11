@@ -771,6 +771,242 @@ namespace IT_Service_Management_System.Controllers
             return highest + 10;
         }
 
+        // ── schedule: overlaps, timelines, deadlines ─────────────────────────────
+
+        /// <summary>
+        /// One page for the three scheduling questions that usually need three tools: what is
+        /// running at once, who is double-booked, and what falls due.
+        ///
+        /// Scoped to the projects the viewer may see, so it works for a team member looking at
+        /// their own commitments as well as for a manager looking across the portfolio.
+        /// </summary>
+        public async Task<IActionResult> Schedule(int days = 60)
+        {
+            if (Roles.IsClient(Role)) return Denied();
+
+            // Keep the window sane: a day is useless and five years is unreadable.
+            days = Math.Clamp(days, 14, 365);
+
+            var today = DateTime.Today;
+            var windowStart = today.AddDays(-14);   // a fortnight back, so recent slippage is visible
+            var windowEnd = today.AddDays(days);
+            var totalDays = Math.Max(1, (windowEnd - windowStart).TotalDays);
+
+            double Left(DateTime d) => Math.Clamp((d.Date - windowStart).TotalDays / totalDays * 100.0, 0, 100);
+            double Width(DateTime from, DateTime to)
+            {
+                var a = from < windowStart ? windowStart : from;
+                var b = to > windowEnd ? windowEnd : to;
+                var span = Math.Max(1, (b.Date - a.Date).TotalDays + 1);
+                return Math.Clamp(span / totalDays * 100.0, 0.4, 100);
+            }
+
+            var model = new ProjectScheduleVm
+            {
+                WindowDays = days,
+                WindowStart = windowStart,
+                WindowEnd = windowEnd,
+                TodayPercent = Left(today)
+            };
+
+            var visibleIds = await Visible().Select(p => p.Id).ToListAsync();
+
+            // ── Portfolio timeline: open projects that touch the window ──
+            var projects = await _db.Projects.AsNoTracking()
+                .Where(p => visibleIds.Contains(p.Id) &&
+                            p.Status != ProjectStatus.Completed &&
+                            p.Status != ProjectStatus.Cancelled &&
+                            p.Status != ProjectStatus.Archived &&
+                            p.StartDate != null && p.EndDate != null &&
+                            p.StartDate <= windowEnd && p.EndDate >= windowStart)
+                .OrderBy(p => p.StartDate)
+                .ToListAsync();
+
+            var index = 0;
+            foreach (var p in projects)
+            {
+                model.ProjectBars.Add(new GanttRow
+                {
+                    Kind = GanttRowKind.Task,
+                    Id = p.Id,
+                    Name = p.Name,
+                    Start = p.StartDate!.Value,
+                    End = p.EndDate!.Value,
+                    PercentComplete = p.ProgressPercent,
+                    Status = p.Status.ToString(),
+                    IsOverdue = p.IsOverdue,
+                    IsCritical = p.Health == ProjectHealth.Red,
+                    LeftPercent = Left(p.StartDate.Value),
+                    WidthPercent = Width(p.StartDate.Value, p.EndDate.Value),
+                    Index = index++
+                });
+            }
+
+            // Contention in the portfolio itself: how many pairs of these run at the same time.
+            for (var i = 0; i < projects.Count; i++)
+                for (var j = i + 1; j < projects.Count; j++)
+                    if (projects[i].StartDate <= projects[j].EndDate &&
+                        projects[j].StartDate <= projects[i].EndDate)
+                        model.OverlappingProjectPairs++;
+
+            // ── Axis ──
+            var cursor = new DateTime(windowStart.Year, windowStart.Month, 1);
+            while (cursor <= windowEnd)
+            {
+                var monthEnd = cursor.AddMonths(1).AddDays(-1);
+                var from = cursor < windowStart ? windowStart : cursor;
+                var to = monthEnd > windowEnd ? windowEnd : monthEnd;
+                model.Ticks.Add(new GanttTick
+                {
+                    Label = cursor.ToString("MMM yyyy"),
+                    LeftPercent = Left(from),
+                    WidthPercent = Math.Max(0, (to - from).TotalDays + 1) / totalDays * 100.0
+                });
+                cursor = cursor.AddMonths(1);
+            }
+
+            // ── Who is double-booked ──
+            // Every open, dated task in view. The people panel below narrows this to the assigned
+            // ones; the deadline list must not, because an unassigned task with a date looming is
+            // the one most worth surfacing.
+            var datedTasks = await _db.ProjectTasks.AsNoTracking()
+                .Include(t => t.AssignedTo)
+                .Include(t => t.Project)
+                .Where(t => visibleIds.Contains(t.ProjectId) &&
+                            t.Status != ProjectTaskStatus.Completed &&
+                            t.Status != ProjectTaskStatus.Cancelled &&
+                            (t.StartDate != null || t.DueDate != null))
+                .ToListAsync();
+
+            foreach (var group in datedTasks.Where(t => t.AssignedToId != null)
+                                            .GroupBy(t => t.AssignedToId!.Value))
+            {
+                var user = group.First().AssignedTo;
+                var row = new PersonLoadRow
+                {
+                    UserId = group.Key,
+                    Name = user == null ? $"User #{group.Key}" : $"{user.FirstName} {user.LastName}".Trim()
+                };
+
+                foreach (var t in group)
+                {
+                    var from = (t.StartDate ?? t.DueDate!.Value).Date;
+                    var to = (t.DueDate ?? t.StartDate!.Value).Date;
+                    if (to < from) to = from;
+                    if (to < windowStart || from > windowEnd) continue;
+
+                    row.Spans.Add(new TaskSpan
+                    {
+                        TaskId = t.Id,
+                        Name = t.Name,
+                        ProjectId = t.ProjectId,
+                        ProjectName = t.Project?.Name ?? string.Empty,
+                        Start = from,
+                        End = to,
+                        IsOverdue = t.DueDate.HasValue && t.DueDate.Value.Date < today,
+                        LeftPercent = Left(from),
+                        WidthPercent = Width(from, to)
+                    });
+                }
+
+                if (row.Spans.Count == 0) continue;
+
+                // Sweep the interval starts and ends to find the busiest stretch. A person with six
+                // tasks spread evenly is fine; three landing in one week is the problem.
+                var events = row.Spans
+                    .SelectMany(sp => new[] { (Date: sp.Start, Delta: 1), (Date: sp.End.AddDays(1), Delta: -1) })
+                    .OrderBy(e => e.Date).ThenBy(e => e.Delta)
+                    .ToList();
+
+                var running = 0;
+                var peak = 0;
+                DateTime? peakFrom = null, peakTo = null;
+                for (var i = 0; i < events.Count; i++)
+                {
+                    running += events[i].Delta;
+                    if (running > peak)
+                    {
+                        peak = running;
+                        peakFrom = events[i].Date;
+                        peakTo = i + 1 < events.Count ? events[i + 1].Date.AddDays(-1) : events[i].Date;
+                    }
+                }
+
+                row.PeakConcurrent = peak;
+                row.PeakFrom = peakFrom;
+                row.PeakTo = peakTo;
+                model.People.Add(row);
+            }
+
+            model.People = model.People
+                .OrderByDescending(p => p.PeakConcurrent)
+                .ThenByDescending(p => p.OverdueCount)
+                .ThenBy(p => p.Name)
+                .ToList();
+
+            // ── What falls due ──
+            var deadlines = new List<DeadlineItem>();
+
+            deadlines.AddRange(projects
+                .Where(p => p.EndDate >= windowStart && p.EndDate <= windowEnd)
+                .Select(p => new DeadlineItem
+                {
+                    Kind = DeadlineKind.Project,
+                    Id = p.Id,
+                    ProjectId = p.Id,
+                    ProjectName = p.Name,
+                    Name = $"{p.Name} ends",
+                    Due = p.EndDate!.Value.Date,
+                    IsOverdue = p.EndDate.Value.Date < today
+                }));
+
+            var milestones = await _db.Milestones.AsNoTracking()
+                .Include(m => m.Project).Include(m => m.Owner)
+                .Where(m => visibleIds.Contains(m.ProjectId) &&
+                            m.Status != MilestoneStatus.Achieved &&
+                            m.Status != MilestoneStatus.Cancelled &&
+                            m.DueDate >= windowStart && m.DueDate <= windowEnd)
+                .ToListAsync();
+
+            deadlines.AddRange(milestones.Select(m => new DeadlineItem
+            {
+                Kind = DeadlineKind.Milestone,
+                Id = m.Id,
+                ProjectId = m.ProjectId,
+                ProjectName = m.Project?.Name ?? string.Empty,
+                Name = m.Name,
+                Due = m.DueDate.Date,
+                Owner = m.Owner == null ? null : $"{m.Owner.FirstName} {m.Owner.LastName}".Trim(),
+                IsOverdue = m.DueDate.Date < today
+            }));
+
+            deadlines.AddRange(datedTasks
+                .Where(t => t.DueDate != null && t.DueDate >= windowStart && t.DueDate <= windowEnd)
+                .Select(t => new DeadlineItem
+                {
+                    Kind = DeadlineKind.Task,
+                    Id = t.Id,
+                    ProjectId = t.ProjectId,
+                    ProjectName = t.Project?.Name ?? string.Empty,
+                    Name = t.Name,
+                    Due = t.DueDate!.Value.Date,
+                    Owner = t.AssignedTo == null ? null : $"{t.AssignedTo.FirstName} {t.AssignedTo.LastName}".Trim(),
+                    IsOverdue = t.DueDate.Value.Date < today
+                }));
+
+            model.Deadlines = deadlines
+                .GroupBy(d => d.Due.Date)
+                .OrderBy(g => g.Key)
+                .Select(g => new DeadlineDay
+                {
+                    Date = g.Key,
+                    Items = g.OrderBy(d => d.Kind).ThenBy(d => d.Name).ToList()
+                })
+                .ToList();
+
+            return View(model);
+        }
+
         // ── gantt ────────────────────────────────────────────────────────────────
 
         /// <summary>

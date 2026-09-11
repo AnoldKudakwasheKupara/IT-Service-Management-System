@@ -1,0 +1,110 @@
+@*
+    Styles unique to the schedule page: the per-person mini timeline and the deadline list.
+    The portfolio chart above them reuses the Gantt styles unchanged.
+*@
+<style>
+    /* ── Per-person mini timeline, on the same axis as the chart above ───── */
+    .mini-track {
+        position: relative;
+        height: 1.15rem;
+        background: var(--gray-100);
+        border-radius: 0.3rem;
+        overflow: hidden;
+    }
+    .mini-bar {
+        position: absolute;
+        top: 0.2rem;
+        height: 0.75rem;
+        background: #93b4d8;
+        border-radius: 0.2rem;
+        /* Semi-transparent so two bars stacked in one column darken where they clash. */
+        opacity: 0.75;
+        min-width: 2px;
+    }
+    .mini-bar.is-overdue { background: var(--danger); }
+    .mini-today {
+        position: absolute;
+        top: 0; bottom: 0;
+        width: 1px;
+        background: var(--danger);
+        z-index: 2;
+    }
+
+    /* ── Deadline list ──────────────────────────────────────────────────── */
+    .deadline-list { display: flex; flex-direction: column; }
+
+    .deadline-day {
+        display: flex;
+        gap: 1rem;
+        padding: 0.85rem 1.5rem;
+        border-bottom: 1px solid var(--gray-100);
+    }
+    .deadline-day:last-child { border-bottom: none; }
+    .deadline-day.is-past { background: #fffafa; }
+    .deadline-day.is-congested { background: var(--warning-light); }
+
+    .deadline-date {
+        flex: 0 0 3.6rem;
+        text-align: center;
+        border-right: 1px solid var(--gray-200);
+        padding-right: 0.75rem;
+    }
+    .deadline-date .dow {
+        display: block;
+        font-size: 0.62rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gray-400);
+    }
+    .deadline-date .dom {
+        display: block;
+        font-size: 1.3rem;
+        font-weight: 700;
+        line-height: 1.1;
+        color: var(--gray-800);
+    }
+    .deadline-date .mon { display: block; font-size: 0.66rem; color: var(--gray-500); }
+    .congested-flag {
+        display: inline-block;
+        margin-top: 0.25rem;
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: #b45309;
+    }
+
+    .deadline-items { flex: 1; display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+
+    .deadline-item {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.35rem 0.6rem;
+        border-radius: 0.45rem;
+        background: #fff;
+        border: 1px solid var(--gray-200);
+        text-decoration: none;
+        font-size: 0.8rem;
+        color: var(--gray-700);
+        transition: var(--transition-smooth);
+    }
+    .deadline-item:hover { border-color: var(--primary); color: var(--primary); }
+    .deadline-item.is-overdue { border-left: 3px solid var(--danger); }
+    .deadline-item i { color: var(--gray-400); font-size: 0.75rem; flex-shrink: 0; }
+    .deadline-item .what {
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .deadline-item .where { font-size: 0.72rem; color: var(--gray-400); white-space: nowrap; }
+    .deadline-item .whom {
+        margin-left: auto;
+        font-size: 0.7rem;
+        color: var(--gray-500);
+        white-space: nowrap;
+    }
+
+    @@media (max-width: 767px) {
+        .deadline-item .where { display: none; }
+    }
+</style>

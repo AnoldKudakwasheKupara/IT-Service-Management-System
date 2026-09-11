@@ -1,0 +1,330 @@
+@model IT_Service_Management_System.ViewModels.Pm.ProjectScheduleVm
+@using IT_Service_Management_System.ViewModels.Pm
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Schedule & overlaps - Axis IT Helpdesk";
+    var rowH = ProjectScheduleVm.RowHeight;
+    string Pct(double v) => v.ToString("0.###", CultureInfo.InvariantCulture);
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="flex-grow-1">
+                <h1 class="page-title">
+                    <i class="fas fa-calendar-week me-2" style="color: var(--primary);"></i>
+                    Schedule &amp; overlaps
+                </h1>
+                <p class="text-muted mt-2">
+                    What runs at once, who is double-booked, and what falls due
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <form method="get" asp-action="Schedule" class="filters-card mb-4">
+        <div class="filters-header">
+            <i class="fas fa-sliders"></i>
+            <span>Looking ahead</span>
+        </div>
+        <div class="filters-body">
+            <div class="filter-group">
+                <label>Window</label>
+                <select name="days" class="filter-select" onchange="this.form.submit()">
+                    @foreach (var d in new[] { 30, 60, 90, 180, 365 })
+                    {
+                        <option value="@d" selected="@(Model.WindowDays == d)">Next @d days</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group" style="flex:2;">
+                <label>Showing</label>
+                <div style="font-size:0.82rem;color:var(--gray-600);padding-top:0.55rem;">
+                    @Model.WindowStart.ToString("d MMM yyyy") &ndash; @Model.WindowEnd.ToString("d MMM yyyy")
+                    <span style="color:var(--gray-400);">
+                        &middot; a fortnight back is included so recent slippage stays visible
+                    </span>
+                </div>
+            </div>
+            <noscript>
+                <button type="submit" class="btn-clear-filters" style="background:var(--primary);color:#fff;border:none;">
+                    Apply
+                </button>
+            </noscript>
+        </div>
+    </form>
+
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--primary-surface); color: var(--primary);">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.OverlappingProjectPairs</h3>
+                <p>Overlapping project pairs</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-light); color: #b45309;">
+                <i class="fas fa-user-clock"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.PeopleOverlapping</h3>
+                <p>People double-booked</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: #eff6ff; color: #1d4ed8;">
+                <i class="fas fa-calendar-day"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.TotalDeadlines</h3>
+                <p>Deadlines in window</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+                <i class="fas fa-fire"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.CongestedDays</h3>
+                <p>Congested days</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. What runs at once -->
+    <div class="data-card mb-4">
+        <div class="card-header-custom">
+            <div><i class="fas fa-chart-gantt me-2"></i><span>Portfolio timeline</span></div>
+            <span class="record-count">@Model.ProjectBars.Count open projects in view</span>
+        </div>
+
+        @if (Model.ProjectBars.Count > 0)
+        {
+            <div class="gantt">
+                <div class="gantt-labels">
+                    <div class="gantt-corner">Project</div>
+                    @foreach (var r in Model.ProjectBars)
+                    {
+                        <div class="gantt-label" style="height:@(rowH)px" title="@r.Name">
+                            <span class="nm">@r.Name</span>
+                        </div>
+                    }
+                </div>
+                <div class="gantt-scroll">
+                    <div class="gantt-chart" style="height:@(Model.ChartHeight + 28)px">
+                        <div class="gantt-axis">
+                            @foreach (var t in Model.Ticks)
+                            {
+                                <div class="gantt-tick" style="left:@Pct(t.LeftPercent)%;width:@Pct(t.WidthPercent)%">
+                                    <span>@t.Label</span>
+                                </div>
+                            }
+                        </div>
+                        <div class="gantt-rows" style="height:@(Model.ChartHeight)px">
+                            @foreach (var t in Model.Ticks)
+                            {
+                                <div class="gantt-gridline" style="left:@Pct(t.LeftPercent)%"></div>
+                            }
+                            @if (Model.TodayPercent.HasValue)
+                            {
+                                <div class="gantt-today" style="left:@Pct(Model.TodayPercent.Value)%" title="Today"></div>
+                            }
+                            @foreach (var r in Model.ProjectBars)
+                            {
+                                var cls = r.IsOverdue ? "bar-overdue" : r.IsCritical ? "bar-critical" : "bar-task";
+                                <div class="gantt-row" style="top:@(r.Index * rowH)px;height:@(rowH)px">
+                                    <a class="gantt-bar @cls"
+                                       asp-action="Gantt" asp-route-id="@r.Id"
+                                       style="left:@Pct(r.LeftPercent)%;width:@Pct(r.WidthPercent)%"
+                                       title="@r.Name — @r.Status, @r.Start.ToString("d MMM") to @r.End.ToString("d MMM"), @r.PercentComplete% done">
+                                        @if (r.PercentComplete > 0)
+                                        {
+                                            <div class="gantt-progress" style="width:@r.PercentComplete%"></div>
+                                        }
+                                    </a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-chart-gantt"></i>
+                <h3>Nothing scheduled in this window</h3>
+                <p>Open projects appear here once they have a start and end date.</p>
+            </div>
+        }
+    </div>
+
+    <!-- 2. Who is double-booked -->
+    <div class="data-card mb-4">
+        <div class="card-header-custom">
+            <div><i class="fas fa-user-clock me-2"></i><span>Who is stretched</span></div>
+            <span class="record-count">Peak = most tasks running at once</span>
+        </div>
+
+        @if (Model.People.Count > 0)
+        {
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Person</th>
+                            <th>Peak load</th>
+                            <th>Busiest stretch</th>
+                            <th>Open tasks</th>
+                            <th>Across</th>
+                            <th>Their timeline</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var person in Model.People)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="list-avatar-cell">
+                                        <div class="list-avatar">@person.Name.Substring(0, 1).ToUpper()</div>
+                                        <span style="font-weight:600;font-size:0.84rem;">@person.Name</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="variance variance-@person.Band">
+                                        @person.PeakConcurrent at once
+                                    </span>
+                                </td>
+                                <td class="date-cell">
+                                    @if (person.PeakFrom.HasValue && person.IsOverlapping)
+                                    {
+                                        @person.PeakFrom.Value.ToString("d MMM")
+                                        <text> &ndash; </text>
+                                        @(person.PeakTo?.ToString("d MMM") ?? "")
+                                    }
+                                    else
+                                    {
+                                        <span class="chip-muted">No overlap</span>
+                                    }
+                                </td>
+                                <td>
+                                    @person.Spans.Count
+                                    @if (person.OverdueCount > 0)
+                                    {
+                                        <span class="variance variance-late">@person.OverdueCount overdue</span>
+                                    }
+                                </td>
+                                <td>@person.ProjectCount project@(person.ProjectCount == 1 ? "" : "s")</td>
+                                <td style="min-width:220px;">
+                                    <!-- Each person's tasks on the same axis as the portfolio above,
+                                         so a clash is visible as two bars stacked in one column. -->
+                                    <div class="mini-track">
+                                        @if (Model.TodayPercent.HasValue)
+                                        {
+                                            <span class="mini-today" style="left:@Pct(Model.TodayPercent.Value)%"></span>
+                                        }
+                                        @foreach (var sp in person.Spans)
+                                        {
+                                            <span class="mini-bar @(sp.IsOverdue ? "is-overdue" : "")"
+                                                  style="left:@Pct(sp.LeftPercent)%;width:@Pct(sp.WidthPercent)%"
+                                                  title="@sp.Name (@sp.ProjectName) — @sp.Start.ToString("d MMM") to @sp.End.ToString("d MMM")"></span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-user-clock"></i>
+                <h3>Nobody has dated work in this window</h3>
+                <p>Assign tasks and give them dates, and overlaps show up here.</p>
+            </div>
+        }
+    </div>
+
+    <!-- 3. What falls due -->
+    <div class="data-card mb-5">
+        <div class="card-header-custom">
+            <div><i class="fas fa-calendar-day me-2"></i><span>Deadlines</span></div>
+            <span class="record-count">
+                @Model.TotalDeadlines in window@(Model.OverdueDeadlines > 0 ? $", {Model.OverdueDeadlines} already past" : "")
+            </span>
+        </div>
+
+        @if (Model.Deadlines.Count > 0)
+        {
+            <div class="deadline-list">
+                @foreach (var day in Model.Deadlines)
+                {
+                    <div class="deadline-day @(day.IsOverdue ? "is-past" : "") @(day.IsCongested ? "is-congested" : "")">
+                        <div class="deadline-date">
+                            <span class="dow">@day.Date.ToString("ddd")</span>
+                            <span class="dom">@day.Date.Day</span>
+                            <span class="mon">@day.Date.ToString("MMM")</span>
+                            @if (day.IsCongested)
+                            {
+                                <span class="congested-flag" title="@day.Items.Count things due on one day">
+                                    <i class="fas fa-fire"></i> @day.Items.Count
+                                </span>
+                            }
+                        </div>
+                        <div class="deadline-items">
+                            @foreach (var item in day.Items)
+                            {
+                                var icon = item.Kind switch
+                                {
+                                    DeadlineKind.Project => "fa-diagram-project",
+                                    DeadlineKind.Milestone => "fa-flag-checkered",
+                                    _ => "fa-list-check"
+                                };
+                                var action = item.Kind switch
+                                {
+                                    DeadlineKind.Project => "Details",
+                                    DeadlineKind.Milestone => "Milestones",
+                                    _ => "Tasks"
+                                };
+                                <a class="deadline-item @(item.IsOverdue ? "is-overdue" : "")"
+                                   asp-action="@action" asp-route-id="@item.ProjectId">
+                                    <i class="fas @icon"></i>
+                                    <span class="what">@item.Name</span>
+                                    <span class="where">@item.ProjectName</span>
+                                    @if (!string.IsNullOrEmpty(item.Owner))
+                                    {
+                                        <span class="whom">@item.Owner</span>
+                                    }
+                                    @if (item.IsOverdue)
+                                    {
+                                        <span class="variance variance-late">@(-item.DaysAway)d late</span>
+                                    }
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-calendar-check"></i>
+                <h3>Nothing falls due</h3>
+                <p>No project ends, milestones or task deadlines land in this window.</p>
+            </div>
+        }
+    </div>
+</div>
+
+@await Html.PartialAsync("_ProjectStyles")
+@await Html.PartialAsync("_GanttStyles")
+@await Html.PartialAsync("_ScheduleStyles")
