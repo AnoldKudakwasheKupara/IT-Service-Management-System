@@ -43,13 +43,18 @@
         </div>
     </div>
 
-    <nav class="project-tabs" aria-label="Project sections">
-        @foreach (var t in tabs)
-        {
-            <a class="project-tab @(tab == t.Key ? "active" : "")"
-               asp-action="@t.Action" asp-route-id="@Model.Id">
-                <i class="fas @t.Icon"></i> @t.Label
-            </a>
-        }
-    </nav>
 </div>
+
+@* The tab strip sits outside .page-header on purpose. site.css paints a direct child
+   .page-header with a dark gradient and white text; these tabs are dark-on-light, so inside
+   it the inactive ones washed out and the active maroon one all but vanished against the
+   maroon half of the gradient. Out here it renders on the page background it was drawn for. *@
+<nav class="project-tabs" aria-label="Project sections">
+    @foreach (var t in tabs)
+    {
+        <a class="project-tab @(tab == t.Key ? "active" : "")"
+           asp-action="@t.Action" asp-route-id="@Model.Id">
+            <i class="fas @t.Icon"></i> @t.Label
+        </a>
+    }
+</nav>
