@@ -815,6 +815,13 @@
                     <span class="nav-badge">@(ViewBag.OpenTicketCount ?? 0)</span>
                 </a>
 
+                @* Open to everyone: anyone can be put on a project team whatever their role, and
+                   the register itself only shows what the viewer is entitled to see. *@
+                <a class="nav-item @(currentController == "Projects" ? "active" : "")"
+                   asp-controller="Projects" asp-action="Index">
+                    <i class="fas fa-diagram-project"></i> Projects
+                </a>
+
                 <a class="nav-item @(currentController == "Activity" ? "active" : "")"
                    asp-controller="Activity" asp-action="Index">
                     <i class="fas fa-tasks"></i> Activity Tracker
@@ -1196,6 +1203,7 @@
             // finds Two-Factor Auth. Matched against the destination's href.
             var ALIASES = {
                 '/Tickets': 'helpdesk incident issue support ticket queue',
+                '/Projects': 'project portfolio milestone task delivery gantt kanban board plan',
                 '/Activity': 'timesheet worklog activity log',
                 '/Assets': 'hardware equipment inventory device',
                 '/SSLCertificates': 'ssl tls certificate expiry',
