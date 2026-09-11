@@ -3,6 +3,7 @@ using IT_Service_Management_System.Helpers;
 using IT_Service_Management_System.Helpers.Pm;
 using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Models.Pm;
+using IT_Service_Management_System.Services.Pm;
 using IT_Service_Management_System.ViewModels.Pm;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,8 +21,13 @@ namespace IT_Service_Management_System.Controllers
     public class ProjectsController : Controller
     {
         private readonly ApplicationDbContext _db;
+        private readonly ProjectMetricsService _metrics;
 
-        public ProjectsController(ApplicationDbContext db) => _db = db;
+        public ProjectsController(ApplicationDbContext db, ProjectMetricsService metrics)
+        {
+            _db = db;
+            _metrics = metrics;
+        }
 
         private int Uid => HttpContext.Session.GetInt32("UserId") ?? 0;
         private string? Role => HttpContext.Session.GetString("UserRole");
@@ -86,6 +92,21 @@ namespace IT_Service_Management_System.Controllers
             ViewBag.Paging = paging;
             ViewBag.CanCreate = CanCreate();
 
+            return View(model);
+        }
+
+        // ── portfolio dashboard ──────────────────────────────────────────────────
+
+        /// <summary>
+        /// The executive view across every project. Deliberately not scoped per user: these are
+        /// portfolio totals, and a figure that silently means "your slice" would be read as the
+        /// organisation's. Only the roles with portfolio-wide sight get in at all.
+        /// </summary>
+        public async Task<IActionResult> Dashboard()
+        {
+            if (!CanSeePortfolio()) return Denied();
+
+            var model = await _metrics.BuildDashboardAsync();
             return View(model);
         }
 
@@ -897,11 +918,7 @@ namespace IT_Service_Management_System.Controllers
         {
             IQueryable<Project> projects = _db.Projects.AsNoTracking();
 
-            if (Roles.IsFullAccess(Role)) return projects;
-
-            if (Role is Roles.GeneralManager or Roles.Finance or Roles.Procurement
-                or Roles.Auditor or Roles.DepartmentManager or Roles.ProjectManager)
-                return projects;
+            if (CanSeePortfolio()) return projects;
 
             var uid = Uid;
             return projects.Where(p =>
@@ -942,6 +959,15 @@ namespace IT_Service_Management_System.Controllers
 
             return projects;
         }
+
+        /// <summary>
+        /// Roles with sight of the whole portfolio rather than just their own projects. Kept beside
+        /// <see cref="Visible"/>, which grants the same set everything, so the two cannot drift.
+        /// </summary>
+        private bool CanSeePortfolio() =>
+            Roles.IsFullAccess(Role) ||
+            Role is Roles.GeneralManager or Roles.Finance or Roles.Procurement
+                or Roles.Auditor or Roles.DepartmentManager or Roles.ProjectManager;
 
         /// <summary>Who may start a project. Team membership does not confer this.</summary>
         private bool CanCreate() =>

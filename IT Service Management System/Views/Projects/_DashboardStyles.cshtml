@@ -1,0 +1,135 @@
+@*
+    Styles for the portfolio dashboard and the schedule page. Everything structural still comes
+    from site.css; this adds the chart primitives those two pages need — all drawn with plain
+    CSS so no chart library has to load.
+*@
+<style>
+    .dash-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        align-items: start;
+    }
+    .dash-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    /* ── Health split ───────────────────────────────────────────────────── */
+    .health-split { display: flex; }
+    .health-figure {
+        flex: 1;
+        text-align: center;
+        padding: 1.5rem 0.5rem;
+        border-right: 1px solid var(--gray-100);
+    }
+    .health-figure:last-child { border-right: none; }
+    .health-figure .n { display: block; font-size: 2rem; font-weight: 700; line-height: 1; }
+    .health-figure .l {
+        display: block;
+        margin-top: 0.35rem;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--gray-400);
+    }
+    .health-ok .n { color: var(--success); }
+    .health-warn .n { color: #b45309; }
+    .health-bad .n { color: var(--danger); }
+
+    /* ── Money rows ─────────────────────────────────────────────────────── */
+    .money-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.65rem 1.25rem;
+        border-bottom: 1px solid var(--gray-100);
+        font-size: 0.83rem;
+    }
+    .money-row span { color: var(--gray-500); }
+    .money-row strong { color: var(--gray-800); }
+
+    /* ── Horizontal bar legend, used for status and department mixes ────── */
+    .legend { display: flex; flex-direction: column; gap: 0.6rem; }
+    .legend-row { display: flex; align-items: center; gap: 0.6rem; font-size: 0.78rem; }
+    .legend-swatch { width: 0.7rem; height: 0.7rem; border-radius: 0.2rem; flex-shrink: 0; }
+    .legend-label {
+        width: 7.5rem;
+        flex-shrink: 0;
+        color: var(--gray-600);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .legend-track {
+        flex: 1;
+        height: 0.55rem;
+        background: var(--gray-100);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+    .legend-fill { height: 100%; border-radius: 999px; }
+    .legend-value { width: 2.2rem; text-align: right; font-weight: 600; color: var(--gray-700); }
+
+    /* ── Sparkline column chart ─────────────────────────────────────────── */
+    .spark {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.35rem;
+        height: 120px;
+        padding-top: 0.5rem;
+    }
+    .spark-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        height: 100%;
+    }
+    .spark-bar {
+        width: 100%;
+        max-width: 28px;
+        background: var(--primary);
+        border-radius: 0.25rem 0.25rem 0 0;
+        opacity: 0.85;
+        transition: opacity 0.2s;
+    }
+    .spark-col:hover .spark-bar { opacity: 1; }
+    .spark-label {
+        margin-top: 0.35rem;
+        font-size: 0.6rem;
+        color: var(--gray-400);
+        white-space: nowrap;
+    }
+
+    /* ── Budget vs spend: spend drawn over budget so overrun is visible ─── */
+    .bvs-row { display: flex; align-items: center; gap: 0.6rem; font-size: 0.76rem; }
+    .bvs-name {
+        width: 8rem;
+        flex-shrink: 0;
+        color: var(--gray-600);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .bvs-track { flex: 1; position: relative; height: 1.1rem; }
+    .bvs-budget {
+        position: absolute;
+        inset-block: 0.25rem;
+        left: 0;
+        background: var(--gray-200);
+        border-radius: 999px;
+    }
+    .bvs-spent {
+        position: absolute;
+        inset-block: 0.25rem;
+        left: 0;
+        background: var(--primary);
+        border-radius: 999px;
+    }
+    .bvs-spent.over { background: var(--danger); }
+    .bvs-value { width: 9rem; text-align: right; color: var(--gray-500); white-space: nowrap; }
+</style>

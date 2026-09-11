@@ -1,4 +1,4 @@
-@model IT_Service_Management_System.ViewModels.Pm.ProjectsIndexVm
+﻿@model IT_Service_Management_System.ViewModels.Pm.ProjectsIndexVm
 @using IT_Service_Management_System.Models.Pm
 
 @{
@@ -20,12 +20,17 @@
                 </h1>
                 <p class="text-muted mt-2">Delivery progress, schedule health and ownership across the portfolio</p>
             </div>
-            @if (canCreate)
-            {
-                <a asp-action="Create" class="btn-create">
-                    <i class="fas fa-plus"></i> New project
+            <div class="toolbar">
+                <a class="btn-soft-action" asp-action="Dashboard">
+                    <i class="fas fa-chart-pie"></i> Dashboard
                 </a>
-            }
+                @if (canCreate)
+                {
+                    <a asp-action="Create" class="btn-create">
+                        <i class="fas fa-plus"></i> New project
+                    </a>
+                }
+            </div>
         </div>
     </div>
 

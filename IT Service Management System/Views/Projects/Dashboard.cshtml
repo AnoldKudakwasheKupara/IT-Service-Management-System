@@ -1,0 +1,440 @@
+@model IT_Service_Management_System.ViewModels.Pm.PmDashboardVm
+@using IT_Service_Management_System.Models.Pm
+
+@{
+    ViewData["Title"] = "Project dashboard - Axis IT Helpdesk";
+
+    // Chart scales are computed once here rather than inside the loops, so a single empty
+    // collection cannot divide by zero halfway down the page.
+    var statusTotal = Model.StatusBreakdown.Values.Sum();
+    var maxDept = Model.DepartmentBreakdown.Count == 0 ? 1 : Math.Max(1, Model.DepartmentBreakdown.Values.Max());
+    var maxMonth = Model.TasksCompletedByMonth.Count == 0 ? 1 : Math.Max(1, Model.TasksCompletedByMonth.Max(m => m.Value));
+    var maxBudget = Model.BudgetComparison.Count == 0 ? 1m : Math.Max(1m, Model.BudgetComparison.Max(b => Math.Max(b.Budget, b.Spent)));
+
+    var statusColours = new Dictionary<string, string>
+    {
+        ["Draft"] = "#cbd5e1", ["Planning"] = "#818cf8", ["Approved"] = "#22d3ee",
+        ["Active"] = "#2c9e6e", ["OnHold"] = "#f5b042", ["Delayed"] = "#e53e3e",
+        ["Completed"] = "#047857", ["Cancelled"] = "#94a3b8", ["Archived"] = "#64748b"
+    };
+}
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div class="flex-grow-1">
+                <h1 class="page-title">
+                    <i class="fas fa-chart-pie me-2" style="color: var(--primary);"></i>
+                    Project dashboard
+                </h1>
+                <p class="text-muted mt-2">
+                    Delivery, money and pressure across the whole portfolio
+                </p>
+            </div>
+            <div class="toolbar">
+                <a class="btn-soft-action" asp-action="Schedule">
+                    <i class="fas fa-calendar-week"></i> Schedule &amp; overlaps
+                </a>
+                <a class="btn-soft-action" asp-action="Index">
+                    <i class="fas fa-table-list"></i> Register
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Headline counts -->
+    <div class="stats-cards mb-4">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--primary-surface); color: var(--primary);">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.TotalProjects</h3>
+                <p>Projects</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-light); color: var(--success);">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.ActiveProjects</h3>
+                <p>Active</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--danger-light); color: var(--danger);">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.DelayedProjects</h3>
+                <p>Delayed or overdue</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-light); color: #b45309;">
+                <i class="fas fa-pause-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>@Model.OnHoldProjects</h3>
+                <p>On hold</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="dash-grid mb-4">
+        <!-- Health: the first question a sponsor asks -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div><i class="fas fa-heart-pulse me-2"></i><span>Health of open projects</span></div>
+            </div>
+            <div class="health-split">
+                <div class="health-figure health-ok">
+                    <span class="n">@Model.HealthyProjects</span>
+                    <span class="l">Green</span>
+                </div>
+                <div class="health-figure health-warn">
+                    <span class="n">@Model.AtRiskProjects</span>
+                    <span class="l">Amber</span>
+                </div>
+                <div class="health-figure health-bad">
+                    <span class="n">@Model.UnhealthyProjects</span>
+                    <span class="l">Red</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Money -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div><i class="fas fa-sack-dollar me-2"></i><span>Budget position</span></div>
+                <span class="record-count">@Model.BudgetUtilisationPercent% used</span>
+            </div>
+            <div class="money-rows">
+                <div class="money-row">
+                    <span>Approved budget</span>
+                    <strong>@Model.TotalBudget.ToString("N0")</strong>
+                </div>
+                <div class="money-row">
+                    <span>Spent</span>
+                    <strong>@Model.TotalSpent.ToString("N0")</strong>
+                </div>
+                <div class="money-row">
+                    <span>Committed, not yet paid</span>
+                    <strong>@Model.TotalCommitted.ToString("N0")</strong>
+                </div>
+                <div class="money-row">
+                    <span>Remaining</span>
+                    <strong class="@(Model.BudgetRemaining < 0 ? "text-danger" : "")">
+                        @Model.BudgetRemaining.ToString("N0")
+                    </strong>
+                </div>
+                <div style="padding: 0 1.25rem 1rem;">
+                    <div class="progress-track">
+                        <div class="progress-fill @(Model.BudgetUtilisationPercent > 100 ? "is-late" : Model.BudgetUtilisationPercent > 85 ? "is-behind" : "")"
+                             style="width:@Math.Min(100, Model.BudgetUtilisationPercent)%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Work pressure -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div><i class="fas fa-gauge-high me-2"></i><span>Pressure</span></div>
+            </div>
+            <div class="rail-stat">
+                <span class="label">Open tasks</span>
+                <span class="figure">@Model.OpenTasks</span>
+            </div>
+            <div class="rail-stat">
+                <span class="label">Overdue tasks</span>
+                <span class="figure @(Model.OverdueTasks > 0 ? "text-danger" : "")">@Model.OverdueTasks</span>
+            </div>
+            <div class="rail-stat">
+                <span class="label">Overdue milestones</span>
+                <span class="figure @(Model.OverdueMilestones > 0 ? "text-danger" : "")">@Model.OverdueMilestones</span>
+            </div>
+            <div class="rail-stat">
+                <span class="label">Risks needing attention</span>
+                <span class="figure">@Model.RisksNeedingAttention</span>
+            </div>
+            <div class="rail-stat">
+                <span class="label">Open issues</span>
+                <span class="figure">@Model.OpenIssues (@Model.CriticalIssues critical)</span>
+            </div>
+            <div class="rail-stat">
+                <span class="label">Completed this month</span>
+                <span class="figure">@Model.TasksCompletedThisMonth</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Health board: one line per project, progress against elapsed schedule -->
+    <div class="data-card mb-4">
+        <div class="card-header-custom">
+            <div><i class="fas fa-list-check me-2"></i><span>Project health board</span></div>
+            <span class="record-count">@Model.HealthBoard.Count projects</span>
+        </div>
+        @if (Model.HealthBoard.Count > 0)
+        {
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Status</th>
+                            <th>Health</th>
+                            <th>Progress vs plan</th>
+                            <th>Budget</th>
+                            <th>Risks / issues</th>
+                            <th>Ends</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.HealthBoard)
+                        {
+                            <tr>
+                                <td>
+                                    <a class="project-name" asp-action="Details" asp-route-id="@row.ProjectId">@row.Name</a>
+                                    <span class="project-code">@row.Reference</span>
+                                    @if (!string.IsNullOrWhiteSpace(row.Manager))
+                                    {
+                                        <span class="client-chip">@row.Manager</span>
+                                    }
+                                </td>
+                                <td><span class="pstatus pstatus-@row.Status">@row.Status</span></td>
+                                <td><span class="health-lamp health-@row.Health">@row.Health</span></td>
+                                <td>
+                                    <!-- Two numbers in one control: the bar is work done, the
+                                         marker is the schedule. Behind the marker means late. -->
+                                    <div class="progress-track">
+                                        <div class="progress-fill @(row.ScheduleVariancePercent < -20 ? "is-late" : row.ScheduleVariancePercent < -5 ? "is-behind" : "")"
+                                             style="width:@Math.Clamp(row.ProgressPercent, 0, 100)%"></div>
+                                        <span class="progress-marker" style="left:@Math.Clamp(row.SchedulePercentElapsed, 0, 100)%"></span>
+                                    </div>
+                                    <div class="progress-label">
+                                        <span>@row.ProgressPercent% done</span>
+                                        <span>@row.SchedulePercentElapsed% elapsed</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="@(row.BudgetUsedPercent > 100 ? "text-danger fw-bold" : "")">
+                                        @row.BudgetUsedPercent%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="chip">@row.OpenRisks R</span>
+                                    <span class="chip">@row.OpenIssues I</span>
+                                </td>
+                                <td class="date-cell">@(row.EndDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="fas fa-list-check"></i>
+                <h3>No projects to report on</h3>
+                <p>The board fills in as projects are registered.</p>
+            </div>
+        }
+    </div>
+
+    <div class="dash-grid-2 mb-4">
+        <!-- Status mix -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div><i class="fas fa-chart-pie me-2"></i><span>Status mix</span></div>
+            </div>
+            <div class="card-body-custom">
+                @if (statusTotal > 0)
+                {
+                    <div class="legend">
+                        @foreach (var kv in Model.StatusBreakdown.OrderByDescending(x => x.Value))
+                        {
+                            var share = kv.Value * 100 / statusTotal;
+                            var colour = statusColours.GetValueOrDefault(kv.Key, "#94a3b8");
+                            <div class="legend-row">
+                                <span class="legend-swatch" style="background:@colour"></span>
+                                <span class="legend-label">@kv.Key</span>
+                                <div class="legend-track">
+                                    <div class="legend-fill" style="width:@share%;background:@colour"></div>
+                                </div>
+                                <span class="legend-value">@kv.Value</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted-2 mb-0">No projects yet.</p>
+                }
+            </div>
+        </div>
+
+        <!-- Department spread -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div><i class="fas fa-building me-2"></i><span>By department</span></div>
+            </div>
+            <div class="card-body-custom">
+                @if (Model.DepartmentBreakdown.Count > 0)
+                {
+                    <div class="legend">
+                        @foreach (var kv in Model.DepartmentBreakdown.OrderByDescending(x => x.Value))
+                        {
+                            <div class="legend-row">
+                                <span class="legend-label">@kv.Key</span>
+                                <div class="legend-track">
+                                    <div class="legend-fill" style="width:@(kv.Value * 100 / maxDept)%;background:var(--primary)"></div>
+                                </div>
+                                <span class="legend-value">@kv.Value</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted-2 mb-0">No departments assigned.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="dash-grid-2 mb-4">
+        <!-- Throughput -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div><i class="fas fa-chart-column me-2"></i><span>Tasks completed by month</span></div>
+            </div>
+            <div class="card-body-custom">
+                @if (Model.TasksCompletedByMonth.Count > 0)
+                {
+                    <div class="spark">
+                        @foreach (var m in Model.TasksCompletedByMonth)
+                        {
+                            <div class="spark-col" title="@m.Label: @m.Value completed">
+                                <div class="spark-bar" style="height:@(Math.Max(2, m.Value * 100 / maxMonth))%"></div>
+                                <span class="spark-label">@m.Label</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted-2 mb-0">Nothing completed yet.</p>
+                }
+            </div>
+        </div>
+
+        <!-- Budget vs actual -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div><i class="fas fa-scale-balanced me-2"></i><span>Budget vs spend</span></div>
+            </div>
+            <div class="card-body-custom">
+                @if (Model.BudgetComparison.Count > 0)
+                {
+                    <div class="legend">
+                        @foreach (var b in Model.BudgetComparison)
+                        {
+                            <div class="bvs-row">
+                                <div class="bvs-name" title="@b.Name">@b.Name</div>
+                                <div class="bvs-track">
+                                    <div class="bvs-budget" style="width:@((int)(b.Budget * 100 / maxBudget))%"></div>
+                                    <div class="bvs-spent @(b.IsOverBudget ? "over" : "")"
+                                         style="width:@((int)(b.Spent * 100 / maxBudget))%"></div>
+                                </div>
+                                <div class="bvs-value @(b.IsOverBudget ? "text-danger" : "")">
+                                    @b.Spent.ToString("N0") / @b.Budget.ToString("N0")
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted-2 mb-0">No budgets recorded.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="dash-grid-2">
+        <!-- Deadlines -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div><i class="fas fa-hourglass-half me-2"></i><span>Deadlines within 45 days</span></div>
+                <a class="btn-soft-action" asp-action="Schedule">
+                    <i class="fas fa-calendar-week"></i> All deadlines
+                </a>
+            </div>
+            @if (Model.UpcomingDeadlines.Count > 0)
+            {
+                @foreach (var p in Model.UpcomingDeadlines)
+                {
+                    <div class="rail-stat">
+                        <span class="label">
+                            <a class="project-name" asp-action="Details" asp-route-id="@p.Id">@p.Name</a>
+                        </span>
+                        <span class="figure">
+                            <span class="variance variance-@ScheduleVariance.Band(p.ScheduleVarianceDays)">
+                                @p.EndDate!.Value.ToString("MMM d")
+                            </span>
+                        </span>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state" style="padding:2rem;">
+                    <i class="fas fa-hourglass-half"></i>
+                    <h3>Nothing due soon</h3>
+                    <p>No open project ends within the next 45 days.</p>
+                </div>
+            }
+        </div>
+
+        <!-- Milestones -->
+        <div class="data-card">
+            <div class="card-header-custom">
+                <div><i class="fas fa-flag-checkered me-2"></i><span>Milestones in view</span></div>
+            </div>
+            @if (Model.UpcomingMilestones.Count > 0)
+            {
+                @foreach (var m in Model.UpcomingMilestones)
+                {
+                    <div class="rail-stat">
+                        <span class="label">
+                            <a class="project-name" asp-action="Milestones" asp-route-id="@m.ProjectId">@m.Name</a>
+                            <div style="font-size:0.7rem;color:var(--gray-400);">@m.Project?.Name</div>
+                        </span>
+                        <span class="figure">
+                            <span class="variance variance-@ScheduleVariance.Band(m.VarianceDays)">
+                                @m.DueDate.ToString("MMM d")
+                            </span>
+                        </span>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state" style="padding:2rem;">
+                    <i class="fas fa-flag-checkered"></i>
+                    <h3>No milestones in view</h3>
+                    <p>Nothing planned between two weeks back and two months ahead.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@await Html.PartialAsync("_ProjectStyles")
+@await Html.PartialAsync("_DashboardStyles")
