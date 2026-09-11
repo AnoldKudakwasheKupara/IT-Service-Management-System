@@ -1,4 +1,4 @@
-using IT_Service_Management_System.DbContexts;
+﻿using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models.Efm;
 using IT_Service_Management_System.Services;
 using Microsoft.EntityFrameworkCore;
@@ -97,8 +97,6 @@ namespace IT_Service_Management_System.Services.Efm
                 doc.Status = DocumentStatus.Rejected;
                 message = $"'{doc.Title}' was rejected.";
                 await NotifyEmployeeAsync(doc, approved: false, comments, ct);
-                await _docs.LogAsync(DocumentAuditAction.Rejected, doc.Id, doc.EmployeeId,
-                    $"Rejected '{doc.Title}'" + (string.IsNullOrWhiteSpace(comments) ? "" : $" — {comments}"), ct);
             }
             else
             {
@@ -118,8 +116,6 @@ namespace IT_Service_Management_System.Services.Efm
                     message = $"'{doc.Title}' approved and is now active.";
                     await NotifyEmployeeAsync(doc, approved: true, comments, ct);
                 }
-                await _docs.LogAsync(DocumentAuditAction.Approved, doc.Id, doc.EmployeeId,
-                    $"Approved '{doc.Title}' (level {approval.Level})", ct);
             }
 
             await _db.SaveChangesAsync(ct);

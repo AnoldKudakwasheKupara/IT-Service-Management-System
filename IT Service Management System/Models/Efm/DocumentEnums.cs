@@ -1,4 +1,4 @@
-namespace IT_Service_Management_System.Models.Efm
+﻿namespace IT_Service_Management_System.Models.Efm
 {
     /// <summary>Lifecycle / approval state of an employee document.</summary>
     public enum DocumentStatus
@@ -38,25 +38,6 @@ namespace IT_Service_Management_System.Models.Efm
     }
 
     /// <summary>Every auditable document action.</summary>
-    public enum DocumentAuditAction
-    {
-        Viewed = 0,
-        Previewed = 1,
-        Downloaded = 2,
-        Uploaded = 3,
-        VersionUploaded = 4,
-        Edited = 5,
-        Deleted = 6,
-        Moved = 7,
-        Printed = 8,
-        Shared = 9,
-        Archived = 10,
-        Restored = 11,
-        Approved = 12,
-        Rejected = 13,
-        VersionRestored = 14
-    }
-
     public enum DocumentNotificationType
     {
         DocumentExpiring = 0,

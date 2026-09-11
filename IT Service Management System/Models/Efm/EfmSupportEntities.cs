@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace IT_Service_Management_System.Models.Efm
@@ -24,31 +24,6 @@ namespace IT_Service_Management_System.Models.Efm
         public int DocumentTagId { get; set; }
         [ValidateNever]
         public DocumentTag? Tag { get; set; }
-    }
-
-    /// <summary>Immutable record of a document action (view/download/edit/…) with who/when/where.</summary>
-    public class DocumentAuditLog
-    {
-        public long Id { get; set; }
-
-        public int? EmployeeDocumentId { get; set; }
-        public int? EmployeeId { get; set; }
-
-        public DocumentAuditAction Action { get; set; }
-
-        public int? PerformedById { get; set; }
-        [StringLength(150)]
-        public string? PerformedByName { get; set; }
-
-        [StringLength(64)]
-        public string? IpAddress { get; set; }
-        [StringLength(300)]
-        public string? UserAgent { get; set; }
-
-        public DateTime Timestamp { get; set; } = DateTime.Now;
-
-        [StringLength(1000)]
-        public string? Details { get; set; }
     }
 
     /// <summary>A secure, optionally password-protected, expiring internal share link (read-only).</summary>

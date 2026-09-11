@@ -1,4 +1,4 @@
-using ClosedXML.Excel;
+﻿using ClosedXML.Excel;
 using IT_Service_Management_System.ViewModels.Efm;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -18,70 +18,6 @@ namespace IT_Service_Management_System.Helpers.Efm
         private static readonly Color Zebra = Color.FromHex("#F3F4F6");
         public const string XlsxContentType =
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
-        // ── Audit trail ────────────────────────────────────────────────────────────
-        public static byte[] AuditXlsx(IReadOnlyList<DocumentAuditRow> rows)
-        {
-            using var wb = new XLWorkbook();
-            var ws = wb.Worksheets.Add("Document Audit");
-            string[] headers = { "Timestamp", "Action", "Performed By", "Employee", "Document", "IP Address", "User Agent", "Details" };
-            for (int i = 0; i < headers.Length; i++) ws.Cell(1, i + 1).Value = headers[i];
-            StyleHeader(ws.Range(1, 1, 1, headers.Length));
-
-            var r = 2;
-            foreach (var row in rows)
-            {
-                ws.Cell(r, 1).Value = row.Timestamp;
-                ws.Cell(r, 1).Style.DateFormat.Format = "yyyy-mm-dd hh:mm:ss";
-                ws.Cell(r, 2).Value = row.Action.ToString();
-                ws.Cell(r, 3).Value = row.PerformedByName;
-                ws.Cell(r, 4).Value = row.EmployeeName;
-                ws.Cell(r, 5).Value = row.DocumentTitle;
-                ws.Cell(r, 6).Value = row.IpAddress;
-                ws.Cell(r, 7).Value = row.UserAgent;
-                ws.Cell(r, 8).Value = row.Details;
-                r++;
-            }
-            Finish(ws, headers.Length);
-            return ToBytes(wb);
-        }
-
-        public static byte[] AuditPdf(IReadOnlyList<DocumentAuditRow> rows, string? scope)
-        {
-            return Document.Create(doc =>
-            {
-                doc.Page(page =>
-                {
-                    page.Size(PageSizes.A4.Landscape());
-                    page.Margin(24);
-                    page.DefaultTextStyle(t => t.FontSize(8));
-
-                    Header(page, "Document Audit Trail", scope);
-                    page.Content().PaddingVertical(8).Table(table =>
-                    {
-                        table.ColumnsDefinition(c =>
-                        {
-                            c.ConstantColumn(78); c.ConstantColumn(58); c.ConstantColumn(80);
-                            c.ConstantColumn(90); c.RelativeColumn(2); c.ConstantColumn(66); c.RelativeColumn(3);
-                        });
-                        TableHead(table, "Time", "Action", "By", "Employee", "Document", "IP", "Details");
-                        var zebra = false;
-                        foreach (var row in rows)
-                        {
-                            var bg = (zebra = !zebra) ? Zebra : Colors.White;
-                            Cell(table, bg, row.Timestamp.ToString("yyyy-MM-dd HH:mm"));
-                            Cell(table, bg, row.Action.ToString());
-                            Cell(table, bg, row.PerformedByName ?? "—");
-                            Cell(table, bg, row.EmployeeName ?? "—");
-                            Cell(table, bg, row.DocumentTitle ?? "—");
-                            Cell(table, bg, row.IpAddress ?? "—");
-                            Cell(table, bg, row.Details ?? "—");
-                        }
-                    });
-                    Footer(page);
-                });
-            }).GeneratePdf();
-        }
 
         // ── File completeness / compliance ──────────────────────────────────────────
         public static byte[] ComplianceXlsx(IReadOnlyList<ComplianceRow> rows)

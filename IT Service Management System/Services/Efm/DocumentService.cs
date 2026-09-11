@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using IT_Service_Management_System.DbContexts;
 using IT_Service_Management_System.Models.Efm;
 using IT_Service_Management_System.Services.Security;
@@ -166,8 +166,6 @@ namespace IT_Service_Management_System.Services.Efm
             await ApplyTagsAsync(doc, input.TagsCsv, ct);
             await _db.SaveChangesAsync(ct);
 
-            await LogAsync(DocumentAuditAction.Uploaded, doc.Id, doc.EmployeeId,
-                $"Uploaded '{doc.Title}' ({version.FileName}, {stored.SizeBytes} bytes)");
 
             EnqueueOcr(version.Id, stored.StoredKey, stored.ContentType);
             return doc;
@@ -221,8 +219,6 @@ namespace IT_Service_Management_System.Services.Efm
             if (doc.Status == DocumentStatus.Expired) doc.Status = DocumentStatus.Active;
             await _db.SaveChangesAsync(ct);
 
-            await LogAsync(DocumentAuditAction.VersionUploaded, documentId, doc.EmployeeId,
-                $"Uploaded v{version.VersionNumber} ({version.FileName})");
 
             EnqueueOcr(version.Id, stored.StoredKey, stored.ContentType);
             return version;
@@ -268,8 +264,6 @@ namespace IT_Service_Management_System.Services.Efm
             doc.UpdatedAt = DateTime.Now;
             await _db.SaveChangesAsync(ct);
 
-            await LogAsync(DocumentAuditAction.VersionRestored, documentId, doc.EmployeeId,
-                $"Restored v{target.VersionNumber} as v{restored.VersionNumber}");
             return restored;
         }
 
@@ -295,28 +289,6 @@ namespace IT_Service_Management_System.Services.Efm
             if (version == null || !await _storage.ExistsAsync(version.StoredKey, ct)) return null;
             var stream = await _storage.OpenReadAsync(version.StoredKey, ct);
             return (version, stream);
-        }
-
-        /// <summary>Writes a document audit-trail entry, capturing IP + user agent.</summary>
-        public async Task LogAsync(DocumentAuditAction action, int? documentId, int? employeeId, string? details, CancellationToken ct = default)
-        {
-            var http = _http.HttpContext;
-            var ip = http?.Connection.RemoteIpAddress?.ToString();
-            if (ip == "::1") ip = "127.0.0.1";
-
-            _db.DocumentAuditLogs.Add(new DocumentAuditLog
-            {
-                EmployeeDocumentId = documentId,
-                EmployeeId = employeeId,
-                Action = action,
-                PerformedById = http?.Session.GetInt32("UserId"),
-                PerformedByName = http?.Session.GetString("UserName"),
-                IpAddress = ip,
-                UserAgent = http?.Request.Headers.UserAgent.ToString(),
-                Timestamp = DateTime.Now,
-                Details = details
-            });
-            await _db.SaveChangesAsync(ct);
         }
 
         private async Task ApplyTagsAsync(EmployeeDocument doc, string? tagsCsv, CancellationToken ct)

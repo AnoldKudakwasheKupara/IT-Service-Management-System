@@ -65,7 +65,6 @@ namespace IT_Service_Management_System.DbContexts
         public DbSet<DocumentVersion> DocumentVersions { get; set; }
         public DbSet<DocumentTag> DocumentTags { get; set; }
         public DbSet<DocumentTagMap> DocumentTagMaps { get; set; }
-        public DbSet<DocumentAuditLog> DocumentAuditLogs { get; set; }
         public DbSet<DocumentShare> DocumentShares { get; set; }
         public DbSet<DocumentApproval> DocumentApprovals { get; set; }
         public DbSet<DocumentComment> DocumentComments { get; set; }
@@ -482,9 +481,6 @@ namespace IT_Service_Management_System.DbContexts
             modelBuilder.Entity<DocumentRequest>().HasIndex(r => new { r.EmployeeId, r.Status });
             modelBuilder.Entity<DocumentRequest>().HasIndex(r => r.Status);
 
-            modelBuilder.Entity<DocumentAuditLog>().HasIndex(a => a.EmployeeDocumentId);
-            modelBuilder.Entity<DocumentAuditLog>().HasIndex(a => a.EmployeeId);
-            modelBuilder.Entity<DocumentAuditLog>().HasIndex(a => a.Timestamp);
             modelBuilder.Entity<DocumentNotification>().HasIndex(n => new { n.RecipientUserId, n.IsRead });
 
             // ── ITSM / ITIL relationships (all nullable links use SetNull/NoAction to avoid
