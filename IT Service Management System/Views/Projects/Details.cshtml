@@ -1,4 +1,4 @@
-@model IT_Service_Management_System.ViewModels.Pm.ProjectDetailsVm
+﻿@model IT_Service_Management_System.ViewModels.Pm.ProjectDetailsVm
 @using IT_Service_Management_System.Models.Pm
 
 @{
@@ -278,6 +278,25 @@
                         Completing or cancelling a project stamps its actual end date, which is what
                         every schedule-variance figure is measured against.
                     </p>
+                </div>
+            }
+
+            @if (Model.CanDelete)
+            {
+                <div class="data-card mt-4" style="border-color: #fed7d7;">
+                    <div class="card-header-custom">
+                        <div><i class="fas fa-trash-alt me-2" style="color: var(--danger);"></i><span>Remove</span></div>
+                    </div>
+                    <form method="post" asp-action="Delete" asp-route-id="@p.Id" style="padding: 1rem 1.5rem;"
+                          onsubmit="return confirm('Delete @p.Name? It disappears from every list. Tasks, milestones and links go with it; booked time stays attributable.');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-clear-filters" style="border-color: var(--danger); color: var(--danger);">
+                            <i class="fas fa-trash-alt"></i> Delete project
+                        </button>
+                        <p style="font-size:0.72rem;color:var(--gray-400);margin:0.6rem 0 0;">
+                            Hidden rather than destroyed, so it can be brought back. Its code stays taken.
+                        </p>
+                    </form>
                 </div>
             }
         </div>

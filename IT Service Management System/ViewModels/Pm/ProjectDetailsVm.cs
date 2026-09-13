@@ -1,4 +1,4 @@
-using IT_Service_Management_System.Models;
+﻿using IT_Service_Management_System.Models;
 using IT_Service_Management_System.Models.Pm;
 
 namespace IT_Service_Management_System.ViewModels.Pm
@@ -29,6 +29,7 @@ namespace IT_Service_Management_System.ViewModels.Pm
         public bool CanEdit { get; set; }
         public bool CanContribute { get; set; }
         public bool CanApprove { get; set; }
+        public bool CanDelete { get; set; }
 
         public int MilestonePercent => MilestonesTotal == 0 ? 0 : MilestonesAchieved * 100 / MilestonesTotal;
         public int TaskPercent => TasksTotal == 0 ? 0 : TasksCompleted * 100 / TasksTotal;

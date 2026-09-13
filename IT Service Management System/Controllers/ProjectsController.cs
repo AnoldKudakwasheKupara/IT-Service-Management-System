@@ -295,7 +295,8 @@ namespace IT_Service_Management_System.Controllers
                     .CountAsync(i => i.ProjectId == id && i.Status != IssueStatus.Closed),
                 CanEdit = PmAccess.CanEdit(project, Uid, Role),
                 CanContribute = PmAccess.CanContribute(project, Uid, Role, team.Select(m => m.UserId)),
-                CanApprove = PmAccess.CanApprove(Role)
+                CanApprove = PmAccess.CanApprove(Role),
+                CanDelete = Roles.IsFullAccess(Role) || (project.IsOpen && project.ProjectManagerId == Uid)
             };
 
             if (model.CanEdit)
@@ -394,6 +395,30 @@ namespace IT_Service_Management_System.Controllers
             await _db.SaveChangesAsync();
             TempData["Success"] = "Team member rolled off.";
             return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == id);
+            if (project == null) return NotFound();
+
+            // Removing a project is a step beyond editing it. Administrators can always do it;
+            // otherwise it stays with the project's own manager, on an open project.
+            if (!(Roles.IsFullAccess(Role) || (project.IsOpen && project.ProjectManagerId == Uid)))
+                return Denied();
+
+            // Soft delete. The row and everything under it — tasks, milestones, links, booked
+            // time — stay in the database and out of every query, so the record can be restored
+            // and history stays attributable. Its code stays claimed by the unique index; a new
+            // project cannot reuse it, which is the right outcome for an identifier.
+            project.IsDeleted = true;
+            project.UpdatedAt = DateTime.Now;
+            await _db.SaveChangesAsync();
+
+            TempData["Success"] = $"Project {project.Reference} deleted.";
+            return RedirectToAction(nameof(Index));
         }
 
         // ── milestones ───────────────────────────────────────────────────────────
