@@ -402,6 +402,24 @@ namespace IT_Service_Management_System.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetBaseline(int id)
+        {
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == id);
+            if (project == null) return NotFound();
+            if (!PmAccess.CanEdit(project, Uid, Role)) return Denied();
+
+            // Copies every current date — project end, milestone due dates, task start and due —
+            // into its baseline field. From here on, variance is measured against this snapshot,
+            // and a slipped date shows as a shift from a ghost bar rather than simply moving.
+            // Freezing again replaces the previous baseline; there is no history of baselines.
+            await _scheduling.SetBaselineAsync(id);
+
+            TempData["Success"] = "Baseline frozen. Slippage is now measured against today's plan.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
             var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == id);

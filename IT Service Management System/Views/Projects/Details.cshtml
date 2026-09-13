@@ -279,6 +279,32 @@
                         every schedule-variance figure is measured against.
                     </p>
                 </div>
+
+                <div class="data-card mt-4">
+                    <div class="card-header-custom">
+                        <div><i class="fas fa-camera me-2"></i><span>Baseline</span></div>
+                        @if (p.BaselineEndDate.HasValue)
+                        {
+                            <span class="record-count">Frozen — ends @p.BaselineEndDate.Value.ToString("d MMM yyyy")</span>
+                        }
+                        else
+                        {
+                            <span class="record-count">Not yet frozen</span>
+                        }
+                    </div>
+                    <form method="post" asp-action="SetBaseline" asp-route-id="@p.Id" style="padding: 1rem 1.5rem;"
+                          onsubmit="return confirm('@(p.BaselineEndDate.HasValue ? "Replace the existing baseline with today's plan? The previous one is not kept." : "Freeze today's plan as the baseline?")');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn-create-sm">
+                            <i class="fas fa-camera"></i> @(p.BaselineEndDate.HasValue ? "Re-freeze baseline" : "Freeze baseline")
+                        </button>
+                        <p style="font-size:0.72rem;color:var(--gray-400);margin:0.6rem 0 0;">
+                            Snapshots every task, milestone and project date as they stand. The Gantt then
+                            shows each bar against its ghost, so slippage is a visible shift rather than a
+                            date that quietly moved. Do it once the plan is agreed.
+                        </p>
+                    </form>
+                </div>
             }
 
             @if (Model.CanDelete)
