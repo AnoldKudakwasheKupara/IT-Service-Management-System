@@ -624,7 +624,7 @@ namespace IT_Service_Management_System.Controllers
         // ── tasks ────────────────────────────────────────────────────────────────
 
         public async Task<IActionResult> Tasks(int id, string view = "list", int? milestoneId = null,
-            int? assigneeId = null, bool openOnly = false)
+            int? assigneeId = null, bool openOnly = false, bool unassignedOnly = false)
         {
             var context = await LoadForTabAsync(id);
             if (context.Result != null) return context.Result;
@@ -643,6 +643,15 @@ namespace IT_Service_Management_System.Controllers
             if (openOnly)
                 query = query.Where(t => t.Status != ProjectTaskStatus.Completed &&
                                          t.Status != ProjectTaskStatus.Cancelled);
+
+            if (unassignedOnly)
+                query = query.Where(t => t.AssignedToId == null);
+
+            // Counted over the whole project, not the filtered list, so the nudge does not
+            // vanish the moment someone filters to a milestone that happens to be staffed.
+            var unassignedOpen = await _db.ProjectTasks.CountAsync(t =>
+                t.ProjectId == id && t.AssignedToId == null &&
+                t.Status != ProjectTaskStatus.Completed && t.Status != ProjectTaskStatus.Cancelled);
 
             var tasks = await query
                 // Board position first so the lanes read in the order someone arranged them;
@@ -687,7 +696,9 @@ namespace IT_Service_Management_System.Controllers
                 View = view == "board" ? "board" : "list",
                 MilestoneId = milestoneId,
                 AssigneeId = assigneeId,
-                OpenOnly = openOnly
+                OpenOnly = openOnly,
+                UnassignedOnly = unassignedOnly,
+                UnassignedOpen = unassignedOpen
             });
         }
 

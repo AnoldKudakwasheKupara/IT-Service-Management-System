@@ -27,8 +27,16 @@ namespace IT_Service_Management_System.ViewModels.Pm
         public int? MilestoneId { get; set; }
         public int? AssigneeId { get; set; }
         public bool OpenOnly { get; set; }
+        public bool UnassignedOnly { get; set; }
 
-        public bool IsFiltered => MilestoneId.HasValue || AssigneeId.HasValue || OpenOnly;
+        public bool IsFiltered => MilestoneId.HasValue || AssigneeId.HasValue || OpenOnly || UnassignedOnly;
+
+        /// <summary>
+        /// Open tasks with nobody on them, across the whole project rather than the current
+        /// filter. Workload and overlap views cannot see a task until it has an owner, so this
+        /// is the number the page nags about.
+        /// </summary>
+        public int UnassignedOpen { get; set; }
 
         public int Completed => Tasks.Count(t => t.Status == ProjectTaskStatus.Completed);
         public int Blocked => Tasks.Count(t => t.Status == ProjectTaskStatus.Blocked);
@@ -46,6 +54,7 @@ namespace IT_Service_Management_System.ViewModels.Pm
             if (MilestoneId.HasValue) values["milestoneId"] = MilestoneId.Value.ToString();
             if (AssigneeId.HasValue) values["assigneeId"] = AssigneeId.Value.ToString();
             if (OpenOnly) values["openOnly"] = "true";
+            if (UnassignedOnly) values["unassignedOnly"] = "true";
             return values;
         }
     }

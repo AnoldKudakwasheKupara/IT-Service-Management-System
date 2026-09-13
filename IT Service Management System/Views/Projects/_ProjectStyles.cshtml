@@ -333,6 +333,22 @@
     .lane-btn:hover { background: var(--primary); border-color: var(--primary); color: #fff; }
     .kanban-empty { font-size: 0.72rem; color: var(--gray-400); text-align: center; padding: 0.75rem 0; margin: 0; }
 
+    /* ── Nudge banner and the field it points at ────────────────────────── */
+    .nudge {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 0.85rem 1.25rem;
+        border-radius: var(--radius-sm);
+        background: var(--warning-light);
+        border: 1px solid #ffe0b3;
+        color: #78350f;
+        font-size: 0.84rem;
+    }
+    .nudge > i { font-size: 1.1rem; color: #b45309; }
+    .nudge strong { color: #78350f; }
+    .filter-select.needs-owner { border-color: var(--warning); background: #fffbeb; }
+
     /* ── Dependency strip beneath a task row ────────────────────────────── */
     .dep-row td { padding-top: 0 !important; background: var(--gray-50); }
     .dep-strip {

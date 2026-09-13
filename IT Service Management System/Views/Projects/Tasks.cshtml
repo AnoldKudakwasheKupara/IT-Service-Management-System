@@ -58,6 +58,25 @@
         </div>
     </div>
 
+    @if (Model.UnassignedOpen > 0)
+    {
+        <!-- The overlap and workload views can only see a task once it has an owner, so an
+             unowned task is invisible to exactly the pages that would flag it as a problem. -->
+        <div class="nudge mb-4">
+            <i class="fas fa-user-slash"></i>
+            <div class="flex-grow-1">
+                <strong>@Model.UnassignedOpen open task@(Model.UnassignedOpen == 1 ? " has" : "s have") no owner.</strong>
+                Nobody&rsquo;s workload counts them, and the overlap view can&rsquo;t see them until someone does.
+            </div>
+            @if (!Model.UnassignedOnly)
+            {
+                <a class="btn-soft-action" asp-action="Tasks" asp-route-id="@p.Id" asp-route-unassignedOnly="true">
+                    <i class="fas fa-filter"></i> Show just those
+                </a>
+            }
+        </div>
+    }
+
     <div class="filters-card mb-4">
         <div class="filters-header">
             <i class="fas fa-filter"></i>
@@ -90,6 +109,13 @@
                 <select name="openOnly" class="filter-select">
                     <option value="false" selected="@(!Model.OpenOnly)">All tasks</option>
                     <option value="true" selected="@Model.OpenOnly">Open only</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Owner</label>
+                <select name="unassignedOnly" class="filter-select">
+                    <option value="false" selected="@(!Model.UnassignedOnly)">Anyone or nobody</option>
+                    <option value="true" selected="@Model.UnassignedOnly">Unassigned only</option>
                 </select>
             </div>
             <button type="submit" class="btn-clear-filters" style="background:var(--primary);color:#fff;border:none;">
@@ -221,7 +247,8 @@
                                                         <option value="@m.Id" selected="@(m.Id == t.MilestoneId)">@m.Name</option>
                                                     }
                                                 </select>
-                                                <select name="AssignedToId" class="filter-select" style="max-width: 150px;">
+                                                <select name="AssignedToId" class="filter-select @(t.AssignedToId == null && t.Status != ProjectTaskStatus.Completed ? "needs-owner" : "")"
+                                                        style="max-width: 150px;" title="@(t.AssignedToId == null ? "No owner yet" : "")">
                                                     <option value="">Unassigned</option>
                                                     @foreach (var u in owners)
                                                     {
