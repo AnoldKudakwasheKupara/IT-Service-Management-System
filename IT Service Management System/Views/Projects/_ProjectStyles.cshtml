@@ -332,4 +332,40 @@
     }
     .lane-btn:hover { background: var(--primary); border-color: var(--primary); color: #fff; }
     .kanban-empty { font-size: 0.72rem; color: var(--gray-400); text-align: center; padding: 0.75rem 0; margin: 0; }
+
+    /* ── Dependency strip beneath a task row ────────────────────────────── */
+    .dep-row td { padding-top: 0 !important; background: var(--gray-50); }
+    .dep-strip {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        padding: 0.35rem 0.25rem 0.5rem;
+        font-size: 0.74rem;
+        color: var(--gray-500);
+    }
+    .dep-label { font-weight: 600; color: var(--gray-500); }
+    .dep-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        background: #fff;
+        border: 1px solid var(--gray-200);
+        color: var(--gray-700);
+        font-weight: 600;
+    }
+    .dep-x {
+        border: none;
+        background: none;
+        color: var(--gray-400);
+        font-size: 0.9rem;
+        line-height: 1;
+        padding: 0 0.1rem;
+        cursor: pointer;
+    }
+    .dep-x:hover { color: var(--danger); }
+    .dep-add { display: inline-flex; align-items: center; gap: 0.3rem; margin-left: auto; }
+    .dep-add .filter-select { max-width: 220px; padding: 0.25rem 0.5rem; font-size: 0.74rem; }
 </style>

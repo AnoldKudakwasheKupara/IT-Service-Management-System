@@ -22,11 +22,14 @@ namespace IT_Service_Management_System.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly ProjectMetricsService _metrics;
+        private readonly ProjectSchedulingService _scheduling;
 
-        public ProjectsController(ApplicationDbContext db, ProjectMetricsService metrics)
+        public ProjectsController(ApplicationDbContext db, ProjectMetricsService metrics,
+            ProjectSchedulingService scheduling)
         {
             _db = db;
             _metrics = metrics;
+            _scheduling = scheduling;
         }
 
         private int Uid => HttpContext.Session.GetInt32("UserId") ?? 0;
@@ -635,10 +638,33 @@ namespace IT_Service_Management_System.Controllers
                 .OrderBy(m => m.SortOrder).ThenBy(m => m.DueDate)
                 .ToListAsync();
 
+            // Every task in the project is a candidate predecessor, whatever the filter shows.
+            var allTasks = await _db.ProjectTasks.AsNoTracking()
+                .Where(t => t.ProjectId == id && t.Status != ProjectTaskStatus.Cancelled)
+                .Select(t => new { t.Id, t.Name })
+                .OrderBy(t => t.Name)
+                .ToListAsync();
+            ViewBag.AllTasks = allTasks.Select(t => (t.Id, t.Name)).ToList();
+
+            var allIds = allTasks.Select(t => t.Id).ToList();
+            var names = allTasks.ToDictionary(t => t.Id, t => t.Name);
+            var predecessors = await _db.TaskDependencies.AsNoTracking()
+                .Where(d => allIds.Contains(d.TaskId))
+                .Select(d => new { d.Id, d.TaskId, d.PredecessorTaskId })
+                .ToListAsync();
+
             return View(new ProjectTasksVm
             {
                 Project = context.Project!,
                 Tasks = tasks,
+                Predecessors = predecessors
+                    .GroupBy(d => d.TaskId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => g.Select(d => new TaskPredecessor(
+                                d.Id, d.PredecessorTaskId,
+                                names.TryGetValue(d.PredecessorTaskId, out var n) ? n : $"Task #{d.PredecessorTaskId}"))
+                              .ToList()),
                 CanContribute = context.CanContribute,
                 View = view == "board" ? "board" : "list",
                 MilestoneId = milestoneId,
@@ -689,6 +715,7 @@ namespace IT_Service_Management_System.Controllers
 
             await _db.SaveChangesAsync();
             await RefreshProgressAsync(id);
+            await _scheduling.RecalculateCriticalPathAsync(id);
 
             TempData["Success"] = input.Id == 0 ? "Task added." : "Task updated.";
             return RedirectToAction(nameof(Tasks), new { id, view = returnView });
@@ -738,9 +765,71 @@ namespace IT_Service_Management_System.Controllers
             _db.ProjectTasks.Remove(task);
             await _db.SaveChangesAsync();
             await RefreshProgressAsync(id);
+            await _scheduling.RecalculateCriticalPathAsync(id);
 
             TempData["Success"] = "Task deleted.";
             return RedirectToAction(nameof(Tasks), new { id, view = returnView });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddDependency(int id, int taskId, int predecessorTaskId)
+        {
+            var context = await LoadForTabAsync(id, needContribute: true);
+            if (context.Result != null) return context.Result;
+
+            // Both ends must be this project's. A link across projects would let one plan hold
+            // another hostage with no visibility from either side.
+            var inProject = await _db.ProjectTasks
+                .Where(t => t.ProjectId == id && (t.Id == taskId || t.Id == predecessorTaskId))
+                .CountAsync();
+            if (inProject != 2) return NotFound();
+
+            if (await _db.TaskDependencies.AnyAsync(d => d.TaskId == taskId && d.PredecessorTaskId == predecessorTaskId))
+            {
+                TempData["Info"] = "That dependency already exists.";
+                return RedirectToAction(nameof(Tasks), new { id });
+            }
+
+            // A cycle makes the plan unschedulable — nothing can ever start. Refused outright,
+            // and the message says why rather than leaving the user to guess.
+            if (await _scheduling.WouldCreateCycleAsync(taskId, predecessorTaskId))
+            {
+                TempData["Error"] = "That would create a loop — the predecessor already depends on this task, directly or through others.";
+                return RedirectToAction(nameof(Tasks), new { id });
+            }
+
+            _db.TaskDependencies.Add(new TaskDependency
+            {
+                TaskId = taskId,
+                PredecessorTaskId = predecessorTaskId,
+                Type = DependencyType.FinishToStart
+            });
+            await _db.SaveChangesAsync();
+            await _scheduling.RecalculateCriticalPathAsync(id);
+
+            TempData["Success"] = "Dependency added.";
+            return RedirectToAction(nameof(Tasks), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveDependency(int id, int dependencyId)
+        {
+            var context = await LoadForTabAsync(id, needContribute: true);
+            if (context.Result != null) return context.Result;
+
+            var dep = await _db.TaskDependencies
+                .Include(d => d.Task)
+                .FirstOrDefaultAsync(d => d.Id == dependencyId && d.Task!.ProjectId == id);
+            if (dep == null) return NotFound();
+
+            _db.TaskDependencies.Remove(dep);
+            await _db.SaveChangesAsync();
+            await _scheduling.RecalculateCriticalPathAsync(id);
+
+            TempData["Success"] = "Dependency removed.";
+            return RedirectToAction(nameof(Tasks), new { id });
         }
 
         /// <summary>

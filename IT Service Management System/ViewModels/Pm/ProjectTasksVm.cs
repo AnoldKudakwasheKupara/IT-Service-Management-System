@@ -1,7 +1,10 @@
-using IT_Service_Management_System.Models.Pm;
+﻿using IT_Service_Management_System.Models.Pm;
 
 namespace IT_Service_Management_System.ViewModels.Pm
 {
+    /// <summary>One "must finish first" link, flattened for display.</summary>
+    public record TaskPredecessor(int DependencyId, int PredecessorTaskId, string PredecessorName);
+
     /// <summary>
     /// The tasks tab. One query feeds both presentations — the list and the board are the same
     /// tasks arranged differently, so switching view costs nothing and cannot disagree.
@@ -11,6 +14,12 @@ namespace IT_Service_Management_System.ViewModels.Pm
         public Project Project { get; set; } = null!;
         public List<ProjectTask> Tasks { get; set; } = new();
         public bool CanContribute { get; set; }
+
+        /// <summary>Predecessors per task: the dependency row id and the task it points at.</summary>
+        public Dictionary<int, List<TaskPredecessor>> Predecessors { get; set; } = new();
+
+        public IReadOnlyList<TaskPredecessor> PredecessorsOf(int taskId) =>
+            Predecessors.TryGetValue(taskId, out var list) ? list : Array.Empty<TaskPredecessor>();
 
         /// <summary>"list" or "board".</summary>
         public string View { get; set; } = "list";

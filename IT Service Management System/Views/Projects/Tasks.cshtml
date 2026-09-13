@@ -8,6 +8,7 @@
     ViewData["Tab"] = "tasks";
 
     var owners = ViewBag.Owners as List<User> ?? new List<User>();
+    var allTasks = ViewBag.AllTasks as List<(int Id, string Name)> ?? new List<(int, string)>();
     var milestones = ViewBag.Milestones as List<Milestone> ?? new List<Milestone>();
 
     // Hoisted: Razor cannot parse a nested double-quoted call inside an attribute value.
@@ -282,6 +283,66 @@
                                         }
                                     </td>
                                 </tr>
+
+                                var preds = Model.PredecessorsOf(t.Id);
+                                var candidates = allTasks.Where(c => c.Id != t.Id && preds.All(x => x.PredecessorTaskId != c.Id)).ToList();
+                                if (preds.Count > 0 || (Model.CanContribute && candidates.Count > 0) || t.IsOnCriticalPath)
+                                {
+                                    <tr class="dep-row">
+                                        <td colspan="6">
+                                            <div class="dep-strip">
+                                                @if (t.IsOnCriticalPath)
+                                                {
+                                                    <span class="variance variance-late" title="Any slip here delays the project finish">
+                                                        <i class="fas fa-bolt"></i> Critical path
+                                                    </span>
+                                                }
+                                                @if (t.FloatDays > 0 && !t.IsOnCriticalPath)
+                                                {
+                                                    <span class="chip-muted" title="Days this can slip before delaying the finish">@t.FloatDays d float</span>
+                                                }
+
+                                                <span class="dep-label"><i class="fas fa-arrow-right-to-bracket"></i> After:</span>
+                                                @if (preds.Count == 0)
+                                                {
+                                                    <span class="chip-muted">nothing — can start any time</span>
+                                                }
+                                                @foreach (var pr in preds)
+                                                {
+                                                    <span class="dep-chip">
+                                                        @pr.PredecessorName
+                                                        @if (Model.CanContribute)
+                                                        {
+                                                            <form method="post" asp-action="RemoveDependency" asp-route-id="@p.Id" class="d-inline">
+                                                                @Html.AntiForgeryToken()
+                                                                <input type="hidden" name="dependencyId" value="@pr.DependencyId" />
+                                                                <button type="submit" class="dep-x" title="Remove this dependency">&times;</button>
+                                                            </form>
+                                                        }
+                                                    </span>
+                                                }
+
+                                                @if (Model.CanContribute && candidates.Count > 0)
+                                                {
+                                                    <form method="post" asp-action="AddDependency" asp-route-id="@p.Id" class="dep-add">
+                                                        @Html.AntiForgeryToken()
+                                                        <input type="hidden" name="taskId" value="@t.Id" />
+                                                        <select name="predecessorTaskId" class="filter-select" required>
+                                                            <option value="">Must finish first…</option>
+                                                            @foreach (var c in candidates)
+                                                            {
+                                                                <option value="@c.Id">@c.Name</option>
+                                                            }
+                                                        </select>
+                                                        <button type="submit" class="action-btn btn-approve" title="Add dependency">
+                                                            <i class="fas fa-plus"></i>
+                                                        </button>
+                                                    </form>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
                             }
                         </tbody>
                     </table>
