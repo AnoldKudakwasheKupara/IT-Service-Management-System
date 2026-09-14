@@ -94,39 +94,14 @@
                     <!-- Right Column -->
                     <div class="form-column">
                         <div class="form-group-modern">
-                            <label asp-for="PasswordHash" class="form-label">
-                                <i class="fas fa-lock"></i>
-                                Password
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-icon-wrapper">
-                                <i class="fas fa-key input-icon"></i>
-                                <input asp-for="PasswordHash" type="password" class="form-control-modern" placeholder="Enter password" autocomplete="off" />
-                                <button type="button" class="password-toggle" id="togglePassword">
-                                    <i class="far fa-eye-slash"></i>
-                                </button>
-                            </div>
-                            <span asp-validation-for="PasswordHash" class="validation-message text-danger"></span>
-                            <div class="form-hint">
-                                <i class="fas fa-info-circle"></i> Password must be at least 8 characters
-                            </div>
-                        </div>
-
-                        <div class="form-group-modern">
-                            <label class="form-label">
-                                <i class="fas fa-check-circle"></i>
-                                Confirm Password
-                                <span class="required">*</span>
-                            </label>
-                            <div class="input-icon-wrapper">
-                                <i class="fas fa-redo-alt input-icon"></i>
-                                <input type="password" id="confirmPassword" class="form-control-modern" placeholder="Confirm password" />
-                                <button type="button" class="password-toggle" id="toggleConfirmPassword">
-                                    <i class="far fa-eye-slash"></i>
-                                </button>
-                            </div>
-                            <div id="passwordMatchError" class="validation-message text-danger" style="display: none;">
-                                <i class="fas fa-times-circle"></i> Passwords do not match
+                            <div class="activation-note">
+                                <i class="fas fa-envelope-open-text"></i>
+                                <div>
+                                    <strong>No password is set here.</strong>
+                                    The person receives an activation email at the address above with a
+                                    link to choose their own password. The link lasts 24 hours and can be
+                                    resent from their profile.
+                                </div>
                             </div>
                         </div>
 
@@ -222,7 +197,7 @@
                         </div>
                         <div class="tip-item">
                             <i class="fas fa-check-circle"></i>
-                            <span>Set a secure password (min 8 characters)</span>
+                            <span>They set their own password from the activation email</span>
                         </div>
                         <div class="tip-item">
                             <i class="fas fa-check-circle"></i>
@@ -446,26 +421,19 @@
             box-shadow: 0 0 0 3px rgba(177, 29, 35, 0.1);
         }
 
-    /* Password Toggle */
-    .password-toggle {
-        position: absolute;
-        right: 0.75rem;
-        top: 50%;
-        transform: translateY(-50%);
-        background: none;
-        border: none;
-        color: var(--gray-400);
-        cursor: pointer;
-        padding: 0;
+    .activation-note {
         display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
+        gap: 0.85rem;
+        align-items: flex-start;
+        padding: 1rem 1.1rem;
+        border-radius: 0.75rem;
+        background: var(--primary-surface, #f8dcde);
+        border: 1px solid #f4ced0;
+        font-size: 0.84rem;
+        color: var(--gray-700, #334155);
+        line-height: 1.5;
     }
-
-        .password-toggle:hover {
-            color: var(--primary);
-        }
+    .activation-note > i { font-size: 1.2rem; color: var(--primary, #b11d23); margin-top: 0.1rem; }
 
     /* Select Styling */
     .select-wrapper {
@@ -631,79 +599,6 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Password visibility toggles
-        const passwordInput = document.querySelector('[asp-for="PasswordHash"]');
-        const confirmPasswordInput = document.getElementById('confirmPassword');
-        const togglePassword = document.getElementById('togglePassword');
-        const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
-        const passwordMatchError = document.getElementById('passwordMatchError');
-
-        // Get the actual password input
-        const actualPasswordInput = document.querySelector('input[name="PasswordHash"]');
-
-        // Password visibility toggle for main password
-        if (togglePassword && actualPasswordInput) {
-            togglePassword.addEventListener('click', function() {
-                const type = actualPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                actualPasswordInput.setAttribute('type', type);
-
-                const icon = this.querySelector('i');
-                if (type === 'text') {
-                    icon.classList.remove('fa-eye-slash');
-                    icon.classList.add('fa-eye');
-                } else {
-                    icon.classList.remove('fa-eye');
-                    icon.classList.add('fa-eye-slash');
-                }
-            });
-        }
-
-        // Password visibility toggle for confirm password
-        if (toggleConfirmPassword && confirmPasswordInput) {
-            toggleConfirmPassword.addEventListener('click', function() {
-                const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-                confirmPasswordInput.setAttribute('type', type);
-
-                const icon = this.querySelector('i');
-                if (type === 'text') {
-                    icon.classList.remove('fa-eye-slash');
-                    icon.classList.add('fa-eye');
-                } else {
-                    icon.classList.remove('fa-eye');
-                    icon.classList.add('fa-eye-slash');
-                }
-            });
-        }
-
-        // Password match validation
-        function checkPasswordMatch() {
-            if (actualPasswordInput && confirmPasswordInput) {
-                const password = actualPasswordInput.value;
-                const confirmPassword = confirmPasswordInput.value;
-
-                if (confirmPassword.length > 0 && password !== confirmPassword) {
-                    passwordMatchError.style.display = 'flex';
-                    return false;
-                } else {
-                    passwordMatchError.style.display = 'none';
-                    return true;
-                }
-            }
-            return true;
-        }
-
-        if (confirmPasswordInput) {
-            confirmPasswordInput.addEventListener('input', checkPasswordMatch);
-        }
-
-        if (actualPasswordInput) {
-            actualPasswordInput.addEventListener('input', function() {
-                if (confirmPasswordInput && confirmPasswordInput.value.length > 0) {
-                    checkPasswordMatch();
-                }
-            });
-        }
-
         // Role description
         const roleSelect = document.getElementById('roleSelect');
         const roleInfo = document.getElementById('roleInfo');
@@ -742,8 +637,6 @@
                 var firstName = document.querySelector('[name="FirstName"]').value.trim();
                 var lastName = document.querySelector('[name="LastName"]').value.trim();
                 var email = document.querySelector('[name="Email"]').value.trim();
-                var password = actualPasswordInput ? actualPasswordInput.value : '';
-                var confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : '';
                 var role = roleSelect ? roleSelect.value : '';
 
                 if (!firstName) {
@@ -773,34 +666,6 @@
                     e.preventDefault();
                     showValidationError('Please enter a valid email address');
                     document.querySelector('[name="Email"]').focus();
-                    return false;
-                }
-
-                if (!password) {
-                    e.preventDefault();
-                    showValidationError('Password is required');
-                    actualPasswordInput.focus();
-                    return false;
-                }
-
-                if (password.length < 8) {
-                    e.preventDefault();
-                    showValidationError('Password must be at least 8 characters');
-                    actualPasswordInput.focus();
-                    return false;
-                }
-
-                if (!confirmPassword) {
-                    e.preventDefault();
-                    showValidationError('Please confirm your password');
-                    confirmPasswordInput.focus();
-                    return false;
-                }
-
-                if (password !== confirmPassword) {
-                    e.preventDefault();
-                    showValidationError('Passwords do not match');
-                    confirmPasswordInput.focus();
                     return false;
                 }
 

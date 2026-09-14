@@ -176,6 +176,11 @@ namespace IT_Service_Management_System.Controllers
                 return View(user);
             }
 
+            // No password is taken at registration. The person sets their own through the
+            // activation link, so nothing a crafted post might put in this field is kept — it
+            // would otherwise be saved verbatim, unhashed, until they activated.
+            user.PasswordHash = null;
+
             // Activation link: email the raw token, persist only its hash. Activation windows are
             // longer than password resets (24h) since onboarding a new user isn't time-critical.
             var activationToken = Guid.NewGuid().ToString("N");
